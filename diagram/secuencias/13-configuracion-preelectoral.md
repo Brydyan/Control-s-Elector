@@ -1,0 +1,121 @@
+# Flujo 13 — Configuración Pre-Electoral (MASTER)
+
+Escenario: MASTER registra toda la información necesaria antes del día de votación.
+
+---
+
+## Parte A — Registro de Cargos, Partidos y Candidatos
+
+```mermaid
+sequenceDiagram
+    actor MASTER as Master
+    participant API as Spring Boot API
+    participant JPA as JPA Repository
+    participant PG as PostgreSQL
+
+    Note over MASTER,PG: Paso 1 — Registrar cargos electorales
+
+    MASTER->>API: POST /api/cargos {nombre: Alcalde, nivel_geografico: CANTON}
+    API->>JPA: save(Cargo)
+    JPA->>PG: INSERT cargo
+    PG-->>JPA: cargo_id
+    API-->>MASTER: 201 Created {cargo_id}
+
+    Note over MASTER: Repite para: Prefecto, Concejal Urbano,\nConcejal Rural, Vocal JPR, Consejero CPCCS
+
+    Note over MASTER,PG: Paso 2 — Registrar partidos políticos
+
+    MASTER->>API: POST /api/partidos {nombre, siglas, numero, color_hex}
+    API->>JPA: save(Partido)
+    JPA->>PG: INSERT partido
+    PG-->>JPA: partido_id
+    API-->>MASTER: 201 Created {partido_id}
+
+    Note over MASTER: Repite para cada partido participante
+
+    Note over MASTER,PG: Paso 3 — Registrar candidatos por cargo y partido
+
+    MASTER->>API: POST /api/candidatos {cargo_id, partido_id, nombre, apellido, numero_lista}
+    API->>JPA: save(Candidato)
+    JPA->>PG: INSERT candidato
+    PG-->>JPA: candidato_id
+    API-->>MASTER: 201 Created {candidato_id}
+
+    Note over MASTER: Repite para cada candidato\n(N candidatos × M cargos)
+```
+
+---
+
+## Parte B — Asignación de Cargos por JRV
+
+```mermaid
+sequenceDiagram
+    actor MASTER as Master
+    participant API as Spring Boot API
+    participant SVC as ConfiguracionService
+    participant JPA as JPA Repository
+    participant PG as PostgreSQL
+
+    Note over MASTER,PG: Define qué cargos aplican para cada JRV\nsegún su ubicación geográfica
+
+    MASTER->>API: POST /api/jrv/{jrv_id}/cargos {cargo_ids: [1,2,3,4]}
+    API->>SVC: asignarCargos(jrv_id, cargo_ids)
+
+    SVC->>JPA: saveAll(JrvCargo [{jrv_id, cargo_id}])
+    JPA->>PG: INSERT jrv_cargo (bulk)
+    PG-->>JPA: ok
+    JPA-->>SVC: ok
+    SVC-->>API: ok
+    API-->>MASTER: 200 OK — cargos asignados a JRV
+
+    Note over MASTER: JRVs en parroquias rurales → incluir Vocal JPR\nJRVs urbanas → excluir Vocal JPR
+```
+
+---
+
+## Parte C — Creación de Usuarios OBSERVER y Asignación de JRVs
+
+```mermaid
+sequenceDiagram
+    actor MASTER as Master
+    participant API as Spring Boot API
+    participant SVC as UsuarioService
+    participant JPA as JPA Repository
+    participant PG as PostgreSQL
+
+    Note over MASTER,PG: Paso 1 — Crear usuario OBSERVER\n(realizado en reunión presencial pre-electoral)
+
+    MASTER->>API: POST /api/usuarios {cedula, nombre_completo, email, rol: OBSERVER}
+    API->>SVC: crearUsuario(dto)
+    SVC->>SVC: Genera contraseña temporal
+    SVC->>JPA: save(Usuario)
+    JPA->>PG: INSERT usuario
+    PG-->>JPA: user_id
+    SVC-->>API: UsuarioDTO + contraseña temporal
+    API-->>MASTER: 201 Created {user_id, password_temporal}
+
+    Note over MASTER,PG: Paso 2 — Asignar JRVs al OBSERVER
+
+    MASTER->>API: POST /api/usuarios/{user_id}/jrvs {jrv_ids: [42, 43]}
+    API->>SVC: asignarJrvs(user_id, jrv_ids)
+    SVC->>JPA: saveAll(ObserverJrvAsignacion [{observer_id, jrv_id}])
+    JPA->>PG: INSERT observer_jrv_asignacion (bulk)
+    PG-->>JPA: ok
+    SVC-->>API: ok
+    API-->>MASTER: 200 OK — JRVs asignadas al observer
+```
+
+---
+
+## Checklist Pre-Electoral (orden obligatorio)
+
+```
+1. Registrar cargos electorales
+2. Registrar partidos políticos
+3. Registrar candidatos por cargo y partido
+4. Asignar cargos a cada JRV según geografía
+5. Crear usuarios OBSERVER
+6. Asignar JRVs a cada OBSERVER
+```
+
+> El orden importa: candidatos dependen de cargos y partidos. Las asignaciones de JRV al OBSERVER dependen de que las JRVs ya tengan cargos configurados.

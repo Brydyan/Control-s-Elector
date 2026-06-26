@@ -1,0 +1,119 @@
+# Diagrama 04 — Modelo de Seguridad y Control de Acceso
+
+Capas de seguridad desde la app hasta la base de datos.
+
+```mermaid
+graph TD
+    subgraph CLIENT["Capa Cliente — control.twintailcs.xyz"]
+        APP[App Angular+Ionic]
+        GUARD[Route Guards<br/>RBAC por rol JWT]
+        V_OBS[Vista /observer/*]
+        V_COORD[Vista /coordinator/* · /master/*]
+        V_DASH[Vista /dashboard/*]
+
+        APP --> GUARD
+        GUARD -->|OBSERVER| V_OBS
+        GUARD -->|COORDINATOR · MASTER| V_COORD
+        GUARD -->|ADMIN · MASTER · COORDINATOR| V_DASH
+    end
+
+    subgraph API_SEC["Capa API — Spring Security RBAC"]
+        JWT[JWT Filter<br/>Validación de Token]
+        ROLES{Roles}
+        R_MASTER[ROLE_MASTER<br/>Acceso total + anulación]
+        R_COORD[ROLE_COORDINATOR<br/>Global operativo — disputas y correcciones]
+        R_ADMIN[ROLE_ADMIN<br/>Global solo lectura — dashboard y stats]
+        R_OBS[ROLE_OBSERVER<br/>JRVs asignadas — upload y correcciones propias]
+
+        JWT --> ROLES
+        ROLES --> R_MASTER
+        ROLES --> R_COORD
+        ROLES --> R_ADMIN
+        ROLES --> R_OBS
+    end
+
+    subgraph DB_SEC["Capa Base de Datos — PostgreSQL RLS"]
+        RLS[Row Level Security]
+        POL_MASTER[Política MASTER<br/>Sin restricción]
+        POL_COORD[Política COORDINATOR<br/>Sin restricción — todas las actas]
+        POL_ADMIN[Política ADMIN<br/>Sin restricción — solo lectura vía API]
+        POL_OBS[Política OBSERVER<br/>WHERE jrv_id IN observer_jrv_asignacion]
+
+        RLS --> POL_MASTER
+        RLS --> POL_COORD
+        RLS --> POL_ADMIN
+        RLS --> POL_OBS
+    end
+
+    subgraph AUDIT["Trazabilidad — AuditLog"]
+        AUDIT_SVC[AuditLogService]
+        AUDIT_TBL[(audit_log<br/>PostgreSQL)]
+        AUDIT_SVC -->|JPA| AUDIT_TBL
+    end
+
+    subgraph CONCURRENCY["Control de Concurrencia — JPA"]
+        OPT[Locking Optimista<br/>@Version en entidades]
+        PES[Locking Pesimista<br/>SELECT FOR UPDATE<br/>acta por JRV]
+    end
+
+    V_OBS -->|Bearer JWT| JWT
+    V_COORD -->|Bearer JWT| JWT
+    V_DASH -->|Bearer JWT| JWT
+
+    R_MASTER --> RLS
+    R_COORD --> RLS
+    R_ADMIN --> RLS
+    R_OBS --> RLS
+
+    R_OBS --> OPT
+    R_COORD --> PES
+    R_MASTER --> PES
+
+    R_MASTER --> AUDIT_SVC
+    R_COORD --> AUDIT_SVC
+    R_OBS --> AUDIT_SVC
+```
+
+---
+
+## Matriz de Permisos
+
+| Acción | MASTER | COORDINATOR | ADMIN | OBSERVER |
+|--------|--------|-------------|-------|----------|
+| Gestionar usuarios y configuración | ✅ | ❌ | ❌ | ❌ |
+| Registrar cargos, partidos y candidatos | ✅ | ❌ | ❌ | ❌ |
+| Ver todas las actas | ✅ | ✅ | ✅ | ✅ sus JRVs |
+| Registrar acta | ❌ | ❌ | ❌ | ✅ sus JRVs |
+| Ver evidencias (fotos) | ✅ | ✅ | ✅ | ✅ sus JRVs |
+| Marcar acta EN_DISPUTA | ✅ | ✅ | ❌ | ❌ |
+| Corregir acta | ✅ | ✅ | ❌ | ✅ si se le solicita |
+| Aprobar acta | ✅ | ✅ | ❌ | ❌ |
+| Anular acta APROBADA | ✅ | ❌ | ❌ | ❌ |
+| Revocar tokens de sesión | ✅ | ❌ | ❌ | ❌ |
+| Ver dashboard y estadísticas | ✅ | ✅ | ✅ | ❌ |
+| Recibir notificación de corrección | ❌ | ❌ | ❌ | ✅ |
+
+---
+
+## Políticas RLS
+
+| Rol | Política | Alcance |
+|-----|----------|---------|
+| `MASTER` | Sin restricción | Todas las filas |
+| `COORDINATOR` | Sin restricción | Todas las filas |
+| `ADMIN` | Sin restricción | Todas las filas (lectura forzada en capa API) |
+| `OBSERVER` | `WHERE jrv_id IN (SELECT jrv_id FROM observer_jrv_asignacion WHERE observer_id = ?)` | Solo JRVs asignadas |
+
+---
+
+## Acciones Auditadas
+
+| Acción | Quién la genera |
+|--------|----------------|
+| `VALIDACION_FALLIDA` | OBSERVER — totales incorrectos rechazados |
+| `STORAGE_REINTENTOS_AGOTADOS` | OBSERVER — upload imagen falló 3 veces |
+| `ACTA_EN_DISPUTA` | COORDINATOR / MASTER |
+| `ACTA_CORREGIDA_POR_OBSERVER` | OBSERVER |
+| `ACTA_CORREGIDA_POR_COORDINATOR` | COORDINATOR |
+| `ACTA_APROBADA` | COORDINATOR / MASTER |
+| `ACTA_ANULADA` | MASTER |

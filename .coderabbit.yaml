@@ -1,0 +1,64 @@
+language: "es"
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  path_instructions:
+    - path: "diagram/**/*.md"
+      instructions: |
+        Estos son archivos de documentación de arquitectura en Mermaid.
+        Verifica que:
+        - Los roles usados sean exactamente: MASTER, COORDINATOR, ADMIN, OBSERVER (en inglés, sin tilde).
+        - El flujo de AuditLog siempre sea: AuditLogService → JPA Repository → PostgreSQL. Nunca directo a PG.
+        - Los estados del acta sean: BORRADOR, ENVIADA, EN_DISPUTA, CORREGIDA, APROBADA, ANULADA.
+        - No exista referencia a tabla EVIDENCIA — la foto va en acta.storage_url.
+        - No exista referencia a votos_candidato_a o votos_candidato_b — los votos van en ACTA_DETALLE.
+        - El locking pesimista aplique por jrv_id + cargo_id (no solo jrv_id).
+
+    - path: "**/*.java"
+      instructions: |
+        Backend Spring Boot — Java 17.
+        Verifica que:
+        - Los endpoints respeten la matriz de permisos definida en diagram/04-security.md.
+        - Solo OBSERVER puede hacer POST /api/actas.
+        - Solo MASTER puede hacer POST /api/auth/revoke y PATCH estado ANULADA.
+        - El AuditLogService se invoque después de cada operación relevante (ver diagram/04-security.md sección Acciones Auditadas).
+        - Las validaciones de acta usen: SUM(acta_detalle.votos) + nulos + blancos = total_sufragantes.
+        - El locking pesimista (SELECT FOR UPDATE) aplique por jrv_id + cargo_id.
+        - RLS se active correctamente vía current_setting('app.user_id') en cada request de OBSERVER.
+        - No se exponga información sobre JRVs no asignadas al OBSERVER (RLS debe devolver 404, no 403).
+
+    - path: "**/*.ts"
+      instructions: |
+        Frontend Angular + Ionic — TypeScript.
+        Verifica que:
+        - Los Route Guards protejan rutas según rol JWT: /observer/* solo OBSERVER, /coordinator/* COORDINATOR+MASTER, /master/* solo MASTER, /dashboard/* ADMIN+MASTER+COORDINATOR.
+        - El access token se guarde en memoria (variable), nunca en localStorage.
+        - El refresh token se guarde en localStorage.
+        - La compresión WebP aplique calidad 0.82 inicial; si resultado > 500KB recomprimir a 0.65.
+        - Dimensiones máximas de imagen: 1920×1080 manteniendo aspect ratio.
+        - Al fallar el upload tras 3 reintentos: guardar en IndexedDB Y en Private Storage con formato JRV-{id}_{YYYYMMDD}_{HHmm}_{obs_id}.webp.
+        - El formulario de acta incluya jrv_id y cargo_id en el payload.
+
+    - path: "**/*.sql"
+      instructions: |
+        PostgreSQL + Supabase.
+        Verifica que:
+        - Las políticas RLS de OBSERVER usen observer_jrv_asignacion (no una sola jrv_id).
+        - La tabla audit_log tenga columna payload de tipo JSONB.
+        - No exista tabla evidencia — la URL va en acta.storage_url.
+        - La unicidad de acta se garantice por (jrv_id, cargo_id).
+
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+
+chat:
+  auto_reply: true
