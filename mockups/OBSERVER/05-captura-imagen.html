@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OBSERVER — Captura de Imagen</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #16a34a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .status-time { color: #fff; font-size: 14px; font-weight: 600; }
+  .status-icons { display: flex; gap: 6px; }
+  .status-icons span { color: #fff; font-size: 12px; }
+
+  .toolbar { background: linear-gradient(135deg, #16a34a, #059669); padding: 10px 16px 14px; flex-shrink: 0; }
+  .toolbar-row { display: flex; align-items: center; gap: 10px; }
+  .back-btn { color: #fff; font-size: 22px; cursor: pointer; line-height: 1; }
+  .toolbar-title { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
+  .step-pill { background: rgba(255,255,255,0.2); color: #fff; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 10px; }
+
+  .scroll-area { flex: 1; overflow-y: auto; padding: 12px 14px; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* Preview de imagen capturada */
+  .camera-preview { background: #1a1a2e; border-radius: 16px; overflow: hidden; margin-bottom: 12px; position: relative; }
+  .preview-image { width: 100%; height: 220px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
+  .preview-image span { font-size: 40px; }
+  .preview-label { color: rgba(255,255,255,0.6); font-size: 12px; }
+  .preview-captured { width: 100%; height: 220px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; }
+  .preview-captured span { font-size: 36px; }
+  .preview-captured p { font-size: 12px; color: #065f46; font-weight: 600; }
+  .preview-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(0,0,0,0.8), transparent); padding: 12px 14px 10px; }
+  .preview-filename { color: #fff; font-size: 11px; }
+
+  .camera-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+  .btn-capture { flex: 1; padding: 12px; background: linear-gradient(135deg, #16a34a, #059669); color: #fff; font-size: 14px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; }
+  .btn-retake { flex: 1; padding: 12px; background: #f0f0f0; color: #555; font-size: 14px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; }
+
+  /* Estado de compresión */
+  .compress-card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .compress-title { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .compress-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f5f5f5; }
+  .compress-row:last-child { border-bottom: none; }
+  .compress-label { font-size: 12px; color: #777; }
+  .compress-value { font-size: 12px; font-weight: 700; color: #222; }
+  .compress-value.ok { color: #16a34a; }
+  .compress-value.warn { color: #f97316; }
+  .compress-bar { margin-top: 6px; }
+  .compress-bar-bg { height: 6px; background: #f0f0f0; border-radius: 3px; }
+  .compress-bar-fill { height: 6px; background: linear-gradient(90deg, #16a34a, #059669); border-radius: 3px; width: 70%; }
+
+  /* Fallback offline */
+  .offline-card { background: #fefce8; border: 1px solid #fef08a; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; }
+  .offline-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .offline-icon { font-size: 18px; }
+  .offline-title { font-size: 13px; font-weight: 700; color: #854d0e; }
+  .offline-body { font-size: 12px; color: #713f12; line-height: 1.5; }
+  .offline-steps { margin-top: 8px; }
+  .offline-step { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 5px; }
+  .step-num { width: 18px; height: 18px; border-radius: 50%; background: #f97316; color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .step-text { font-size: 11px; color: #713f12; }
+
+  .specs-card { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .specs-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .spec-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #f5f5f5; }
+  .spec-row:last-child { border-bottom: none; }
+  .spec-label { font-size: 11px; color: #999; }
+  .spec-value { font-size: 11px; font-weight: 700; color: #444; }
+
+  .submit-bar { background: #fff; padding: 12px 14px; border-top: 1px solid #e8e8e8; flex-shrink: 0; }
+  .btn-next { width: 100%; padding: 14px; background: linear-gradient(135deg, #16a34a, #059669); color: #fff; font-size: 16px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <span class="back-btn">‹</span>
+      <span class="toolbar-title">Capturar Imagen</span>
+      <span class="step-pill">Paso 2 de 3</span>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+
+    <!-- Preview imagen capturada (estado: capturada OK) -->
+    <div class="camera-preview">
+      <div class="preview-captured">
+        <span>📸</span>
+        <p>Imagen capturada · Lista para procesar</p>
+      </div>
+      <div class="preview-overlay">
+        <div class="preview-filename">JRV-2401-088_20270202_0941_OBS007.webp</div>
+      </div>
+    </div>
+
+    <div class="camera-actions">
+      <button class="btn-retake">🔄 Retomar</button>
+      <button class="btn-capture">✅ Usar esta foto</button>
+    </div>
+
+    <!-- Estado de compresión WebP -->
+    <div class="compress-card">
+      <div class="compress-title">Procesamiento WebP</div>
+      <div class="compress-row">
+        <span class="compress-label">Formato</span>
+        <span class="compress-value ok">WebP ✓</span>
+      </div>
+      <div class="compress-row">
+        <span class="compress-label">Calidad inicial</span>
+        <span class="compress-value">0.82</span>
+      </div>
+      <div class="compress-row">
+        <span class="compress-label">Tamaño resultante</span>
+        <span class="compress-value ok">348 KB ✓</span>
+      </div>
+      <div class="compress-row">
+        <span class="compress-label">Límite objetivo</span>
+        <span class="compress-value">~350 KB</span>
+      </div>
+      <div class="compress-row">
+        <span class="compress-label">Dimensiones</span>
+        <span class="compress-value">1920×1080</span>
+      </div>
+      <div class="compress-bar">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span style="font-size:10px;color:#888">Tamaño</span>
+          <span style="font-size:10px;color:#16a34a;font-weight:700">348 KB / 500 KB límite</span>
+        </div>
+        <div class="compress-bar-bg"><div class="compress-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <!-- Fallback offline -->
+    <div class="offline-card">
+      <div class="offline-header">
+        <span class="offline-icon">📴</span>
+        <span class="offline-title">Fallback sin conexión</span>
+      </div>
+      <div class="offline-body">Si la subida falla, la imagen se guarda localmente:</div>
+      <div class="offline-steps">
+        <div class="offline-step"><span class="step-num">1</span><span class="step-text"><strong>IndexedDB</strong> — reintento automático cada 30 s (cortes breves)</span></div>
+        <div class="offline-step"><span class="step-num">2</span><span class="step-text"><strong>Storage privado del dispositivo</strong> — fallback manual en oficina. No requiere permisos especiales.</span></div>
+      </div>
+    </div>
+
+    <div class="specs-card">
+      <div class="specs-title">Destino</div>
+      <div class="spec-row"><span class="spec-label">Storage</span><span class="spec-value">Supabase Object Storage</span></div>
+      <div class="spec-row"><span class="spec-label">API</span><span class="spec-value">POST /api/actas (multipart)</span></div>
+      <div class="spec-row"><span class="spec-label">Nombre archivo</span><span class="spec-value">JRV-{id}_{YYYYMMDD}_{HHmm}_{obs}.webp</span></div>
+      <div class="spec-row"><span class="spec-label">Canvas API</span><span class="spec-value">Procesamiento en cliente</span></div>
+    </div>
+
+  </div>
+
+  <div class="submit-bar">
+    <button class="btn-next">Siguiente — Revisar y Enviar 📤</button>
+  </div>
+</div>
+</body>
+</html>

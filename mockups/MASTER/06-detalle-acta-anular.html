@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Mobile — Detalle Acta + Anular</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a2e; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; position: relative; }
+    .status-bar { background: #1a1a2e; padding: 14px 24px 8px; display: flex; justify-content: space-between; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
+    .toolbar { background: linear-gradient(135deg, #7b2ff7, #3880ff); padding: 12px 20px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .back-btn { background: rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 10px; color: white; font-size: 14px; cursor: pointer; }
+    .toolbar-center { text-align: center; }
+    .toolbar-center h1 { font-size: 16px; font-weight: 800; color: white; }
+    .toolbar-center p { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .scroll { flex: 1; overflow-y: auto; padding: 12px; }
+    /* Status banner */
+    .status-banner { background: #e8f5e9; border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+    .status-banner-text { font-size: 13px; font-weight: 700; color: #2dd36f; }
+    .badge-aprobada { background: #2dd36f; color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+    /* Info card */
+    .info-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .info-card h3 { font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    .info-row { display: flex; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid #f4f5f8; }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { font-size: 12px; color: #888; width: 110px; flex-shrink: 0; }
+    .info-value { font-size: 13px; font-weight: 600; color: #1a1a2e; flex: 1; }
+    /* Image placeholder */
+    .img-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .img-placeholder { background: #f4f5f8; border-radius: 12px; height: 120px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin-bottom: 8px; }
+    .img-meta { font-size: 11px; color: #888; line-height: 1.6; }
+    /* Votes table */
+    .votes-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .votes-card h3 { font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .vote-row { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #f4f5f8; }
+    .vote-row:last-child { border-bottom: none; }
+    .vote-num { width: 24px; font-size: 12px; font-weight: 700; color: #7b2ff7; }
+    .vote-name { flex: 1; font-size: 13px; color: #333; }
+    .vote-sigla { font-size: 11px; color: #888; background: #f4f5f8; padding: 2px 6px; border-radius: 6px; margin-right: 8px; }
+    .vote-count { font-size: 14px; font-weight: 800; color: #1a1a2e; width: 36px; text-align: right; }
+    .vote-row-total { background: #f8f9ff; border-radius: 8px; margin-top: 6px; padding: 8px 10px; display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: #1a1a2e; }
+    .checksum { background: #e8f5e9; border-radius: 10px; padding: 8px 12px; font-size: 11px; color: #2dd36f; margin-top: 8px; font-weight: 600; }
+    /* Anular button */
+    .anular-section { margin-bottom: 12px; }
+    .btn-anular { width: 100%; padding: 16px; background: linear-gradient(135deg, #eb445a, #c0392b); color: white; border: none; border-radius: 14px; font-size: 15px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .anular-note { font-size: 11px; color: #888; text-align: center; margin-top: 6px; }
+    /* Modal overlay */
+    .modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: flex-end; z-index: 100; border-radius: 40px; overflow: hidden; }
+    .modal { background: white; border-radius: 24px 24px 0 0; padding: 24px; width: 100%; }
+    .modal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .modal-icon { font-size: 28px; }
+    .modal-title { font-size: 18px; font-weight: 800; color: #eb445a; }
+    .modal-sub { font-size: 12px; color: #888; margin-top: 2px; }
+    .modal-warning { background: #fdecea; border-radius: 12px; padding: 12px 14px; font-size: 12px; color: #c0392b; line-height: 1.7; margin-bottom: 16px; }
+    .modal-warning strong { display: block; margin-bottom: 4px; font-size: 13px; }
+    label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 6px; }
+    .input-wrap { border: 2px solid #e8e8e8; border-radius: 12px; padding: 12px 14px; background: #fafafa; margin-bottom: 16px; }
+    .input-wrap textarea { border: none; background: transparent; font-size: 14px; color: #333; outline: none; width: 100%; resize: none; height: 60px; }
+    .modal-actions { display: flex; gap: 10px; }
+    .btn-cancel { flex: 1; padding: 14px; background: #f4f5f8; color: #555; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-confirm-anular { flex: 2; padding: 14px; background: linear-gradient(135deg, #eb445a, #c0392b); color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; }
+  </style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>▶ ◼ 📶 100%</span></div>
+
+  <div class="toolbar">
+    <div class="back-btn">← Volver</div>
+    <div class="toolbar-center">
+      <h1>JRV-001 · Prefecto/a</h1>
+      <p>Santa Elena · Zona urbana</p>
+    </div>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="scroll">
+    <!-- Status -->
+    <div class="status-banner">
+      <div class="status-banner-text">✅ Acta Aprobada</div>
+      <div class="badge-aprobada">APROBADA</div>
+    </div>
+
+    <!-- Info -->
+    <div class="info-card">
+      <h3>Información del Acta</h3>
+      <div class="info-row"><div class="info-label">JRV</div><div class="info-value">JRV-001 — Santa Elena</div></div>
+      <div class="info-row"><div class="info-label">Cargo</div><div class="info-value">Prefecto/a Provincial</div></div>
+      <div class="info-row"><div class="info-label">Cantón</div><div class="info-value">Santa Elena (2401)</div></div>
+      <div class="info-row"><div class="info-label">Parroquia</div><div class="info-value">Santa Elena (Zona urbana)</div></div>
+      <div class="info-row"><div class="info-label">Observer</div><div class="info-value">Mario López</div></div>
+      <div class="info-row"><div class="info-label">Enviada</div><div class="info-value">02/03/2027 14:32</div></div>
+      <div class="info-row"><div class="info-label">Aprobada</div><div class="info-value">02/03/2027 16:00 · COORDINATOR</div></div>
+    </div>
+
+    <!-- Image -->
+    <div class="img-card">
+      <div class="img-placeholder">🖼️</div>
+      <div class="img-meta">
+        📎 <strong>Supabase Storage</strong> · Formato WebP (~350KB)<br>
+        URL: <code>storage/actas/jrv001_20270302_1432_ml.webp</code><br>
+        No existe tabla EVIDENCIA — URL guardada en <code>acta.storage_url</code>
+      </div>
+    </div>
+
+    <!-- Votes -->
+    <div class="votes-card">
+      <h3>Resultado de Votos</h3>
+      <div class="vote-row">
+        <div class="vote-num">1</div>
+        <div class="vote-name">Carlos Mendoza</div>
+        <div class="vote-sigla">PM</div>
+        <div class="vote-count">89</div>
+      </div>
+      <div class="vote-row">
+        <div class="vote-num">2</div>
+        <div class="vote-name">Patricia Suárez</div>
+        <div class="vote-sigla">PSC</div>
+        <div class="vote-count">72</div>
+      </div>
+      <div class="vote-row">
+        <div class="vote-num">3</div>
+        <div class="vote-name">Roberto Vera</div>
+        <div class="vote-sigla">ID</div>
+        <div class="vote-count">41</div>
+      </div>
+      <div class="vote-row">
+        <div class="vote-num">4</div>
+        <div class="vote-name">Diana Ramos</div>
+        <div class="vote-sigla">RC</div>
+        <div class="vote-count">28</div>
+      </div>
+      <div class="vote-row-total">
+        <span>Votos Válidos</span><span>230</span>
+      </div>
+      <div class="vote-row" style="padding:4px 0;">
+        <div class="vote-num"></div>
+        <div class="vote-name" style="color:#888;">Votos Nulos</div>
+        <div class="vote-count" style="color:#888;">12</div>
+      </div>
+      <div class="vote-row" style="padding:4px 0;">
+        <div class="vote-num"></div>
+        <div class="vote-name" style="color:#888;">Votos Blancos</div>
+        <div class="vote-count" style="color:#888;">8</div>
+      </div>
+      <div class="vote-row-total">
+        <span>Total Sufragantes</span><span>250</span>
+      </div>
+      <div class="checksum">✅ Validación: 89+72+41+28 + 12 + 8 = 250 ✓</div>
+    </div>
+
+    <!-- Anular button -->
+    <div class="anular-section">
+      <button class="btn-anular">⛔ Anular Esta Acta</button>
+      <div class="anular-note">Solo MASTER · Estado irreversible · Los datos no se eliminan</div>
+    </div>
+  </div>
+
+  <!-- Modal de confirmación ANULAR -->
+  <div class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-icon">⛔</div>
+        <div>
+          <div class="modal-title">Anular Acta</div>
+          <div class="modal-sub">JRV-001 · Prefecto/a · Santa Elena</div>
+        </div>
+      </div>
+      <div class="modal-warning">
+        <strong>⚠️ Acción irreversible</strong>
+        Esta acta pasará a estado <strong>ANULADA</strong> permanentemente.<br>
+        Los datos no se eliminan — el acta queda excluida de estadísticas.<br>
+        Solo <strong>MASTER</strong> puede ejecutar esta acción.
+      </div>
+      <label>Motivo de anulación (obligatorio)</label>
+      <div class="input-wrap">
+        <textarea placeholder="Ej: Inconsistencia en suma de votos detectada por auditoría..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel">Cancelar</button>
+        <button class="btn-confirm-anular">⛔ Confirmar Anulación</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OBSERVER — Dashboard Home</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #16a34a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .status-time { color: #fff; font-size: 14px; font-weight: 600; }
+  .status-icons { display: flex; gap: 6px; }
+  .status-icons span { color: #fff; font-size: 12px; }
+
+  .toolbar { background: linear-gradient(135deg, #16a34a, #059669); padding: 12px 20px 16px; flex-shrink: 0; }
+  .toolbar-row { display: flex; align-items: center; justify-content: space-between; }
+  .toolbar-title { color: #fff; font-size: 18px; font-weight: 700; }
+  .toolbar-icons { display: flex; gap: 12px; align-items: center; }
+  .bell { font-size: 20px; position: relative; }
+  .badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 32px; height: 32px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; }
+  .observer-banner { background: rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .obs-info .obs-name { color: #fff; font-size: 14px; font-weight: 700; }
+  .obs-info .obs-sub { color: rgba(255,255,255,0.75); font-size: 11px; }
+  .obs-pill { background: rgba(255,255,255,0.2); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
+
+  .scroll-area { flex: 1; overflow-y: auto; padding: 14px 16px; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  /* Alerta de corrección (banner urgente) */
+  .correction-alert { background: #fff7ed; border: 1px solid #fed7aa; border-left: 4px solid #f97316; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+  .corr-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .corr-icon { font-size: 18px; }
+  .corr-title { font-size: 13px; font-weight: 700; color: #c2410c; }
+  .corr-body { font-size: 12px; color: #7c3aed; font-style: italic; margin-bottom: 8px; }
+  .corr-btn { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 8px; border: none; cursor: pointer; }
+
+  .section-title { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 10px; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: #fff; border-radius: 14px; padding: 14px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .stat-label { font-size: 11px; color: #888; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .stat-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .stat-value { font-size: 28px; font-weight: 800; color: #222; }
+  .stat-sub { font-size: 10px; color: #aaa; margin-top: 2px; }
+
+  .jrv-card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 12px; }
+  .jrv-icon { width: 40px; height: 40px; background: #f0fdf4; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .jrv-info { flex: 1; }
+  .jrv-id { font-size: 14px; font-weight: 700; color: #222; }
+  .jrv-location { font-size: 11px; color: #888; margin-top: 1px; }
+  .jrv-status { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot-green { background: #22c55e; }
+  .dot-orange { background: #f97316; }
+  .dot-gray { background: #94a3b8; }
+  .status-text { font-size: 10px; font-weight: 600; }
+  .jrv-action { background: linear-gradient(135deg, #16a34a, #059669); color: #fff; font-size: 11px; font-weight: 700; padding: 7px 12px; border-radius: 8px; border: none; cursor: pointer; flex-shrink: 0; }
+  .jrv-action.done { background: #f0fdf4; color: #16a34a; }
+  .jrv-action.pending { background: linear-gradient(135deg, #16a34a, #059669); }
+
+  .bottom-nav { background: #fff; border-top: 1px solid #e8e8e8; display: flex; height: 70px; flex-shrink: 0; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: relative; }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: #aaa; }
+  .nav-item.active .nav-label { color: #16a34a; font-weight: 700; }
+  .nav-dot { position: absolute; top: 8px; right: 18px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <span class="toolbar-title">Mis JRVs</span>
+      <div class="toolbar-icons">
+        <div style="position:relative"><span class="bell">🔔</span><div class="badge">1</div></div>
+        <div class="avatar">MG</div>
+      </div>
+    </div>
+    <div class="observer-banner">
+      <div class="obs-info">
+        <div class="obs-name">María González</div>
+        <div class="obs-sub">12 JRVs asignadas · Santa Elena</div>
+      </div>
+      <span class="obs-pill">OBSERVER</span>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+
+    <!-- ALERTA: Corrección solicitada -->
+    <div class="correction-alert">
+      <div class="corr-header">
+        <span class="corr-icon">⚠️</span>
+        <span class="corr-title">Corrección solicitada — JRV 2401-087</span>
+      </div>
+      <div class="corr-body">"Los votos no coinciden con el total de sufragantes"</div>
+      <button class="corr-btn">Corregir Ahora</button>
+    </div>
+
+    <div class="section-title">Resumen de hoy</div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label"><span class="stat-dot" style="background:#94a3b8"></span>Mis JRVs</div>
+        <div class="stat-value">12</div>
+        <div class="stat-sub">Asignadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="stat-dot dot-green"></span>Enviadas</div>
+        <div class="stat-value" style="color:#16a34a">8</div>
+        <div class="stat-sub">Esta jornada</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="stat-dot dot-orange"></span>Pendientes</div>
+        <div class="stat-value" style="color:#f97316">4</div>
+        <div class="stat-sub">Por registrar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="stat-dot" style="background:#ef4444"></span>Disputas</div>
+        <div class="stat-value" style="color:#ef4444">1</div>
+        <div class="stat-sub">Corrección pend.</div>
+      </div>
+    </div>
+
+    <div class="section-title">JRVs pendientes</div>
+
+    <div class="jrv-card">
+      <div class="jrv-icon">📋</div>
+      <div class="jrv-info">
+        <div class="jrv-id">JRV 2401-088</div>
+        <div class="jrv-location">Colonche · Santa Elena</div>
+        <div class="jrv-status"><span class="status-dot dot-orange"></span><span class="status-text" style="color:#f97316">Sin registrar</span></div>
+      </div>
+      <button class="jrv-action pending">+ Registrar</button>
+    </div>
+
+    <div class="jrv-card">
+      <div class="jrv-icon">📋</div>
+      <div class="jrv-info">
+        <div class="jrv-id">JRV 2401-089</div>
+        <div class="jrv-location">Colonche · Santa Elena</div>
+        <div class="jrv-status"><span class="status-dot dot-orange"></span><span class="status-text" style="color:#f97316">Sin registrar</span></div>
+      </div>
+      <button class="jrv-action pending">+ Registrar</button>
+    </div>
+
+    <div class="section-title">JRVs completadas</div>
+
+    <div class="jrv-card">
+      <div class="jrv-icon">✅</div>
+      <div class="jrv-info">
+        <div class="jrv-id">JRV 2401-082</div>
+        <div class="jrv-location">Simón Bolívar · Santa Elena</div>
+        <div class="jrv-status"><span class="status-dot dot-green"></span><span class="status-text" style="color:#16a34a">Aprobada</span></div>
+      </div>
+      <button class="jrv-action done">Ver</button>
+    </div>
+
+    <div class="jrv-card">
+      <div class="jrv-icon">📤</div>
+      <div class="jrv-info">
+        <div class="jrv-id">JRV 2401-083</div>
+        <div class="jrv-location">Simón Bolívar · Santa Elena</div>
+        <div class="jrv-status"><span class="status-dot dot-green"></span><span class="status-text" style="color:#3b82f6">Enviada — en revisión</span></div>
+      </div>
+      <button class="jrv-action done">Ver</button>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active"><span class="nav-icon">🏠</span><span class="nav-label">Inicio</span></div>
+    <div class="nav-item"><span class="nav-icon">📋</span><span class="nav-label">Mis JRVs</span></div>
+    <div class="nav-item" style="position:relative"><div class="nav-dot"></div><span class="nav-icon">📄</span><span class="nav-label">Mis Actas</span></div>
+    <div class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Perfil</span></div>
+  </div>
+</div>
+</body>
+</html>

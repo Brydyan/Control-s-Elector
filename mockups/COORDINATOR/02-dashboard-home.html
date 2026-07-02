@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COORDINATOR — Dashboard Home</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #0d9488; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .status-time { color: #fff; font-size: 14px; font-weight: 600; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .status-icons span { color: #fff; font-size: 12px; }
+
+  .toolbar { background: linear-gradient(135deg, #0d9488, #0891b2); padding: 12px 20px 16px; flex-shrink: 0; }
+  .toolbar-row { display: flex; align-items: center; justify-content: space-between; }
+  .toolbar-title { color: #fff; font-size: 18px; font-weight: 700; }
+  .toolbar-icons { display: flex; gap: 12px; align-items: center; }
+  .realtime-dot { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.15); padding: 4px 8px; border-radius: 12px; }
+  .dot-pulse { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 0 2px rgba(74,222,128,0.4); }
+  .realtime-dot span { color: #fff; font-size: 10px; font-weight: 600; }
+  .bell { font-size: 20px; position: relative; }
+  .badge { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .avatar { width: 32px; height: 32px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; }
+  .coordinator-banner { background: rgba(255,255,255,0.12); border-radius: 10px; padding: 8px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .coordinator-info { color: #fff; }
+  .coordinator-name { font-size: 14px; font-weight: 700; }
+  .coordinator-sub { font-size: 11px; opacity: 0.8; }
+  .coord-pill { background: rgba(255,255,255,0.2); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 10px; }
+
+  .scroll-area { flex: 1; overflow-y: auto; padding: 14px 16px; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: #fff; border-radius: 14px; padding: 14px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .stat-label { font-size: 11px; color: #888; font-weight: 600; margin-bottom: 6px; }
+  .stat-value { font-size: 28px; font-weight: 800; color: #222; }
+  .stat-sub { font-size: 10px; color: #aaa; margin-top: 2px; }
+  .stat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+  .dot-blue { background: #3b82f6; }
+  .dot-orange { background: #f97316; }
+  .dot-green { background: #22c55e; }
+  .dot-gray { background: #94a3b8; }
+
+  .section-title { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 10px; }
+
+  .alert-card { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid #f97316; }
+  .alert-card.urgent { border-left-color: #ef4444; }
+  .alert-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .alert-tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 8px; background: #fff7ed; color: #f97316; }
+  .alert-tag.red { background: #fef2f2; color: #ef4444; }
+  .alert-title { font-size: 13px; font-weight: 600; color: #222; }
+  .alert-meta { font-size: 11px; color: #999; margin-top: 2px; }
+  .alert-btn { display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 8px; background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff; }
+
+  .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .quick-card { background: #fff; border-radius: 14px; padding: 14px 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; flex-direction: column; align-items: flex-start; }
+  .quick-icon { font-size: 22px; margin-bottom: 6px; }
+  .quick-label { font-size: 12px; font-weight: 700; color: #333; }
+  .quick-count { font-size: 11px; color: #888; margin-top: 2px; }
+  .quick-badge { margin-top: 6px; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .badge-orange { background: #fff7ed; color: #f97316; }
+  .badge-blue { background: #eff6ff; color: #3b82f6; }
+
+  .bottom-nav { background: #fff; border-top: 1px solid #e8e8e8; display: flex; height: 70px; flex-shrink: 0; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; cursor: pointer; position: relative; }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: #aaa; }
+  .nav-item.active .nav-label { color: #0d9488; font-weight: 700; }
+  .nav-item.active .nav-icon { filter: drop-shadow(0 0 4px #0d9488); }
+  .nav-dot { position: absolute; top: 8px; right: 18px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <span class="toolbar-title">Dashboard</span>
+      <div class="toolbar-icons">
+        <div class="realtime-dot"><div class="dot-pulse"></div><span>En vivo</span></div>
+        <div style="position:relative">
+          <span class="bell">🔔</span>
+          <div class="badge">4</div>
+        </div>
+        <div class="avatar">CR</div>
+      </div>
+    </div>
+    <div class="coordinator-banner">
+      <div class="coordinator-info">
+        <div class="coordinator-name">Carlos Rodríguez</div>
+        <div class="coordinator-sub">Acceso global · Todas las JRVs · 3 cantones</div>
+      </div>
+      <span class="coord-pill">COORDINATOR</span>
+    </div>
+  </div>
+
+  <div class="scroll-area">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label"><span class="stat-dot dot-blue"></span>Enviadas</div>
+        <div class="stat-value">189</div>
+        <div class="stat-sub">Pendientes revisión</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="stat-dot dot-orange"></span>En Disputa</div>
+        <div class="stat-value" style="color:#f97316">12</div>
+        <div class="stat-sub">Requieren atención</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="stat-dot dot-green"></span>Aprobadas</div>
+        <div class="stat-value" style="color:#22c55e">118</div>
+        <div class="stat-sub">Esta jornada</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="stat-dot dot-gray"></span>Corregidas</div>
+        <div class="stat-value" style="color:#8b5cf6">7</div>
+        <div class="stat-sub">Listas para aprobar</div>
+      </div>
+    </div>
+
+    <div class="section-title">Acciones Rápidas</div>
+    <div class="quick-grid">
+      <div class="quick-card">
+        <div class="quick-icon">⚠️</div>
+        <div class="quick-label">Disputas</div>
+        <div class="quick-count">Actas en conflicto</div>
+        <span class="quick-badge badge-orange">12 activas</span>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon">✅</div>
+        <div class="quick-label">Aprobar Actas</div>
+        <div class="quick-count">Enviadas + Corregidas</div>
+        <span class="quick-badge badge-blue">196 pend.</span>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon">📋</div>
+        <div class="quick-label">Correcciones</div>
+        <div class="quick-count">Revisar corregidas</div>
+        <span class="quick-badge badge-blue">7 listas</span>
+      </div>
+      <div class="quick-card">
+        <div class="quick-icon">📊</div>
+        <div class="quick-label">Reportes</div>
+        <div class="quick-count">Progreso por cantón</div>
+      </div>
+    </div>
+
+    <div class="section-title">Alertas Recientes</div>
+    <div class="alert-card urgent">
+      <div class="alert-header">
+        <span class="alert-tag red">URGENTE</span>
+      </div>
+      <div class="alert-title">JRV 2401-087 — Discrepancia de votos</div>
+      <div class="alert-meta">Santa Elena · hace 8 min · Observer: María González</div>
+      <div class="alert-btn">Resolver Disputa</div>
+    </div>
+    <div class="alert-card">
+      <div class="alert-header">
+        <span class="alert-tag">CORRECCIÓN</span>
+      </div>
+      <div class="alert-title">JRV 2402-034 — Corrección enviada</div>
+      <div class="alert-meta">La Libertad · hace 22 min · Pendiente revisión</div>
+      <div class="alert-btn">Revisar</div>
+    </div>
+    <div class="alert-card">
+      <div class="alert-header">
+        <span class="alert-tag">DISPUTA</span>
+      </div>
+      <div class="alert-title">JRV 2403-015 — Votos no coinciden</div>
+      <div class="alert-meta">Salinas · hace 45 min · Observer: Pedro Lara</div>
+      <div class="alert-btn">Ver Acta</div>
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <span class="nav-icon">🏠</span>
+      <span class="nav-label">Inicio</span>
+    </div>
+    <div class="nav-item" style="position:relative">
+      <div class="nav-dot"></div>
+      <span class="nav-icon">📄</span>
+      <span class="nav-label">Actas</span>
+    </div>
+    <div class="nav-item" style="position:relative">
+      <div class="nav-dot"></div>
+      <span class="nav-icon">⚠️</span>
+      <span class="nav-label">Disputas</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">📝</span>
+      <span class="nav-label">Correcciones</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">Reportes</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
