@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Mobile — Gestión de Usuarios</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a2e; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+    .status-bar { background: #1a1a2e; padding: 14px 24px 8px; display: flex; justify-content: space-between; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
+    .toolbar { background: linear-gradient(135deg, #7b2ff7, #3880ff); padding: 12px 20px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .toolbar-left h1 { font-size: 17px; font-weight: 800; color: white; }
+    .toolbar-left p { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .add-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    /* Search */
+    .search-area { background: white; border-bottom: 1px solid #eee; padding: 10px 16px; flex-shrink: 0; }
+    .search-wrap { display: flex; align-items: center; gap: 8px; background: #f4f5f8; border-radius: 10px; padding: 10px 14px; }
+    .search-input { border: none; background: transparent; font-size: 14px; color: #333; outline: none; flex: 1; }
+    /* Filter chips */
+    .filter-chips { display: flex; gap: 6px; padding: 8px 12px; background: white; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; }
+    .chip { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+    .chip-active { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; }
+    .chip-default { background: #f4f5f8; color: #555; }
+    .scroll { flex: 1; overflow-y: auto; padding: 12px; }
+    /* Summary */
+    .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+    .sum-card { background: white; border-radius: 12px; padding: 10px 8px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .sum-val { font-size: 20px; font-weight: 900; }
+    .sum-label { font-size: 9px; color: #888; font-weight: 600; margin-top: 2px; }
+    /* User cards */
+    .user-card { background: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .user-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .user-avatar { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; color: white; flex-shrink: 0; }
+    .av-observer { background: linear-gradient(135deg, #3880ff, #5260ff); }
+    .av-coordinator { background: linear-gradient(135deg, #2dd36f, #1ba855); }
+    .av-admin { background: linear-gradient(135deg, #ffa600, #ff7700); }
+    .av-master { background: linear-gradient(135deg, #7b2ff7, #3880ff); }
+    .user-info { flex: 1; }
+    .user-name { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+    .user-email { font-size: 11px; color: #888; }
+    .rol-badge { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; }
+    .rol-observer { background: #e8edff; color: #3880ff; }
+    .rol-coordinator { background: #e8f5e9; color: #2dd36f; }
+    .rol-admin { background: #fff3e0; color: #ffa600; }
+    .rol-master { background: #f0e6ff; color: #7b2ff7; }
+    .user-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .meta-chip { background: #f4f5f8; padding: 3px 8px; border-radius: 8px; font-size: 11px; color: #555; }
+    .user-actions { display: flex; gap: 6px; }
+    .action-btn { flex: 1; padding: 8px; border-radius: 10px; font-size: 12px; font-weight: 700; text-align: center; cursor: pointer; border: none; }
+    .btn-edit { background: #f0e6ff; color: #7b2ff7; }
+    .btn-assign { background: #e8edff; color: #3880ff; }
+    .btn-revoke { background: #fdecea; color: #eb445a; }
+    .annotation { background: #f0e6ff; border-left: 3px solid #7b2ff7; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #555; line-height: 1.6; margin: 8px 0; }
+    .annotation b { color: #7b2ff7; }
+    /* Bottom nav */
+    .bottom-nav { background: white; border-top: 1px solid #eee; display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 0 4px; flex-shrink: 0; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 9px; font-weight: 600; color: #888; }
+  </style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>▶ ◼ 📶 100%</span></div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <h1>👥 Gestión de Usuarios</h1>
+      <p>Solo MASTER · Todos los roles</p>
+    </div>
+    <button class="add-btn">+ Nuevo</button>
+  </div>
+
+  <div class="search-area">
+    <div class="search-wrap">🔍 <input class="search-input" placeholder="Buscar por nombre, email, JRV..." readonly /></div>
+  </div>
+
+  <div class="filter-chips">
+    <div class="chip chip-active">Todos (28)</div>
+    <div class="chip chip-default">OBSERVER (20)</div>
+    <div class="chip chip-default">COORDINATOR (5)</div>
+    <div class="chip chip-default">ADMIN (2)</div>
+    <div class="chip chip-default">MASTER (1)</div>
+  </div>
+
+  <div class="scroll">
+    <div class="summary-row">
+      <div class="sum-card"><div class="sum-val" style="color:#3880ff;">20</div><div class="sum-label">Observers</div></div>
+      <div class="sum-card"><div class="sum-val" style="color:#2dd36f;">5</div><div class="sum-label">Coordinators</div></div>
+      <div class="sum-card"><div class="sum-val" style="color:#ffa600;">2</div><div class="sum-label">Admins</div></div>
+      <div class="sum-card"><div class="sum-val" style="color:#7b2ff7;">1</div><div class="sum-label">Master</div></div>
+    </div>
+
+    <!-- User 1: OBSERVER -->
+    <div class="user-card">
+      <div class="user-header">
+        <div class="user-avatar av-observer">ML</div>
+        <div class="user-info">
+          <div class="user-name">Mario López</div>
+          <div class="user-email">m.lopez@observer.ec</div>
+        </div>
+        <div class="rol-badge rol-observer">OBSERVER</div>
+      </div>
+      <div class="user-meta">
+        <div class="meta-chip">📍 JRV-001, JRV-005, JRV-012</div>
+        <div class="meta-chip">🗺️ Santa Elena</div>
+        <div class="meta-chip">🟢 Activo</div>
+      </div>
+      <div class="user-actions">
+        <button class="action-btn btn-edit">✏️ Editar</button>
+        <button class="action-btn btn-assign">📍 Asignar JRVs</button>
+        <button class="action-btn btn-revoke">🔑 Revocar</button>
+      </div>
+    </div>
+
+    <!-- User 2: COORDINATOR -->
+    <div class="user-card">
+      <div class="user-header">
+        <div class="user-avatar av-coordinator">JP</div>
+        <div class="user-info">
+          <div class="user-name">Javier Pérez</div>
+          <div class="user-email">j.perez@coordinator.ec</div>
+        </div>
+        <div class="rol-badge rol-coordinator">COORDINATOR</div>
+      </div>
+      <div class="user-meta">
+        <div class="meta-chip">🌐 Todas las JRVs</div>
+        <div class="meta-chip">🟢 Activo</div>
+        <div class="meta-chip">📋 3 disputas abiertas</div>
+      </div>
+      <div class="user-actions">
+        <button class="action-btn btn-edit">✏️ Editar</button>
+        <button class="action-btn btn-revoke">🔑 Revocar</button>
+      </div>
+    </div>
+
+    <!-- User 3: OBSERVER suspicious -->
+    <div class="user-card" style="border: 2px solid #fdecea;">
+      <div class="user-header">
+        <div class="user-avatar av-observer">LM</div>
+        <div class="user-info">
+          <div class="user-name">Luis Mora ⚠️</div>
+          <div class="user-email">l.mora@observer.ec</div>
+        </div>
+        <div class="rol-badge rol-observer">OBSERVER</div>
+      </div>
+      <div class="user-meta">
+        <div class="meta-chip">📍 JRV-088, JRV-091</div>
+        <div class="meta-chip" style="background:#fdecea;color:#eb445a;">⚠️ 2 IPs detectadas</div>
+        <div class="meta-chip" style="background:#fdecea;color:#eb445a;">🔴 Sospechoso</div>
+      </div>
+      <div class="user-actions">
+        <button class="action-btn btn-edit">✏️ Editar</button>
+        <button class="action-btn btn-revoke" style="flex:2;">🔑 Revocar Sesión AHORA</button>
+      </div>
+    </div>
+
+    <!-- User 4: ADMIN -->
+    <div class="user-card">
+      <div class="user-header">
+        <div class="user-avatar av-admin">AD</div>
+        <div class="user-info">
+          <div class="user-name">Ana Delgado</div>
+          <div class="user-email">a.delgado@cne.gob.ec</div>
+        </div>
+        <div class="rol-badge rol-admin">ADMIN</div>
+      </div>
+      <div class="user-meta">
+        <div class="meta-chip">👁️ Solo lectura</div>
+        <div class="meta-chip">🏛️ CNE</div>
+        <div class="meta-chip">🟢 Activo</div>
+      </div>
+      <div class="user-actions">
+        <button class="action-btn btn-edit">✏️ Editar</button>
+        <button class="action-btn btn-revoke">🔑 Revocar</button>
+      </div>
+    </div>
+
+    <div class="annotation">
+      <b>Endpoint crear:</b> <code>POST /api/master/usuarios</code><br>
+      <b>Asignar JRVs:</b> <code>POST /api/master/usuarios/{id}/jrvs</code> → tabla <code>observer_jrv_asignacion</code><br>
+      <b>Revocar:</b> invalida refresh token en PG → próximo request 401 → forzar logout
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Dashboard</div></div>
+    <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">Actas</div></div>
+    <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Config</div></div>
+    <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label" style="color:#7b2ff7;">Usuarios</div></div>
+    <div class="nav-item"><div class="nav-icon">🔑</div><div class="nav-label">Sesiones</div></div>
+  </div>
+</div>
+</body>
+</html>

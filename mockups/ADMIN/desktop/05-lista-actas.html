@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADMIN Desktop — Lista de Actas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef0f5; min-height: 100vh; display: flex; }
+    .sidebar { width: 240px; min-height: 100vh; background: #1a1a2e; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-brand { padding: 28px 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
+    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #3880ff, #5260ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar-brand-name { font-size: 15px; font-weight: 800; }
+    .sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 16px 12px; }
+    .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 16px 0 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; margin-bottom: 2px; }
+    .nav-item.active { background: linear-gradient(135deg, #3880ff, #5260ff); color: white; font-weight: 600; }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.06); border-radius: 10px; }
+    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #3880ff, #5260ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: white; }
+    .user-name { font-size: 13px; font-weight: 600; color: white; }
+    .user-rol { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { background: white; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+    .topbar-title p { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; }
+    .readonly-badge { background: #fff3e0; color: #e65100; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .content { padding: 28px 32px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+    /* Filters bar */
+    .filters-bar {
+      background: white;
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      flex-wrap: wrap;
+    }
+    .search-wrap {
+      display: flex; align-items: center; gap: 8px;
+      background: #f4f5f8; border-radius: 10px;
+      padding: 8px 14px; flex: 1; min-width: 200px;
+    }
+    .search-input { border: none; background: transparent; font-size: 14px; color: #333; outline: none; width: 100%; }
+    .filter-select {
+      padding: 8px 14px;
+      border: 2px solid #e8e8e8;
+      border-radius: 10px;
+      font-size: 13px;
+      color: #555;
+      background: white;
+      outline: none;
+      cursor: pointer;
+    }
+    .filter-select:focus { border-color: #3880ff; }
+    .results-count { font-size: 12px; color: #888; margin-left: auto; white-space: nowrap; }
+    /* Table */
+    .table-card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      overflow: hidden;
+      flex: 1;
+    }
+    .table-header {
+      display: grid;
+      grid-template-columns: 80px 120px 1fr 160px 120px 120px 100px;
+      gap: 8px;
+      padding: 14px 20px;
+      background: #f8f9ff;
+      border-bottom: 2px solid #eee;
+      font-size: 11px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .table-row {
+      display: grid;
+      grid-template-columns: 80px 120px 1fr 160px 120px 120px 100px;
+      gap: 8px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #f4f5f8;
+      align-items: center;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .table-row:hover { background: #f8f9ff; }
+    .table-row:last-child { border-bottom: none; }
+    .jrv-num { font-weight: 800; color: #1a1a2e; }
+    .cargo-text { color: #555; font-size: 12px; }
+    .canton-text { color: #333; font-weight: 600; }
+    .canton-subtext { font-size: 11px; color: #888; }
+    .observer-text { color: #555; }
+    .fecha-text { color: #888; font-size: 12px; }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .badge-enviada   { background: #e8edff; color: #3880ff; }
+    .badge-aprobada  { background: #e8f5e9; color: #2dd36f; }
+    .badge-disputa   { background: #fff3e0; color: #ffa600; }
+    .badge-corregida { background: #ede8ff; color: #7b61ff; }
+    .badge-anulada   { background: #fdecea; color: #eb445a; }
+    .no-action { font-size: 11px; color: #ccc; font-style: italic; }
+    /* Pagination */
+    .pagination {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-top: 1px solid #f0f0f0;
+      background: #fafafa;
+    }
+    .pagination-info { font-size: 13px; color: #888; }
+    .pagination-pages { display: flex; gap: 4px; }
+    .page-btn {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      border: 2px solid transparent;
+      color: #555;
+    }
+    .page-btn.active { background: #3880ff; color: white; border-color: #3880ff; }
+    .page-btn:not(.active):hover { border-color: #e8e8e8; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-row">
+      <div class="sidebar-logo">🗳️</div>
+      <div>
+        <div class="sidebar-brand-name">Control Electoral</div>
+        <div class="sidebar-brand-sub">Santa Elena 2027</div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">📊</span> Resumen General</div>
+    <div class="nav-item"><span class="nav-icon">📈</span> Resultados por Cargo</div>
+    <div class="nav-item"><span class="nav-icon">🗺️</span> Progreso por Cantón</div>
+    <div class="nav-item active"><span class="nav-icon">📋</span> Lista de Actas</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Ana Delgado</div>
+        <div class="user-rol">ADMIN · CNE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">
+      <h1>Lista de Actas</h1>
+      <p>Todas las actas registradas · Solo lectura · Sin acciones disponibles</p>
+    </div>
+    <div class="topbar-right">
+      <div class="readonly-badge">👁️ Solo lectura</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="search-wrap">
+        🔍
+        <input class="search-input" type="text" placeholder="Buscar por JRV, canton, cargo, observer..." readonly />
+      </div>
+      <select class="filter-select">
+        <option>Todos los estados</option>
+        <option>ENVIADA</option>
+        <option>EN_DISPUTA</option>
+        <option>CORREGIDA</option>
+        <option>APROBADA</option>
+        <option>ANULADA</option>
+      </select>
+      <select class="filter-select">
+        <option>Todos los cantones</option>
+        <option>Santa Elena</option>
+        <option>La Libertad</option>
+        <option>Salinas</option>
+      </select>
+      <select class="filter-select">
+        <option>Todos los cargos</option>
+        <option>Prefecto/a</option>
+        <option>Alcalde/sa</option>
+        <option>Concejal Urbano</option>
+        <option>Concejal Rural</option>
+        <option>Vocal JPR</option>
+        <option>CPCCS</option>
+      </select>
+      <div class="results-count">291 actas · Página 1 de 30</div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <div>JRV</div>
+        <div>Estado</div>
+        <div>Cargo</div>
+        <div>Cantón / Parroquia</div>
+        <div>Observer</div>
+        <div>Fecha</div>
+        <div>Acción</div>
+      </div>
+
+      <div class="table-row">
+        <div class="jrv-num">JRV-001</div>
+        <div><span class="badge badge-aprobada">APROBADA</span></div>
+        <div class="cargo-text">Prefecto/a Provincial</div>
+        <div><div class="canton-text">Santa Elena</div><div class="canton-subtext">Zona urbana</div></div>
+        <div class="observer-text">Mario López</div>
+        <div class="fecha-text">02/03/2027 14:32</div>
+        <div class="no-action">sin acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="jrv-num">JRV-002</div>
+        <div><span class="badge badge-disputa">EN_DISPUTA</span></div>
+        <div class="cargo-text">Alcalde/sa Cantón</div>
+        <div><div class="canton-text">Santa Elena</div><div class="canton-subtext">Zona urbana</div></div>
+        <div class="observer-text">Lucía Vera</div>
+        <div class="fecha-text">02/03/2027 13:05</div>
+        <div class="no-action">sin acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="jrv-num">JRV-015</div>
+        <div><span class="badge badge-enviada">ENVIADA</span></div>
+        <div class="cargo-text">Vocal Junta Parroquial Rural</div>
+        <div><div class="canton-text">Santa Elena</div><div class="canton-subtext">Chanduy</div></div>
+        <div class="observer-text">Pedro Suárez</div>
+        <div class="fecha-text">02/03/2027 15:10</div>
+        <div class="no-action">sin acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="jrv-num">JRV-088</div>
+        <div><span class="badge badge-aprobada">APROBADA</span></div>
+        <div class="cargo-text">Concejal Urbano</div>
+        <div><div class="canton-text">La Libertad</div><div class="canton-subtext">Zona urbana</div></div>
+        <div class="observer-text">Ana Torres</div>
+        <div class="fecha-text">02/03/2027 11:48</div>
+        <div class="no-action">sin acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="jrv-num">JRV-099</div>
+        <div><span class="badge badge-anulada">ANULADA</span></div>
+        <div class="cargo-text">Prefecto/a Provincial</div>
+        <div><div class="canton-text">La Libertad</div><div class="canton-subtext">Zona urbana</div></div>
+        <div class="observer-text">Carlos Pinto</div>
+        <div class="fecha-text">02/03/2027 09:20</div>
+        <div class="no-action">sin acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="jrv-num">JRV-120</div>
+        <div><span class="badge badge-corregida">CORREGIDA</span></div>
+        <div class="cargo-text">Consejero/a CPCCS</div>
+        <div><div class="canton-text">Salinas</div><div class="canton-subtext">Zona urbana</div></div>
+        <div class="observer-text">Rosa Núñez</div>
+        <div class="fecha-text">02/03/2027 16:00</div>
+        <div class="no-action">sin acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="jrv-num">JRV-135</div>
+        <div><span class="badge badge-enviada">ENVIADA</span></div>
+        <div class="cargo-text">Concejal Rural</div>
+        <div><div class="canton-text">Salinas</div><div class="canton-subtext">José Luis Tamayo</div></div>
+        <div class="observer-text">Tomás Bravo</div>
+        <div class="fecha-text">02/03/2027 16:30</div>
+        <div class="no-action">sin acciones</div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="pagination-info">Mostrando 1–10 de 291 actas</div>
+        <div class="pagination-pages">
+          <div class="page-btn active">1</div>
+          <div class="page-btn">2</div>
+          <div class="page-btn">3</div>
+          <div class="page-btn">4</div>
+          <div class="page-btn">5</div>
+          <div class="page-btn">···</div>
+          <div class="page-btn">30</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

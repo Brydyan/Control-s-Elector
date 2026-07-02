@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Desktop — Sesiones Activas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef0f5; min-height: 100vh; display: flex; }
+    .sidebar { width: 240px; min-height: 100vh; background: #1a1a2e; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-brand { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
+    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #7b2ff7, #3880ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar-brand-name { font-size: 15px; font-weight: 800; }
+    .sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px; }
+    .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer; margin-bottom: 1px; }
+    .nav-item.active { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; font-weight: 600; }
+    .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+    .nav-badge { margin-left: auto; background: #eb445a; color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.06); border-radius: 10px; }
+    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #7b2ff7, #3880ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: white; }
+    .user-name { font-size: 13px; font-weight: 600; color: white; }
+    .user-rol { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { background: white; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+    .topbar-title p { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .btn-revoke-all { background: linear-gradient(135deg, #eb445a, #c0392b); color: white; border: none; border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .master-badge { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+    .content { padding: 28px 32px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+    /* Alert banner */
+    .alert-banner { background: #fdecea; border-radius: 14px; padding: 16px 20px; display: flex; align-items: flex-start; gap: 14px; }
+    .alert-icon { font-size: 24px; flex-shrink: 0; }
+    .alert-text { flex: 1; }
+    .alert-title { font-size: 15px; font-weight: 800; color: #c0392b; margin-bottom: 4px; }
+    .alert-sub { font-size: 13px; color: #c0392b; line-height: 1.6; }
+    .btn-revoke-now { background: #eb445a; color: white; border: none; border-radius: 10px; padding: 10px 18px; font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap; }
+    /* Summary */
+    .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .sum-card { background: white; border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; }
+    .sum-val { font-size: 32px; font-weight: 900; }
+    .sum-label { font-size: 12px; color: #888; font-weight: 600; margin-top: 4px; }
+    .c-purple { color: #7b2ff7; } .c-green { color: #2dd36f; } .c-orange { color: #ffa600; } .c-red { color: #eb445a; }
+    /* Filters */
+    .filters-bar { background: white; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .search-wrap { display: flex; align-items: center; gap: 8px; background: #f4f5f8; border-radius: 10px; padding: 8px 14px; flex: 1; }
+    .search-input { border: none; background: transparent; font-size: 14px; color: #333; outline: none; width: 100%; }
+    .filter-select { padding: 8px 14px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 13px; color: #555; background: white; outline: none; }
+    /* Table */
+    .table-card { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+    .table-header { display: grid; grid-template-columns: 180px 120px 160px 120px 140px 100px 170px; gap: 8px; padding: 14px 20px; background: #f8f9ff; border-bottom: 2px solid #eee; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-row { display: grid; grid-template-columns: 180px 120px 160px 120px 140px 100px 170px; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #f4f5f8; align-items: center; font-size: 13px; }
+    .table-row:last-child { border-bottom: none; }
+    .table-row.suspicious { background: #fdecea; border-left: 3px solid #eb445a; }
+    .user-cell { display: flex; align-items: center; gap: 8px; }
+    .ua { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: white; flex-shrink: 0; }
+    .ua-blue { background: linear-gradient(135deg, #3880ff, #5260ff); }
+    .ua-green { background: linear-gradient(135deg, #2dd36f, #1ba855); }
+    .ua-red { background: #eb445a; }
+    .ua-orange { background: linear-gradient(135deg, #ffa600, #ff7700); }
+    .user-name { font-size: 13px; font-weight: 700; color: #1a1a2e; }
+    .user-email { font-size: 11px; color: #888; }
+    .rol-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
+    .rol-observer { background: #e8edff; color: #3880ff; }
+    .rol-coordinator { background: #e8f5e9; color: #2dd36f; }
+    .rol-admin { background: #fff3e0; color: #ffa600; }
+    .token-cell { font-size: 11px; color: #888; }
+    .token-id { font-family: monospace; color: #7b2ff7; }
+    .ip-cell { font-size: 12px; }
+    .ip-warn { color: #eb445a; font-weight: 700; }
+    .ip-ok { color: #2dd36f; }
+    .time-cell { font-size: 12px; color: #555; }
+    .status-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .dot-green { width: 8px; height: 8px; background: #2dd36f; border-radius: 50%; }
+    .dot-red { width: 8px; height: 8px; background: #eb445a; border-radius: 50%; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .action-btns { display: flex; gap: 6px; }
+    .btn-sm { padding: 6px 10px; border-radius: 7px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; }
+    .btn-view { background: #f4f5f8; color: #555; }
+    .btn-revoke { background: #fdecea; color: #eb445a; }
+    .annotation { background: #f0e6ff; border-left: 3px solid #7b2ff7; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #555; line-height: 1.7; }
+    .annotation b { color: #7b2ff7; }
+    .warn-tag { background: #fdecea; color: #eb445a; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-row">
+      <div class="sidebar-logo">🗳️</div>
+      <div><div class="sidebar-brand-name">Control Electoral</div><div class="sidebar-brand-sub">Santa Elena 2027</div></div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">📊</span> Resumen General</div>
+    <div class="nav-item"><span class="nav-icon">📈</span> Resultados por Cargo</div>
+    <div class="nav-item"><span class="nav-icon">🗺️</span> Progreso por Cantón</div>
+    <div class="nav-section-label">Coordinación</div>
+    <div class="nav-item"><span class="nav-icon">📋</span> Lista de Actas <span class="nav-badge">12</span></div>
+    <div class="nav-item"><span class="nav-icon">⚠️</span> Disputas Activas <span class="nav-badge">3</span></div>
+    <div class="nav-section-label">Administración</div>
+    <div class="nav-item"><span class="nav-icon">⚙️</span> Configuración Electoral</div>
+    <div class="nav-item"><span class="nav-icon">👥</span> Gestión de Usuarios</div>
+    <div class="nav-item active"><span class="nav-icon">🔑</span> Sesiones Activas <span class="nav-badge" style="background:#ffa600;">1</span></div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">MR</div>
+      <div><div class="user-name">Marco Ruiz</div><div class="user-rol">MASTER · CNE</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">
+      <h1>Sesiones Activas</h1>
+      <p>Refresh tokens vigentes · Revocación inmediata · Solo MASTER</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-revoke-all">🔑 Revocar Todas las Sesiones</button>
+      <div class="master-badge">MASTER</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Alert -->
+    <div class="alert-banner">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-text">
+        <div class="alert-title">Sesión sospechosa detectada — Acción requerida</div>
+        <div class="alert-sub">Observer <strong>Luis Mora</strong> (l.mora@observer.ec) tiene 2 IPs distintas en los últimos 28 minutos. Posible sesión compartida o dispositivo comprometido. Recomendación: revocar inmediatamente.</div>
+      </div>
+      <button class="btn-revoke-now">🔑 Revocar Ahora</button>
+    </div>
+
+    <!-- Summary -->
+    <div class="summary-row">
+      <div class="sum-card"><div class="sum-val c-purple">28</div><div class="sum-label">Sesiones activas</div></div>
+      <div class="sum-card"><div class="sum-val c-green">7h 45m</div><div class="sum-label">Duración promedio</div></div>
+      <div class="sum-card"><div class="sum-val c-orange">0h 15m</div><div class="sum-label">Expiran en</div></div>
+      <div class="sum-card"><div class="sum-val c-red">1</div><div class="sum-label">Sospechosas</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="search-wrap">🔍 <input class="search-input" placeholder="Buscar por usuario, email, IP..." readonly /></div>
+      <select class="filter-select">
+        <option>Todos los roles</option>
+        <option>OBSERVER</option><option>COORDINATOR</option><option>ADMIN</option>
+      </select>
+      <select class="filter-select">
+        <option>Todas las sesiones</option>
+        <option>Sospechosas</option>
+        <option>Normales</option>
+      </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
+      <div class="table-header">
+        <div>Usuario</div>
+        <div>Rol</div>
+        <div>Token ID · Expira</div>
+        <div>IP(s)</div>
+        <div>Dispositivo</div>
+        <div>Estado</div>
+        <div>Acciones</div>
+      </div>
+
+      <div class="table-row suspicious">
+        <div class="user-cell">
+          <div class="ua ua-red">LM</div>
+          <div><div class="user-name">Luis Mora ⚠️</div><div class="user-email">l.mora@observer.ec</div></div>
+        </div>
+        <div><span class="rol-badge rol-observer">OBSERVER</span></div>
+        <div class="token-cell"><div class="token-id">ref_a7b2...d91f</div><div>Exp: 17:02 hoy</div></div>
+        <div class="ip-cell">
+          <div class="ip-warn">186.42.12.8</div>
+          <div class="ip-warn">190.15.44.2 ⚠️</div>
+          <span class="warn-tag">2 IPs</span>
+        </div>
+        <div style="font-size:12px;">Android 13 · Chrome 120</div>
+        <div><div class="status-dot"><div class="dot-red"></div><span style="color:#eb445a;font-weight:700;">Sospechoso</span></div></div>
+        <div class="action-btns">
+          <button class="btn-sm btn-view">📋</button>
+          <button class="btn-sm btn-revoke">🔑 REVOCAR</button>
+        </div>
+      </div>
+
+      <div class="table-row">
+        <div class="user-cell">
+          <div class="ua ua-blue">ML</div>
+          <div><div class="user-name">Mario López</div><div class="user-email">m.lopez@observer.ec</div></div>
+        </div>
+        <div><span class="rol-badge rol-observer">OBSERVER</span></div>
+        <div class="token-cell"><div class="token-id">ref_c3d9...a12e</div><div>Exp: 16:30 hoy</div></div>
+        <div class="ip-cell"><div class="ip-ok">186.42.18.1 ✓</div></div>
+        <div style="font-size:12px;">Android 14 · Chrome 121</div>
+        <div><div class="status-dot"><div class="dot-green"></div> Normal</div></div>
+        <div class="action-btns">
+          <button class="btn-sm btn-view">📋</button>
+          <button class="btn-sm btn-revoke">🔑 Revocar</button>
+        </div>
+      </div>
+
+      <div class="table-row">
+        <div class="user-cell">
+          <div class="ua ua-green">JP</div>
+          <div><div class="user-name">Javier Pérez</div><div class="user-email">j.perez@coordinator.ec</div></div>
+        </div>
+        <div><span class="rol-badge rol-coordinator">COORDINATOR</span></div>
+        <div class="token-cell"><div class="token-id">ref_e5f1...b77c</div><div>Exp: 15:58 hoy</div></div>
+        <div class="ip-cell"><div class="ip-ok">190.15.20.4 ✓</div></div>
+        <div style="font-size:12px;">Windows · Chrome 121</div>
+        <div><div class="status-dot"><div class="dot-green"></div> Normal</div></div>
+        <div class="action-btns">
+          <button class="btn-sm btn-view">📋</button>
+          <button class="btn-sm btn-revoke">🔑 Revocar</button>
+        </div>
+      </div>
+
+      <div class="table-row">
+        <div class="user-cell">
+          <div class="ua ua-orange">AD</div>
+          <div><div class="user-name">Ana Delgado</div><div class="user-email">a.delgado@cne.gob.ec</div></div>
+        </div>
+        <div><span class="rol-badge rol-admin">ADMIN</span></div>
+        <div class="token-cell"><div class="token-id">ref_f2a8...c03b</div><div>Exp: 17:15 hoy</div></div>
+        <div class="ip-cell"><div class="ip-ok">200.107.45.8 ✓</div></div>
+        <div style="font-size:12px;">macOS · Safari 17</div>
+        <div><div class="status-dot"><div class="dot-green"></div> Normal</div></div>
+        <div class="action-btns">
+          <button class="btn-sm btn-view">📋</button>
+          <button class="btn-sm btn-revoke">🔑 Revocar</button>
+        </div>
+      </div>
+
+      <div class="table-row">
+        <div class="user-cell">
+          <div class="ua ua-blue">LV</div>
+          <div><div class="user-name">Lucía Vera</div><div class="user-email">l.vera@observer.ec</div></div>
+        </div>
+        <div><span class="rol-badge rol-observer">OBSERVER</span></div>
+        <div class="token-cell"><div class="token-id">ref_b9c4...e55d</div><div>Exp: 16:05 hoy</div></div>
+        <div class="ip-cell"><div class="ip-ok">186.42.19.3 ✓</div></div>
+        <div style="font-size:12px;">iOS 17 · Safari Mobile</div>
+        <div><div class="status-dot"><div class="dot-green"></div> Normal</div></div>
+        <div class="action-btns">
+          <button class="btn-sm btn-view">📋</button>
+          <button class="btn-sm btn-revoke">🔑 Revocar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="annotation">
+      <b>Mecanismo de revocación:</b> invalida el campo <code>refresh_token_hash</code> en PG → próxima renovación de access token retorna 401 → cliente forzado al logout<br>
+      <b>Endpoint revocar uno:</b> <code>DELETE /api/master/sesiones/{tokenId}</code><br>
+      <b>Endpoint revocar usuario:</b> <code>DELETE /api/master/sesiones?usuarioId={id}</code><br>
+      <b>Endpoint revocar todas:</b> <code>DELETE /api/master/sesiones/all</code> · Usar solo en emergencias<br>
+      <b>Access token:</b> 15 min en memoria JS — la revocación es efectiva en máximo 15 min sin bloqueo adicional
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

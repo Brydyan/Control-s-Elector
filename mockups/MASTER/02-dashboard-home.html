@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Mobile — Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #1a1a2e; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+    .status-bar { background: #1a1a2e; padding: 14px 24px 8px; display: flex; justify-content: space-between; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
+    .toolbar { background: linear-gradient(135deg, #7b2ff7, #3880ff); padding: 12px 20px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .toolbar-left { display: flex; align-items: center; gap: 10px; }
+    .toolbar-logo { font-size: 20px; }
+    .toolbar-title { font-size: 16px; font-weight: 800; color: white; }
+    .toolbar-sub { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .toolbar-right { display: flex; align-items: center; gap: 14px; }
+    .realtime-dot { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,0.9); }
+    .dot { width: 7px; height: 7px; background: #2dd36f; border-radius: 50%; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .bell { font-size: 18px; position: relative; cursor: pointer; }
+    .badge { position: absolute; top: -4px; right: -4px; background: #eb445a; color: white; width: 14px; height: 14px; border-radius: 50%; font-size: 9px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+    .avatar { width: 32px; height: 32px; background: rgba(255,255,255,0.25); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: white; }
+    .master-banner { background: linear-gradient(135deg, #7b2ff7, #5260ff); margin: 12px; border-radius: 16px; padding: 14px 18px; color: white; display: flex; align-items: center; justify-content: space-between; }
+    .master-banner-left h2 { font-size: 15px; font-weight: 800; }
+    .master-banner-left p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+    .master-pill { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
+    .scroll { flex: 1; overflow-y: auto; padding: 0 12px 12px; }
+    .section-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.6px; margin: 14px 4px 8px; }
+    /* Progress card */
+    .progress-card { background: white; border-radius: 16px; padding: 16px 18px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .progress-header h3 { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+    .progress-pct { font-size: 22px; font-weight: 900; color: #7b2ff7; }
+    .progress-bar-wrap { background: #f0e6ff; border-radius: 8px; height: 8px; overflow: hidden; margin-bottom: 10px; }
+    .progress-bar-fill { width: 68%; background: linear-gradient(90deg, #7b2ff7, #3880ff); height: 100%; border-radius: 8px; }
+    .progress-detail { display: flex; gap: 8px; font-size: 11px; color: #888; flex-wrap: wrap; }
+    .progress-detail span { background: #f4f5f8; padding: 3px 8px; border-radius: 20px; }
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    .stat-card { background: white; border-radius: 14px; padding: 14px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .stat-label { font-size: 11px; color: #888; margin-bottom: 6px; font-weight: 600; }
+    .stat-value { font-size: 24px; font-weight: 900; }
+    .stat-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
+    .c-blue { color: #3880ff; }
+    .c-orange { color: #ffa600; }
+    .c-green { color: #2dd36f; }
+    .c-red { color: #eb445a; }
+    .c-purple { color: #7b2ff7; }
+    /* Quick actions */
+    .actions-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+    .action-btn { background: white; border-radius: 14px; padding: 12px 8px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); cursor: pointer; }
+    .action-icon { font-size: 22px; margin-bottom: 4px; }
+    .action-label { font-size: 10px; font-weight: 600; color: #555; line-height: 1.2; }
+    /* Recent alerts */
+    .alert-card { background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .alert-icon { font-size: 20px; flex-shrink: 0; }
+    .alert-text { flex: 1; }
+    .alert-title { font-size: 13px; font-weight: 700; color: #1a1a2e; }
+    .alert-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .alert-time { font-size: 10px; color: #bbb; }
+    .alert-badge-red { background: #fdecea; color: #eb445a; padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; }
+    /* Bottom nav */
+    .bottom-nav { background: white; border-top: 1px solid #eee; display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 0 4px; flex-shrink: 0; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 9px; font-weight: 600; color: #888; }
+    .nav-item.active .nav-label { color: #7b2ff7; }
+    .nav-item.active .nav-icon { filter: none; }
+    .annotation { background: #f0e6ff; border-left: 3px solid #7b2ff7; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #555; line-height: 1.6; margin: 8px 0; }
+    .annotation b { color: #7b2ff7; }
+  </style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>▶ ◼ 📶 100%</span></div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div class="toolbar-logo">🗳️</div>
+      <div>
+        <div class="toolbar-title">Control Electoral</div>
+        <div class="toolbar-sub">Santa Elena 2027</div>
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <div class="realtime-dot"><div class="dot"></div> En vivo</div>
+      <div class="bell" style="color:white;position:relative;">🔔<div class="badge">5</div></div>
+      <div class="avatar">MR</div>
+    </div>
+  </div>
+
+  <div class="master-banner">
+    <div class="master-banner-left">
+      <h2>Marco Ruiz</h2>
+      <p>Acceso total al sistema · Todas las JRVs</p>
+    </div>
+    <div class="master-pill">MASTER</div>
+  </div>
+
+  <div class="scroll">
+    <div class="section-title">Resumen Proceso Electoral</div>
+
+    <div class="progress-card">
+      <div class="progress-header">
+        <h3>Progreso Global</h3>
+        <div class="progress-pct">68%</div>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill"></div></div>
+      <div class="progress-detail">
+        <span>SC: 72%</span>
+        <span>LL: 100%</span>
+        <span>SAL: 11%</span>
+        <span>Total: 450 JRVs</span>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Actas Enviadas</div>
+        <div class="stat-value c-blue">189</div>
+        <div class="stat-sub">Pendientes revisión</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">En Disputa</div>
+        <div class="stat-value c-orange">12</div>
+        <div class="stat-sub">Requieren acción</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Aprobadas</div>
+        <div class="stat-value c-green">118</div>
+        <div class="stat-sub">Válidas para cómputo</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Anuladas</div>
+        <div class="stat-value c-red">3</div>
+        <div class="stat-sub">Por MASTER</div>
+      </div>
+    </div>
+
+    <div class="section-title">Acciones Rápidas</div>
+
+    <div class="actions-row">
+      <div class="action-btn">
+        <div class="action-icon">⚙️</div>
+        <div class="action-label">Config Electoral</div>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">👥</div>
+        <div class="action-label">Usuarios</div>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">🔑</div>
+        <div class="action-label">Sesiones</div>
+      </div>
+      <div class="action-btn">
+        <div class="action-icon">📋</div>
+        <div class="action-label">Todas Actas</div>
+      </div>
+    </div>
+
+    <div class="section-title">Alertas Recientes</div>
+
+    <div class="alert-card">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-text">
+        <div class="alert-title">Disputa en JRV-002 — Alcalde/sa</div>
+        <div class="alert-sub">COORDINATOR Pérez solicitó revisión · Santa Elena</div>
+        <div class="alert-time">Hace 8 min</div>
+      </div>
+      <div class="alert-badge-red">URGENTE</div>
+    </div>
+
+    <div class="alert-card">
+      <div class="alert-icon">🔑</div>
+      <div class="alert-text">
+        <div class="alert-title">Sesión sospechosa detectada</div>
+        <div class="alert-sub">Observer Luis Mora — 2 IPs distintas</div>
+        <div class="alert-time">Hace 22 min</div>
+      </div>
+    </div>
+
+    <div class="annotation">
+      <b>APIs:</b> <code>GET /api/dashboard/resumen</code>, <code>GET /api/dashboard/progreso</code><br>
+      <b>Realtime:</b> Supabase WebSocket — tablas <code>acta</code> y <code>notificacion</code><br>
+      <b>MASTER:</b> único rol que puede anular APROBADAS y revocar sesiones
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item active">
+      <div class="nav-icon">📊</div>
+      <div class="nav-label" style="color:#7b2ff7;">Dashboard</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">📋</div>
+      <div class="nav-label">Actas</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">Config</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">👥</div>
+      <div class="nav-label">Usuarios</div>
+    </div>
+    <div class="nav-item">
+      <div class="nav-icon">🔑</div>
+      <div class="nav-label">Sesiones</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

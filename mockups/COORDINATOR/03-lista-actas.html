@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COORDINATOR — Lista de Actas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #0d9488; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .status-time { color: #fff; font-size: 14px; font-weight: 600; }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .status-icons span { color: #fff; font-size: 12px; }
+
+  .toolbar { background: linear-gradient(135deg, #0d9488, #0891b2); padding: 0 16px 10px; flex-shrink: 0; }
+  .toolbar-row { display: flex; align-items: center; gap: 10px; padding-top: 10px; }
+  .toolbar-title { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
+  .searchbar { background: rgba(255,255,255,0.18); border-radius: 10px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+  .searchbar input { background: transparent; border: none; outline: none; color: #fff; font-size: 14px; flex: 1; }
+  .searchbar input::placeholder { color: rgba(255,255,255,0.6); }
+  .search-icon { color: rgba(255,255,255,0.7); font-size: 14px; }
+
+  .filter-bar { padding: 10px 16px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; gap: 8px; overflow-x: auto; flex-shrink: 0; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip { white-space: nowrap; padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; background: #f0f0f0; color: #666; border: 2px solid transparent; cursor: pointer; }
+  .filter-chip.active { background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff; }
+  .filter-chip.orange { background: #fff7ed; color: #f97316; border-color: #fed7aa; }
+  .filter-chip.blue { background: #eff6ff; color: #3b82f6; border-color: #bfdbfe; }
+  .filter-chip.purple { background: #f5f3ff; color: #8b5cf6; border-color: #ddd6fe; }
+  .filter-chip.green { background: #f0fdf4; color: #22c55e; border-color: #bbf7d0; }
+
+  .scroll-area { flex: 1; overflow-y: auto; padding: 10px 14px; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  .acta-card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid #e0e0e0; }
+  .acta-card.enviada { border-left-color: #3b82f6; }
+  .acta-card.disputa { border-left-color: #f97316; }
+  .acta-card.corregida { border-left-color: #8b5cf6; }
+  .acta-card.aprobada { border-left-color: #22c55e; }
+  .acta-card.anulada { border-left-color: #94a3b8; opacity: 0.7; }
+
+  .acta-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .acta-jrv { font-size: 14px; font-weight: 700; color: #222; }
+  .state-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
+  .badge-blue { background: #eff6ff; color: #3b82f6; }
+  .badge-orange { background: #fff7ed; color: #f97316; }
+  .badge-purple { background: #f5f3ff; color: #8b5cf6; }
+  .badge-green { background: #f0fdf4; color: #22c55e; }
+  .badge-gray { background: #f1f5f9; color: #64748b; }
+
+  .acta-meta { font-size: 12px; color: #777; margin-bottom: 8px; }
+  .acta-cargo { font-size: 12px; font-weight: 600; color: #555; margin-bottom: 8px; }
+  .acta-actions { display: flex; gap: 8px; }
+  .btn-sm { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; }
+  .btn-view { background: #f0f9ff; color: #0891b2; }
+  .btn-approve { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+  .btn-dispute { background: #fff7ed; color: #f97316; border: 1px solid #fed7aa; }
+  .btn-resolve { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; }
+  .btn-review { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; }
+
+  .bottom-nav { background: #fff; border-top: 1px solid #e8e8e8; display: flex; height: 70px; flex-shrink: 0; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: #aaa; }
+  .nav-item.active .nav-label { color: #0d9488; font-weight: 700; }
+  .nav-dot { position: absolute; top: 8px; right: 18px; width: 8px; height: 8px; background: #ef4444; border-radius: 50%; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <span class="toolbar-title">Lista de Actas</span>
+      <span style="color:#fff;font-size:13px;font-weight:600;">322 total</span>
+    </div>
+    <div class="searchbar">
+      <span class="search-icon">🔍</span>
+      <input type="text" placeholder="Buscar por JRV, cantón, cargo…">
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="filter-chip active">Todas 322</span>
+    <span class="filter-chip blue">Enviadas 189</span>
+    <span class="filter-chip orange">Disputa 12</span>
+    <span class="filter-chip purple">Corregidas 7</span>
+    <span class="filter-chip green">Aprobadas 118</span>
+  </div>
+
+  <div class="scroll-area">
+
+    <!-- EN DISPUTA -->
+    <div class="acta-card disputa">
+      <div class="acta-header">
+        <span class="acta-jrv">JRV 2401-087</span>
+        <span class="state-badge badge-orange">⚠️ EN_DISPUTA</span>
+      </div>
+      <div class="acta-cargo">Prefecto/a · Santa Elena</div>
+      <div class="acta-meta">Observer: María González · hace 8 min</div>
+      <div class="acta-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+        <button class="btn-sm btn-resolve">⚠️ Resolver</button>
+      </div>
+    </div>
+
+    <!-- ENVIADA -->
+    <div class="acta-card enviada">
+      <div class="acta-header">
+        <span class="acta-jrv">JRV 2402-011</span>
+        <span class="state-badge badge-blue">ENVIADA</span>
+      </div>
+      <div class="acta-cargo">Alcalde/sa · La Libertad</div>
+      <div class="acta-meta">Observer: Ana Torres · hace 15 min</div>
+      <div class="acta-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+        <button class="btn-sm btn-approve">✅ Aprobar</button>
+        <button class="btn-sm btn-dispute">⚠️ Disputar</button>
+      </div>
+    </div>
+
+    <!-- CORREGIDA -->
+    <div class="acta-card corregida">
+      <div class="acta-header">
+        <span class="acta-jrv">JRV 2403-022</span>
+        <span class="state-badge badge-purple">CORREGIDA</span>
+      </div>
+      <div class="acta-cargo">Vocal JPR · Salinas</div>
+      <div class="acta-meta">Observer: Pedro Lara · hace 32 min</div>
+      <div class="acta-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+        <button class="btn-sm btn-review">📋 Revisar</button>
+      </div>
+    </div>
+
+    <!-- ENVIADA 2 -->
+    <div class="acta-card enviada">
+      <div class="acta-header">
+        <span class="acta-jrv">JRV 2401-055</span>
+        <span class="state-badge badge-blue">ENVIADA</span>
+      </div>
+      <div class="acta-cargo">Concejal Urbano · Santa Elena</div>
+      <div class="acta-meta">Observer: Rosa Vélez · hace 40 min</div>
+      <div class="acta-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+        <button class="btn-sm btn-approve">✅ Aprobar</button>
+        <button class="btn-sm btn-dispute">⚠️ Disputar</button>
+      </div>
+    </div>
+
+    <!-- APROBADA -->
+    <div class="acta-card aprobada">
+      <div class="acta-header">
+        <span class="acta-jrv">JRV 2402-034</span>
+        <span class="state-badge badge-green">APROBADA</span>
+      </div>
+      <div class="acta-cargo">Prefecto/a · La Libertad</div>
+      <div class="acta-meta">Aprobada por CR · hace 1h</div>
+      <div class="acta-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+      </div>
+    </div>
+
+    <!-- EN DISPUTA 2 -->
+    <div class="acta-card disputa">
+      <div class="acta-header">
+        <span class="acta-jrv">JRV 2403-015</span>
+        <span class="state-badge badge-orange">⚠️ EN_DISPUTA</span>
+      </div>
+      <div class="acta-cargo">Consejero/a CPCCS · Salinas</div>
+      <div class="acta-meta">Observer: Pedro Lara · hace 45 min</div>
+      <div class="acta-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+        <button class="btn-sm btn-resolve">⚠️ Resolver</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Inicio</span></div>
+    <div class="nav-item active"><span class="nav-icon">📄</span><span class="nav-label">Actas</span></div>
+    <div class="nav-item" style="position:relative"><div class="nav-dot"></div><span class="nav-icon">⚠️</span><span class="nav-label">Disputas</span></div>
+    <div class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">Correcciones</span></div>
+    <div class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Reportes</span></div>
+  </div>
+</div>
+</body>
+</html>

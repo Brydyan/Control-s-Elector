@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADMIN Desktop — Progreso por Cantón</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef0f5; min-height: 100vh; display: flex; }
+    /* sidebar */
+    .sidebar { width: 240px; min-height: 100vh; background: #1a1a2e; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-brand { padding: 28px 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
+    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #3880ff, #5260ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar-brand-name { font-size: 15px; font-weight: 800; }
+    .sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 16px 12px; }
+    .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 16px 0 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; margin-bottom: 2px; }
+    .nav-item.active { background: linear-gradient(135deg, #3880ff, #5260ff); color: white; font-weight: 600; }
+    .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.06); border-radius: 10px; }
+    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #3880ff, #5260ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: white; }
+    .user-name { font-size: 13px; font-weight: 600; color: white; }
+    .user-rol { font-size: 11px; color: rgba(255,255,255,0.4); }
+    /* main */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { background: white; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+    .topbar-title p { font-size: 12px; color: #888; margin-top: 1px; }
+    .readonly-badge { background: #fff3e0; color: #e65100; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .content { padding: 28px 32px; flex: 1; overflow-y: auto; }
+    /* Summary row */
+    .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .summary-card { background: white; border-radius: 14px; padding: 20px 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 16px; }
+    .summary-icon { font-size: 32px; }
+    .summary-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; }
+    .summary-value { font-size: 28px; font-weight: 900; line-height: 1; margin-top: 2px; }
+    /* Cantones grid */
+    .cantones-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px; }
+    .canton-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .canton-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+    .canton-name { font-size: 18px; font-weight: 900; color: #1a1a2e; }
+    .canton-code { font-size: 12px; color: #888; margin-top: 3px; }
+    .canton-pct { font-size: 36px; font-weight: 900; line-height: 1; }
+    .prog-bar { height: 10px; border-radius: 5px; overflow: hidden; margin-bottom: 16px; }
+    .prog-fill { height: 100%; border-radius: 5px; }
+    .fill-green  { background: linear-gradient(90deg, #2dd36f, #0cd16a); background-color:#e8f5e9; }
+    .fill-blue   { background: linear-gradient(90deg, #3880ff, #5260ff); }
+    .fill-amber  { background: linear-gradient(90deg, #ffa600, #ffcc02); }
+    .canton-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .canton-stat-item { padding: 10px; background: #f8f9ff; border-radius: 10px; text-align: center; }
+    .canton-stat-value { font-size: 18px; font-weight: 800; color: #333; }
+    .canton-stat-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+    /* Parroquias table */
+    .parroquias-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .parroquias-title { font-size: 15px; font-weight: 800; color: #1a1a2e; margin-bottom: 16px; }
+    .parroquias-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 120px; gap: 8px; padding: 0 12px 10px; font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f0f0f0; }
+    .parroquia-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 120px; gap: 8px; padding: 12px; align-items: center; border-bottom: 1px solid #f8f8f8; font-size: 13px; }
+    .parroquia-row:last-child { border-bottom: none; }
+    .parroquia-nombre { font-weight: 700; color: #333; }
+    .parroquia-canton { font-size: 11px; color: #888; }
+    .num { color: #555; }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-align: center; }
+    .badge-complete { background: #e8f5e9; color: #2dd36f; }
+    .badge-high { background: #e8edff; color: #3880ff; }
+    .badge-mid { background: #fff3e0; color: #ffa600; }
+    .badge-low { background: #fdecea; color: #eb445a; }
+    .mini-prog { display: flex; align-items: center; gap: 6px; }
+    .mini-bar { flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; }
+    .mini-fill { height: 100%; border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-row">
+      <div class="sidebar-logo">🗳️</div>
+      <div>
+        <div class="sidebar-brand-name">Control Electoral</div>
+        <div class="sidebar-brand-sub">Santa Elena 2027</div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">📊</span> Resumen General</div>
+    <div class="nav-item"><span class="nav-icon">📈</span> Resultados por Cargo</div>
+    <div class="nav-item active"><span class="nav-icon">🗺️</span> Progreso por Cantón</div>
+    <div class="nav-item"><span class="nav-icon">📋</span> Lista de Actas</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">AD</div>
+      <div>
+        <div class="user-name">Ana Delgado</div>
+        <div class="user-rol">ADMIN · CNE</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">
+      <h1>Progreso por Cantón</h1>
+      <p>3 cantones · 450 JRVs totales · Actualización en tiempo real</p>
+    </div>
+    <div class="readonly-badge">👁️ Solo lectura</div>
+  </div>
+
+  <div class="content">
+
+    <!-- Summary -->
+    <div class="summary-row">
+      <div class="summary-card">
+        <div class="summary-icon">🏛️</div>
+        <div>
+          <div class="summary-label">Total JRVs</div>
+          <div class="summary-value" style="color:#1a1a2e">450</div>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">📋</div>
+        <div>
+          <div class="summary-label">Con Acta</div>
+          <div class="summary-value" style="color:#3880ff">305</div>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">✅</div>
+        <div>
+          <div class="summary-label">Aprobadas</div>
+          <div class="summary-value" style="color:#2dd36f">128</div>
+        </div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-icon">📊</div>
+        <div>
+          <div class="summary-label">Progreso Total</div>
+          <div class="summary-value" style="color:#5260ff">68%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Canton cards -->
+    <div class="cantones-grid">
+      <!-- La Libertad -->
+      <div class="canton-card">
+        <div class="canton-header">
+          <div>
+            <div class="canton-name">La Libertad</div>
+            <div class="canton-code">Código 2402 · Cantón urbano</div>
+          </div>
+          <div class="canton-pct" style="color:#2dd36f">100%</div>
+        </div>
+        <div class="prog-bar" style="background:#e8f5e9">
+          <div class="prog-fill fill-green" style="width:100%"></div>
+        </div>
+        <div class="canton-stats">
+          <div class="canton-stat-item">
+            <div class="canton-stat-value">150</div>
+            <div class="canton-stat-label">JRVs Total</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#2dd36f">150</div>
+            <div class="canton-stat-label">Reportadas</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#2dd36f">148</div>
+            <div class="canton-stat-label">Aprobadas</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#eb445a">2</div>
+            <div class="canton-stat-label">Anuladas</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Santa Elena -->
+      <div class="canton-card">
+        <div class="canton-header">
+          <div>
+            <div class="canton-name">Santa Elena</div>
+            <div class="canton-code">Código 2401 · Cabecera provincial</div>
+          </div>
+          <div class="canton-pct" style="color:#3880ff">72%</div>
+        </div>
+        <div class="prog-bar" style="background:#e8edff">
+          <div class="prog-fill fill-blue" style="width:72%"></div>
+        </div>
+        <div class="canton-stats">
+          <div class="canton-stat-item">
+            <div class="canton-stat-value">200</div>
+            <div class="canton-stat-label">JRVs Total</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#3880ff">144</div>
+            <div class="canton-stat-label">Reportadas</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#2dd36f">110</div>
+            <div class="canton-stat-label">Aprobadas</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#ffa600">8</div>
+            <div class="canton-stat-label">En Disputa</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Salinas -->
+      <div class="canton-card">
+        <div class="canton-header">
+          <div>
+            <div class="canton-name">Salinas</div>
+            <div class="canton-code">Código 2403 · Zona costera</div>
+          </div>
+          <div class="canton-pct" style="color:#ffa600">11%</div>
+        </div>
+        <div class="prog-bar" style="background:#fff3e0">
+          <div class="prog-fill fill-amber" style="width:11%"></div>
+        </div>
+        <div class="canton-stats">
+          <div class="canton-stat-item">
+            <div class="canton-stat-value">100</div>
+            <div class="canton-stat-label">JRVs Total</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#ffa600">11</div>
+            <div class="canton-stat-label">Reportadas</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#2dd36f">9</div>
+            <div class="canton-stat-label">Aprobadas</div>
+          </div>
+          <div class="canton-stat-item">
+            <div class="canton-stat-value" style="color:#ffa600">2</div>
+            <div class="canton-stat-label">En Disputa</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parroquias table -->
+    <div class="parroquias-card">
+      <div class="parroquias-title">📍 Desglose por Parroquia</div>
+      <div class="parroquias-header">
+        <div>Parroquia</div>
+        <div>JRVs Total</div>
+        <div>Reportadas</div>
+        <div>Aprobadas</div>
+        <div>Progreso</div>
+      </div>
+
+      <div class="parroquia-row">
+        <div><div class="parroquia-nombre">La Libertad (urbano)</div><div class="parroquia-canton">Cantón La Libertad</div></div>
+        <div class="num">150</div>
+        <div class="num">150</div>
+        <div class="num">148</div>
+        <div class="mini-prog"><div class="mini-bar"><div class="mini-fill fill-green" style="width:100%"></div></div><span class="badge badge-complete">100%</span></div>
+      </div>
+      <div class="parroquia-row">
+        <div><div class="parroquia-nombre">Santa Elena (urbano)</div><div class="parroquia-canton">Cantón Santa Elena</div></div>
+        <div class="num">80</div>
+        <div class="num">76</div>
+        <div class="num">68</div>
+        <div class="mini-prog"><div class="mini-bar"><div class="mini-fill fill-blue" style="width:95%"></div></div><span class="badge badge-high">95%</span></div>
+      </div>
+      <div class="parroquia-row">
+        <div><div class="parroquia-nombre">Chanduy</div><div class="parroquia-canton">Cantón Santa Elena</div></div>
+        <div class="num">40</div>
+        <div class="num">27</div>
+        <div class="num">20</div>
+        <div class="mini-prog"><div class="mini-bar"><div class="mini-fill fill-blue" style="width:68%"></div></div><span class="badge badge-high">68%</span></div>
+      </div>
+      <div class="parroquia-row">
+        <div><div class="parroquia-nombre">Colonche</div><div class="parroquia-canton">Cantón Santa Elena</div></div>
+        <div class="num">50</div>
+        <div class="num">22</div>
+        <div class="num">14</div>
+        <div class="mini-prog"><div class="mini-bar"><div class="mini-fill fill-amber" style="width:44%"></div></div><span class="badge badge-mid">44%</span></div>
+      </div>
+      <div class="parroquia-row">
+        <div><div class="parroquia-nombre">Salinas (urbano)</div><div class="parroquia-canton">Cantón Salinas</div></div>
+        <div class="num">60</div>
+        <div class="num">8</div>
+        <div class="num">7</div>
+        <div class="mini-prog"><div class="mini-bar"><div class="mini-fill fill-amber" style="width:13%"></div></div><span class="badge badge-low">13%</span></div>
+      </div>
+      <div class="parroquia-row">
+        <div><div class="parroquia-nombre">José Luis Tamayo</div><div class="parroquia-canton">Cantón Salinas</div></div>
+        <div class="num">40</div>
+        <div class="num">3</div>
+        <div class="num">2</div>
+        <div class="mini-prog"><div class="mini-bar"><div class="mini-fill" style="width:8%; background:#eb445a"></div></div><span class="badge badge-low">8%</span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
