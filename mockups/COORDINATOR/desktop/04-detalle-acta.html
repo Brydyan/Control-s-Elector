@@ -6,40 +6,40 @@
 <title>COORDINATOR Desktop — Detalle de Acta</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .frame { width: 1280px; height: 800px; background: #f1f5f9; border-radius: 12px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.6); display: flex; }
+  body { background: #eef0f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .frame { width: 1280px; height: 800px; background: #eef0f5; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(26,26,46,0.18); display: flex; }
 
   .sidebar { width: 240px; background: #1a1a2e; display: flex; flex-direction: column; flex-shrink: 0; }
   .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .brand-logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0d9488, #0891b2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0d9488, #14b8a6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
   .logo-text { color: #fff; font-size: 14px; font-weight: 700; }
   .logo-sub { color: rgba(255,255,255,0.4); font-size: 10px; }
   .user-info { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .user-name { color: #fff; font-size: 13px; font-weight: 700; }
-  .user-badge { display: inline-block; background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
+  .user-badge { display: inline-block; background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
   .user-sub { color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 2px; }
   .nav-section { padding: 14px 0 0; }
   .nav-section-title { padding: 0 20px 6px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.8px; }
   .nav-item { padding: 9px 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 13px; }
   .nav-item.active { background: rgba(13,148,136,0.15); color: #5eead4; border-left: 3px solid #0d9488; padding-left: 17px; }
   .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-  .nav-badge { margin-left: auto; background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
-  .nav-badge.orange { background: #f97316; }
+  .nav-badge { margin-left: auto; background: #eb445a; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+  .nav-badge.orange { background: #ffa600; }
 
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; padding: 0 28px; gap: 16px; flex-shrink: 0; }
+  .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; padding: 0 28px; gap: 16px; flex-shrink: 0; }
   .back-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #0d9488; cursor: pointer; }
-  .topbar-title { font-size: 18px; font-weight: 800; color: #1e293b; flex: 1; }
+  .topbar-title { font-size: 18px; font-weight: 800; color: #1a1a2e; flex: 1; }
 
-  .btn-approve { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; }
-  .btn-dispute-top { background: #fff7ed; color: #f97316; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 2px solid #fed7aa; cursor: pointer; }
+  .btn-approve { background: linear-gradient(135deg, #2dd36f, #28ba62); color: #fff; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; }
+  .btn-dispute-top { background: #fff3e0; color: #ffa600; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 2px solid #ffd699; cursor: pointer; }
   .btn-correct-top { background: #f5f3ff; color: #8b5cf6; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 2px solid #ddd6fe; cursor: pointer; }
 
   .content { flex: 1; overflow-y: auto; padding: 20px 28px; }
   .content::-webkit-scrollbar { display: none; }
 
-  .state-banner { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .state-banner { background: #e8edff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
   .banner-left { display: flex; align-items: center; gap: 12px; }
   .banner-icon { font-size: 22px; }
   .banner-title { font-size: 15px; font-weight: 700; color: #1e40af; }
@@ -51,13 +51,13 @@
   .card-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
   .info-row { display: flex; padding: 7px 0; border-bottom: 1px solid #f8fafc; }
   .info-row:last-child { border-bottom: none; }
-  .info-label { font-size: 12px; color: #94a3b8; width: 130px; flex-shrink: 0; }
-  .info-value { font-size: 12px; color: #1e293b; font-weight: 600; }
+  .info-label { font-size: 12px; color: #888; width: 130px; flex-shrink: 0; }
+  .info-value { font-size: 12px; color: #1a1a2e; font-weight: 600; }
 
   .image-placeholder { width: 100%; height: 160px; background: linear-gradient(135deg, #e0f2fe, #bfdbfe); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; margin-bottom: 10px; }
   .image-placeholder span { font-size: 32px; }
   .image-placeholder p { font-size: 12px; color: #475569; text-align: center; }
-  .image-meta { font-size: 11px; color: #94a3b8; }
+  .image-meta { font-size: 11px; color: #888; }
 
   .votes-card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 16px; }
   table.votes { width: 100%; border-collapse: collapse; }
@@ -69,11 +69,11 @@
   .rank-2 { background: #f1f5f9; color: #475569; }
   .rank-3 { background: #fef3c7; color: #92400e; }
   .bar-wrap { width: 100px; }
-  .mini-bar { height: 6px; background: linear-gradient(90deg, #0d9488, #0891b2); border-radius: 3px; }
-  .checksum-row { background: #f0fdf4; border-radius: 8px; padding: 10px 12px; margin-top: 10px; display: flex; align-items: center; gap: 8px; }
-  .checksum-row span { font-size: 12px; color: #16a34a; font-weight: 600; }
+  .mini-bar { height: 6px; background: linear-gradient(90deg, #0d9488, #14b8a6); border-radius: 3px; }
+  .checksum-row { background: #e8f5e9; border-radius: 8px; padding: 10px 12px; margin-top: 10px; display: flex; align-items: center; gap: 8px; }
+  .checksum-row span { font-size: 12px; color: #2dd36f; font-weight: 600; }
 
-  .action-bar { background: #fff; border-top: 2px solid #e2e8f0; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .action-bar { background: #fff; border-top: 2px solid #e8e8e8; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
   .action-label { font-size: 12px; font-weight: 700; color: #64748b; }
   .action-btns { display: flex; gap: 10px; }
 </style>

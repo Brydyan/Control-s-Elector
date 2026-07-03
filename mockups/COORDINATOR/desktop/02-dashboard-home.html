@@ -6,19 +6,19 @@
 <title>COORDINATOR Desktop — Dashboard</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .frame { width: 1280px; height: 800px; background: #f1f5f9; border-radius: 12px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.6); display: flex; }
+  body { background: #eef0f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .frame { width: 1280px; height: 800px; background: #eef0f5; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(26,26,46,0.18); display: flex; }
 
   /* Sidebar */
   .sidebar { width: 240px; background: #1a1a2e; display: flex; flex-direction: column; flex-shrink: 0; }
   .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .brand-logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0d9488, #0891b2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0d9488, #14b8a6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
   .logo-text { color: #fff; font-size: 14px; font-weight: 700; }
   .logo-sub { color: rgba(255,255,255,0.4); font-size: 10px; }
   .user-info { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .user-name { color: #fff; font-size: 13px; font-weight: 700; }
-  .user-badge { display: inline-block; background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
+  .user-badge { display: inline-block; background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
   .user-sub { color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 2px; }
 
   .nav-section { padding: 14px 0 0; }
@@ -27,29 +27,29 @@
   .nav-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
   .nav-item.active { background: rgba(13,148,136,0.15); color: #5eead4; border-left: 3px solid #0d9488; padding-left: 17px; }
   .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-  .nav-badge { margin-left: auto; background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
-  .nav-badge.orange { background: #f97316; }
+  .nav-badge { margin-left: auto; background: #eb445a; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+  .nav-badge.orange { background: #ffa600; }
 
   /* Main */
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; padding: 0 28px; gap: 16px; flex-shrink: 0; }
-  .topbar-title { font-size: 20px; font-weight: 800; color: #1e293b; flex: 1; }
-  .live-pill { display: flex; align-items: center; gap: 6px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 12px; border-radius: 20px; }
-  .dot-pulse { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 2px rgba(34,197,94,0.3); }
-  .live-pill span { font-size: 12px; color: #16a34a; font-weight: 700; }
-  .topbar-badge { background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 10px; }
+  .topbar-title { font-size: 20px; font-weight: 800; color: #1a1a2e; flex: 1; }
+  .live-pill { display: flex; align-items: center; gap: 6px; background: #e8f5e9; border: 1px solid #bce4c7; padding: 6px 12px; border-radius: 20px; }
+  .dot-pulse { width: 8px; height: 8px; background: #2dd36f; border-radius: 50%; box-shadow: 0 0 0 2px rgba(45,211,111,0.3); }
+  .live-pill span { font-size: 12px; color: #2dd36f; font-weight: 700; }
+  .topbar-badge { background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 10px; }
   .bell { font-size: 22px; position: relative; cursor: pointer; }
-  .badge-num { position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .badge-num { position: absolute; top: -4px; right: -4px; background: #eb445a; color: #fff; font-size: 9px; font-weight: 700; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 
   .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
   .content::-webkit-scrollbar { display: none; }
 
   /* Progress banner */
-  .progress-banner { background: linear-gradient(135deg, #0d9488, #0891b2); border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+  .progress-banner { background: linear-gradient(135deg, #0d9488, #14b8a6); border-radius: 16px; padding: 24px 28px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
   .prog-left .prog-big { color: #fff; font-size: 52px; font-weight: 900; line-height: 1; }
   .prog-left .prog-label { color: rgba(255,255,255,0.8); font-size: 14px; margin: 6px 0 12px; }
   .prog-bar-bg { height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; }
-  .prog-bar-fill { height: 8px; background: #4ade80; border-radius: 4px; width: 68%; }
+  .prog-bar-fill { height: 8px; background: rgba(255,255,255,0.9); border-radius: 4px; width: 68%; }
   .prog-right { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .prog-stat { background: rgba(255,255,255,0.12); border-radius: 10px; padding: 10px 14px; }
   .prog-stat-value { color: #fff; font-size: 22px; font-weight: 800; }
@@ -58,32 +58,32 @@
   /* Stats row */
   .stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
   .stat-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  .stat-label { font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .stat-value { font-size: 28px; font-weight: 900; color: #1e293b; }
-  .stat-sub { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+  .stat-label { font-size: 11px; color: #888; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-value { font-size: 28px; font-weight: 900; color: #1a1a2e; }
+  .stat-sub { font-size: 11px; color: #888; margin-top: 3px; }
 
   /* Bottom grid */
   .bottom-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid-card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  .grid-card-title { font-size: 14px; font-weight: 700; color: #1e293b; margin-bottom: 14px; }
+  .grid-card-title { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; }
   .quick-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
   .quick-item { background: #f8fafc; border-radius: 10px; padding: 14px 12px; text-align: center; cursor: pointer; border: 1px solid #e2e8f0; }
   .quick-item:hover { border-color: #0d9488; }
   .quick-icon { font-size: 22px; margin-bottom: 6px; }
   .quick-label { font-size: 11px; font-weight: 700; color: #334155; }
-  .quick-count { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-  .quick-badge { display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 7px; background: #fff7ed; color: #f97316; }
+  .quick-count { font-size: 11px; color: #888; margin-top: 2px; }
+  .quick-badge { display: inline-block; margin-top: 6px; font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 7px; background: #fff3e0; color: #ffa600; }
 
   .alert-list .alert-item { padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex; align-items: flex-start; gap: 12px; }
   .alert-item:last-child { border-bottom: none; }
   .alert-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
-  .alert-dot.red { background: #ef4444; }
-  .alert-dot.orange { background: #f97316; }
+  .alert-dot.red { background: #eb445a; }
+  .alert-dot.orange { background: #ffa600; }
   .alert-dot.blue { background: #3b82f6; }
   .alert-text-group { flex: 1; }
-  .alert-title { font-size: 13px; font-weight: 600; color: #1e293b; }
-  .alert-meta { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-  .alert-btn { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 7px; border: none; cursor: pointer; background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff; white-space: nowrap; }
+  .alert-title { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+  .alert-meta { font-size: 11px; color: #888; margin-top: 2px; }
+  .alert-btn { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 7px; border: none; cursor: pointer; background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -140,9 +140,9 @@
       <div class="stats-row">
         <div class="stat-card"><div class="stat-label">Total JRVs</div><div class="stat-value">322</div><div class="stat-sub">3 cantones</div></div>
         <div class="stat-card"><div class="stat-label" style="color:#3b82f6">Enviadas</div><div class="stat-value" style="color:#3b82f6">189</div><div class="stat-sub">Pendientes revisión</div></div>
-        <div class="stat-card"><div class="stat-label" style="color:#f97316">En Disputa</div><div class="stat-value" style="color:#f97316">12</div><div class="stat-sub">Requieren acción</div></div>
+        <div class="stat-card"><div class="stat-label" style="color:#ffa600">En Disputa</div><div class="stat-value" style="color:#ffa600">12</div><div class="stat-sub">Requieren acción</div></div>
         <div class="stat-card"><div class="stat-label" style="color:#8b5cf6">Corregidas</div><div class="stat-value" style="color:#8b5cf6">7</div><div class="stat-sub">Listas para aprobar</div></div>
-        <div class="stat-card"><div class="stat-label" style="color:#22c55e">Aprobadas</div><div class="stat-value" style="color:#22c55e">118</div><div class="stat-sub">Esta jornada</div></div>
+        <div class="stat-card"><div class="stat-label" style="color:#2dd36f">Aprobadas</div><div class="stat-value" style="color:#2dd36f">118</div><div class="stat-sub">Esta jornada</div></div>
       </div>
 
       <div class="bottom-grid">
@@ -159,7 +159,7 @@
               <div class="quick-icon">✅</div>
               <div class="quick-label">Aprobar Actas</div>
               <div class="quick-count">Enviadas + Corregidas</div>
-              <div class="quick-badge" style="background:#eff6ff;color:#3b82f6">196 pend.</div>
+              <div class="quick-badge" style="background:#e8edff;color:#3b82f6">196 pend.</div>
             </div>
             <div class="quick-item">
               <div class="quick-icon">📋</div>

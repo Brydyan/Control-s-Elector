@@ -6,32 +6,32 @@
 <title>COORDINATOR Desktop — Correcciones</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #0f172a; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .frame { width: 1280px; height: 800px; background: #f1f5f9; border-radius: 12px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.6); display: flex; }
+  body { background: #eef0f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .frame { width: 1280px; height: 800px; background: #eef0f5; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(26,26,46,0.18); display: flex; }
 
   .sidebar { width: 240px; background: #1a1a2e; display: flex; flex-direction: column; flex-shrink: 0; }
   .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .brand-logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0d9488, #0891b2); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0d9488, #14b8a6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
   .logo-text { color: #fff; font-size: 14px; font-weight: 700; }
   .logo-sub { color: rgba(255,255,255,0.4); font-size: 10px; }
   .user-info { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .user-name { color: #fff; font-size: 13px; font-weight: 700; }
-  .user-badge { display: inline-block; background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
+  .user-badge { display: inline-block; background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
   .user-sub { color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 2px; }
   .nav-section { padding: 14px 0 0; }
   .nav-section-title { padding: 0 20px 6px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.8px; }
   .nav-item { padding: 9px 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 13px; }
-  .nav-item.active { background: rgba(139,92,246,0.15); color: #c4b5fd; border-left: 3px solid #8b5cf6; padding-left: 17px; }
+  .nav-item.active { background: rgba(13,148,136,0.15); color: #5eead4; border-left: 3px solid #0d9488; padding-left: 17px; }
   .nav-icon { font-size: 16px; width: 20px; text-align: center; }
-  .nav-badge { margin-left: auto; background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
-  .nav-badge.orange { background: #f97316; }
+  .nav-badge { margin-left: auto; background: #eb445a; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+  .nav-badge.orange { background: #ffa600; }
   .nav-badge.teal { background: #0d9488; }
 
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; padding: 0 28px; gap: 16px; flex-shrink: 0; }
-  .topbar-title { font-size: 20px; font-weight: 800; color: #1e293b; flex: 1; }
-  .topbar-badge { background: linear-gradient(135deg, #0d9488, #0891b2); color: #fff; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 10px; }
+  .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; padding: 0 28px; gap: 16px; flex-shrink: 0; }
+  .topbar-title { font-size: 20px; font-weight: 800; color: #1a1a2e; flex: 1; }
+  .topbar-badge { background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 10px; }
   .tab-btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; background: #f1f5f9; color: #64748b; }
   .tab-btn.active { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; }
 
@@ -40,15 +40,15 @@
 
   .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
   .stat-card { background: #fff; border-radius: 12px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  .stat-label { font-size: 11px; color: #94a3b8; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-label { font-size: 11px; color: #888; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
   .stat-value { font-size: 28px; font-weight: 900; }
-  .stat-sub { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+  .stat-sub { font-size: 11px; color: #888; margin-top: 3px; }
 
   .annotation { background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 12px; padding: 12px 18px; margin-bottom: 16px; }
   .annotation p { font-size: 12px; color: #6d28d9; line-height: 1.6; }
 
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  thead th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; }
+  thead th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e8e8e8; }
   tbody td { padding: 12px 16px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr.corregida { border-left: 3px solid #8b5cf6; }
@@ -60,24 +60,24 @@
   .diff-row-inline { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; }
   .diff-row-inline:last-child { margin-bottom: 0; }
   .diff-field { font-weight: 700; color: #64748b; min-width: 90px; font-size: 11px; }
-  .diff-old { color: #ef4444; text-decoration: line-through; font-size: 12px; }
-  .diff-new { color: #22c55e; font-weight: 700; font-size: 12px; }
+  .diff-old { color: #eb445a; text-decoration: line-through; font-size: 12px; }
+  .diff-new { color: #2dd36f; font-weight: 700; font-size: 12px; }
   .diff-arrow { color: #cbd5e1; font-size: 12px; }
 
   .btn-sm { padding: 5px 10px; border-radius: 7px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; margin-right: 4px; }
   .btn-view { background: #f0f9ff; color: #0891b2; }
-  .btn-approve { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
-  .btn-reject { background: #fef2f2; color: #ef4444; }
+  .btn-approve { background: linear-gradient(135deg, #2dd36f, #28ba62); color: #fff; }
+  .btn-reject { background: #fdecea; color: #eb445a; }
 
   .waiting-section { background: #fff; border-radius: 12px; padding: 16px 20px; margin-top: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
   .waiting-title { font-size: 13px; font-weight: 700; color: #64748b; margin-bottom: 12px; }
   .waiting-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
   .waiting-row:last-child { border-bottom: none; }
-  .waiting-dot { width: 8px; height: 8px; border-radius: 50%; background: #f97316; }
+  .waiting-dot { width: 8px; height: 8px; border-radius: 50%; background: #ffa600; }
   .waiting-dot.old { background: #94a3b8; }
   .waiting-text { flex: 1; font-size: 12px; color: #475569; }
-  .waiting-time { font-size: 11px; color: #94a3b8; }
-  .waiting-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 7px; background: #fff7ed; color: #f97316; }
+  .waiting-time { font-size: 11px; color: #888; }
+  .waiting-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 7px; background: #fff3e0; color: #ffa600; }
 </style>
 </head>
 <body>
@@ -120,8 +120,8 @@
       <div class="stats-row">
         <div class="stat-card"><div class="stat-label">Listas para revisar</div><div class="stat-value" style="color:#8b5cf6">7</div><div class="stat-sub">Observer ya corrigió</div></div>
         <div class="stat-card"><div class="stat-label">Esperando Observer</div><div class="stat-value" style="color:#94a3b8">5</div><div class="stat-sub">Corrección solicitada</div></div>
-        <div class="stat-card"><div class="stat-label">Aprobadas hoy</div><div class="stat-value" style="color:#22c55e">34</div><div class="stat-sub">Tras corrección</div></div>
-        <div class="stat-card"><div class="stat-label">Rechazadas</div><div class="stat-value" style="color:#ef4444">2</div><div class="stat-sub">Vuelven a EN_DISPUTA</div></div>
+        <div class="stat-card"><div class="stat-label">Aprobadas hoy</div><div class="stat-value" style="color:#2dd36f">34</div><div class="stat-sub">Tras corrección</div></div>
+        <div class="stat-card"><div class="stat-label">Rechazadas</div><div class="stat-value" style="color:#eb445a">2</div><div class="stat-sub">Vuelven a EN_DISPUTA</div></div>
       </div>
 
       <div class="annotation">
@@ -183,7 +183,7 @@
         <div class="waiting-title">⏳ En espera de corrección del OBSERVER (5)</div>
         <div class="waiting-row"><div class="waiting-dot"></div><div class="waiting-text"><strong>JRV 2401-099</strong> — Prefecto/a · Corrección solicitada por "Firma ilegible"</div><div class="waiting-time">hace 12 min</div><span class="waiting-badge">Pendiente</span></div>
         <div class="waiting-row"><div class="waiting-dot"></div><div class="waiting-text"><strong>JRV 2403-041</strong> — CPCCS · Corrección por "Números no suman total"</div><div class="waiting-time">hace 28 min</div><span class="waiting-badge">Pendiente</span></div>
-        <div class="waiting-row"><div class="waiting-dot old"></div><div class="waiting-text"><strong>JRV 2402-055</strong> — Concejal Urbano · Sin respuesta del Observer</div><div class="waiting-time">hace 1h</div><span class="waiting-badge" style="background:#fef2f2;color:#ef4444">Sin respuesta</span></div>
+        <div class="waiting-row"><div class="waiting-dot old"></div><div class="waiting-text"><strong>JRV 2402-055</strong> — Concejal Urbano · Sin respuesta del Observer</div><div class="waiting-time">hace 1h</div><span class="waiting-badge" style="background:#fdecea;color:#eb445a">Sin respuesta</span></div>
       </div>
     </div>
   </div>
