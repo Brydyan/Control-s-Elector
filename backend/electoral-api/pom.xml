@@ -15,15 +15,15 @@
 	<name>electoral-api</name>
 	<description>API REST para Control Electoral — Elecciones Seccionales 2027-2031</description>
 
-	<properties>
-		<java.version>21</java.version>
+    <properties>
+		<java.version>25</java.version>
 	</properties>
 
 	<dependencies>
 		<!-- Web -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
 		<!-- Security -->
@@ -43,6 +43,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Liquibase — versionamiento de schema (reemplaza ddl-auto) -->
+		<dependency>
+			<groupId>org.liquibase</groupId>
+			<artifactId>liquibase-core</artifactId>
+		</dependency>
+
 		<!-- Validación -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -55,6 +61,33 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+
+		<!-- AWS SDK v2 — S3 client (singleton). RustFS local / Supabase S3 en prod. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+		 <version>2.30.0</version>
+		</dependency>
+
+		<!-- Nimbus JOSE+JWT: para emitir y validar JWTs (login/refresh). -->
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+		 <version>9.40</version>
+		</dependency>
+
+		<!-- Actuator (endpoints /actuator/health, /info, /metrics + HealthIndicators). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<!-- @PreAuthorize(@authz.has(...)) se apoya en el AOP que
+		     spring-security ya trae; no requiere dependencia extra. -->
+
+		<!-- AOT / GraalVM Native Image: el processing se hace vía el plugin
+		     (native-maven-plugin) y el profile `native` de spring-boot-maven-plugin.
+		     No requiere una dependencia starter explícita. -->
 
 		<!-- Test -->
 		<dependency>
@@ -95,7 +128,71 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+			<!-- GraalVM Native Image Plugin
+			     Spring Boot parent POM ya maneja la versión y config vía
+			     el profile `-Pnative`. Solo declaramos el plugin aquí.
+			     El build se hace desde Docker con:
+			       ./mvnw -Pnative package -DskipTests -B
+			     Eso corre: compile -> process-aot (AOT) -> package -> compile-no-fork (native-image).
+			-->
+			<plugin>
+				<groupId>org.graalvm.buildtools</groupId>
+				<artifactId>native-maven-plugin</artifactId>
+			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>native</id>
+			<build>
+				<plugins>
+					<!-- Spring Boot AOT processing: genera hint files para native-image -->
+					<plugin>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>process-aot</id>
+								<goals>
+									<goal>process-aot</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+					<!-- Compilar native-image durante `mvn package` -->
+					<plugin>
+						<groupId>org.graalvm.buildtools</groupId>
+						<artifactId>native-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>build-native</id>
+								<goals>
+									<goal>compile-no-fork</goal>
+								</goals>
+								<phase>package</phase>
+							</execution>
+						</executions>
+						<configuration>
+							<!--
+							  Configuracion del native-image builder.
+							  no-fallback: si falla la compilacion AOT, falla el build
+							              en lugar de caer a JVM mode.
+							  Sin J-Xmx fijo: el builder usa 80% del heap disponible.
+							  GC: GraalVM 25 usa epsilon o serial por defecto. serial
+							      es seguro y suficiente para la mayoria de los builds.
+							  Requiere Docker Desktop con 6GB+ de memoria asignada.
+							-->
+							<buildArgs>
+								<buildArg>--no-fallback</buildArg>
+								<buildArg>--gc=serial</buildArg>
+								<buildArg>--parallelism=1</buildArg>
+							</buildArgs>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>

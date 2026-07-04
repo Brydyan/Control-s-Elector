@@ -1,0 +1,57 @@
+# =============================================================================
+# .dockerignore — Archivos excluidos del build del frontend
+# =============================================================================
+
+# node_modules se reconstruye dentro del contenedor
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Builds previos
+www/
+dist/
+.angular/
+.parcel-cache/
+
+# Tests
+coverage/
+*.spec.ts
+*.test.ts
+__tests__/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Archivos temporales
+.tmp/
+*.tmp
+*.bak
+*.orig
+.DS_Store
+Thumbs.db
+
+# Documentación (no necesaria en la imagen)
+*.md
+docs/
+
+# Configuración local
+.env
+.env.local
+.env.*.local
+
+# Mobile (Capacitor) — solo relevante para builds nativas, no para dev web
+android/
+ios/
+
+# Docker
+Dockerfile*
+.docker/
+compose*.yaml
+
+# Logs
+*.log
+logs/

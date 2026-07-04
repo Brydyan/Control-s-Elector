@@ -1,0 +1,63 @@
+# =============================================================================
+# .dockerignore — Archivos excluidos del build
+# =============================================================================
+
+# Archivos de control de versiones
+.git
+.gitignore
+.gitattributes
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# Archivos de build
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs
+*.log
+logs/
+
+# Archivos temporales
+*.tmp
+*.bak
+*.orig
+.DS_Store
+Thumbs.db
+
+# Maven wrapper (ya está en el contenedor)
+.mvn/wrapper/maven-wrapper.jar
+
+# Documentación (no necesaria en producción)
+*.md
+docs/
+diagram/
+
+# Tests (no necesarios en producción)
+src/test/
+src/it/
+*.test.*
+*Test.java
+
+# Configuración local
+.env.local
+.env.*.local
+application-local.properties
+
+# Docker (evitar recursión)
+Dockerfile*
+compose*.yaml
+.docker/
+
+# Archivos de configuración del proyecto
+atl/
+pi/
+.coderabbit.yaml
