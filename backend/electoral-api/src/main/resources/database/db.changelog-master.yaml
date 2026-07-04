@@ -1,0 +1,17 @@
+# Liquibase master changelog — orquestador.
+#
+# Incluye cada changelog en ORDEN EXPLICITO. No usar includeAll para tener
+# control determinista de la secuencia de aplicacion.
+#
+# Referenciado desde application.properties:
+#   spring.liquibase.change-log=classpath:database/db.changelog-master.yaml
+
+databaseChangeLog:
+  - include:
+      file: database/changelog/001-initial-schema.sql
+  - include:
+      file: database/changelog/002-rbac-seed.sql
+
+  # Nuevos changelogs se agregan ACA, al final, en orden creciente:
+  # - include:
+  #     file: database/changelog/003-<descripcion>.sql
