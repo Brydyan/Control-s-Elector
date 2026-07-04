@@ -110,16 +110,12 @@ public class EvidenciaService {
     }
 
     /**
-     * Cambia estado. @Transactional garantiza que el lock optimista
-     * (version) detecta concurrencia: si dos moderadores aprueban al
-     * mismo tiempo, una transaccion tira OptimisticLockException.
+     * Cambia estado. La autorización la hace @PreAuthorize en el controller
+     * (requiere acta:aprobar o acta:rechazar — COORDINATOR/MASTER).
+     * El lock optimista (version) detecta concurrencia.
      */
     @Transactional
-    public Evidencia cambiarEstado(Long id, EstadoEvidencia nuevo, String callerRolName) {
-        if (!"MASTER".equals(callerRolName) && !"COORDINATOR".equals(callerRolName)) {
-            throw new EvidenciaAccessDeniedException(
-                    "Solo COORDINATOR/MASTER puede aprobar/rechazar");
-        }
+    public Evidencia cambiarEstado(Long id, EstadoEvidencia nuevo) {
         Evidencia e = repository.findById(id)
                 .orElseThrow(() -> new EvidenciaNotFoundException(id));
         if (nuevo != EstadoEvidencia.APROBADA && nuevo != EstadoEvidencia.RECHAZADA) {
@@ -132,25 +128,15 @@ public class EvidenciaService {
     }
 
     /**
-     * Elimina. Solo OBSERVER duenho o MASTER pueden borrar.
-     * Si S3 falla despues de DB OK, dejo orphan: sera limpiado por
-     * un job batch (no hay job todavia, queda registrado en log).
-     *
-     * {@code callerRolName} viene del JWT (en feat/auth se inyecta via
-     * SecurityContext; en este PR viene de CurrentUser.staticRolName()).
+     * Elimina. @PreAuthorize en el controller garantiza que solo quien
+     * tenga {@code evidencia:delete} (MASTER) puede borrar. El callerId
+     * es solo para log/registro, no para control de acceso (los permisos
+     * estan en la DB, no hardcodeados).
      */
     @Transactional
-    public void delete(Long id, Long callerId, String callerRolName) {
+    public void delete(Long id, Long callerId) {
         Evidencia e = repository.findById(id)
                 .orElseThrow(() -> new EvidenciaNotFoundException(id));
-
-        boolean duenho = "OBSERVER".equals(callerRolName)
-                && e.getUsuarioId().equals(callerId);
-        boolean admin = "MASTER".equals(callerRolName);
-        if (!duenho && !admin) {
-            throw new EvidenciaAccessDeniedException(
-                    "Solo el duenho de la evidencia o MASTER puede eliminarla");
-        }
 
         // Borrado DB primero (rollback facil si algo sale mal).
         repository.delete(e);

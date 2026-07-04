@@ -80,10 +80,7 @@ public class EvidenciaController {
             @PathVariable Long id,
             @Valid @org.springframework.web.bind.annotation.RequestBody
                     CambiarEstadoRequest body) {
-        // RBAC pendiente: feat/rbac va a usar @PreAuthorize. Por ahora pasamos
-        // el nombre del rol como String (en feat/rbac sera OBSERVER -> 403).
-        Evidencia e = service.cambiarEstado(id, body.estado(),
-                CurrentUser.staticRolName());
+        Evidencia e = service.cambiarEstado(id, body.estado());
         return EvidenciaResponse.from(e);
     }
 
@@ -91,7 +88,7 @@ public class EvidenciaController {
     @PreAuthorize("@authz.has('evidencia:delete')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id, CurrentUser.staticId(), CurrentUser.staticRolName());
+        service.delete(id, CurrentUser.staticId());
         return ResponseEntity.noContent().build();
     }
 

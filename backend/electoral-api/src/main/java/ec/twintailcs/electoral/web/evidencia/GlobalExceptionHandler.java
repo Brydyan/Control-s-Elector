@@ -35,8 +35,9 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
     }
 
-    @ExceptionHandler(EvidenciaAccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> denied(EvidenciaAccessDeniedException ex) {
+    /** AccessDeniedException de @PreAuthorize -> 403 FORBIDDEN. */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> accessDenied(AccessDeniedException ex) {
         return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
     }
 
@@ -61,12 +62,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> illegalArg(IllegalArgumentException ex) {
         return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
-    }
-
-    /** AccessDeniedException de @PreAuthorize -> 403 FORBIDDEN. */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> accessDenied(AccessDeniedException ex) {
-        return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
     }
 
     @ExceptionHandler(Exception.class)
