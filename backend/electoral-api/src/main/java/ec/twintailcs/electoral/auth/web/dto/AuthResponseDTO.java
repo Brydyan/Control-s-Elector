@@ -10,7 +10,7 @@ import java.util.List;
  * desde login para que no quede en logs/proxies). En refresh, va en el
  * request (cookie o body, configurable).
  */
-public record AuthResponse(
+public record AuthResponseDTO(
         String accessToken,
         String tokenType,        // "Bearer"
         long expiresInSeconds,   // TTL del access

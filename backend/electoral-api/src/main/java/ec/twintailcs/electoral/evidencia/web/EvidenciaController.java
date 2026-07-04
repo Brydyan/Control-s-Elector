@@ -4,9 +4,9 @@ import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.config.RequiredPermission;
 import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
-import ec.twintailcs.electoral.evidencia.web.dto.CambiarEstadoRequest;
-import ec.twintailcs.electoral.evidencia.web.dto.DownloadUrlResponse;
-import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
+import ec.twintailcs.electoral.evidencia.web.dto.CambiarEstadoDTO;
+import ec.twintailcs.electoral.evidencia.web.dto.DownloadUrlDTO;
+import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponseDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -52,40 +52,40 @@ public class EvidenciaController {
     @RequiredPermission("evidencia:upload")
     @PreAuthorize("@authz.has('evidencia:upload')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<EvidenciaResponse> upload(
+    public ResponseEntity<EvidenciaResponseDTO> upload(
             @RequestPart("file") MultipartFile file,
             @RequestParam("jrvId") Long jrvId,
             @RequestParam("cargoId") Long cargoId) {
 
         Long userId = CurrentUser.staticId();
         Evidencia e = service.upload(file, jrvId, cargoId, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(EvidenciaResponse.from(e));
+        return ResponseEntity.status(HttpStatus.CREATED).body(EvidenciaResponseDTO.from(e));
     }
 
     @RequiredPermission("evidencia:read")
     @PreAuthorize("@authz.has('evidencia:read')")
     @GetMapping("/{id}")
-    public EvidenciaResponse get(@PathVariable Long id) {
-        return EvidenciaResponse.from(service.get(id));
+    public EvidenciaResponseDTO get(@PathVariable Long id) {
+        return EvidenciaResponseDTO.from(service.get(id));
     }
 
     @RequiredPermission("evidencia:download")
     @PreAuthorize("@authz.has('evidencia:download')")
     @GetMapping("/{id}/download-url")
-    public DownloadUrlResponse downloadUrl(@PathVariable Long id) {
+    public DownloadUrlDTO downloadUrl(@PathVariable Long id) {
         String url = service.presignDownload(id);
-        return new DownloadUrlResponse(id, url);
+        return new DownloadUrlDTO(id, url);
     }
 
     @RequiredPermission({"acta:aprobar", "acta:rechazar"})
     @PreAuthorize("@authz.hasAny('acta:aprobar','acta:rechazar')")
     @PatchMapping("/{id}/estado")
-    public EvidenciaResponse cambiarEstado(
+    public EvidenciaResponseDTO cambiarEstado(
             @PathVariable Long id,
             @Valid @org.springframework.web.bind.annotation.RequestBody
-                    CambiarEstadoRequest body) {
+                    CambiarEstadoDTO body) {
         Evidencia e = service.cambiarEstado(id, body.estado());
-        return EvidenciaResponse.from(e);
+        return EvidenciaResponseDTO.from(e);
     }
 
     @RequiredPermission("evidencia:delete")

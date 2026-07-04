@@ -7,10 +7,10 @@ import ec.twintailcs.electoral.auth.application.RegisterService;
 import ec.twintailcs.electoral.auth.domain.RolPermisoRepository;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
-import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
-import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
-import ec.twintailcs.electoral.auth.web.dto.RefreshRequest;
-import ec.twintailcs.electoral.auth.web.dto.RegisterRequest;
+import ec.twintailcs.electoral.auth.web.dto.AuthResponseDTO;
+import ec.twintailcs.electoral.auth.web.dto.LoginDTO;
+import ec.twintailcs.electoral.auth.web.dto.RefreshDTO;
+import ec.twintailcs.electoral.auth.web.dto.RegisterDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Instant;
@@ -69,7 +69,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest body,
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginDTO body,
                                               HttpServletRequest req) {
         JwtService.TokenPair pair = auth.login(
                 body.email(), body.password(),
@@ -78,11 +78,11 @@ public class AuthController {
         Usuario u = usuarios.findByEmail(body.email()).orElseThrow();
         List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
 
-        AuthResponse payload = new AuthResponse(
+        AuthResponseDTO payload = new AuthResponseDTO(
                 pair.access(), "Bearer",
                 pair.accessTtl().toSeconds(),
                 pair.sesionId(),
-                new AuthResponse.UsuarioActual(
+                new AuthResponseDTO.UsuarioActual(
                         u.getId(), u.getEmail(), u.getRol(), permisos)
         );
 
@@ -92,7 +92,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestBody(required = false) RefreshRequest body,
+    public ResponseEntity<AuthResponseDTO> refresh(@RequestBody(required = false) RefreshDTO body,
                                                 HttpServletRequest req) {
         String refresh = readRefresh(req, body);
         JwtService.TokenPair pair = auth.refresh(refresh);
@@ -102,11 +102,11 @@ public class AuthController {
         Usuario u = usuarios.findById(userId).orElseThrow();
         List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
 
-        AuthResponse payload = new AuthResponse(
+        AuthResponseDTO payload = new AuthResponseDTO(
                 pair.access(), "Bearer",
                 pair.accessTtl().toSeconds(),
                 pair.sesionId(),
-                new AuthResponse.UsuarioActual(
+                new AuthResponseDTO.UsuarioActual(
                         u.getId(), u.getEmail(), u.getRol(), permisos)
         );
 
@@ -116,7 +116,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody(required = false) RefreshRequest body,
+    public ResponseEntity<Void> logout(@RequestBody(required = false) RefreshDTO body,
                                        HttpServletRequest req) {
         String refresh = readRefresh(req, body);
         auth.logout(refresh);
@@ -129,11 +129,11 @@ public class AuthController {
 
     /** Informacion del usuario actual (parseado del access token en el SecurityContext). */
     @GetMapping("/me")
-    public AuthResponse.UsuarioActual me(org.springframework.security.core.Authentication auth) {
+    public AuthResponseDTO.UsuarioActual me(org.springframework.security.core.Authentication auth) {
         String email = auth.getName();
         Usuario u = usuarios.findByEmail(email).orElseThrow();
         List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
-        return new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol(), permisos);
+        return new AuthResponseDTO.UsuarioActual(u.getId(), u.getEmail(), u.getRol(), permisos);
     }
 
     /**
@@ -143,17 +143,17 @@ public class AuthController {
      */
     @PostMapping("/register")
     @PreAuthorize("hasAuthority('usuario:create') or hasAuthority('MASTER')")
-    public ResponseEntity<AuthResponse.UsuarioActual> register(@Valid @RequestBody RegisterRequest body) {
+    public ResponseEntity<AuthResponseDTO.UsuarioActual> register(@Valid @RequestBody RegisterDTO body) {
         Usuario u = registros.register(body.email(), body.password(), body.rol());
         return ResponseEntity.status(201).body(
-                new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol(),
+                new AuthResponseDTO.UsuarioActual(u.getId(), u.getEmail(), u.getRol(),
                         rolPermisos.findAuthorityStringsByUsuarioId(u.getId())));
     }
 
     // --------- helpers ---------
 
     /** Lee refresh token de cookie, body o ambos. Devuelve null-safe. */
-    private String readRefresh(HttpServletRequest req, RefreshRequest body) {
+    private String readRefresh(HttpServletRequest req, RefreshDTO body) {
         if (req.getCookies() != null) {
             for (var c : req.getCookies()) {
                 if (REFRESH_COOKIE.equals(c.getName())) {
