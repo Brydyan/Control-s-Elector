@@ -5,4 +5,4 @@ package ec.twintailcs.electoral.auth.web.dto;
  * El refresh token NO viaja en JSON: viaja en cookie httpOnly por seguridad.
  * Ver AuthController.refresh() para la extraccion.
  */
-public record RefreshRequest(String refreshToken) {}
+public record RefreshDTO(String refreshToken) {}

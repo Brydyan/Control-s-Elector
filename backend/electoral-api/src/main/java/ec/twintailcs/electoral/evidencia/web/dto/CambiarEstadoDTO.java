@@ -8,4 +8,4 @@ import jakarta.validation.constraints.NotNull;
  * Solo se acepta APROBADA o RECHAZADA (no se vuelve a EN_REVISION desde el FE;
  * eso es un caso raro manejado por un endpoint master separado).
  */
-public record CambiarEstadoRequest(@NotNull EstadoEvidencia estado) {}
+public record CambiarEstadoDTO(@NotNull EstadoEvidencia estado) {}

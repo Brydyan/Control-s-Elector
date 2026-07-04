@@ -8,7 +8,7 @@ import java.time.Instant;
  * Respuesta publica de la API. NO expone la columna {@code version}
  * (interna) ni el SHA-256 crudo por ahora; solo metadata util para el FE.
  */
-public record EvidenciaResponse(
+public record EvidenciaResponseDTO(
         Long id,
         Long jrvId,
         Long cargoId,
@@ -20,8 +20,8 @@ public record EvidenciaResponse(
         Instant creadoEn,
         Instant actualizadoEn
 ) {
-    public static EvidenciaResponse from(Evidencia e) {
-        return new EvidenciaResponse(
+    public static EvidenciaResponseDTO from(Evidencia e) {
+        return new EvidenciaResponseDTO(
                 e.getId(), e.getJrvId(), e.getCargoId(), e.getUsuarioId(),
                 e.getS3Key(), e.getSizeBytes(), e.getContentType(),
                 e.getEstado(), e.getCreadoEn(), e.getActualizadoEn());

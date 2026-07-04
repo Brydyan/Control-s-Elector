@@ -8,8 +8,8 @@ import java.time.Instant;
  * El FE recibe la URL y la usa directo en un {@code <img src>}.
  * La URL es presigned (15 min de validez por default en S3StorageService).
  */
-public record DownloadUrlResponse(Long id, String url, Instant emitidoEn) {
-    public DownloadUrlResponse(Long id, String url) {
+public record DownloadUrlDTO(Long id, String url, Instant emitidoEn) {
+    public DownloadUrlDTO(Long id, String url) {
         this(id, url, Instant.now());
     }
 }

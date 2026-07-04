@@ -13,7 +13,7 @@ import jakarta.validation.constraints.Size;
  * (sino seria un vector de spam). Quien llama debe tener permisos
  * elevados (se valida en el controller via @PreAuthorize).
  */
-public record RegisterRequest(
+public record RegisterDTO(
         @NotBlank @Email String email,
         @NotBlank @Size(min = 8, max = 100) String password,
         @NotBlank @Pattern(regexp = "OBSERVER|COORDINATOR|MASTER|ADMIN") String rol
