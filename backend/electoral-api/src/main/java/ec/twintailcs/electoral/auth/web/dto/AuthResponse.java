@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.auth.interfaces.dto;
+package ec.twintailcs.electoral.auth.web.dto;
 
 import java.util.List;
 

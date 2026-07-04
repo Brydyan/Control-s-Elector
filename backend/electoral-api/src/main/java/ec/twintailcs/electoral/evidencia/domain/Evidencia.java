@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.domain.evidencia;
+package ec.twintailcs.electoral.evidencia.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

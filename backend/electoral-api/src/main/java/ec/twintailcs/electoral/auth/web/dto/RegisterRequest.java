@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.auth.interfaces.dto;
+package ec.twintailcs.electoral.auth.web.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

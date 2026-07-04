@@ -1,6 +1,6 @@
-package ec.twintailcs.electoral.web.evidencia;
+package ec.twintailcs.electoral.evidencia.web.dto;
 
-import ec.twintailcs.electoral.domain.evidencia.EstadoEvidencia;
+import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import jakarta.validation.constraints.NotNull;
 
 /**

@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.domain.evidencia;
+package ec.twintailcs.electoral.evidencia.domain;
 
 /**
  * Estado de una evidencia subida al sistema.

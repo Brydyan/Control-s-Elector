@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.domain.evidencia;
+package ec.twintailcs.electoral.evidencia.domain;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

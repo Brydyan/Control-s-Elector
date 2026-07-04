@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.auth.interfaces;
+package ec.twintailcs.electoral.auth.config;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

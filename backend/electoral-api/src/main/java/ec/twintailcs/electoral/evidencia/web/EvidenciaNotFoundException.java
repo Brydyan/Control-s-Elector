@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.web.evidencia;
+package ec.twintailcs.electoral.evidencia.web;
 
 /**
  * 404. La evidencia no existe en la DB.

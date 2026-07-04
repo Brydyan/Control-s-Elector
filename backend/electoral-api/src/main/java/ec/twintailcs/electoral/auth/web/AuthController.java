@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.auth.interfaces;
+package ec.twintailcs.electoral.auth.web;
 
 import ec.twintailcs.electoral.auth.application.AuthService;
 import ec.twintailcs.electoral.auth.application.JwtService;
@@ -7,10 +7,10 @@ import ec.twintailcs.electoral.auth.application.RegisterService;
 import ec.twintailcs.electoral.auth.domain.RolPermisoRepository;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
-import ec.twintailcs.electoral.auth.interfaces.dto.AuthResponse;
-import ec.twintailcs.electoral.auth.interfaces.dto.LoginRequest;
-import ec.twintailcs.electoral.auth.interfaces.dto.RefreshRequest;
-import ec.twintailcs.electoral.auth.interfaces.dto.RegisterRequest;
+import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
+import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
+import ec.twintailcs.electoral.auth.web.dto.RefreshRequest;
+import ec.twintailcs.electoral.auth.web.dto.RegisterRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Instant;

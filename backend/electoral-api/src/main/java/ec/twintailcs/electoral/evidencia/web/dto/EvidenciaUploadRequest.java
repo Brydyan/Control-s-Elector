@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.web.evidencia;
+package ec.twintailcs.electoral.evidencia.web.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

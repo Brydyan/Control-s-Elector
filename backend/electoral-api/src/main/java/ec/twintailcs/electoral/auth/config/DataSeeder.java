@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.auth;
+package ec.twintailcs.electoral.auth.config;
 
 import ec.twintailcs.electoral.auth.application.PasswordHasher;
 import ec.twintailcs.electoral.auth.domain.Permiso;

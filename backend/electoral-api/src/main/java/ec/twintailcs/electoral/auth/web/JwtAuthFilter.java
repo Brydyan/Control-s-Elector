@@ -1,7 +1,7 @@
-package ec.twintailcs.electoral.auth.interfaces;
+package ec.twintailcs.electoral.auth.web;
 
-import ec.twintailcs.electoral.auth.CurrentUser;
-import ec.twintailcs.electoral.auth.UserPrincipal;
+import ec.twintailcs.electoral.auth.config.CurrentUser;
+import ec.twintailcs.electoral.auth.config.UserPrincipal;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

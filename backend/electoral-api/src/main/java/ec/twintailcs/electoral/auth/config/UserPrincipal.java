@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.auth;
+package ec.twintailcs.electoral.auth.config;
 
 import java.util.List;
 

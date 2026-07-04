@@ -1,5 +1,6 @@
-package ec.twintailcs.electoral.web.evidencia;
+package ec.twintailcs.electoral.shared.web;
 
+import ec.twintailcs.electoral.evidencia.web.EvidenciaNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.HashMap;

@@ -1,8 +1,9 @@
-package ec.twintailcs.electoral.web.evidencia;
+package ec.twintailcs.electoral.evidencia.application;
 
-import ec.twintailcs.electoral.domain.evidencia.EstadoEvidencia;
-import ec.twintailcs.electoral.domain.evidencia.Evidencia;
-import ec.twintailcs.electoral.domain.evidencia.EvidenciaRepository;
+import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
+import ec.twintailcs.electoral.evidencia.domain.Evidencia;
+import ec.twintailcs.electoral.evidencia.domain.EvidenciaRepository;
+import ec.twintailcs.electoral.evidencia.web.EvidenciaNotFoundException;
 import ec.twintailcs.electoral.storage.s3.S3StorageService;
 import java.io.IOException;
 import java.io.InputStream;

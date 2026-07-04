@@ -1,8 +1,12 @@
-package ec.twintailcs.electoral.web.evidencia;
+package ec.twintailcs.electoral.evidencia.web;
 
-import ec.twintailcs.electoral.auth.CurrentUser;
-import ec.twintailcs.electoral.auth.interfaces.RequiredPermission;
-import ec.twintailcs.electoral.domain.evidencia.Evidencia;
+import ec.twintailcs.electoral.auth.config.CurrentUser;
+import ec.twintailcs.electoral.auth.config.RequiredPermission;
+import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
+import ec.twintailcs.electoral.evidencia.domain.Evidencia;
+import ec.twintailcs.electoral.evidencia.web.dto.CambiarEstadoRequest;
+import ec.twintailcs.electoral.evidencia.web.dto.DownloadUrlResponse;
+import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

@@ -1,7 +1,7 @@
-package ec.twintailcs.electoral.web.evidencia;
+package ec.twintailcs.electoral.evidencia.web.dto;
 
-import ec.twintailcs.electoral.domain.evidencia.EstadoEvidencia;
-import ec.twintailcs.electoral.domain.evidencia.Evidencia;
+import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
+import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import java.time.Instant;
 
 /**
