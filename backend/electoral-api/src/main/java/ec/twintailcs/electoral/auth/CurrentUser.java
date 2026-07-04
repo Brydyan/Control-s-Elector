@@ -1,22 +1,21 @@
 package ec.twintailcs.electoral.auth;
 
+import java.util.List;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 /**
  * Lee el usuario actual del SecurityContext.
  *
- * Si el endpoint esta con permitAll (evidencia en este PR), el
- * SecurityContext queda vacio, email=null, etc. Por eso los metodos
- * son null-safe y permiten fallback explicito (id=0L).
+ * Cuando el JWT es valido, el JwtAuthFilter inyecta un
+ * {@link UserPrincipal} como principal (con id, email, rol, permisos)
+ * y CurrentUser devuelve valores reales.
  *
- * Cuando se integre feat/rbac, los endpoints dejaran de ser permitAll,
- * el contexto vendra siempre con auth, y los callers dejaran de usar
- * los defaults.
+ * Si el endpoint esta con permitAll (login, refresh, logout), el
+ * SecurityContext queda vacio con anonymousUser, y los metodos
+ * devuelven defaults null-safe.
  */
 @Component
 public class CurrentUser {
@@ -33,13 +32,14 @@ public class CurrentUser {
         return a == null ? null : a.getName();
     }
 
-    /** ID del usuario. CERO si no esta autenticado. */
+    /**
+     * ID del usuario extraido del claim {@code sub} del JWT.
+     * CERO si no esta autenticado.
+     */
     public Long id() {
         Authentication a = authOrNull();
         if (a == null) return 0L;
-        // El JWT incluye email + rol. Para id, haria falta un lookup via
-        // UsuarioRepository. Hasta que integremos eso, usamos una env var
-        // o lo inferimos via un claim extra en el JWT. Por ahora, 0L.
+        if (a.getPrincipal() instanceof UserPrincipal up) return up.id();
         return 0L;
     }
 
@@ -47,22 +47,25 @@ public class CurrentUser {
     public List<String> permisos() {
         Authentication a = authOrNull();
         if (a == null) return List.of();
+        if (a.getPrincipal() instanceof UserPrincipal up) return up.permisos();
         return a.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList();
     }
 
-    /** Nombre del rol. Null si no hay auth. */
+    /**
+     * Nombre del rol extraido del claim {@code rol} del JWT.
+     * Null si no esta autenticado.
+     */
     public String rolName() {
         Authentication a = authOrNull();
         if (a == null) return null;
-        // El rol viaja como autoridad "ROL_OBSERVER" o como claim. Por
-        // ahora, null hasta feat/rbac lo emita bien.
+        if (a.getPrincipal() instanceof UserPrincipal up) return up.rol();
         return null;
     }
 
-    // --- static helpers backward-compat con el viejo CurrentUser ---
-    // EvidenciaController los usa staticamente. Mantengo esa API.
+    // --- static helpers backward-compat con callers existentes ---
+    // EvidenciaController los usa staticamente. Mantenemos la API.
     public static Long staticId() { return new CurrentUser().id(); }
     public static String staticEmail() { return new CurrentUser().email(); }
     public static String staticRolName() { return new CurrentUser().rolName(); }

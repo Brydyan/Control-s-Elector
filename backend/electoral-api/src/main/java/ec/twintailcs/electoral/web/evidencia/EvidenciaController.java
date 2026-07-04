@@ -1,11 +1,13 @@
 package ec.twintailcs.electoral.web.evidencia;
 
 import ec.twintailcs.electoral.auth.CurrentUser;
+import ec.twintailcs.electoral.auth.interfaces.RequiredPermission;
 import ec.twintailcs.electoral.domain.evidencia.Evidencia;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -43,6 +45,8 @@ public class EvidenciaController {
         this.service = service;
     }
 
+    @RequiredPermission("evidencia:upload")
+    @PreAuthorize("@authz.has('evidencia:upload')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EvidenciaResponse> upload(
             @RequestPart("file") MultipartFile file,
@@ -54,17 +58,23 @@ public class EvidenciaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(EvidenciaResponse.from(e));
     }
 
+    @RequiredPermission("evidencia:read")
+    @PreAuthorize("@authz.has('evidencia:read')")
     @GetMapping("/{id}")
     public EvidenciaResponse get(@PathVariable Long id) {
         return EvidenciaResponse.from(service.get(id));
     }
 
+    @RequiredPermission("evidencia:download")
+    @PreAuthorize("@authz.has('evidencia:download')")
     @GetMapping("/{id}/download-url")
     public DownloadUrlResponse downloadUrl(@PathVariable Long id) {
         String url = service.presignDownload(id);
         return new DownloadUrlResponse(id, url);
     }
 
+    @RequiredPermission({"acta:aprobar", "acta:rechazar"})
+    @PreAuthorize("@authz.hasAny('acta:aprobar','acta:rechazar')")
     @PatchMapping("/{id}/estado")
     public EvidenciaResponse cambiarEstado(
             @PathVariable Long id,
@@ -77,6 +87,8 @@ public class EvidenciaController {
         return EvidenciaResponse.from(e);
     }
 
+    @RequiredPermission("evidencia:delete")
+    @PreAuthorize("@authz.has('evidencia:delete')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id, CurrentUser.staticId(), CurrentUser.staticRolName());

@@ -48,8 +48,8 @@ public class SecurityConfig {
                     "/api/v1/auth/refresh",
                     "/api/v1/auth/logout"
                 ).permitAll()
-                // TODO(feat/rbac): cerrar /api/v1/evidencias/** con auth + @PreAuthorize.
-                .requestMatchers("/api/v1/evidencias/**").permitAll()
+                // Evidencias protegidas via @RequiredPermission en el controller.
+                // Cada endpoint especifica su permiso (evidencia:upload, :read, etc.).
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex

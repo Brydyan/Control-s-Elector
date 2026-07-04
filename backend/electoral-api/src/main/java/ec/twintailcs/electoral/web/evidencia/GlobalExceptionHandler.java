@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -60,6 +61,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> illegalArg(IllegalArgumentException ex) {
         return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+    }
+
+    /** AccessDeniedException de @PreAuthorize -> 403 FORBIDDEN. */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> accessDenied(AccessDeniedException ex) {
+        return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
     }
 
     @ExceptionHandler(Exception.class)

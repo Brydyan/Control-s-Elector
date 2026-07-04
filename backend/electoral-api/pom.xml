@@ -76,6 +76,9 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
+		<!-- @PreAuthorize(@authz.has(...)) se apoya en el AOP que
+		     spring-security ya trae; no requiere dependencia extra. -->
+
 		<!-- AOT / GraalVM Native Image: el processing se hace vía el plugin
 		     (native-maven-plugin) y el profile `native` de spring-boot-maven-plugin.
 		     No requiere una dependencia starter explícita. -->

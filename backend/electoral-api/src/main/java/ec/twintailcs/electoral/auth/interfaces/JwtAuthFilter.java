@@ -1,5 +1,7 @@
 package ec.twintailcs.electoral.auth.interfaces;
 
+import ec.twintailcs.electoral.auth.CurrentUser;
+import ec.twintailcs.electoral.auth.UserPrincipal;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -59,8 +61,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     .map(p -> new SimpleGrantedAuthority(p))
                     .toList();
 
+            var principal = new UserPrincipal(
+                    Long.parseLong(parsed.subject()),
+                    parsed.email(),
+                    parsed.rol(),
+                    parsed.perms());
             var authentication = new UsernamePasswordAuthenticationToken(
-                    parsed.email(), null, auths);
+                    principal, null, auths);
             authentication.setDetails(
                     new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
