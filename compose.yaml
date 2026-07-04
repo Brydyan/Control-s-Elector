@@ -1,0 +1,114 @@
+# =============================================================================
+# compose.yaml — Stack de desarrollo local (staging)
+# =============================================================================
+# Solo servicios de infraestructura: PostgreSQL y RustFS (emulación S3).
+# El backend (Spring Boot) y el frontend (Angular) corren nativos en el host:
+#   - Backend: cd backend/electoral-api && mvn spring-boot:run
+#   - Frontend: cd frontend/app && ng serve
+#
+# Esto es a propósito. Cada cambio Java re-build nativo de GraalVM consume
+# ~3-4 GB de RAM heap durante el AOT, lo cual satura Docker Desktop con
+# el límite por defecto de ~4 GB. Correr JVM y dev server en el host evita
+# eso, da iteración instantánea (hot reload) y no gasta memoria del VM Docker.
+#
+# El binario nativo de GraalVM queda reservado para deploy en Railway
+# (donde el proceso de build corre fuera del desktop y tiene más memoria).
+#
+# Uso:
+#   docker compose --profile dev up -d   # solo Postgres + RustFS
+#   # en otra terminal: mvn spring-boot:run (backend) / ng serve (frontend)
+#
+# Variables configurables (ver .env.example): DB_NAME, DB_USER, DB_PASSWORD,
+# DB_PORT, APP_ENV, POSTGRES_MEM_LIMIT, RESTART_POLICY.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — Base de datos
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16
+    container_name: electoral-postgres-${APP_ENV:-dev}
+    profiles: ["dev"]
+    environment:
+      POSTGRES_DB: ${DB_NAME:-electoral_db}
+      POSTGRES_USER: ${DB_USER:-electoral_user}
+      # Dev trae default inseguro a propósito. Si querés sobreescribir,
+      # pasá las variables en .env o en el comando con -e.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-electoral_pass}
+      # Initdb con ICU en lugar de glibc: postgres:16 (Debian) no trae
+      # locales es_EC.UTF-8 vía glibc, pero ICU (compilado en la imagen)
+      # sí resuelve es-EC sin generar locales del sistema.
+      POSTGRES_INITDB_ARGS: >-
+        --encoding=UTF8
+        --locale-provider=icu
+        --icu-locale=es-EC
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - >-
+          pg_isready
+          -U ${DB_USER:-electoral_user}
+          -d ${DB_NAME:-electoral_db}
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: ${RESTART_POLICY:-no}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: ${POSTGRES_MEM_LIMIT:-512M}
+
+  # ---------------------------------------------------------------------------
+  # RustFS — Emulación S3 (storage de evidencias)
+  # ---------------------------------------------------------------------------
+  # NO se levanta por default. Usá `docker compose --profile dev --profile s3 up -d`
+  # si querés correr RustFS en Docker. Por default, el backend apunta al
+  # rustfs nativo en localhost:9000 si lo tenés corriendo.
+  # Si activás este profile, primero asegurate de no tener rustfs nativo
+  # (sudo systemctl stop rustfs) — chocan los puertos.
+  # ---------------------------------------------------------------------------
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: electoral-rustfs
+    profiles: ["s3"]  # Solo se levanta con profile "s3"
+    environment:
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-rustfsadmin}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
+      RUSTFS_ADDRESS: "0.0.0.0:${S3_PORT:-9000}"
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:${S3_CONSOLE_PORT:-9001}"
+      RUSTFS_VOLUMES: /data
+    ports:
+      - "${S3_PORT:-9000}:${S3_PORT:-9000}" # API S3
+      - "${S3_CONSOLE_PORT:-9001}:${S3_CONSOLE_PORT:-9001}" # Console web
+    volumes:
+      - rustfs_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${S3_PORT:-9000}/health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+# -----------------------------------------------------------------------------
+# Volúmenes persistentes
+# -----------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    name: electoral-postgres-${APP_ENV:-dev}-data
+  rustfs_data:
+    name: electoral-rustfs-data

@@ -103,3 +103,7 @@ surefire-reports/
 # ─── Personal ─────────────────────────────────────────────────────────────────
 CLAUDE.md
 task-control
+# Local Pi runtime state
+.atl/
+/.pi
+/openspec
