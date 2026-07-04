@@ -1,7 +1,7 @@
 package ec.twintailcs.electoral.web.evidencia;
 
+import ec.twintailcs.electoral.auth.CurrentUser;
 import ec.twintailcs.electoral.domain.evidencia.Evidencia;
-import ec.twintailcs.electoral.security.CurrentUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -49,7 +49,7 @@ public class EvidenciaController {
             @RequestParam("jrvId") Long jrvId,
             @RequestParam("cargoId") Long cargoId) {
 
-        Long userId = CurrentUser.id();
+        Long userId = CurrentUser.staticId();
         Evidencia e = service.upload(file, jrvId, cargoId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(EvidenciaResponse.from(e));
     }
@@ -70,13 +70,16 @@ public class EvidenciaController {
             @PathVariable Long id,
             @Valid @org.springframework.web.bind.annotation.RequestBody
                     CambiarEstadoRequest body) {
-        Evidencia e = service.cambiarEstado(id, body.estado(), CurrentUser.rol());
+        // RBAC pendiente: feat/rbac va a usar @PreAuthorize. Por ahora pasamos
+        // el nombre del rol como String (en feat/rbac sera OBSERVER -> 403).
+        Evidencia e = service.cambiarEstado(id, body.estado(),
+                CurrentUser.staticRolName());
         return EvidenciaResponse.from(e);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.delete(id, CurrentUser.id(), CurrentUser.rol());
+        service.delete(id, CurrentUser.staticId(), CurrentUser.staticRolName());
         return ResponseEntity.noContent().build();
     }
 

@@ -3,7 +3,6 @@ package ec.twintailcs.electoral.web.evidencia;
 import ec.twintailcs.electoral.domain.evidencia.EstadoEvidencia;
 import ec.twintailcs.electoral.domain.evidencia.Evidencia;
 import ec.twintailcs.electoral.domain.evidencia.EvidenciaRepository;
-import ec.twintailcs.electoral.security.Rol;
 import ec.twintailcs.electoral.storage.s3.S3StorageService;
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,8 +115,8 @@ public class EvidenciaService {
      * mismo tiempo, una transaccion tira OptimisticLockException.
      */
     @Transactional
-    public Evidencia cambiarEstado(Long id, EstadoEvidencia nuevo, Rol callerRol) {
-        if (callerRol != Rol.MASTER && callerRol != Rol.COORDINATOR) {
+    public Evidencia cambiarEstado(Long id, EstadoEvidencia nuevo, String callerRolName) {
+        if (!"MASTER".equals(callerRolName) && !"COORDINATOR".equals(callerRolName)) {
             throw new EvidenciaAccessDeniedException(
                     "Solo COORDINATOR/MASTER puede aprobar/rechazar");
         }
@@ -136,15 +135,18 @@ public class EvidenciaService {
      * Elimina. Solo OBSERVER duenho o MASTER pueden borrar.
      * Si S3 falla despues de DB OK, dejo orphan: sera limpiado por
      * un job batch (no hay job todavia, queda registrado en log).
+     *
+     * {@code callerRolName} viene del JWT (en feat/auth se inyecta via
+     * SecurityContext; en este PR viene de CurrentUser.staticRolName()).
      */
     @Transactional
-    public void delete(Long id, Long callerId, Rol callerRol) {
+    public void delete(Long id, Long callerId, String callerRolName) {
         Evidencia e = repository.findById(id)
                 .orElseThrow(() -> new EvidenciaNotFoundException(id));
 
-        boolean duenho = callerRol == Rol.OBSERVER
+        boolean duenho = "OBSERVER".equals(callerRolName)
                 && e.getUsuarioId().equals(callerId);
-        boolean admin = callerRol == Rol.MASTER;
+        boolean admin = "MASTER".equals(callerRolName);
         if (!duenho && !admin) {
             throw new EvidenciaAccessDeniedException(
                     "Solo el duenho de la evidencia o MASTER puede eliminarla");

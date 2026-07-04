@@ -63,6 +63,13 @@
 		 <version>2.30.0</version>
 		</dependency>
 
+		<!-- Nimbus JOSE+JWT: para emitir y validar JWTs (login/refresh). -->
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+		 <version>9.40</version>
+		</dependency>
+
 		<!-- Actuator (endpoints /actuator/health, /info, /metrics + HealthIndicators). -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
