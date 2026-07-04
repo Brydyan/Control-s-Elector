@@ -43,6 +43,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Liquibase — versionamiento de schema (reemplaza ddl-auto) -->
+		<dependency>
+			<groupId>org.liquibase</groupId>
+			<artifactId>liquibase-core</artifactId>
+		</dependency>
+
 		<!-- Validación -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
