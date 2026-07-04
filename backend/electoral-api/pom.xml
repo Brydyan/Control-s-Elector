@@ -43,6 +43,12 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Liquibase — versionamiento de schema (reemplaza ddl-auto) -->
+		<dependency>
+			<groupId>org.liquibase</groupId>
+			<artifactId>liquibase-core</artifactId>
+		</dependency>
+
 		<!-- Validación -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -75,6 +81,9 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
+
+		<!-- @PreAuthorize(@authz.has(...)) se apoya en el AOP que
+		     spring-security ya trae; no requiere dependencia extra. -->
 
 		<!-- AOT / GraalVM Native Image: el processing se hace vía el plugin
 		     (native-maven-plugin) y el profile `native` de spring-boot-maven-plugin.
