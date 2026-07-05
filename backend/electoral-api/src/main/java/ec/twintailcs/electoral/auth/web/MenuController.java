@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.auth.web;
 import ec.twintailcs.electoral.auth.application.MenuService;
 import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.web.dto.MenuResponse;
+import java.util.UUID;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,7 +35,7 @@ public class MenuController {
      */
     @GetMapping("/me")
     public MenuResponse myMenus() {
-        Long userId = CurrentUser.staticId();
+        UUID userId = CurrentUser.staticId();
         return menuService.getMyMenus(userId);
     }
 }

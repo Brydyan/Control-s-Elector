@@ -13,7 +13,9 @@ databaseChangeLog:
       file: database/changelog/002-rbac-seed.sql
   - include:
       file: database/changelog/003-menus.sql
+  - include:
+      file: database/changelog/004-public-ids.sql
+  - include:
+      file: database/changelog/005-fks.sql
 
   # Nuevos changelogs se agregan ACA, al final, en orden creciente:
-  # - include:
-  #     file: database/changelog/004-<descripcion>.sql

@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.auth.config;
 
 import java.util.List;
+import java.util.UUID;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,11 +37,11 @@ public class CurrentUser {
      * ID del usuario extraido del claim {@code sub} del JWT.
      * CERO si no esta autenticado.
      */
-    public Long id() {
+    public UUID id() {
         Authentication a = authOrNull();
-        if (a == null) return 0L;
+        if (a == null) return null;
         if (a.getPrincipal() instanceof UserPrincipal up) return up.id();
-        return 0L;
+        return null;
     }
 
     /** Authority strings cargados (recurso:accion). Vacio si no hay auth. */
@@ -66,7 +67,7 @@ public class CurrentUser {
 
     // --- static helpers backward-compat con callers existentes ---
     // EvidenciaController los usa staticamente. Mantenemos la API.
-    public static Long staticId() { return new CurrentUser().id(); }
+    public static UUID staticId() { return new CurrentUser().id(); }
     public static String staticEmail() { return new CurrentUser().email(); }
     public static String staticRolName() { return new CurrentUser().rolName(); }
 }

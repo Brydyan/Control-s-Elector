@@ -9,6 +9,9 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;
+import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 
 /**
  * Item de menu del sistema. Estructura jerarquica (self-reference via
@@ -37,6 +40,10 @@ public class Menu {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @UuidGenerator(algorithm = UuidV7Generator.class)
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
 
     /** FK self-reference. NULL = item raiz. */
     @Column(name = "parent_id")
@@ -75,6 +82,8 @@ public class Menu {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public UUID getPublicId() { return publicId; }
+    public void setPublicId(UUID publicId) { this.publicId = publicId; }
     public Long getParentId() { return parentId; }
     public void setParentId(Long parentId) { this.parentId = parentId; }
     public String getCodigo() { return codigo; }

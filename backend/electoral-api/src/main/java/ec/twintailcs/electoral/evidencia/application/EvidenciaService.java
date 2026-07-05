@@ -5,6 +5,8 @@ import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaRepository;
 import ec.twintailcs.electoral.evidencia.web.EvidenciaNotFoundException;
 import ec.twintailcs.electoral.storage.s3.S3StorageService;
+import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import ec.twintailcs.electoral.auth.domain.Usuario;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -44,10 +46,12 @@ public class EvidenciaService {
 
     private final EvidenciaRepository repository;
     private final S3StorageService s3;
+    private final UsuarioRepository usuarios;
 
-    public EvidenciaService(EvidenciaRepository repository, S3StorageService s3) {
+    public EvidenciaService(EvidenciaRepository repository, S3StorageService s3, UsuarioRepository usuarios) {
         this.repository = repository;
         this.s3 = s3;
+        this.usuarios = usuarios;
     }
 
     /**
@@ -60,12 +64,17 @@ public class EvidenciaService {
      * @return evidencia persistida con id
      */
     @Transactional
-    public Evidencia upload(MultipartFile file, Long jrvId, Long cargoId, Long userId) {
+    public Evidencia upload(MultipartFile file, Long jrvId, Long cargoId, UUID callerPublicId) {
         validate(file);
         String s3Key = buildKey(jrvId, cargoId);
-        String sha256;
+
+        // Resuelve el usuario PRIMERO — fail early antes de cualquier side-effect en S3.
+        Usuario u = usuarios.findByPublicId(callerPublicId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"));
+
         long size = file.getSize();
         String contentType = file.getContentType();
+        String sha256 = computeSha256(file);
 
         // Sube a S3 (try-with-resources garantiza cierre del stream).
         try (InputStream in = file.getInputStream()) {
@@ -74,14 +83,11 @@ public class EvidenciaService {
             throw new IllegalArgumentException("cannot read uploaded file: " + e.getMessage());
         }
 
-        // Calcula el hash despues, leyendo otra vez (S3 cerro el input).
-        sha256 = computeSha256(file);
-
         // Persiste. Si esto falla, compensamos borrando el objeto en S3.
         Evidencia evidencia = new Evidencia();
         evidencia.setJrvId(jrvId);
         evidencia.setCargoId(cargoId);
-        evidencia.setUsuarioId(userId);
+        evidencia.setUsuarioId(u.getId());
         evidencia.setS3Key(s3Key);
         evidencia.setSizeBytes(size);
         evidencia.setContentType(contentType);
@@ -105,9 +111,9 @@ public class EvidenciaService {
     }
 
     @Transactional(readOnly = true)
-    public Evidencia get(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new EvidenciaNotFoundException(id));
+    public Evidencia get(UUID publicId) {
+        return repository.findByPublicId(publicId)
+                .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
     }
 
     /**
@@ -116,9 +122,9 @@ public class EvidenciaService {
      * El lock optimista (version) detecta concurrencia.
      */
     @Transactional
-    public Evidencia cambiarEstado(Long id, EstadoEvidencia nuevo) {
-        Evidencia e = repository.findById(id)
-                .orElseThrow(() -> new EvidenciaNotFoundException(id));
+    public Evidencia cambiarEstado(UUID publicId, EstadoEvidencia nuevo) {
+        Evidencia e = repository.findByPublicId(publicId)
+                .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
         if (nuevo != EstadoEvidencia.APROBADA && nuevo != EstadoEvidencia.RECHAZADA) {
             throw new IllegalArgumentException(
                     "Solo APROBADA o RECHAZADA son aceptables, recibido: " + nuevo);
@@ -135,26 +141,26 @@ public class EvidenciaService {
      * estan en la DB, no hardcodeados).
      */
     @Transactional
-    public void delete(Long id, Long callerId) {
-        Evidencia e = repository.findById(id)
-                .orElseThrow(() -> new EvidenciaNotFoundException(id));
+    public void delete(UUID publicId, UUID callerPublicId) {
+        Evidencia e = repository.findByPublicId(publicId)
+                .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
 
         // Borrado DB primero (rollback facil si algo sale mal).
         repository.delete(e);
         try {
             s3.delete(e.getS3Key());
         } catch (Exception s3Err) {
-            log.error("S3 delete failed for evidencia {} (key {}); queda orphan",
-                    id, e.getS3Key(), s3Err);
+            log.error("S3 delete failed for evidencia with public ID {} (key {}); queda orphan",
+                    publicId, e.getS3Key(), s3Err);
             // No relanzamos: el FE ya recibio la confirmacion de borrado.
             // El operador lo vera en logs.
         }
     }
 
     @Transactional(readOnly = true)
-    public String presignDownload(Long id) {
-        Evidencia e = repository.findById(id)
-                .orElseThrow(() -> new EvidenciaNotFoundException(id));
+    public String presignDownload(UUID publicId) {
+        Evidencia e = repository.findByPublicId(publicId)
+                .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
         return s3.presignDownloadUrl(e.getS3Key());
     }
 

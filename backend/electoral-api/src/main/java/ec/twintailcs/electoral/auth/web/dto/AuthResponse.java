@@ -16,6 +16,8 @@ package ec.twintailcs.electoral.auth.web.dto;
  *   - En su lugar, el FE llama a GET /api/v1/menus/me para obtener el
  *     sidebar derivado de los permisos del usuario.
  */
+import java.util.UUID;
+
 public record AuthResponse(
         String accessToken,
         String tokenType,        // "Bearer"
@@ -24,7 +26,7 @@ public record AuthResponse(
         UsuarioActual usuario
 ) {
     public record UsuarioActual(
-            Long id,
+            UUID id,
             String email,
             String rol
     ) {}

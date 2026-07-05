@@ -1,6 +1,8 @@
 package ec.twintailcs.electoral.auth.domain;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -43,4 +45,6 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
             ORDER BY m.orden ASC, m.label ASC
             """)
     List<Menu> findActiveChildrenOf(@Param("parentId") Long parentId);
+
+    Optional<Menu> findByPublicId(UUID publicId);
 }

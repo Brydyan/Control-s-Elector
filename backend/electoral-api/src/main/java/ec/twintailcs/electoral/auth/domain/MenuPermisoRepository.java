@@ -1,6 +1,8 @@
 package ec.twintailcs.electoral.auth.domain;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -30,4 +32,6 @@ public interface MenuPermisoRepository extends JpaRepository<MenuPermiso, Long> 
               AND mp.borradoEn IS NULL
             """)
     List<Object[]> findAllMenuAuthorityPairs();
+
+    Optional<MenuPermiso> findByPublicId(UUID publicId);
 }
