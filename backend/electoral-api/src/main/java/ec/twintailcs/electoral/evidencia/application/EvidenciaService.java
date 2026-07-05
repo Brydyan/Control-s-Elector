@@ -67,9 +67,14 @@ public class EvidenciaService {
     public Evidencia upload(MultipartFile file, Long jrvId, Long cargoId, UUID callerPublicId) {
         validate(file);
         String s3Key = buildKey(jrvId, cargoId);
-        String sha256;
+
+        // Resuelve el usuario PRIMERO — fail early antes de cualquier side-effect en S3.
+        Usuario u = usuarios.findByPublicId(callerPublicId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"));
+
         long size = file.getSize();
         String contentType = file.getContentType();
+        String sha256 = computeSha256(file);
 
         // Sube a S3 (try-with-resources garantiza cierre del stream).
         try (InputStream in = file.getInputStream()) {
@@ -77,12 +82,6 @@ public class EvidenciaService {
         } catch (IOException e) {
             throw new IllegalArgumentException("cannot read uploaded file: " + e.getMessage());
         }
-
-        // Calcula el hash despues, leyendo otra vez (S3 cerro el input).
-        sha256 = computeSha256(file);
-
-        Usuario u = usuarios.findByPublicId(callerPublicId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"));
 
         // Persiste. Si esto falla, compensamos borrando el objeto en S3.
         Evidencia evidencia = new Evidencia();

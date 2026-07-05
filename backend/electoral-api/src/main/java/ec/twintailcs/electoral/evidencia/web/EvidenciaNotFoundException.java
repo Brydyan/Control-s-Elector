@@ -11,6 +11,6 @@ public class EvidenciaNotFoundException extends RuntimeException {
     }
 
     public EvidenciaNotFoundException(UUID publicId) {
-        super("Evidencia with public ID " + publicId + " not found");
+        super("Evidencia no encontrada");
     }
 }

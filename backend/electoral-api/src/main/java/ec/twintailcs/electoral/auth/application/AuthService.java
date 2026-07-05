@@ -121,7 +121,15 @@ public class AuthService {
             throw new AuthException("Sesion revocada o expirada");
         }
 
-        Usuario u = usuarios.findByPublicId(UUID.fromString(parsed.subject()))
+        UUID publicId;
+        try {
+            publicId = UUID.fromString(parsed.subject());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // Tokens emitidos antes de la migracion UUIDv7 tenian sub numerico.
+            // En dev no hay datos legacy, pero el handle generico evita 500.
+            throw new AuthException("Token invalido");
+        }
+        Usuario u = usuarios.findByPublicId(publicId)
                 .orElseThrow(() -> new AuthException("Usuario no existe"));
 
         // emite nuevo par con el mismo sesionId (revocacion explicita del
