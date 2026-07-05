@@ -40,13 +40,26 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
+.authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/actuator/health",
                     "/actuator/info",
                     "/api/v1/auth/login",
                     "/api/v1/auth/refresh",
                     "/api/v1/auth/logout"
+                ).permitAll()
+                // OpenAPI / Swagger UI — publicos para que devs y consumers
+                // puedan descubrir el contrato sin JWT. En prod restringir
+                // por IP/gateway (no exponer a internet abierto).
+                .requestMatchers(
+                    "/v3/api-docs",
+                    "/v3/api-docs/**",
+                    "/v3/api-docs.yaml",
+                    "/v3/api-docs/swagger-config",
+                    "/swagger-ui.html",
+                    "/swagger-ui/**",
+                    "/swagger-resources/**",
+                    "/webjars/**"
                 ).permitAll()
                 // Evidencias protegidas via @RequiredPermission en el controller.
                 // Cada endpoint especifica su permiso (evidencia:upload, :read, etc.).

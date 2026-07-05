@@ -43,11 +43,13 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Liquibase — versionamiento de schema (reemplaza ddl-auto) -->
-		<dependency>
-			<groupId>org.liquibase</groupId>
-			<artifactId>liquibase-core</artifactId>
-		</dependency>
+		<!-- Liquibase — versionamiento de schema (reemplaza ddl-auto).
+    	     Spring Boot 4.x requiere el starter explicito; liquibase-core
+    	     solo no se autoconfigura (cambio vs Spring Boot 3.x). -->
+    	<dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-liquibase</artifactId>
+    	</dependency>
 
 		<!-- Validación -->
 		<dependency>
@@ -77,10 +79,19 @@
 		</dependency>
 
 		<!-- Actuator (endpoints /actuator/health, /info, /metrics + HealthIndicators). -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
+    	<dependency>
+    		<groupId>org.springframework.boot</groupId>
+    		<artifactId>spring-boot-starter-actuator</artifactId>
+    	</dependency>
+
+    	<!-- OpenAPI 3 / Swagger UI (springdoc 3.x — compatible con Spring Boot 4.x).
+    	     Genera /v3/api-docs (JSON+YAML) y /swagger-ui.html a partir de los controllers.
+    	     El esquema JWT bearer y la metadata se definen en OpenApiConfig. -->
+    	<dependency>
+    		<groupId>org.springdoc</groupId>
+    		<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+    		<version>3.0.3</version>
+    	</dependency>
 
 		<!-- @PreAuthorize(@authz.has(...)) se apoya en el AOP que
 		     spring-security ya trae; no requiere dependencia extra. -->
@@ -128,6 +139,18 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+			<!-- Liquibase Maven Plugin
+			     Permite correr goals CLI de Liquibase (update / changelog-sync /
+			     rollback / etc) desde Maven. spring-boot-starter-liquibase solo
+			     aporta el autoconfig de runtime; el plugin CLI es separado.
+			     Alineado a la misma version que liquibase-core (5.0.3) para
+			     evitar conflictos. -->
+			<plugin>
+				<groupId>org.liquibase</groupId>
+				<artifactId>liquibase-maven-plugin</artifactId>
+				<version>5.0.3</version>
+			</plugin>
+
 			<!-- GraalVM Native Image Plugin
 			     Spring Boot parent POM ya maneja la versión y config vía
 			     el profile `-Pnative`. Solo declaramos el plugin aquí.

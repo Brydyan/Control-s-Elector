@@ -1,0 +1,26 @@
+<header class="topbar">
+  <div class="topbar-title">
+    <h1>{{ title() }}</h1>
+    @if (subtitle()) {
+      <p>{{ subtitle() }}</p>
+    }
+  </div>
+
+  <div class="topbar-right">
+    <div class="realtime-pill">
+      <span class="dot"></span>
+      En vivo · Tiempo real
+    </div>
+
+    <button class="bell-btn" type="button" aria-label="Notificaciones">
+      🔔
+      @if (notifications() > 0) {
+        <span class="bell-badge">{{ notifications() }}</span>
+      }
+    </button>
+
+    @if (isReadOnly()) {
+      <div class="readonly-badge">👁️ Solo lectura</div>
+    }
+  </div>
+</header>

@@ -1,0 +1,15 @@
+<div class="layout">
+  <app-sidebar></app-sidebar>
+
+  <div class="main">
+    <app-topbar
+      [title]="meta().title"
+      [subtitle]="meta().subtitle"
+      [notifications]="meta().notifications"
+    ></app-topbar>
+
+    <main class="content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

@@ -4,7 +4,6 @@ import ec.twintailcs.electoral.auth.application.AuthService;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.JwtService.InvalidJwtException;
 import ec.twintailcs.electoral.auth.application.RegisterService;
-import ec.twintailcs.electoral.auth.domain.RolPermisoRepository;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
@@ -15,7 +14,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -55,16 +53,14 @@ public class AuthController {
     private final AuthService auth;
     private final RegisterService registros;
     private final UsuarioRepository usuarios;
-    private final RolPermisoRepository rolPermisos;
     private final JwtService jwt;
 
     public AuthController(AuthService auth, RegisterService registros,
-                          UsuarioRepository usuarios, RolPermisoRepository rolPermisos,
+                          UsuarioRepository usuarios,
                           JwtService jwt) {
         this.auth = auth;
         this.registros = registros;
         this.usuarios = usuarios;
-        this.rolPermisos = rolPermisos;
         this.jwt = jwt;
     }
 
@@ -76,14 +72,15 @@ public class AuthController {
                 req.getRemoteAddr(), req.getHeader("User-Agent"));
 
         Usuario u = usuarios.findByEmail(body.email()).orElseThrow();
-        List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
+        // Permisos NO se exponen en el body — quedan en el JWT (claim "perms")
+        // para uso interno (JwtAuthFilter -> @PreAuthorize). El FE obtiene
+        // el sidebar via GET /api/v1/menus/me.
 
         AuthResponse payload = new AuthResponse(
                 pair.access(), "Bearer",
                 pair.accessTtl().toSeconds(),
                 pair.sesionId(),
-                new AuthResponse.UsuarioActual(
-                        u.getId(), u.getEmail(), u.getRol(), permisos)
+                new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol())
         );
 
         return ResponseEntity.ok()
@@ -100,14 +97,12 @@ public class AuthController {
         // Necesitamos los datos del usuario para construir la respuesta.
         Long userId = Long.parseLong(jwt.parse(pair.access()).subject());
         Usuario u = usuarios.findById(userId).orElseThrow();
-        List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
 
         AuthResponse payload = new AuthResponse(
                 pair.access(), "Bearer",
                 pair.accessTtl().toSeconds(),
                 pair.sesionId(),
-                new AuthResponse.UsuarioActual(
-                        u.getId(), u.getEmail(), u.getRol(), permisos)
+                new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol())
         );
 
         return ResponseEntity.ok()
@@ -132,8 +127,7 @@ public class AuthController {
     public AuthResponse.UsuarioActual me(org.springframework.security.core.Authentication auth) {
         String email = auth.getName();
         Usuario u = usuarios.findByEmail(email).orElseThrow();
-        List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
-        return new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol(), permisos);
+        return new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol());
     }
 
     /**
@@ -146,8 +140,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse.UsuarioActual> register(@Valid @RequestBody RegisterRequest body) {
         Usuario u = registros.register(body.email(), body.password(), body.rol());
         return ResponseEntity.status(201).body(
-                new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol(),
-                        rolPermisos.findAuthorityStringsByUsuarioId(u.getId())));
+                new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol()));
     }
 
     // --------- helpers ---------
