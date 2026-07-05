@@ -1,7 +1,5 @@
 package ec.twintailcs.electoral.auth.web.dto;
 
-import java.util.List;
-
 /**
  * Respuesta publica de /auth/login y /auth/refresh.
  *
@@ -9,6 +7,14 @@ import java.util.List;
  * El refresh token viaja SOLO en cookie httpOnly (no se serializa aca
  * desde login para que no quede en logs/proxies). En refresh, va en el
  * request (cookie o body, configurable).
+ *
+ * Decisiones sobre que NO exponer al frontend:
+ *   - Permisos atomicos (recurso:accion) NO viajan en el body. Se
+ *     mantienen server-side (claim "perms" del JWT + DB) y se usan para
+ *     @PreAuthorize en cada endpoint. Si el FE los necesita, debe llamar
+ *     a un endpoint admin futuro (no implementado en esta version).
+ *   - En su lugar, el FE llama a GET /api/v1/menus/me para obtener el
+ *     sidebar derivado de los permisos del usuario.
  */
 public record AuthResponse(
         String accessToken,
@@ -20,7 +26,6 @@ public record AuthResponse(
     public record UsuarioActual(
             Long id,
             String email,
-            String rol,
-            List<String> permisos
+            String rol
     ) {}
 }
