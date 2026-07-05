@@ -6,6 +6,9 @@ import ec.twintailcs.electoral.auth.domain.MenuRepository;
 import ec.twintailcs.electoral.auth.domain.RolPermisoRepository;
 import ec.twintailcs.electoral.auth.web.dto.MenuResponse;
 import ec.twintailcs.electoral.auth.web.dto.MenuResponse.MenuNode;
+import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import ec.twintailcs.electoral.auth.domain.Usuario;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -52,17 +55,24 @@ public class MenuService {
     private final MenuRepository menus;
     private final MenuPermisoRepository menuPermisos;
     private final RolPermisoRepository rolPermisos;
+    private final UsuarioRepository usuarios;
 
     public MenuService(MenuRepository menus,
                        MenuPermisoRepository menuPermisos,
-                       RolPermisoRepository rolPermisos) {
+                       RolPermisoRepository rolPermisos,
+                       UsuarioRepository usuarios) {
         this.menus = menus;
         this.menuPermisos = menuPermisos;
         this.rolPermisos = rolPermisos;
+        this.usuarios = usuarios;
     }
 
     @Transactional(readOnly = true)
-    public MenuResponse getMyMenus(Long usuarioId) {
+    public MenuResponse getMyMenus(UUID userPublicId) {
+        Usuario u = usuarios.findByPublicId(userPublicId)
+                .orElseThrow(() -> new ec.twintailcs.electoral.auth.application.AuthService.AuthException("Usuario no existe"));
+        Long usuarioId = u.getId();
+
         // 1. Permisos efectivos del usuario como authority strings (recurso:accion).
         Set<String> userAuths = new HashSet<>(
                 rolPermisos.findAuthorityStringsByUsuarioId(usuarioId));

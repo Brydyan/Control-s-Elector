@@ -16,3 +16,14 @@ CREATE UNIQUE INDEX ix_evidencia_public_id ON evidencia (public_id);
 -- rollback ALTER TABLE evidencia DROP CONSTRAINT uk_evidencia_public_id;
 -- rollback DROP INDEX ix_evidencia_public_id;
 -- rollback ALTER TABLE evidencia DROP COLUMN public_id;
+
+-- changeset electoral:004-02-usuario-public-id
+ALTER TABLE usuario ADD COLUMN public_id UUID;
+UPDATE usuario SET public_id = gen_random_uuid() WHERE public_id IS NULL;
+ALTER TABLE usuario ALTER COLUMN public_id SET NOT NULL;
+ALTER TABLE usuario ADD CONSTRAINT uk_usuario_public_id UNIQUE (public_id);
+CREATE UNIQUE INDEX ix_usuario_public_id ON usuario (public_id);
+-- rollback ALTER TABLE usuario DROP CONSTRAINT uk_usuario_public_id;
+-- rollback DROP INDEX ix_usuario_public_id;
+-- rollback ALTER TABLE usuario DROP COLUMN public_id;
+

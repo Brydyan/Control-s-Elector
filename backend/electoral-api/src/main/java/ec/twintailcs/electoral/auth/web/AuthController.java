@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.UUID;
 import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -80,7 +81,7 @@ public class AuthController {
                 pair.access(), "Bearer",
                 pair.accessTtl().toSeconds(),
                 pair.sesionId(),
-                new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol())
+                new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRol())
         );
 
         return ResponseEntity.ok()
@@ -95,14 +96,14 @@ public class AuthController {
         JwtService.TokenPair pair = auth.refresh(refresh);
 
         // Necesitamos los datos del usuario para construir la respuesta.
-        Long userId = Long.parseLong(jwt.parse(pair.access()).subject());
-        Usuario u = usuarios.findById(userId).orElseThrow();
+        UUID publicId = UUID.fromString(jwt.parse(pair.access()).subject());
+        Usuario u = usuarios.findByPublicId(publicId).orElseThrow();
 
         AuthResponse payload = new AuthResponse(
                 pair.access(), "Bearer",
                 pair.accessTtl().toSeconds(),
                 pair.sesionId(),
-                new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol())
+                new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRol())
         );
 
         return ResponseEntity.ok()
@@ -127,7 +128,7 @@ public class AuthController {
     public AuthResponse.UsuarioActual me(org.springframework.security.core.Authentication auth) {
         String email = auth.getName();
         Usuario u = usuarios.findByEmail(email).orElseThrow();
-        return new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol());
+        return new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRol());
     }
 
     /**
@@ -140,7 +141,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse.UsuarioActual> register(@Valid @RequestBody RegisterRequest body) {
         Usuario u = registros.register(body.email(), body.password(), body.rol());
         return ResponseEntity.status(201).body(
-                new AuthResponse.UsuarioActual(u.getId(), u.getEmail(), u.getRol()));
+                new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRol()));
     }
 
     // --------- helpers ---------

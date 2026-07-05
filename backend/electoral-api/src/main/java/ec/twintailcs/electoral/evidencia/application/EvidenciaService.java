@@ -5,6 +5,8 @@ import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaRepository;
 import ec.twintailcs.electoral.evidencia.web.EvidenciaNotFoundException;
 import ec.twintailcs.electoral.storage.s3.S3StorageService;
+import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import ec.twintailcs.electoral.auth.domain.Usuario;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.MessageDigest;
@@ -44,10 +46,12 @@ public class EvidenciaService {
 
     private final EvidenciaRepository repository;
     private final S3StorageService s3;
+    private final UsuarioRepository usuarios;
 
-    public EvidenciaService(EvidenciaRepository repository, S3StorageService s3) {
+    public EvidenciaService(EvidenciaRepository repository, S3StorageService s3, UsuarioRepository usuarios) {
         this.repository = repository;
         this.s3 = s3;
+        this.usuarios = usuarios;
     }
 
     /**
@@ -60,7 +64,7 @@ public class EvidenciaService {
      * @return evidencia persistida con id
      */
     @Transactional
-    public Evidencia upload(MultipartFile file, Long jrvId, Long cargoId, Long userId) {
+    public Evidencia upload(MultipartFile file, Long jrvId, Long cargoId, UUID callerPublicId) {
         validate(file);
         String s3Key = buildKey(jrvId, cargoId);
         String sha256;
@@ -77,11 +81,14 @@ public class EvidenciaService {
         // Calcula el hash despues, leyendo otra vez (S3 cerro el input).
         sha256 = computeSha256(file);
 
+        Usuario u = usuarios.findByPublicId(callerPublicId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"));
+
         // Persiste. Si esto falla, compensamos borrando el objeto en S3.
         Evidencia evidencia = new Evidencia();
         evidencia.setJrvId(jrvId);
         evidencia.setCargoId(cargoId);
-        evidencia.setUsuarioId(userId);
+        evidencia.setUsuarioId(u.getId());
         evidencia.setS3Key(s3Key);
         evidencia.setSizeBytes(size);
         evidencia.setContentType(contentType);
@@ -135,7 +142,7 @@ public class EvidenciaService {
      * estan en la DB, no hardcodeados).
      */
     @Transactional
-    public void delete(UUID publicId, Long callerId) {
+    public void delete(UUID publicId, UUID callerPublicId) {
         Evidencia e = repository.findByPublicId(publicId)
                 .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
 

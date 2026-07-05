@@ -58,7 +58,7 @@ public class EvidenciaController {
             @RequestParam("jrvId") Long jrvId,
             @RequestParam("cargoId") Long cargoId) {
 
-        Long userId = CurrentUser.staticId();
+        UUID userId = CurrentUser.staticId();
         Evidencia e = service.upload(file, jrvId, cargoId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(EvidenciaResponse.from(e));
     }
