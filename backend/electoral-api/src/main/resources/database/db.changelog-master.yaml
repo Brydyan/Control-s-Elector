@@ -11,7 +11,9 @@ databaseChangeLog:
       file: database/changelog/001-initial-schema.sql
   - include:
       file: database/changelog/002-rbac-seed.sql
+  - include:
+      file: database/changelog/003-menus.sql
 
   # Nuevos changelogs se agregan ACA, al final, en orden creciente:
   # - include:
-  #     file: database/changelog/003-<descripcion>.sql
+  #     file: database/changelog/004-<descripcion>.sql

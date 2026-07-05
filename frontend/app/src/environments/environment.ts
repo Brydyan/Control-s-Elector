@@ -3,7 +3,10 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  // Same-origin path proxied to the backend in dev (see proxy.conf.json).
+  // Keeping it relative lets the browser send the httpOnly refresh cookie.
+  apiUrl: '/api/v1',
 };
 
 /*

@@ -107,3 +107,4 @@ task-control
 .atl/
 /.pi
 /openspec
+/.playwright-mcp
