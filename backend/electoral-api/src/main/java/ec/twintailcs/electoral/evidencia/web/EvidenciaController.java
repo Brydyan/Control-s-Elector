@@ -8,6 +8,7 @@ import ec.twintailcs.electoral.evidencia.web.dto.CambiarEstadoRequest;
 import ec.twintailcs.electoral.evidencia.web.dto.DownloadUrlResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
 import jakarta.validation.Valid;
+import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -65,14 +66,14 @@ public class EvidenciaController {
     @RequiredPermission("evidencia:read")
     @PreAuthorize("@authz.has('evidencia:read')")
     @GetMapping("/{id}")
-    public EvidenciaResponse get(@PathVariable Long id) {
+    public EvidenciaResponse get(@PathVariable UUID id) {
         return EvidenciaResponse.from(service.get(id));
     }
 
     @RequiredPermission("evidencia:download")
     @PreAuthorize("@authz.has('evidencia:download')")
     @GetMapping("/{id}/download-url")
-    public DownloadUrlResponse downloadUrl(@PathVariable Long id) {
+    public DownloadUrlResponse downloadUrl(@PathVariable UUID id) {
         String url = service.presignDownload(id);
         return new DownloadUrlResponse(id, url);
     }
@@ -81,7 +82,7 @@ public class EvidenciaController {
     @PreAuthorize("@authz.hasAny('acta:aprobar','acta:rechazar')")
     @PatchMapping("/{id}/estado")
     public EvidenciaResponse cambiarEstado(
-            @PathVariable Long id,
+            @PathVariable UUID id,
             @Valid @org.springframework.web.bind.annotation.RequestBody
                     CambiarEstadoRequest body) {
         Evidencia e = service.cambiarEstado(id, body.estado());
@@ -91,7 +92,7 @@ public class EvidenciaController {
     @RequiredPermission("evidencia:delete")
     @PreAuthorize("@authz.has('evidencia:delete')")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id, CurrentUser.staticId());
         return ResponseEntity.noContent().build();
     }

@@ -105,9 +105,9 @@ public class EvidenciaService {
     }
 
     @Transactional(readOnly = true)
-    public Evidencia get(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new EvidenciaNotFoundException(id));
+    public Evidencia get(UUID publicId) {
+        return repository.findByPublicId(publicId)
+                .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
     }
 
     /**
@@ -116,9 +116,9 @@ public class EvidenciaService {
      * El lock optimista (version) detecta concurrencia.
      */
     @Transactional
-    public Evidencia cambiarEstado(Long id, EstadoEvidencia nuevo) {
-        Evidencia e = repository.findById(id)
-                .orElseThrow(() -> new EvidenciaNotFoundException(id));
+    public Evidencia cambiarEstado(UUID publicId, EstadoEvidencia nuevo) {
+        Evidencia e = repository.findByPublicId(publicId)
+                .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
         if (nuevo != EstadoEvidencia.APROBADA && nuevo != EstadoEvidencia.RECHAZADA) {
             throw new IllegalArgumentException(
                     "Solo APROBADA o RECHAZADA son aceptables, recibido: " + nuevo);
@@ -135,26 +135,26 @@ public class EvidenciaService {
      * estan en la DB, no hardcodeados).
      */
     @Transactional
-    public void delete(Long id, Long callerId) {
-        Evidencia e = repository.findById(id)
-                .orElseThrow(() -> new EvidenciaNotFoundException(id));
+    public void delete(UUID publicId, Long callerId) {
+        Evidencia e = repository.findByPublicId(publicId)
+                .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
 
         // Borrado DB primero (rollback facil si algo sale mal).
         repository.delete(e);
         try {
             s3.delete(e.getS3Key());
         } catch (Exception s3Err) {
-            log.error("S3 delete failed for evidencia {} (key {}); queda orphan",
-                    id, e.getS3Key(), s3Err);
+            log.error("S3 delete failed for evidencia with public ID {} (key {}); queda orphan",
+                    publicId, e.getS3Key(), s3Err);
             // No relanzamos: el FE ya recibio la confirmacion de borrado.
             // El operador lo vera en logs.
         }
     }
 
     @Transactional(readOnly = true)
-    public String presignDownload(Long id) {
-        Evidencia e = repository.findById(id)
-                .orElseThrow(() -> new EvidenciaNotFoundException(id));
+    public String presignDownload(UUID publicId) {
+        Evidencia e = repository.findByPublicId(publicId)
+                .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
         return s3.presignDownloadUrl(e.getS3Key());
     }
 

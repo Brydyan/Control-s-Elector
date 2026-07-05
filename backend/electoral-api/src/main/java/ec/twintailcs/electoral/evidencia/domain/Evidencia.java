@@ -11,6 +11,9 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
+import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;
+import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 
 /**
  * Evidencia fotografica subida por un OBSERVER al digitalizar un acta.
@@ -39,6 +42,10 @@ public class Evidencia {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @UuidGenerator(algorithm = UuidV7Generator.class)
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
 
     @Column(name = "jrv_id", nullable = false)
     private Long jrvId;
@@ -78,6 +85,8 @@ public class Evidencia {
     private Instant actualizadoEn = Instant.now();
 
     public Long getId() { return id; }
+    public UUID getPublicId() { return publicId; }
+    public void setPublicId(UUID publicId) { this.publicId = publicId; }
     public Long getJrvId() { return jrvId; }
     public void setJrvId(Long jrvId) { this.jrvId = jrvId; }
     public Long getCargoId() { return cargoId; }
