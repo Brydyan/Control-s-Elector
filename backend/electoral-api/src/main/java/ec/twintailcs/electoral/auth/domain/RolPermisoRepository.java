@@ -1,10 +1,14 @@
 package ec.twintailcs.electoral.auth.domain;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 public interface RolPermisoRepository extends JpaRepository<RolPermiso, Long> {
+
+    Optional<RolPermiso> findByPublicId(UUID publicId);
 
     /** Lista de permisos asignados al rol (devuelve el objeto completo). */
     @Query("SELECT rp FROM RolPermiso rp WHERE rp.rol = :rol")

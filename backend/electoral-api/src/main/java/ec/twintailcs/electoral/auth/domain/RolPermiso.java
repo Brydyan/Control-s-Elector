@@ -6,6 +6,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
+import jakarta.persistence.Column;
+import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;
+import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 
 /**
  * Tabla intermedia: muchos-a-muchos entre roles y permisos.
@@ -28,12 +32,16 @@ public class RolPermiso {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @UuidGenerator(algorithm = UuidV7Generator.class)
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
+
     /** Nombre del rol (ej: "OBSERVER", "COORDINATOR"). Unico + not null. */
-    @jakarta.persistence.Column(nullable = false, length = 32)
+    @Column(nullable = false, length = 32)
     private String rol;
 
     /** FK a permiso. */
-    @jakarta.persistence.Column(name = "permiso_id", nullable = false)
+    @Column(name = "permiso_id", nullable = false)
     private Long permisoId;
 
     public RolPermiso() {}
@@ -45,6 +53,8 @@ public class RolPermiso {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public UUID getPublicId() { return publicId; }
+    public void setPublicId(UUID publicId) { this.publicId = publicId; }
     public String getRol() { return rol; }
     public void setRol(String rol) { this.rol = rol; }
     public Long getPermisoId() { return permisoId; }

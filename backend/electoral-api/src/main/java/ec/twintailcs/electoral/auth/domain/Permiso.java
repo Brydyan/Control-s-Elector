@@ -8,6 +8,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;
+import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 
 /**
  * Permiso granular del sistema.
@@ -38,6 +41,10 @@ public class Permiso {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @UuidGenerator(algorithm = UuidV7Generator.class)
+    @Column(name = "public_id", nullable = false, unique = true, updatable = false)
+    private UUID publicId;
+
     /** Recurso protegido. Obligatorio. ej: "evidencia", "acta" */
     @Column(nullable = false, length = 64)
     private String recurso;
@@ -65,6 +72,8 @@ public class Permiso {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+    public UUID getPublicId() { return publicId; }
+    public void setPublicId(UUID publicId) { this.publicId = publicId; }
     public String getRecurso() { return recurso; }
     public void setRecurso(String recurso) { this.recurso = recurso; }
     public String getAccion() { return accion; }

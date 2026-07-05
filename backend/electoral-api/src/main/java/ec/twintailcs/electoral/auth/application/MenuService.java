@@ -166,11 +166,19 @@ public class MenuService {
                 .comparing(Menu::getOrden, Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(Menu::getLabel, Comparator.nullsLast(Comparator.naturalOrder())));
 
+        // Lookup map for Long ID -> UUID publicId of menus in the flat list
+        Map<Long, UUID> idToPublicId = new HashMap<>();
+        for (Menu m : flat) {
+            idToPublicId.put(m.getId(), m.getPublicId());
+        }
+
         Map<Long, MenuNode> nodes = new LinkedHashMap<>();
         for (Menu m : flat) {
+            UUID publicId = m.getPublicId();
+            UUID parentPublicId = m.getParentId() != null ? idToPublicId.get(m.getParentId()) : null;
             nodes.put(m.getId(), new MenuNode(
-                    m.getId(),
-                    m.getParentId(),
+                    publicId,
+                    parentPublicId,
                     m.getCodigo(),
                     m.getLabel(),
                     m.getIcono(),
@@ -182,9 +190,10 @@ public class MenuService {
         }
 
         List<MenuNode> roots = new ArrayList<>();
-        for (MenuNode node : nodes.values()) {
-            if (node.parentId() != null && nodes.containsKey(node.parentId())) {
-                nodes.get(node.parentId()).children().add(node);
+        for (Menu m : flat) {
+            MenuNode node = nodes.get(m.getId());
+            if (m.getParentId() != null && nodes.containsKey(m.getParentId())) {
+                nodes.get(m.getParentId()).children().add(node);
             } else {
                 roots.add(node);
             }
