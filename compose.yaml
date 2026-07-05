@@ -85,17 +85,17 @@ services:
     environment:
       RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-rustfsadmin}
       RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
-      RUSTFS_ADDRESS: "0.0.0.0:${S3_PORT:-9000}"
+      RUSTFS_ADDRESS: "0.0.0.0:${S3_PORT:-9003}"
       RUSTFS_CONSOLE_ENABLE: "true"
-      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:${S3_CONSOLE_PORT:-9001}"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:${S3_CONSOLE_PORT:-9004}"
       RUSTFS_VOLUMES: /data
     ports:
-      - "${S3_PORT:-9000}:${S3_PORT:-9000}" # API S3
-      - "${S3_CONSOLE_PORT:-9001}:${S3_CONSOLE_PORT:-9001}" # Console web
+      - "${S3_PORT:-9003}:${S3_PORT:-9003}" # API S3
+      - "${S3_CONSOLE_PORT:-9004}:${S3_CONSOLE_PORT:-9004}" # Console web
     volumes:
       - rustfs_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${S3_PORT:-9000}/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${S3_PORT:-9003}/health"]
       interval: 30s
       timeout: 20s
       retries: 3
