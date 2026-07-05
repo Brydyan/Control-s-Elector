@@ -15,7 +15,10 @@ import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.auth.application.JwtService;
+import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
+import ec.twintailcs.electoral.evidencia.web.dto.mapper.EvidenciaMapper;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -36,6 +39,20 @@ class EvidenciaControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private EvidenciaMapper evidenciaMapper;
+
+    @BeforeEach
+    void setUpMapper() {
+        when(evidenciaMapper.toDto(any())).thenAnswer(invocation -> {
+            Evidencia e = invocation.getArgument(0);
+            return new EvidenciaResponse(
+                    e.getPublicId(), e.getJrvId(), e.getCargoId(), e.getUsuarioId(),
+                    e.getS3Key(), e.getSizeBytes(), e.getContentType(),
+                    e.getEstado(), e.getCreadoEn(), e.getActualizadoEn());
+        });
+    }
 
     @Test
     void get_withValidUuid_returnsEvidencia() throws Exception {

@@ -10,6 +10,7 @@ import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
 import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
 import ec.twintailcs.electoral.auth.web.dto.RefreshRequest;
 import ec.twintailcs.electoral.auth.web.dto.RegisterRequest;
+import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Instant;
@@ -55,14 +56,17 @@ public class AuthController {
     private final RegisterService registros;
     private final UsuarioRepository usuarios;
     private final JwtService jwt;
+    private final UsuarioMapper usuarioMapper;
 
     public AuthController(AuthService auth, RegisterService registros,
                           UsuarioRepository usuarios,
-                          JwtService jwt) {
+                          JwtService jwt,
+                          UsuarioMapper usuarioMapper) {
         this.auth = auth;
         this.registros = registros;
         this.usuarios = usuarios;
         this.jwt = jwt;
+        this.usuarioMapper = usuarioMapper;
     }
 
     @PostMapping("/login")
@@ -81,7 +85,7 @@ public class AuthController {
                 pair.access(), "Bearer",
                 pair.accessTtl().toSeconds(),
                 pair.sesionId(),
-                new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRol())
+                usuarioMapper.toDto(u)
         );
 
         return ResponseEntity.ok()
@@ -103,7 +107,7 @@ public class AuthController {
                 pair.access(), "Bearer",
                 pair.accessTtl().toSeconds(),
                 pair.sesionId(),
-                new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRol())
+                usuarioMapper.toDto(u)
         );
 
         return ResponseEntity.ok()
@@ -128,7 +132,7 @@ public class AuthController {
     public AuthResponse.UsuarioActual me(org.springframework.security.core.Authentication auth) {
         String email = auth.getName();
         Usuario u = usuarios.findByEmail(email).orElseThrow();
-        return new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRol());
+        return usuarioMapper.toDto(u);
     }
 
     /**
@@ -140,8 +144,7 @@ public class AuthController {
     @PreAuthorize("hasAuthority('usuario:create') or hasAuthority('MASTER')")
     public ResponseEntity<AuthResponse.UsuarioActual> register(@Valid @RequestBody RegisterRequest body) {
         Usuario u = registros.register(body.email(), body.password(), body.rol());
-        return ResponseEntity.status(201).body(
-                new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRol()));
+        return ResponseEntity.status(201).body(usuarioMapper.toDto(u));
     }
 
     // --------- helpers ---------

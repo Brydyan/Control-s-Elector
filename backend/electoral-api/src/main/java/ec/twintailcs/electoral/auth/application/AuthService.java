@@ -92,7 +92,7 @@ public class AuthService {
         sesiones.save(sesion);
 
         List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
-        JwtService.TokenPair pair = jwt.issue(u.getPublicId(), u.getEmail(), u.getRol(),
+        JwtService.TokenPair pair = jwt.issue(u.getPublicId(), u.getEmail(), u.getRolNombre(),
                 permisos, sesionId);
 
         // guarda hash del refresh (nunca el token plano)
@@ -135,7 +135,7 @@ public class AuthService {
         // emite nuevo par con el mismo sesionId (revocacion explicita del
         // refresh anterior: cambia el hash guardado, el viejo deja de servir)
         List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
-        JwtService.TokenPair pair = jwt.issue(u.getPublicId(), u.getEmail(), u.getRol(),
+        JwtService.TokenPair pair = jwt.issue(u.getPublicId(), u.getEmail(), u.getRolNombre(),
                 permisos, sesion.getSesionId());
         sesion.setRefreshHash(hashOf(pair.refresh()));
         sesion.setUltimoUsoEn(Instant.now());

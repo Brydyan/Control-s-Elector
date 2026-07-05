@@ -1,5 +1,7 @@
 package ec.twintailcs.electoral.auth.application;
 
+import ec.twintailcs.electoral.auth.domain.Rol;
+import ec.twintailcs.electoral.auth.domain.RolRepository;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import org.springframework.stereotype.Service;
@@ -17,22 +19,26 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegisterService {
 
     private final UsuarioRepository usuarios;
+    private final RolRepository roles;
     private final PasswordHasher hasher;
 
-    public RegisterService(UsuarioRepository usuarios, PasswordHasher hasher) {
+    public RegisterService(UsuarioRepository usuarios, RolRepository roles, PasswordHasher hasher) {
         this.usuarios = usuarios;
+        this.roles = roles;
         this.hasher = hasher;
     }
 
     @Transactional
-    public Usuario register(String email, String passwordPlano, String rol) {
+    public Usuario register(String email, String passwordPlano, String rolNombre) {
         if (usuarios.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("email ya registrado");
         }
+        Rol rolEntity = roles.findByNombre(rolNombre)
+                .orElseThrow(() -> new IllegalArgumentException("rol invalido: " + rolNombre));
         Usuario u = new Usuario();
         u.setEmail(email);
         u.setPasswordHash(hasher.hash(passwordPlano));
-        u.setRol(rol);
+        u.setRol(rolEntity);
         u.setHabilitado(true);
         return usuarios.save(u);
     }

@@ -7,6 +7,7 @@ import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.web.dto.CambiarEstadoRequest;
 import ec.twintailcs.electoral.evidencia.web.dto.DownloadUrlResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
+import ec.twintailcs.electoral.evidencia.web.dto.mapper.EvidenciaMapper;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -45,9 +46,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class EvidenciaController {
 
     private final EvidenciaService service;
+    private final EvidenciaMapper evidenciaMapper;
 
-    public EvidenciaController(EvidenciaService service) {
+    public EvidenciaController(EvidenciaService service, EvidenciaMapper evidenciaMapper) {
         this.service = service;
+        this.evidenciaMapper = evidenciaMapper;
     }
 
     @RequiredPermission("evidencia:upload")
@@ -60,14 +63,14 @@ public class EvidenciaController {
 
         UUID userId = CurrentUser.staticId();
         Evidencia e = service.upload(file, jrvId, cargoId, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(EvidenciaResponse.from(e));
+        return ResponseEntity.status(HttpStatus.CREATED).body(evidenciaMapper.toDto(e));
     }
 
     @RequiredPermission("evidencia:read")
     @PreAuthorize("@authz.has('evidencia:read')")
     @GetMapping("/{id}")
     public EvidenciaResponse get(@PathVariable UUID id) {
-        return EvidenciaResponse.from(service.get(id));
+        return evidenciaMapper.toDto(service.get(id));
     }
 
     @RequiredPermission("evidencia:download")
@@ -86,7 +89,7 @@ public class EvidenciaController {
             @Valid @org.springframework.web.bind.annotation.RequestBody
                     CambiarEstadoRequest body) {
         Evidencia e = service.cambiarEstado(id, body.estado());
-        return EvidenciaResponse.from(e);
+        return evidenciaMapper.toDto(e);
     }
 
     @RequiredPermission("evidencia:delete")

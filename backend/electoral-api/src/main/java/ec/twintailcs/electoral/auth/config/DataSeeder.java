@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.auth.config;
 
 import ec.twintailcs.electoral.auth.application.PasswordHasher;
+import ec.twintailcs.electoral.auth.domain.RolRepository;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import org.slf4j.Logger;
@@ -24,6 +25,7 @@ public class DataSeeder implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
     private final UsuarioRepository usuarios;
+    private final RolRepository roles;
     private final PasswordHasher hasher;
 
     @Value("${app.seed.admin-email:admin@control-elector.local}")
@@ -31,8 +33,9 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${app.seed.admin-password:admin12345}")
     private String adminPassword;
 
-    public DataSeeder(UsuarioRepository usuarios, PasswordHasher hasher) {
+    public DataSeeder(UsuarioRepository usuarios, RolRepository roles, PasswordHasher hasher) {
         this.usuarios = usuarios;
+        this.roles = roles;
         this.hasher = hasher;
     }
 
@@ -41,10 +44,14 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         if (usuarios.findByEmail(adminEmail).isPresent()) return;
 
+        var masterRol = roles.findByNombre("MASTER")
+                .orElseThrow(() -> new IllegalStateException(
+                        "Rol MASTER no encontrado. Ejecutar migracion 005-fks primero."));
+
         Usuario admin = new Usuario();
         admin.setEmail(adminEmail);
         admin.setPasswordHash(hasher.hash(adminPassword));
-        admin.setRol("MASTER");
+        admin.setRol(masterRol);
         admin.setHabilitado(true);
         usuarios.save(admin);
         log.warn("Seed: usuario ADMIN creado ({}) con password '{}' — CAMBIAR EN PROD",

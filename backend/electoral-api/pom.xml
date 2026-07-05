@@ -51,6 +51,13 @@
     		<artifactId>spring-boot-starter-liquibase</artifactId>
     	</dependency>
 
+		<!-- MapStruct — mapeo DTO ↔ Entidad con resolución automática de UUIDs -->
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>1.6.3</version>
+		</dependency>
+
 		<!-- Validación -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -177,6 +184,11 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>1.6.3</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

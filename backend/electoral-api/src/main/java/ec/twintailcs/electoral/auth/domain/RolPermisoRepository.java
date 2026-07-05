@@ -11,13 +11,16 @@ public interface RolPermisoRepository extends JpaRepository<RolPermiso, Long> {
     Optional<RolPermiso> findByPublicId(UUID publicId);
 
     /** Lista de permisos asignados al rol (devuelve el objeto completo). */
-    @Query("SELECT rp FROM RolPermiso rp WHERE rp.rol = :rol")
-    List<RolPermiso> findByRol(String rol);
+    @Query("SELECT rp FROM RolPermiso rp WHERE rp.rol.nombre = :rolNombre")
+    List<RolPermiso> findByRolNombre(String rolNombre);
 
     /**
      * Authority strings del usuario via JOIN: Usuario.rol -> RolPermiso -> Permiso.
      * Hibernate 7 (Spring Boot 4) rechaza string concat en JPQL, uso
      * CONCAT(...) con sus overloads posicionales.
+     *
+     * La comparacion {@code u.rol = rp.rol} funciona entre entidades:
+     * JPQL traduce a {@code u.rol_id = rp.rol_id} internamente.
      */
     @Query("""
             SELECT CONCAT(p.recurso, ':', p.accion)
@@ -32,7 +35,7 @@ public interface RolPermisoRepository extends JpaRepository<RolPermiso, Long> {
     @Query("""
             SELECT CONCAT(p.recurso, ':', p.accion)
             FROM Permiso p, RolPermiso rp
-            WHERE rp.permisoId = p.id AND rp.rol = :rol
+            WHERE rp.permisoId = p.id AND rp.rol.nombre = :rol
             """)
     List<String> findAuthorityStringsByRol(String rol);
 }

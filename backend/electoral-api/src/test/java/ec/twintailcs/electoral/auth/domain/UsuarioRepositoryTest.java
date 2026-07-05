@@ -14,6 +14,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -39,12 +41,21 @@ class UsuarioRepositoryTest {
     @Autowired
     private jakarta.persistence.EntityManager entityManager;
 
+    @Autowired
+    private RolRepository rolRepository;
+
+    private Rol obtenerRol(String nombre) {
+        return rolRepository.findByNombre(nombre)
+                .orElseThrow(() -> new RuntimeException(
+                        "Rol " + nombre + " no encontrado. Liquibase debe haberlo sembrado."));
+    }
+
     @Test
     void shouldAutoGenerateUuidV7AndRoundTrip() {
         Usuario usuario = new Usuario();
         usuario.setEmail("test@example.com");
         usuario.setPasswordHash("hashedpassword");
-        usuario.setRol("OBSERVER");
+        usuario.setRol(obtenerRol("OBSERVER"));
         usuario.setHabilitado(true);
 
         Usuario saved = repository.saveAndFlush(usuario);
@@ -60,21 +71,23 @@ class UsuarioRepositoryTest {
 
     @Test
     void shouldThrowExceptionWhenDuplicatePublicIdIsPersisted() {
+        Rol rol = obtenerRol("OBSERVER");
+
         Usuario u1 = new Usuario();
         u1.setEmail("user1@example.com");
         u1.setPasswordHash("hashed1");
-        u1.setRol("OBSERVER");
+        u1.setRol(rol);
 
         Usuario saved1 = repository.saveAndFlush(u1);
         UUID publicId = saved1.getPublicId();
 
-        org.junit.jupiter.api.Assertions.assertThrows(
+        assertThrows(
             org.springframework.dao.DataIntegrityViolationException.class,
             () -> {
                 jdbcTemplate.update(
-                    "INSERT INTO usuario (email, password_hash, rol, habilitado, creado_en, public_id) " +
-                    "VALUES ('user2@example.com', 'hashed2', 'OBSERVER', true, NOW(), ?)",
-                    publicId
+                    "INSERT INTO usuario (email, password_hash, rol_id, habilitado, creado_en, public_id) " +
+                    "VALUES ('user2@example.com', 'hashed2', ?, true, NOW(), ?)",
+                    rol.getId(), publicId
                 );
             }
         );
@@ -85,7 +98,7 @@ class UsuarioRepositoryTest {
         Usuario usuario = new Usuario();
         usuario.setEmail("immutable@example.com");
         usuario.setPasswordHash("hashed");
-        usuario.setRol("OBSERVER");
+        usuario.setRol(obtenerRol("OBSERVER"));
 
         Usuario saved = repository.saveAndFlush(usuario);
         UUID originalPublicId = saved.getPublicId();

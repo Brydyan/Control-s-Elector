@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.auth.domain;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
@@ -13,6 +14,8 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DataJpaTest
 @Testcontainers
@@ -39,9 +42,17 @@ class RolPermisoRepositoryTest {
     @Autowired
     private jakarta.persistence.EntityManager entityManager;
 
+    @Autowired
+    private RolRepository rolRepository;
+
+    private Rol crearRol(String nombre) {
+        return rolRepository.save(new Rol(nombre));
+    }
+
     @Test
     void shouldAutoGenerateUuidV7AndRoundTrip() {
-        RolPermiso rp = new RolPermiso("TEST_ROL", 1L);
+        Rol rol = crearRol("TEST_ROL");
+        RolPermiso rp = new RolPermiso(rol, 1L);
         RolPermiso saved = repository.saveAndFlush(rp);
 
         assertThat(saved.getId()).isNotNull();
@@ -55,17 +66,20 @@ class RolPermisoRepositoryTest {
 
     @Test
     void shouldThrowExceptionWhenDuplicatePublicIdIsPersisted() {
-        RolPermiso rp1 = new RolPermiso("TEST_ROL1", 1L);
+        Rol rol1 = crearRol("TEST_ROL1");
+        RolPermiso rp1 = new RolPermiso(rol1, 1L);
         RolPermiso saved1 = repository.saveAndFlush(rp1);
         UUID publicId = saved1.getPublicId();
 
-        org.junit.jupiter.api.Assertions.assertThrows(
+        Rol rol2 = crearRol("TEST_ROL2");
+
+        assertThrows(
             org.springframework.dao.DataIntegrityViolationException.class,
             () -> {
                 jdbcTemplate.update(
-                    "INSERT INTO rol_permiso (rol, permiso_id, public_id) " +
-                    "VALUES ('TEST_ROL2', 2, ?)",
-                    publicId
+                    "INSERT INTO rol_permiso (rol_id, permiso_id, public_id) " +
+                    "VALUES (?, 2, ?)",
+                    rol2.getId(), publicId
                 );
             }
         );
@@ -73,7 +87,8 @@ class RolPermisoRepositoryTest {
 
     @Test
     void shouldNotUpdatePublicIdWhenEntityIsModified() {
-        RolPermiso rp = new RolPermiso("TEST_ROL_IMM", 1L);
+        Rol rol = crearRol("TEST_ROL_IMM");
+        RolPermiso rp = new RolPermiso(rol, 1L);
         RolPermiso saved = repository.saveAndFlush(rp);
         UUID originalPublicId = saved.getPublicId();
 

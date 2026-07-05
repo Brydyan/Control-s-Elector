@@ -14,13 +14,17 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import ec.twintailcs.electoral.auth.application.AuthService;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.RegisterService;
+import ec.twintailcs.electoral.auth.domain.Rol;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
+import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
 import jakarta.servlet.http.Cookie;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -48,6 +52,17 @@ class AuthControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
+    @MockitoBean
+    private UsuarioMapper usuarioMapper;
+
+    @BeforeEach
+    void setUpMapper() {
+        when(usuarioMapper.toDto(any())).thenAnswer(invocation -> {
+            Usuario u = invocation.getArgument(0);
+            return new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRolNombre());
+        });
+    }
+
     @Test
     void login_withValidCredentials_returnsAuthResponseAndCookie() throws Exception {
         UUID publicId = UUID.randomUUID();
@@ -55,7 +70,7 @@ class AuthControllerTest {
         usuario.setId(100L);
         usuario.setPublicId(publicId);
         usuario.setEmail("user@example.com");
-        usuario.setRol("OBSERVER");
+        usuario.setRol(new Rol("OBSERVER"));
 
         JwtService.TokenPair tokenPair = new JwtService.TokenPair(
                 "accessTokenVal", "refreshTokenVal",
@@ -88,7 +103,7 @@ class AuthControllerTest {
         usuario.setId(100L);
         usuario.setPublicId(publicId);
         usuario.setEmail("user@example.com");
-        usuario.setRol("OBSERVER");
+        usuario.setRol(new Rol("OBSERVER"));
 
         JwtService.TokenPair tokenPair = new JwtService.TokenPair(
                 "newAccessTokenVal", "newRefreshTokenVal",
