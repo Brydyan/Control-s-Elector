@@ -51,6 +51,13 @@
     		<artifactId>spring-boot-starter-liquibase</artifactId>
     	</dependency>
 
+		<!-- MapStruct — mapeo DTO ↔ Entidad con resolución automática de UUIDs -->
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>1.6.3</version>
+		</dependency>
+
 		<!-- Validación -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -84,6 +91,15 @@
     		<artifactId>spring-boot-starter-actuator</artifactId>
     	</dependency>
 
+		<!-- UUIDv7 generator (RFC 9562). Isolado detras de UuidV7Generator para
+		     poder eliminarlo cuando Hibernate >=7.2 traiga UuidVersion7Strategy
+		     nativo (ver ADR 0001). Pin explicito: no hay BOM que lo maneje. -->
+		<dependency>
+			<groupId>com.github.f4b6a3</groupId>
+			<artifactId>uuid-creator</artifactId>
+			<version>6.1.1</version>
+		</dependency>
+
     	<!-- OpenAPI 3 / Swagger UI (springdoc 3.x — compatible con Spring Boot 4.x).
     	     Genera /v3/api-docs (JSON+YAML) y /swagger-ui.html a partir de los controllers.
     	     El esquema JWT bearer y la metadata se definen en OpenApiConfig. -->
@@ -111,6 +127,39 @@
 			<artifactId>spring-security-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- Spring Boot 4.x modularizo los test slices fuera de
+		     spring-boot-test-autoconfigure: @DataJpaTest y @WebMvcTest ahora
+		     viven en modulos dedicados (no en spring-boot-starter-test). -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-data-jpa-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Testcontainers: Postgres real para @DataJpaTest (uuid nativo /
+		     gen_random_uuid() no existen en H2). Versiones gestionadas por el
+		     BOM de spring-boot-starter-parent 4.1. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-testcontainers</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -135,6 +184,11 @@
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>1.6.3</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

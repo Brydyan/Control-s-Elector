@@ -57,11 +57,11 @@ public class JwtService {
     }
 
     /** Emite access + refresh para un usuario dado. */
-    public TokenPair issue(Long usuarioId, String email, String rol,
+    public TokenPair issue(UUID publicId, String email, String rol,
                           List<String> permissions, String sesionId) {
         Instant now = Instant.now();
         String access = sign(builder -> builder
-                .subject(usuarioId.toString())
+                .subject(publicId.toString())
                 .issuer(issuer)
                 .claim("email", email)
                 .claim("rol", rol)
@@ -72,7 +72,7 @@ public class JwtService {
                 .jwtID(UUID.randomUUID().toString()));
 
         String refresh = sign(builder -> builder
-                .subject(usuarioId.toString())
+                .subject(publicId.toString())
                 .issuer(issuer)
                 .claim("typ", "refresh")
                 .claim("sid", sesionId)

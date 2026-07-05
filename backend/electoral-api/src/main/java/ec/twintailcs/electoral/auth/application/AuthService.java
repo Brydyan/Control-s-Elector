@@ -92,7 +92,7 @@ public class AuthService {
         sesiones.save(sesion);
 
         List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
-        JwtService.TokenPair pair = jwt.issue(u.getId(), u.getEmail(), u.getRol(),
+        JwtService.TokenPair pair = jwt.issue(u.getPublicId(), u.getEmail(), u.getRolNombre(),
                 permisos, sesionId);
 
         // guarda hash del refresh (nunca el token plano)
@@ -121,13 +121,21 @@ public class AuthService {
             throw new AuthException("Sesion revocada o expirada");
         }
 
-        Usuario u = usuarios.findById(sesion.getUsuarioId())
+        UUID publicId;
+        try {
+            publicId = UUID.fromString(parsed.subject());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            // Tokens emitidos antes de la migracion UUIDv7 tenian sub numerico.
+            // En dev no hay datos legacy, pero el handle generico evita 500.
+            throw new AuthException("Token invalido");
+        }
+        Usuario u = usuarios.findByPublicId(publicId)
                 .orElseThrow(() -> new AuthException("Usuario no existe"));
 
         // emite nuevo par con el mismo sesionId (revocacion explicita del
         // refresh anterior: cambia el hash guardado, el viejo deja de servir)
         List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
-        JwtService.TokenPair pair = jwt.issue(u.getId(), u.getEmail(), u.getRol(),
+        JwtService.TokenPair pair = jwt.issue(u.getPublicId(), u.getEmail(), u.getRolNombre(),
                 permisos, sesion.getSesionId());
         sesion.setRefreshHash(hashOf(pair.refresh()));
         sesion.setUltimoUsoEn(Instant.now());

@@ -4,12 +4,14 @@ import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import java.time.Instant;
 
+import java.util.UUID;
+
 /**
  * Respuesta publica de la API. NO expone la columna {@code version}
  * (interna) ni el SHA-256 crudo por ahora; solo metadata util para el FE.
  */
 public record EvidenciaResponse(
-        Long id,
+        UUID id,
         Long jrvId,
         Long cargoId,
         Long usuarioId,
@@ -22,7 +24,7 @@ public record EvidenciaResponse(
 ) {
     public static EvidenciaResponse from(Evidencia e) {
         return new EvidenciaResponse(
-                e.getId(), e.getJrvId(), e.getCargoId(), e.getUsuarioId(),
+                e.getPublicId(), e.getJrvId(), e.getCargoId(), e.getUsuarioId(),
                 e.getS3Key(), e.getSizeBytes(), e.getContentType(),
                 e.getEstado(), e.getCreadoEn(), e.getActualizadoEn());
     }

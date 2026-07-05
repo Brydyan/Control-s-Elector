@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.auth.web.dto;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Response de GET /api/v1/menus/me.
@@ -19,8 +20,8 @@ public record MenuResponse(List<MenuNode> menus) {
      * Orden de campos pensado para legibilidad en JSON, no logica.
      */
     public record MenuNode(
-            Long id,
-            Long parentId,
+            UUID id,
+            UUID parentId,
             String codigo,
             String label,
             String icono,

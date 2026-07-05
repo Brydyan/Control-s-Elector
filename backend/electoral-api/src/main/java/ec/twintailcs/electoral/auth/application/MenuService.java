@@ -6,6 +6,9 @@ import ec.twintailcs.electoral.auth.domain.MenuRepository;
 import ec.twintailcs.electoral.auth.domain.RolPermisoRepository;
 import ec.twintailcs.electoral.auth.web.dto.MenuResponse;
 import ec.twintailcs.electoral.auth.web.dto.MenuResponse.MenuNode;
+import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import ec.twintailcs.electoral.auth.domain.Usuario;
+import java.util.UUID;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -52,17 +55,24 @@ public class MenuService {
     private final MenuRepository menus;
     private final MenuPermisoRepository menuPermisos;
     private final RolPermisoRepository rolPermisos;
+    private final UsuarioRepository usuarios;
 
     public MenuService(MenuRepository menus,
                        MenuPermisoRepository menuPermisos,
-                       RolPermisoRepository rolPermisos) {
+                       RolPermisoRepository rolPermisos,
+                       UsuarioRepository usuarios) {
         this.menus = menus;
         this.menuPermisos = menuPermisos;
         this.rolPermisos = rolPermisos;
+        this.usuarios = usuarios;
     }
 
     @Transactional(readOnly = true)
-    public MenuResponse getMyMenus(Long usuarioId) {
+    public MenuResponse getMyMenus(UUID userPublicId) {
+        Usuario u = usuarios.findByPublicId(userPublicId)
+                .orElseThrow(() -> new ec.twintailcs.electoral.auth.application.AuthService.AuthException("Usuario no existe"));
+        Long usuarioId = u.getId();
+
         // 1. Permisos efectivos del usuario como authority strings (recurso:accion).
         Set<String> userAuths = new HashSet<>(
                 rolPermisos.findAuthorityStringsByUsuarioId(usuarioId));
@@ -156,11 +166,19 @@ public class MenuService {
                 .comparing(Menu::getOrden, Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(Menu::getLabel, Comparator.nullsLast(Comparator.naturalOrder())));
 
+        // Lookup map for Long ID -> UUID publicId of menus in the flat list
+        Map<Long, UUID> idToPublicId = new HashMap<>();
+        for (Menu m : flat) {
+            idToPublicId.put(m.getId(), m.getPublicId());
+        }
+
         Map<Long, MenuNode> nodes = new LinkedHashMap<>();
         for (Menu m : flat) {
+            UUID publicId = m.getPublicId();
+            UUID parentPublicId = m.getParentId() != null ? idToPublicId.get(m.getParentId()) : null;
             nodes.put(m.getId(), new MenuNode(
-                    m.getId(),
-                    m.getParentId(),
+                    publicId,
+                    parentPublicId,
                     m.getCodigo(),
                     m.getLabel(),
                     m.getIcono(),
@@ -172,9 +190,10 @@ public class MenuService {
         }
 
         List<MenuNode> roots = new ArrayList<>();
-        for (MenuNode node : nodes.values()) {
-            if (node.parentId() != null && nodes.containsKey(node.parentId())) {
-                nodes.get(node.parentId()).children().add(node);
+        for (Menu m : flat) {
+            MenuNode node = nodes.get(m.getId());
+            if (m.getParentId() != null && nodes.containsKey(m.getParentId())) {
+                nodes.get(m.getParentId()).children().add(node);
             } else {
                 roots.add(node);
             }

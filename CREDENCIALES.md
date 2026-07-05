@@ -8,13 +8,13 @@
 
 ## 🗄️ Base de datos (PostgreSQL)
 
-| Campo         | Valor             | Variable de entorno |
-| ------------- | ----------------- | ------------------- |
-| Host          | `localhost`       | `DB_HOST`           |
-| Puerto        | `5432`            | `DB_PORT`           |
-| Base de datos | `electoral_db`    | `DB_NAME`           |
-| Usuario       | `electoral_user`  | `DB_USER`           |
-| Password      | `electoral_pass`  | `DB_PASSWORD`       |
+| Campo         | Valor            | Variable de entorno |
+| ------------- | ---------------- | ------------------- |
+| Host          | `localhost`      | `DB_HOST`           |
+| Puerto        | `5432`           | `DB_PORT`           |
+| Base de datos | `electoral_db`   | `DB_NAME`           |
+| Usuario       | `electoral_user` | `DB_USER`           |
+| Password      | `electoral_pass` | `DB_PASSWORD`       |
 
 Conectarte con `psql`:
 
@@ -38,11 +38,11 @@ docker exec electoral-postgres-dev \
 Lo crea `DataSeeder` (idempotente) en el primer arranque del backend. Si ya
 existe un usuario con ese email, no hace nada.
 
-| Campo    | Valor                          | Variable de entorno      |
-| -------- | ------------------------------ | ------------------------ |
-| Email    | `admin@control-elector.local`  | `APP_SEED_ADMIN_EMAIL`   |
-| Password | `admin12345`                   | `APP_SEED_ADMIN_PASSWORD`|
-| Rol      | `MASTER`                       | (hardcoded en el seeder) |
+| Campo    | Valor                         | Variable de entorno       |
+| -------- | ----------------------------- | ------------------------- |
+| Email    | `admin@control-elector.local` | `APP_SEED_ADMIN_EMAIL`    |
+| Password | `admin12345`                  | `APP_SEED_ADMIN_PASSWORD` |
+| Rol      | `MASTER`                      | (hardcoded en el seeder)  |
 
 ⚠️ **Cambiar antes de cualquier deploy a prod.** Hoy el seeder loggea la
 password en `WARN` — visible para cualquiera con acceso a los logs.
@@ -59,14 +59,14 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 
 ## 🔑 JWT
 
-| Campo           | Valor                                                | Variable de entorno         |
-| --------------- | ---------------------------------------------------- | --------------------------- |
-| Issuer          | `control-elector`                                    | `APP_JWT_ISSUER`            |
-| Secret (dev)    | `dev-only-change-in-prod-32chars-min-jwt-hmac-key`   | `APP_JWT_SECRET`            |
-| Access TTL      | `15m`                                                | `APP_JWT_ACCESS_TTL`        |
-| Refresh TTL     | `7d`                                                 | `APP_JWT_REFRESH_TTL`       |
-| Refresh pepper  | `dev-only-control-elector-refresh-pepper`            | `APP_JWT_REFRESH_PEPPER`    |
-| Algoritmo       | HS256 (Nimbus JOSE+JWT)                              | (hardcoded)                 |
+| Campo          | Valor                                              | Variable de entorno      |
+| -------------- | -------------------------------------------------- | ------------------------ |
+| Issuer         | `control-elector`                                  | `APP_JWT_ISSUER`         |
+| Secret (dev)   | `dev-only-change-in-prod-32chars-min-jwt-hmac-key` | `APP_JWT_SECRET`         |
+| Access TTL     | `15m`                                              | `APP_JWT_ACCESS_TTL`     |
+| Refresh TTL    | `7d`                                               | `APP_JWT_REFRESH_TTL`    |
+| Refresh pepper | `dev-only-control-elector-refresh-pepper`          | `APP_JWT_REFRESH_PEPPER` |
+| Algoritmo      | HS256 (Nimbus JOSE+JWT)                            | (hardcoded)              |
 
 ⚠️ El secret DEBE tener **≥ 32 caracteres**. Validación en `JwtService.java`
 al arrancar — si es más corto, la app falla con `IllegalStateException`.
@@ -78,14 +78,14 @@ token viaja en cookie httpOnly (`refresh_token`) o en el body del request.
 
 ## 🪣 S3 / RustFS (storage de evidencias)
 
-| Campo       | Valor                    | Variable de entorno       |
-| ----------- | ------------------------ | ------------------------- |
-| Endpoint    | `http://localhost:9000`  | `AWS_S3_ENDPOINT`         |
-| Region      | `us-east-1`              | `AWS_S3_REGION`           |
-| Bucket      | `electoral-evidences`    | `AWS_S3_BUCKET`           |
-| Access key  | `rustfsadmin`            | `AWS_ACCESS_KEY_ID`       |
-| Secret key  | `rustfsadmin123`         | `AWS_SECRET_ACCESS_KEY`   |
-| Path-style  | `true`                   | `AWS_S3_PATH_STYLE`       |
+| Campo      | Valor                   | Variable de entorno     |
+| ---------- | ----------------------- | ----------------------- |
+| Endpoint   | `http://localhost:9000` | `AWS_S3_ENDPOINT`       |
+| Region     | `us-east-1`             | `AWS_S3_REGION`         |
+| Bucket     | `electoral-evidences`   | `AWS_S3_BUCKET`         |
+| Access key | `rustfsadmin`           | `AWS_ACCESS_KEY_ID`     |
+| Secret key | `rustfsadmin123`        | `AWS_SECRET_ACCESS_KEY` |
+| Path-style | `true`                  | `AWS_S3_PATH_STYLE`     |
 
 `path-style=true` es necesario para RustFS/MinIO local. En AWS real o
 Supabase S3, cambiar a `false` (virtual-hosted style).
@@ -104,7 +104,7 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
     -d '{"email":"admin@control-elector.local","password":"admin12345"}' \
     | python3 -c "import sys,json;print(json.load(sys.stdin)['accessToken'])")
 
-curl -X POST http://localhost:8080/api/v1/auth/register \
+curl -X POST http://localhost:8080/api/v1/auth/register
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"email":"observer@test.local","password":"obs12345","rol":"OBSERVER"}'
@@ -115,29 +115,29 @@ Roles disponibles y su matriz de permisos:
 
 Endpoints útiles para smoke test con cada rol:
 
-| Endpoint                            | MASTER | COORDINATOR | ADMIN | OBSERVER |
-| ----------------------------------- | :----: | :---------: | :---: | :------: |
-| `GET /api/v1/auth/me`               |   ✅   |     ✅      |  ✅   |    ✅    |
-| `POST /api/v1/auth/register`        |   ✅   |     ❌      |  ❌   |    ❌    |
-| `POST /api/v1/evidencias` (upload)  |   ✅   |     ❌      |  ❌   |    ✅    |
-| `GET /api/v1/evidencias/{id}`       |   ✅   |     ✅      |  ✅   |    ✅    |
-| `GET /api/v1/menus/me`              |   ✅   |     ✅      |  ✅   |    ✅    |
+| Endpoint                           | MASTER | COORDINATOR | ADMIN | OBSERVER |
+| ---------------------------------- | :----: | :---------: | :---: | :------: |
+| `GET /api/v1/auth/me`              |   ✅   |     ✅      |  ✅   |    ✅    |
+| `POST /api/v1/auth/register`       |   ✅   |     ❌      |  ❌   |    ❌    |
+| `POST /api/v1/evidencias` (upload) |   ✅   |     ❌      |  ❌   |    ✅    |
+| `GET /api/v1/evidencias/{id}`      |   ✅   |     ✅      |  ✅   |    ✅    |
+| `GET /api/v1/menus/me`             |   ✅   |     ✅      |  ✅   |    ✅    |
 
 ---
 
 ## 🌐 URLs del stack local
 
-| Servicio            | URL                                          |
-| ------------------- | -------------------------------------------- |
-| Backend (API)       | <http://localhost:8080>                        |
-| Swagger UI          | <http://localhost:8080/swagger-ui.html>       |
-| OpenAPI JSON        | <http://localhost:8080/v3/api-docs>            |
-| OpenAPI YAML        | <http://localhost:8080/v3/api-docs.yaml>       |
-| Health check        | <http://localhost:8080/actuator/health>        |
-| Menús del usuario   | <http://localhost:8080/api/v1/menus/me>        |
-| Postgres (docker)   | `localhost:5432`                             |
-| RustFS S3 API       | <http://localhost:9000>                        |
-| RustFS console      | <http://localhost:9001>                        |
+| Servicio          | URL                                      |
+| ----------------- | ---------------------------------------- |
+| Backend (API)     | <http://localhost:8080>                  |
+| Swagger UI        | <http://localhost:8080/swagger-ui.html>  |
+| OpenAPI JSON      | <http://localhost:8080/v3/api-docs>      |
+| OpenAPI YAML      | <http://localhost:8080/v3/api-docs.yaml> |
+| Health check      | <http://localhost:8080/actuator/health>  |
+| Menús del usuario | <http://localhost:8080/api/v1/menus/me>  |
+| Postgres (docker) | `localhost:5432`                         |
+| RustFS S3 API     | <http://localhost:9000>                  |
+| RustFS console    | <http://localhost:9001>                  |
 
 ---
 
