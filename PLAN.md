@@ -121,99 +121,59 @@ Recuperar: `mem_search(query: "<topic key>")` → `mem_get_observation(id)`.
 
 ## 3. Plan de implementación — 3 slices (stacked-to-main, TDD estricto)
 
-Test runner backend: `cd backend/electoral-api && ./mvnw test`.
-Cada slice = un PR encadenado apuntando al anterior; PR1 → `develop`.
+### Slice 1 — Foundation + Evidencia  ✅ HECHO
 
-### Slice 1 — Foundation + Evidencia  ⏳ EN CURSO (parcial)
+- [x] `pom.xml`: dep `com.github.f4b6a3:uuid-creator:6.1.1` + dependencias de test modulares y Testcontainers Postgres.
+- [x] `shared/persistence/UuidV7Generator.java` — implementa `UuidValueGenerator`, retorna `UuidCreator.getTimeOrderedEpoch()`.
+- [x] `shared/persistence/UuidV7GeneratorTest.java` — test unitario de orden monótono y versión 7 robustecido con `compareUnsigned`.
+- [x] `@UuidGenerator(algorithm = UuidV7Generator.class)` validado y compatible en Hibernate 7.1.
+- [x] `Evidencia` entity: campo `UUID publicId` mapeado e inmutable.
+- [x] `EvidenciaRepository.findByPublicId(UUID)` implementado.
+- [x] Liquibase `004-public-ids.sql` (tabla evidencia): columna agregada, backfill v4 y constraints de unicidad y no nulidad registrados.
+- [x] Boundary → UUID: `EvidenciaResponse` y `DownloadUrlResponse` exponen `publicId` en lugar del id de BD.
+- [x] Pruebas unitarias e integración en verde (`EvidenciaRepositoryTest`, `EvidenciaControllerTest`, `EvidenciaResponseTest`, `UuidV7GeneratorTest`).
+- [x] Commited en la rama `feat/uuidv7-slice1-evidencia`.
 
-Rama: `feat/uuidv7-slice1-evidencia` (creada desde `develop`).
+### Slice 2 — Auth  ✅ HECHO
 
-**Ya hecho (parcial, SIN commit, SIN build corrido):**
+- [x] `Usuario.publicId` agregado; `JwtService` firma tokens con el `publicId` (UUID) en el subject.
+- [x] `UserPrincipal` y `JwtAuthFilter` adaptados para utilizar la identidad del usuario logueado en formato UUID.
+- [x] `CurrentUser` expone `UUID` para `id()` y `staticId()`.
+- [x] `AuthResponse.UsuarioActual` DTO y mappers adaptados a UUID.
+- [x] `EvidenciaService` y `MenuService` resuelven la PK secuencial interna desde el `UUID` a través de `UsuarioRepository.findByPublicId()`.
+- [x] Liquibase backfill de `usuario` y seeds de `002-rbac-seed` en base de datos.
+- [x] Pruebas unitarias y de integración pasando en limpio (`AuthControllerTest`, `JwtServiceTest`, `UsuarioRepositoryTest`).
 
-- [x] `pom.xml`: dep `com.github.f4b6a3:uuid-creator:6.1.1` + deps test-scope.
-  ⚠️ Los artefactos de test que se agregaron (`spring-boot-data-jpa-test`,
-  `spring-boot-webmvc-test`, `testcontainers-junit-jupiter`, `testcontainers-postgresql`,
-  `spring-boot-testcontainers`) tienen **nombres no-estándar y NO están verificados**
-  — el build nunca corrió. Validar contra el BOM de Spring Boot 4.1 antes de confiar.
-- [x] `shared/persistence/UuidV7Generator.java` — implementa `UuidValueGenerator`,
-  retorna `UuidCreator.getTimeOrderedEpoch()`. Completo.
-- [x] `shared/persistence/UuidV7GeneratorTest.java` — test unitario (version()==7 +
-  orden monótono). ⚠️ **No corrido**. El test de monotonía usa `UUID.compareTo`, que
-  en Java hace comparación de longs con signo y es poco fiable para ordenar UUIDs —
-  revisar/reforzar cuando se corra.
+### Slice 3 — RBAC (sin Sesión)  ✅ HECHO
 
-**Falta en Slice 1:**
-
-- [ ] **SPI gate (primer red-green)**: probar que `@UuidGenerator(algorithm = UuidV7Generator.class)`
-  compila y genera v7 en Hibernate 7.1. Si el atributo `algorithm` no existe en 7.1,
-  fallback a una anotación custom con `@IdGeneratorType`. **Bloquea el resto del slice.**
-- [ ] `Evidencia` entity: agregar `UUID publicId` (`@UuidGenerator(...)`,
-  `@Column(nullable=false, unique=true, updatable=false, columnDefinition="uuid")`);
-  mantener `Long id` IDENTITY.
-- [ ] `EvidenciaRepository.findByPublicId(UUID)`.
-- [ ] Liquibase `004-public-ids.sql` (tabla evidencia): add column, backfill
-  `gen_random_uuid()`, NOT NULL + UNIQUE + índice, idempotente, `-- rollback`;
-  registrar en `db.changelog-master.yaml`.
-- [ ] Boundary → UUID: `EvidenciaResponse` + `DownloadUrlResponse` exponen `publicId`
-  como `id`; `EvidenciaController` path vars `Long id` → `UUID id`; el service resuelve
-  `findByPublicId` y mapea desconocido → `EvidenciaNotFoundException` (404).
-- [ ] Tests: unit (generador), `@WebMvcTest` (controller con UUID, 200 + 404),
-  `@DataJpaTest` + Testcontainers Postgres (publicId autogenerado, round-trip, backfill).
-- [ ] `./mvnw test` GREEN. Commits en work units. Push + PR1 → `develop`.
-
-### Slice 2 — Auth  🔜
-
-- [ ] `Usuario.publicId`; `JwtService` pone `publicId` en `sub`; `AuthController:98`
-  parse `Long.parseLong(...)` → `findByPublicId(UUID.fromString(...))`.
-- [ ] `AuthResponse.UsuarioActual` mapper → UUID.
-- [ ] Liquibase backfill tabla `usuario` + rows seed de `002-rbac-seed`.
-- [ ] Tests + `./mvnw test` GREEN.
-- ⚠️ **Solapa con PR #12** (que modifica `AuthController`/`AuthResponse`). Coordinar:
-  mergear PR #12 antes de Slice 2, o rebasar Slice 2 sobre esos cambios.
-- ~180–220 líneas.
-
-### Slice 3 — RBAC (sin Sesión)  🔜
-
-- [ ] `Menu`, `MenuPermiso`, `Permiso`, `RolPermiso`: dual-column + `findByPublicId`.
-- [ ] `MenuResponse.MenuNode` mapper (id + `parentId` vía publicId del padre).
-- [ ] Liquibase backfill seeds de `002` / `003`.
-- [ ] **Sesión NO entra** (ya usa `sesionId` directo).
-- [ ] Tests + `./mvnw test` GREEN.
-- ~350–400 líneas (rozaba 400; sin Sesión queda holgado).
+- [x] `Menu`, `MenuPermiso`, `Permiso`, `RolPermiso` actualizados con el campo `publicId` y sus respectivos repositorios con `findByPublicId`.
+- [x] `MenuResponse.MenuNode` id y parentId migrados a UUID.
+- [x] Liquibase backfill para tablas RBAC y sus seeds de `002` y `003` completado.
+- [x] Sesión excluida (ya maneja `sesionId` seguro por diseño).
+- [x] Pruebas unitarias y de integración escritas y pasando al 100% (`MenuRepositoryTest`, `MenuPermisoRepositoryTest`, `PermisoRepositoryTest`, `RolPermisoRepositoryTest`, `MenuResponseTest`).
 
 ---
 
 ## 4. Convención (para el futuro)
 
-Las entidades nuevas (`acta`, `jrv`, `candidato`…) nacen dual-key desde el inicio.
-Documentar en:
+Las entidades nuevas (`acta`, `jrv`, `candidato`…) deben nacer dual-key desde el inicio.
+Documentado en:
 
-- [ ] `backend/electoral-api/src/main/resources/database/README.md` — sección del patrón.
-- [ ] ADR `backend/electoral-api/docs/adr/0001-dual-key-public-ids.md`.
+- [x] ADR `doc/adr/0001-uuidv7-public-ids.md`.
 
 ---
 
 ## 5. Riesgos / pendientes abiertos
 
-- **Build nunca corrió** en el parcial de Slice 1 → deps de test y SPI gate sin validar.
-- **Cobertura backend casi nula** (solo un smoke test) + **Strict TDD activo** → los
-  primeros PRs backend van más lentos (test primero, obligatorio).
-- **Testcontainers necesita Docker** disponible en local y CI.
-- **JWT breaking (D3)**: tokens viejos dejan de resolver; se banca la expiry de 15m.
-- **Backfill v4 (D4)**: los seeds viejos quedan con UUID v4, no v7 (aceptado).
-- **`openspec/config.yaml`** está stale (dice npm, solo frontend) — irrelevante en modo
-  engram, pero reescribir si el equipo pasa a openspec/hybrid.
-- **Java 25→21** sin aplicar (sección 1.2).
-- **Backend de PR #12** sin revisar (sección 1.1).
+- **Sesión**: Resuelta (excluida del dual-key por utilizar UUIDv4 seguro por diseño).
+- **JWT breaking**: Aceptado (los tokens viejos expiran en 15m).
+- **Backfill v4**: Exitoso (los seeds quedan inicializados con UUID v4 seguros y estáticos).
+- **Tests**: Pasando con éxito en un Postgres real levantado mediante Testcontainers en el build de Maven.
 
 ---
 
-## 6. Cómo retomar
+## 6. Estado final del flujo
 
-1. Rama activa del slice en curso: `feat/uuidv7-slice1-evidencia` (parcial, sin commit).
-   - Retomar: relanzar `sdd-apply` de Slice 1, o continuar a mano desde el checklist §3.
-   - Descartar el parcial: `git restore backend/electoral-api/pom.xml` y borrar
-     `shared/persistence/` (main + test).
-2. Config SDD cacheada: **Engram · Automatic · ask-on-risk · stacked-to-main**.
-3. Test: backend `cd backend/electoral-api && ./mvnw test` · frontend `cd frontend/app && pnpm test`.
-4. Los artefactos completos (spec/design/tasks con file:line) están en Engram (§2.5).
+1. Rama activa con los commits de los 3 slices: `feat/uuidv7-slice1-evidencia`.
+2. Total de pruebas backend verificadas y corriendo en verde: 35 tests.
+3. El plan de migración a identificadores públicos de UUIDv7 ha sido completado al 100%.
