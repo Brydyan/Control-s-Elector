@@ -6,70 +6,70 @@
   <title>MASTER Desktop — Detalle Acta + Anular</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef0f5; min-height: 100vh; display: flex; }
-    .sidebar { width: 240px; min-height: 100vh; background: #1a1a2e; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #E2E8F0; min-height: 100vh; display: flex; }
+    .sidebar { width: 240px; min-height: 100vh; background: #334155; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
     .sidebar-brand { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
-    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #7b2ff7, #5260ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
     .sidebar-brand-name { font-size: 15px; font-weight: 800; }
     .sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
     .sidebar-nav { flex: 1; padding: 12px; }
     .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 4px; }
     .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer; margin-bottom: 1px; }
-    .nav-item.active { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; font-weight: 600; }
+    .nav-item.active { background: linear-gradient(135deg, #0F172A, #334155); color: white; font-weight: 600; }
     .nav-icon { font-size: 15px; width: 20px; text-align: center; }
     .nav-badge { margin-left: auto; background: #eb445a; color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; }
     .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
     .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.06); border-radius: 10px; }
-    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #7b2ff7, #5260ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: white; }
+    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: white; }
     .user-name { font-size: 13px; font-weight: 600; color: white; }
     .user-rol { font-size: 11px; color: rgba(255,255,255,0.4); }
     .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
     .topbar { background: white; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
     .topbar-left { display: flex; align-items: center; gap: 16px; }
-    .back-btn { background: #f4f5f8; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; color: #555; cursor: pointer; font-weight: 600; }
-    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #1a1a2e; }
-    .topbar-title p { font-size: 12px; color: #888; margin-top: 1px; }
+    .back-btn { background: #f4f5f8; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; color: #475569; cursor: pointer; font-weight: 600; }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #334550; }
+    .topbar-title p { font-size: 12px; color: #4C6589; margin-top: 1px; }
     .topbar-right { display: flex; align-items: center; gap: 12px; }
     .btn-anular-top { background: #eb445a; color: white; border: none; border-radius: 10px; padding: 10px 20px; font-size: 14px; font-weight: 800; cursor: pointer; }
-    .master-badge { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+    .master-badge { background: linear-gradient(135deg, #0F172A, #334155); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; }
     .content { padding: 28px 32px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; position: relative; }
     /* Status banner */
     .status-banner { background: #e8f5e9; border-radius: 14px; padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; }
     .status-left { display: flex; align-items: center; gap: 12px; }
     .status-icon { font-size: 24px; }
     .status-title { font-size: 16px; font-weight: 800; color: #2dd36f; }
-    .status-sub { font-size: 13px; color: #888; margin-top: 2px; }
+    .status-sub { font-size: 13px; color: #4C6589; margin-top: 2px; }
     .badge-aprobada { background: #2dd36f; color: white; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 800; }
     /* Two-column layout */
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    .card-title { font-size: 13px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
+    .card-title { font-size: 13px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 14px; }
     .info-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f4f5f8; }
     .info-row:last-child { border-bottom: none; }
-    .info-label { font-size: 12px; color: #888; width: 120px; flex-shrink: 0; }
-    .info-value { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+    .info-label { font-size: 12px; color: #4C6589; width: 120px; flex-shrink: 0; }
+    .info-value { font-size: 13px; font-weight: 600; color: #334550; }
     /* Image */
     .img-placeholder { background: #f4f5f8; border-radius: 12px; height: 160px; display: flex; align-items: center; justify-content: center; font-size: 48px; margin-bottom: 10px; }
-    .img-meta { font-size: 12px; color: #888; line-height: 1.7; }
+    .img-meta { font-size: 12px; color: #4C6589; line-height: 1.7; }
     /* Votes table */
-    .vote-table-header { display: grid; grid-template-columns: 40px 1fr 80px 80px 100px; gap: 8px; padding: 10px 0; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; border-bottom: 2px solid #f0f0f0; }
+    .vote-table-header { display: grid; grid-template-columns: 40px 1fr 80px 80px 100px; gap: 8px; padding: 10px 0; font-size: 11px; font-weight: 700; color: #4C6589; text-transform: uppercase; border-bottom: 2px solid #f0f0f0; }
     .vote-row { display: grid; grid-template-columns: 40px 1fr 80px 80px 100px; gap: 8px; padding: 10px 0; border-bottom: 1px solid #f4f5f8; align-items: center; font-size: 13px; }
     .vote-row:last-child { border-bottom: none; }
     .rank { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
     .r1 { background: #fff3e0; color: #ffa600; }
-    .r2 { background: #f4f5f8; color: #888; }
+    .r2 { background: #f4f5f8; color: #4C6589; }
     .r3 { background: #fdecea; color: #eb445a; }
-    .r-n { background: #f4f5f8; color: #aaa; }
-    .cand-name { font-weight: 600; color: #1a1a2e; }
-    .cand-partido { font-size: 11px; color: #888; }
-    .sigla { background: #f4f5f8; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #555; }
-    .votes-val { font-weight: 800; color: #1a1a2e; text-align: right; }
+    .r-n { background: #f4f5f8; color: #4C6589; }
+    .cand-name { font-weight: 600; color: #334550; }
+    .cand-partido { font-size: 11px; color: #4C6589; }
+    .sigla { background: #f4f5f8; padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; color: #475569; }
+    .votes-val { font-weight: 800; color: #334550; text-align: right; }
     .pct-bar-wrap { background: #f4f5f8; border-radius: 4px; height: 6px; overflow: hidden; margin-top: 4px; }
-    .pct-bar-fill { height: 100%; background: linear-gradient(90deg, #7b2ff7, #5260ff); border-radius: 4px; }
+    .pct-bar-fill { height: 100%; background: linear-gradient(90deg, #0F172A, #334155); border-radius: 4px; }
     .totals-row { background: #f8f9ff; border-radius: 10px; padding: 10px 14px; margin-top: 8px; }
     .total-line { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
-    .total-line-main { font-weight: 800; color: #1a1a2e; border-top: 1px solid #eee; margin-top: 4px; padding-top: 8px; }
+    .total-line-main { font-weight: 800; color: #334550; border-top: 1px solid #eee; margin-top: 4px; padding-top: 8px; }
     .checksum { background: #e8f5e9; border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #2dd36f; margin-top: 8px; font-weight: 600; }
     /* Anular modal overlay */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
@@ -77,15 +77,15 @@
     .modal-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
     .modal-icon { font-size: 36px; }
     .modal-title { font-size: 22px; font-weight: 800; color: #eb445a; }
-    .modal-sub { font-size: 13px; color: #888; margin-top: 4px; }
+    .modal-sub { font-size: 13px; color: #4C6589; margin-top: 4px; }
     .modal-warning { background: #fdecea; border-radius: 12px; padding: 14px 18px; font-size: 13px; color: #eb445a; line-height: 1.8; margin-bottom: 20px; }
     .modal-warning strong { font-size: 14px; display: block; margin-bottom: 6px; }
     .modal-warning li { margin-left: 16px; }
-    label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; }
+    label { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 8px; }
     .textarea-wrap { border: 2px solid #e8e8e8; border-radius: 12px; padding: 12px 16px; background: #fafafa; margin-bottom: 20px; }
-    .textarea-wrap textarea { border: none; background: transparent; font-size: 14px; color: #333; outline: none; width: 100%; resize: none; height: 80px; font-family: inherit; }
+    .textarea-wrap textarea { border: none; background: transparent; font-size: 14px; color: #334550; outline: none; width: 100%; resize: none; height: 80px; font-family: inherit; }
     .modal-actions { display: flex; gap: 12px; }
-    .btn-cancel { flex: 1; padding: 14px; background: #f4f5f8; color: #555; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .btn-cancel { flex: 1; padding: 14px; background: #f4f5f8; color: #475569; border: none; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
     .btn-confirm { flex: 2; padding: 14px; background: #eb445a; color: white; border: none; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; }
   </style>
 </head>
@@ -103,13 +103,16 @@
     <div class="nav-item"><span class="nav-icon">📊</span> Resumen General</div>
     <div class="nav-item"><span class="nav-icon">📈</span> Resultados por Cargo</div>
     <div class="nav-item"><span class="nav-icon">🗺️</span> Progreso por Cantón</div>
-    <div class="nav-section-label">Coordinación</div>
+    <div class="nav-item"><span class="nav-icon">📑</span> Reportes y Estadísticas</div>
+    <div class="nav-section-label">Gestión Operativa</div>
     <div class="nav-item active"><span class="nav-icon">📋</span> Lista de Actas <span class="nav-badge">12</span></div>
     <div class="nav-item"><span class="nav-icon">⚠️</span> Disputas Activas <span class="nav-badge">3</span></div>
+    <div class="nav-item"><span class="nav-icon">📝</span> Correcciones</div>
     <div class="nav-section-label">Administración</div>
     <div class="nav-item"><span class="nav-icon">⚙️</span> Configuración Electoral</div>
     <div class="nav-item"><span class="nav-icon">👥</span> Gestión de Usuarios</div>
     <div class="nav-item"><span class="nav-icon">🔑</span> Sesiones Activas <span class="nav-badge" style="background:#ffa600;">1</span></div>
+    <div class="nav-item"><span class="nav-icon">🧾</span> Logs</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-card">
@@ -186,32 +189,32 @@
         <div><div class="cand-name">Carlos Mendoza</div><div class="cand-partido">Partido Movimiento</div></div>
         <div><span class="sigla">PM</span></div>
         <div class="votes-val">89</div>
-        <div><div style="font-size:12px;font-weight:700;color:#7b2ff7;">35.6%</div><div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:89%;"></div></div></div>
+        <div><div style="font-size:12px;font-weight:700;color:#475569;">35.6%</div><div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:89%;"></div></div></div>
       </div>
       <div class="vote-row">
         <div class="rank r2">2°</div>
         <div><div class="cand-name">Patricia Suárez</div><div class="cand-partido">Partido Social Cristiano</div></div>
         <div><span class="sigla">PSC</span></div>
         <div class="votes-val">72</div>
-        <div><div style="font-size:12px;font-weight:700;color:#7b2ff7;">28.8%</div><div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:72%;"></div></div></div>
+        <div><div style="font-size:12px;font-weight:700;color:#475569;">28.8%</div><div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:72%;"></div></div></div>
       </div>
       <div class="vote-row">
         <div class="rank r3">3°</div>
         <div><div class="cand-name">Roberto Vera</div><div class="cand-partido">Izquierda Democrática</div></div>
         <div><span class="sigla">ID</span></div>
         <div class="votes-val">41</div>
-        <div><div style="font-size:12px;font-weight:700;color:#7b2ff7;">16.4%</div><div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:41%;"></div></div></div>
+        <div><div style="font-size:12px;font-weight:700;color:#475569;">16.4%</div><div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:41%;"></div></div></div>
       </div>
       <div class="vote-row">
         <div class="rank r-n">4°</div>
         <div><div class="cand-name">Diana Ramos</div><div class="cand-partido">Revolución Ciudadana</div></div>
         <div><span class="sigla">RC</span></div>
         <div class="votes-val">28</div>
-        <div><div style="font-size:12px;font-weight:700;color:#7b2ff7;">11.2%</div><div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:28%;"></div></div></div>
+        <div><div style="font-size:12px;font-weight:700;color:#475569;">11.2%</div><div class="pct-bar-wrap"><div class="pct-bar-fill" style="width:28%;"></div></div></div>
       </div>
       <div class="totals-row">
-        <div class="total-line"><span style="color:#888;">Votos Nulos</span><span>12</span></div>
-        <div class="total-line"><span style="color:#888;">Votos Blancos</span><span>8</span></div>
+        <div class="total-line"><span style="color:#4C6589;">Votos Nulos</span><span>12</span></div>
+        <div class="total-line"><span style="color:#4C6589;">Votos Blancos</span><span>8</span></div>
         <div class="total-line total-line-main"><span>Total Sufragantes</span><span>250</span></div>
       </div>
       <div class="checksum">✅ Validación: 89 + 72 + 41 + 28 + 12 + 8 = 250 — Suma correcta</div>

@@ -6,25 +6,25 @@
   <title>MASTER Mobile — Sesiones Activas</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #1a1a2e; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { background: #334155; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
-    .status-bar { background: #1a1a2e; padding: 14px 24px 8px; display: flex; justify-content: space-between; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
-    .toolbar { background: linear-gradient(135deg, #7b2ff7, #3880ff); padding: 12px 20px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .status-bar { background: #334155; padding: 14px 24px 8px; display: flex; justify-content: space-between; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
+    .toolbar { background: linear-gradient(135deg, #0F172A, #3880ff); padding: 12px 20px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .toolbar-left h1 { font-size: 17px; font-weight: 800; color: white; }
     .toolbar-left p { font-size: 11px; color: rgba(255,255,255,0.7); }
     .revoke-all-btn { background: rgba(235,68,90,0.3); border: 1px solid rgba(235,68,90,0.5); color: white; border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 700; cursor: pointer; }
     /* Filter */
     .filter-chips { display: flex; gap: 6px; padding: 8px 12px; background: white; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; }
     .chip { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
-    .chip-active { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; }
-    .chip-default { background: #f4f5f8; color: #555; }
+    .chip-active { background: linear-gradient(135deg, #0F172A, #334155); color: white; }
+    .chip-default { background: #f4f5f8; color: #475569; }
     .chip-red { background: #fdecea; color: #eb445a; }
     .scroll { flex: 1; overflow-y: auto; padding: 10px 12px; }
     /* Summary */
     .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
     .sum-card { background: white; border-radius: 14px; padding: 12px; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
     .sum-val { font-size: 24px; font-weight: 900; }
-    .sum-label { font-size: 10px; color: #888; font-weight: 600; margin-top: 2px; }
+    .sum-label { font-size: 10px; color: #4C6589; font-weight: 600; margin-top: 2px; }
     /* Session card */
     .session-card { background: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
     .session-card.suspicious { border: 2px solid #eb445a; }
@@ -34,35 +34,35 @@
     .av-green { background: linear-gradient(135deg, #2dd36f, #1ba855); }
     .av-red { background: #eb445a; }
     .session-info { flex: 1; }
-    .session-name { font-size: 14px; font-weight: 700; color: #1a1a2e; }
-    .session-email { font-size: 11px; color: #888; }
+    .session-name { font-size: 14px; font-weight: 700; color: #334550; }
+    .session-email { font-size: 11px; color: #4C6589; }
     .rol-badge { padding: 3px 8px; border-radius: 20px; font-size: 10px; font-weight: 800; }
     .rol-observer { background: #e8edff; color: #3880ff; }
     .rol-coordinator { background: #e8f5e9; color: #2dd36f; }
     .session-meta { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-    .meta-chip { background: #f4f5f8; padding: 3px 8px; border-radius: 8px; font-size: 11px; color: #555; }
+    .meta-chip { background: #f4f5f8; padding: 3px 8px; border-radius: 8px; font-size: 11px; color: #475569; }
     .meta-chip-warn { background: #fdecea; color: #eb445a; }
     .meta-chip-ok { background: #e8f5e9; color: #2dd36f; }
     /* Token info */
-    .token-info { background: #f8f9ff; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; font-size: 11px; color: #555; line-height: 1.7; }
-    .token-info code { font-size: 10px; color: #7b2ff7; background: #f0e6ff; padding: 1px 4px; border-radius: 4px; }
+    .token-info { background: #f8f9ff; border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; font-size: 11px; color: #475569; line-height: 1.7; }
+    .token-info code { font-size: 10px; color: #475569; background: #E2E8F0; padding: 1px 4px; border-radius: 4px; }
     /* Actions */
     .session-actions { display: flex; gap: 6px; }
     .action-btn { flex: 1; padding: 8px; border-radius: 10px; font-size: 12px; font-weight: 700; text-align: center; cursor: pointer; border: none; }
-    .btn-view { background: #f4f5f8; color: #555; }
+    .btn-view { background: #f4f5f8; color: #475569; }
     .btn-revoke { background: #fdecea; color: #eb445a; }
     /* Alert banner */
     .alert-banner { background: #fdecea; border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; display: flex; gap: 10px; align-items: flex-start; }
     .alert-banner-icon { font-size: 20px; flex-shrink: 0; }
     .alert-banner-text { font-size: 12px; color: #c0392b; line-height: 1.6; }
     .alert-banner-text strong { display: block; font-size: 13px; }
-    .annotation { background: #f0e6ff; border-left: 3px solid #7b2ff7; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #555; line-height: 1.6; margin: 8px 0; }
-    .annotation b { color: #7b2ff7; }
+    .annotation { background: #E2E8F0; border-left: 3px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #475569; line-height: 1.6; margin: 8px 0; }
+    .annotation b { color: #475569; }
     /* Bottom nav */
     .bottom-nav { background: white; border-top: 1px solid #eee; display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 0 4px; flex-shrink: 0; }
     .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .nav-icon { font-size: 20px; }
-    .nav-label { font-size: 9px; font-weight: 600; color: #888; }
+    .nav-label { font-size: 9px; font-weight: 600; color: #4C6589; }
   </style>
 </head>
 <body>
@@ -190,7 +190,7 @@
     <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">Actas</div></div>
     <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Config</div></div>
     <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Usuarios</div></div>
-    <div class="nav-item"><div class="nav-icon">🔑</div><div class="nav-label" style="color:#7b2ff7;">Sesiones</div></div>
+    <div class="nav-item"><div class="nav-icon">🔑</div><div class="nav-label" style="color:#475569;">Sesiones</div></div>
   </div>
 </div>
 </body>

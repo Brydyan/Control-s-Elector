@@ -8,7 +8,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #1a1a2e;
+      background: #E2E8F0;
       min-height: 100vh;
       display: flex;
       align-items: flex-start;
@@ -25,7 +25,7 @@
     }
     /* Toolbar */
     .toolbar {
-      background: linear-gradient(135deg, #3880ff 0%, #5260ff 100%);
+      background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
       padding: 52px 20px 16px;
       display: flex;
       align-items: center;
@@ -77,8 +77,8 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
     .role-icon { font-size: 28px; }
-    .role-info h3 { font-size: 15px; font-weight: 700; color: #333; }
-    .role-info p { font-size: 12px; color: #888; margin-top: 2px; }
+    .role-info h3 { font-size: 15px; font-weight: 700; color: #334550; }
+    .role-info p { font-size: 12px; color: #4C6589; margin-top: 2px; }
     .badge-readonly {
       margin-left: auto;
       background: #fff3e0;
@@ -92,7 +92,7 @@
     .section-title {
       font-size: 13px;
       font-weight: 700;
-      color: #666;
+      color: #475569;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin: 16px 0 10px;
@@ -111,9 +111,9 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
     .stat-card.full { grid-column: 1 / -1; }
-    .stat-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .stat-label { font-size: 11px; color: #4C6589; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
     .stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
-    .stat-sub { font-size: 11px; color: #999; margin-top: 4px; }
+    .stat-sub { font-size: 11px; color: #4C6589; margin-top: 4px; }
     .stat-bar {
       height: 4px;
       background: #eee;
@@ -147,7 +147,7 @@
       align-items: center;
       margin-bottom: 12px;
     }
-    .progress-title { font-size: 14px; font-weight: 700; color: #333; }
+    .progress-title { font-size: 14px; font-weight: 700; color: #334550; }
     .progress-pct { font-size: 22px; font-weight: 800; color: #2dd36f; }
     .progress-bar-big {
       height: 10px;
@@ -161,7 +161,7 @@
       background: linear-gradient(90deg, #2dd36f, #0cd16a);
       border-radius: 5px;
     }
-    .progress-meta { display: flex; justify-content: space-between; font-size: 11px; color: #888; }
+    .progress-meta { display: flex; justify-content: space-between; font-size: 11px; color: #4C6589; }
     /* Realtime indicator */
     .realtime-dot {
       display: inline-block;
@@ -175,7 +175,7 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(1.3); }
     }
-    .realtime-label { font-size: 11px; color: #666; }
+    .realtime-label { font-size: 11px; color: #475569; }
     /* Nav tabs */
     .nav-tabs {
       background: white;
@@ -190,11 +190,11 @@
       align-items: center;
       gap: 4px;
       font-size: 10px;
-      color: #aaa;
+      color: #4C6589;
       padding: 8px 0;
       cursor: pointer;
     }
-    .nav-tab.active { color: #3880ff; }
+    .nav-tab.active { color: #475569; }
     .nav-tab-icon { font-size: 22px; }
     /* Annotation panel */
     .annotation {
@@ -208,10 +208,10 @@
       align-self: flex-start;
       margin-top: 60px;
     }
-    .annotation h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #333; border-bottom: 2px solid #3880ff; padding-bottom: 8px; }
+    .annotation h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #334550; border-bottom: 2px solid #475569; padding-bottom: 8px; }
     .annotation-section { margin-bottom: 14px; }
-    .annotation-section h4 { font-size: 12px; font-weight: 700; color: #3880ff; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
-    .annotation-section ul { padding-left: 16px; color: #555; }
+    .annotation-section h4 { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .annotation-section ul { padding-left: 16px; color: #475569; }
     .annotation-section li { margin-bottom: 3px; }
     code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 11px; }
   </style>
@@ -255,7 +255,7 @@
       <div class="progress-header">
         <div>
           <div class="progress-title">Progreso General</div>
-          <div style="font-size:12px; color:#888; margin-top:2px;">Actas registradas / total JRVs</div>
+          <div style="font-size:12px; color:#4C6589; margin-top:2px;">Actas registradas / total JRVs</div>
         </div>
         <div class="progress-pct">68%</div>
       </div>
@@ -301,7 +301,7 @@
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <div>
             <div class="stat-label">Total Sufragantes Registrados</div>
-            <div class="stat-value" style="font-size:32px; color:#333;">87,340</div>
+            <div class="stat-value" style="font-size:32px; color:#334550;">87,340</div>
             <div class="stat-sub">De ~128,000 padron provincial estimado</div>
           </div>
           <div style="font-size:36px;">🗳️</div>

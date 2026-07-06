@@ -8,7 +8,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #eef0f5;
+      background: #E2E8F0;
       min-height: 100vh;
       display: flex;
     }
@@ -17,7 +17,7 @@
     .sidebar {
       width: 240px;
       min-height: 100vh;
-      background: #1a1a2e;
+      background: #334155;
       color: white;
       display: flex;
       flex-direction: column;
@@ -30,7 +30,7 @@
     .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
     .sidebar-logo {
       width: 38px; height: 38px;
-      background: linear-gradient(135deg, #3880ff, #5260ff);
+      background: linear-gradient(135deg, #0F172A, #334155);
       border-radius: 10px;
       display: flex; align-items: center; justify-content: center;
       font-size: 18px;
@@ -60,7 +60,7 @@
       transition: all 0.15s;
     }
     .nav-item:hover { background: rgba(255,255,255,0.07); color: white; }
-    .nav-item.active { background: linear-gradient(135deg, #3880ff, #5260ff); color: white; font-weight: 600; }
+    .nav-item.active { background: linear-gradient(135deg, #0F172A, #334155); color: white; font-weight: 600; }
     .nav-icon { font-size: 16px; width: 20px; text-align: center; }
     .sidebar-footer {
       padding: 16px;
@@ -77,7 +77,7 @@
     }
     .user-avatar {
       width: 34px; height: 34px;
-      background: linear-gradient(135deg, #3880ff, #5260ff);
+      background: linear-gradient(135deg, #0F172A, #334155);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       font-weight: 800; font-size: 13px; color: white;
@@ -105,8 +105,8 @@
       border-bottom: 1px solid #e8e8e8;
       box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
-    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #1a1a2e; }
-    .topbar-title p { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #334550; }
+    .topbar-title p { font-size: 12px; color: #4C6589; margin-top: 1px; }
     .topbar-right { display: flex; align-items: center; gap: 16px; }
     .realtime-pill {
       display: flex;
@@ -155,7 +155,7 @@
 
     /* Progress banner */
     .progress-banner {
-      background: linear-gradient(135deg, #3880ff 0%, #5260ff 100%);
+      background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
       border-radius: 18px;
       padding: 28px 32px;
       color: white;
@@ -197,15 +197,15 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
       border-top: 3px solid transparent;
     }
-    .stat-card-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .stat-card-label { font-size: 11px; color: #4C6589; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
     .stat-card-value { font-size: 32px; font-weight: 900; line-height: 1; }
-    .stat-card-sub { font-size: 11px; color: #aaa; margin-top: 4px; }
-    .c-total   { border-color: #1a1a2e; }
+    .stat-card-sub { font-size: 11px; color: #4C6589; margin-top: 4px; }
+    .c-total   { border-color: #334550; }
     .c-enviada { border-color: #3880ff; }
     .c-disputa { border-color: #ffa600; }
     .c-aprobada{ border-color: #2dd36f; }
     .c-anulada { border-color: #eb445a; }
-    .v-total   { color: #1a1a2e; }
+    .v-total   { color: #334550; }
     .v-enviada { color: #3880ff; }
     .v-disputa { color: #ffa600; }
     .v-aprobada{ color: #2dd36f; }
@@ -226,7 +226,7 @@
     .card-title {
       font-size: 14px;
       font-weight: 800;
-      color: #1a1a2e;
+      color: #334550;
       margin-bottom: 18px;
       display: flex;
       align-items: center;
@@ -240,8 +240,8 @@
       font-size: 13px;
       margin-bottom: 6px;
     }
-    .canton-name { font-weight: 700; color: #333; }
-    .canton-meta { color: #888; font-size: 12px; }
+    .canton-name { font-weight: 700; color: #334550; }
+    .canton-meta { color: #4C6589; font-size: 12px; }
     .canton-pct { font-weight: 800; }
     .prog-bar { height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
     .prog-fill { height: 100%; border-radius: 4px; }
@@ -258,8 +258,8 @@
       font-size: 13px;
     }
     .acta-row:last-child { border-bottom: none; }
-    .acta-jrv { font-weight: 700; color: #333; }
-    .acta-cargo { font-size: 11px; color: #888; }
+    .acta-jrv { font-weight: 700; color: #334550; }
+    .acta-cargo { font-size: 11px; color: #4C6589; }
     .badge {
       padding: 3px 9px;
       border-radius: 20px;
@@ -269,8 +269,8 @@
     .badge-enviada  { background: #e8edff; color: #3880ff; }
     .badge-aprobada { background: #e8f5e9; color: #2dd36f; }
     .badge-disputa  { background: #fff3e0; color: #ffa600; }
-    .badge-corregida{ background: #ede8ff; color: #7b61ff; }
-    .acta-time { font-size: 11px; color: #aaa; }
+    .badge-corregida{ background: #ede8ff; color: #475569; }
+    .acta-time { font-size: 11px; color: #4C6589; }
   </style>
 </head>
 <body>
@@ -298,18 +298,10 @@
     <div class="nav-item">
       <span class="nav-icon">🗺️</span> Progreso por Cantón
     </div>
+
+    <div class="nav-section-label" style="margin-top:24px;">Gestión Operativa</div>
     <div class="nav-item">
       <span class="nav-icon">📋</span> Lista de Actas
-    </div>
-
-    <div class="nav-section-label" style="margin-top:24px;">Sistema</div>
-    <div class="nav-item" style="color:rgba(255,255,255,0.25); cursor:not-allowed;">
-      <span class="nav-icon">⚙️</span> Configuración
-      <span style="margin-left:auto; font-size:10px; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:6px;">Solo MASTER</span>
-    </div>
-    <div class="nav-item" style="color:rgba(255,255,255,0.25); cursor:not-allowed;">
-      <span class="nav-icon">👥</span> Usuarios
-      <span style="margin-left:auto; font-size:10px; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:6px;">Solo MASTER</span>
     </div>
   </nav>
 

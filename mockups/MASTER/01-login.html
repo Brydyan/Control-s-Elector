@@ -6,32 +6,32 @@
   <title>MASTER Mobile — Login</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #1a1a2e; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { background: #334155; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     .phone { width: 390px; min-height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.6); position: relative; display: flex; flex-direction: column; }
-    .status-bar { background: #1a1a2e; padding: 14px 24px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
-    .hero { background: linear-gradient(160deg, #7b2ff7 0%, #3880ff 60%, #1a1a2e 100%); padding: 48px 32px 40px; text-align: center; color: white; }
+    .status-bar { background: #334155; padding: 14px 24px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
+    .hero { background: linear-gradient(160deg, #0F172A 0%, #3880ff 60%, #334155 100%); padding: 48px 32px 40px; text-align: center; color: white; }
     .hero-logo { width: 72px; height: 72px; background: rgba(255,255,255,0.15); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 16px; }
     .hero h1 { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
     .hero p { font-size: 13px; opacity: 0.75; line-height: 1.5; }
     .master-badge { display: inline-block; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin-top: 12px; }
     .form-area { flex: 1; background: white; border-radius: 28px 28px 0 0; padding: 32px 28px; margin-top: -16px; }
-    .form-title { font-size: 20px; font-weight: 800; color: #1a1a2e; margin-bottom: 4px; }
-    .form-sub { font-size: 13px; color: #888; margin-bottom: 28px; }
+    .form-title { font-size: 20px; font-weight: 800; color: #334550; margin-bottom: 4px; }
+    .form-sub { font-size: 13px; color: #4C6589; margin-bottom: 28px; }
     .form-group { margin-bottom: 18px; }
-    label { display: block; font-size: 11px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+    label { display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
     .input-wrap { display: flex; align-items: center; gap: 10px; border: 2px solid #e8e8e8; border-radius: 14px; padding: 14px 16px; background: #fafafa; }
-    .input-wrap.active { border-color: #7b2ff7; background: white; }
+    .input-wrap.active { border-color: #334155; background: white; }
     .input-icon { font-size: 16px; }
-    .input-wrap input { border: none; outline: none; font-size: 15px; color: #333; background: transparent; width: 100%; }
-    .btn-login { width: 100%; padding: 16px; background: linear-gradient(135deg, #7b2ff7, #3880ff); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; letter-spacing: 0.3px; }
+    .input-wrap input { border: none; outline: none; font-size: 15px; color: #334550; background: transparent; width: 100%; }
+    .btn-login { width: 100%; padding: 16px; background: linear-gradient(135deg, #0F172A, #3880ff); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; letter-spacing: 0.3px; }
     .rol-chips { display: flex; gap: 8px; margin-top: 20px; }
     .chip { flex: 1; padding: 8px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 700; }
-    .chip-master { background: linear-gradient(135deg, #7b2ff7, #3880ff); color: white; }
-    .chip-other { background: #f4f5f8; color: #aaa; }
-    .rol-note { font-size: 11px; color: #bbb; text-align: center; margin-top: 10px; }
+    .chip-master { background: linear-gradient(135deg, #0F172A, #3880ff); color: white; }
+    .chip-other { background: #f4f5f8; color: #4C6589; }
+    .rol-note { font-size: 11px; color: #4C6589; text-align: center; margin-top: 10px; }
     /* annotation */
-    .annotation { margin: 16px 28px 0; background: #f0e6ff; border-left: 3px solid #7b2ff7; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #555; line-height: 1.6; }
-    .annotation b { color: #7b2ff7; }
+    .annotation { margin: 16px 28px 0; background: #E2E8F0; border-left: 3px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #475569; line-height: 1.6; }
+    .annotation b { color: #475569; }
   </style>
 </head>
 <body>

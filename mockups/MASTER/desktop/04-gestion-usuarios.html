@@ -6,47 +6,47 @@
   <title>MASTER Desktop — Gestión de Usuarios</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #eef0f5; min-height: 100vh; display: flex; }
-    .sidebar { width: 240px; min-height: 100vh; background: #1a1a2e; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #E2E8F0; min-height: 100vh; display: flex; }
+    .sidebar { width: 240px; min-height: 100vh; background: #334155; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
     .sidebar-brand { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
-    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #7b2ff7, #5260ff); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
     .sidebar-brand-name { font-size: 15px; font-weight: 800; }
     .sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
     .sidebar-nav { flex: 1; padding: 12px; }
     .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 4px; }
     .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer; margin-bottom: 1px; }
-    .nav-item.active { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; font-weight: 600; }
+    .nav-item.active { background: linear-gradient(135deg, #0F172A, #334155); color: white; font-weight: 600; }
     .nav-icon { font-size: 15px; width: 20px; text-align: center; }
     .nav-badge { margin-left: auto; background: #eb445a; color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; }
     .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
     .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.06); border-radius: 10px; }
-    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #7b2ff7, #5260ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: white; }
+    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: white; }
     .user-name { font-size: 13px; font-weight: 600; color: white; }
     .user-rol { font-size: 11px; color: rgba(255,255,255,0.4); }
     .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
     .topbar { background: white; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #1a1a2e; }
-    .topbar-title p { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #334550; }
+    .topbar-title p { font-size: 12px; color: #4C6589; margin-top: 1px; }
     .topbar-right { display: flex; align-items: center; gap: 12px; }
-    .btn-primary { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; border: none; border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer; }
-    .master-badge { background: linear-gradient(135deg, #7b2ff7, #5260ff); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+    .btn-primary { background: linear-gradient(135deg, #0F172A, #334155); color: white; border: none; border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .master-badge { background: linear-gradient(135deg, #0F172A, #334155); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; }
     .content { padding: 28px 32px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
     /* Summary */
     .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
     .sum-card { background: white; border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); text-align: center; }
     .sum-val { font-size: 32px; font-weight: 900; }
-    .sum-label { font-size: 12px; color: #888; font-weight: 600; margin-top: 4px; }
+    .sum-label { font-size: 12px; color: #4C6589; font-weight: 600; margin-top: 4px; }
     .c-blue { color: #3880ff; } .c-green { color: #2dd36f; } .c-orange { color: #ffa600; } .c-purple { color: #7b2ff7; }
     /* Filters bar */
     .filters-bar { background: white; border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); flex-wrap: wrap; }
     .search-wrap { display: flex; align-items: center; gap: 8px; background: #f4f5f8; border-radius: 10px; padding: 8px 14px; flex: 1; min-width: 200px; }
-    .search-input { border: none; background: transparent; font-size: 14px; color: #333; outline: none; width: 100%; }
-    .filter-select { padding: 8px 14px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 13px; color: #555; background: white; outline: none; }
-    .filter-select:focus { border-color: #7b2ff7; }
+    .search-input { border: none; background: transparent; font-size: 14px; color: #334550; outline: none; width: 100%; }
+    .filter-select { padding: 8px 14px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 13px; color: #475569; background: white; outline: none; }
+    .filter-select:focus { border-color: #334155; }
     /* Table */
     .table-card { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
-    .table-header { display: grid; grid-template-columns: 200px 140px 1fr 120px 120px 180px; gap: 8px; padding: 14px 20px; background: #f8f9ff; border-bottom: 2px solid #eee; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-header { display: grid; grid-template-columns: 200px 140px 1fr 120px 120px 180px; gap: 8px; padding: 14px 20px; background: #f8f9ff; border-bottom: 2px solid #eee; font-size: 11px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.5px; }
     .table-row { display: grid; grid-template-columns: 200px 140px 1fr 120px 120px 180px; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #f4f5f8; align-items: center; font-size: 13px; }
     .table-row:hover { background: #f8f9ff; }
     .table-row.suspicious { background: #fdecea; border-left: 3px solid #eb445a; }
@@ -58,25 +58,25 @@
     .ua-orange { background: linear-gradient(135deg, #ffa600, #ff7700); }
     .ua-purple { background: linear-gradient(135deg, #7b2ff7, #3880ff); }
     .ua-red { background: #eb445a; }
-    .user-name { font-size: 13px; font-weight: 700; color: #1a1a2e; }
-    .user-email { font-size: 11px; color: #888; }
+    .user-name { font-size: 13px; font-weight: 700; color: #334550; }
+    .user-email { font-size: 11px; color: #4C6589; }
     .rol-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; display: inline-block; }
     .rol-observer { background: #e8edff; color: #3880ff; }
     .rol-coordinator { background: #e8f5e9; color: #2dd36f; }
     .rol-admin { background: #fff3e0; color: #ffa600; }
     .rol-master { background: #f0e6ff; color: #7b2ff7; }
-    .jrv-list { font-size: 12px; color: #555; }
+    .jrv-list { font-size: 12px; color: #475569; }
     .status-dot { display: flex; align-items: center; gap: 6px; font-size: 12px; }
     .dot-green { width: 8px; height: 8px; background: #2dd36f; border-radius: 50%; }
     .dot-red { width: 8px; height: 8px; background: #eb445a; border-radius: 50%; }
     .action-btns { display: flex; gap: 6px; }
     .btn-sm { padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; }
-    .btn-edit { background: #f0e6ff; color: #7b2ff7; }
+    .btn-edit { background: #E2E8F0; color: #475569; }
     .btn-assign { background: #e8edff; color: #3880ff; }
     .btn-revoke { background: #fdecea; color: #eb445a; }
     .warn-tag { background: #fdecea; color: #eb445a; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 800; }
-    .annotation { background: #f0e6ff; border-left: 3px solid #7b2ff7; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #555; line-height: 1.7; }
-    .annotation b { color: #7b2ff7; }
+    .annotation { background: #E2E8F0; border-left: 3px solid #334155; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #475569; line-height: 1.7; }
+    .annotation b { color: #475569; }
   </style>
 </head>
 <body>
@@ -93,13 +93,16 @@
     <div class="nav-item"><span class="nav-icon">📊</span> Resumen General</div>
     <div class="nav-item"><span class="nav-icon">📈</span> Resultados por Cargo</div>
     <div class="nav-item"><span class="nav-icon">🗺️</span> Progreso por Cantón</div>
-    <div class="nav-section-label">Coordinación</div>
+    <div class="nav-item"><span class="nav-icon">📑</span> Reportes y Estadísticas</div>
+    <div class="nav-section-label">Gestión Operativa</div>
     <div class="nav-item"><span class="nav-icon">📋</span> Lista de Actas <span class="nav-badge">12</span></div>
     <div class="nav-item"><span class="nav-icon">⚠️</span> Disputas Activas <span class="nav-badge">3</span></div>
+    <div class="nav-item"><span class="nav-icon">📝</span> Correcciones</div>
     <div class="nav-section-label">Administración</div>
     <div class="nav-item"><span class="nav-icon">⚙️</span> Configuración Electoral</div>
     <div class="nav-item active"><span class="nav-icon">👥</span> Gestión de Usuarios</div>
     <div class="nav-item"><span class="nav-icon">🔑</span> Sesiones Activas <span class="nav-badge" style="background:#ffa600;">1</span></div>
+    <div class="nav-item"><span class="nav-icon">🧾</span> Logs</div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-card">

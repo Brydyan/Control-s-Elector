@@ -6,78 +6,78 @@
 <title>COORDINATOR Desktop — Lista de Actas</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #eef0f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .frame { width: 1280px; height: 800px; background: #eef0f5; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(26,26,46,0.18); display: flex; }
+  body { background: #E2E8F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .frame { width: 1280px; height: 800px; background: #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(26,26,46,0.18); display: flex; }
 
-  .sidebar { width: 240px; background: #1a1a2e; display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar { width: 240px; background: #334155; display: flex; flex-direction: column; flex-shrink: 0; }
   .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .brand-logo { display: flex; align-items: center; gap: 10px; }
-  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0d9488, #14b8a6); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
   .logo-text { color: #fff; font-size: 14px; font-weight: 700; }
   .logo-sub { color: rgba(255,255,255,0.4); font-size: 10px; }
   .user-info { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
   .user-name { color: #fff; font-size: 13px; font-weight: 700; }
-  .user-badge { display: inline-block; background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
+  .user-badge { display: inline-block; background: linear-gradient(135deg, #0F172A, #334155); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
   .user-sub { color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 2px; }
   .nav-section { padding: 14px 0 0; }
   .nav-section-title { padding: 0 20px 6px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.8px; }
   .nav-item { padding: 9px 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 13px; }
-  .nav-item.active { background: rgba(13,148,136,0.15); color: #5eead4; border-left: 3px solid #0d9488; padding-left: 17px; }
+  .nav-item.active { background: rgba(15,23,42,0.35); color: #fff; border-left: 3px solid #0F172A; padding-left: 17px; }
   .nav-icon { font-size: 16px; width: 20px; text-align: center; }
   .nav-badge { margin-left: auto; background: #eb445a; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
   .nav-badge.orange { background: #ffa600; }
 
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
   .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; padding: 0 28px; gap: 16px; flex-shrink: 0; }
-  .topbar-title { font-size: 20px; font-weight: 800; color: #1a1a2e; flex: 1; }
-  .topbar-badge { background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 10px; }
+  .topbar-title { font-size: 20px; font-weight: 800; color: #334550; flex: 1; }
+  .topbar-badge { background: linear-gradient(135deg, #0F172A, #334155); color: #fff; font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 10px; }
   .search-input { padding: 8px 14px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 13px; outline: none; width: 240px; }
-  .search-input:focus { border-color: #0d9488; }
+  .search-input:focus { border-color: #475569; }
 
   .content { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column; }
   .content::-webkit-scrollbar { display: none; }
 
   .filters-bar { background: #fff; border-bottom: 1px solid #e8e8e8; padding: 12px 28px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-  .filter-chip { padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 700; border: 2px solid #e2e8f0; background: #f8fafc; color: #64748b; cursor: pointer; }
-  .filter-chip.active { background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; border-color: transparent; }
+  .filter-chip { padding: 5px 14px; border-radius: 16px; font-size: 12px; font-weight: 700; border: 2px solid #e2e8f0; background: #f8fafc; color: #4C6589; cursor: pointer; }
+  .filter-chip.active { background: linear-gradient(135deg, #0F172A, #334155); color: #fff; border-color: transparent; }
   .filter-chip.orange { border-color: #ffd699; color: #ffa600; background: #fff3e0; }
-  .filter-chip.purple { border-color: #ddd6fe; color: #8b5cf6; background: #f5f3ff; }
+  .filter-chip.purple { border-color: #ddd6fe; color: #475569; background: #f5f3ff; }
   .filter-chip.blue { border-color: #bfdbfe; color: #3b82f6; background: #eff6ff; }
   .filter-chip.green { border-color: #a8e6bc; color: #2dd36f; background: #e8f5e9; }
 
   .table-wrap { flex: 1; overflow-y: auto; padding: 20px 28px; }
   .table-wrap::-webkit-scrollbar { display: none; }
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-  thead th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e8e8e8; }
-  tbody td { padding: 12px 16px; font-size: 13px; color: #334155; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+  thead th { background: #f8fafc; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e8e8e8; }
+  tbody td { padding: 12px 16px; font-size: 13px; color: #475569; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
   tbody tr:last-child td { border-bottom: none; }
   tbody tr:hover { background: #f8fafc; }
   tbody tr.disputa { border-left: 3px solid #ffa600; }
-  tbody tr.corregida { border-left: 3px solid #8b5cf6; }
+  tbody tr.corregida { border-left: 3px solid #475569; }
   tbody tr.enviada { border-left: 3px solid #3b82f6; }
   tbody tr.aprobada { border-left: 3px solid #2dd36f; }
 
   .state-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; white-space: nowrap; }
   .badge-blue { background: #e8edff; color: #3b82f6; }
   .badge-orange { background: #fff3e0; color: #ffa600; }
-  .badge-purple { background: #f5f3ff; color: #8b5cf6; }
+  .badge-purple { background: #f5f3ff; color: #475569; }
   .badge-green { background: #e8f5e9; color: #2dd36f; }
-  .badge-gray { background: #f1f5f9; color: #64748b; }
+  .badge-gray { background: #f1f5f9; color: #4C6589; }
 
   .btn-sm { padding: 5px 10px; border-radius: 7px; font-size: 11px; font-weight: 700; border: none; cursor: pointer; margin-right: 4px; }
-  .btn-view { background: #f0f9ff; color: #0891b2; }
+  .btn-view { background: #f0f9ff; color: #475569; }
   .btn-approve { background: linear-gradient(135deg, #2dd36f, #28ba62); color: #fff; }
   .btn-dispute { background: #fff3e0; color: #ffa600; }
   .btn-resolve { background: linear-gradient(135deg, #ffa600, #e69500); color: #fff; }
-  .btn-review { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; }
+  .btn-review { background: linear-gradient(135deg, #0F172A, #334155); color: #fff; }
 
-  .meta-small { font-size: 11px; color: #888; margin-top: 2px; }
+  .meta-small { font-size: 11px; color: #4C6589; margin-top: 2px; }
 
   .pagination { background: #fff; border-top: 1px solid #e8e8e8; padding: 12px 28px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-  .pagination-info { font-size: 12px; color: #64748b; }
+  .pagination-info { font-size: 12px; color: #4C6589; }
   .pagination-btns { display: flex; gap: 6px; }
   .page-btn { padding: 5px 10px; border-radius: 7px; border: 1px solid #e2e8f0; background: #fff; font-size: 12px; font-weight: 600; color: #475569; cursor: pointer; }
-  .page-btn.active { background: linear-gradient(135deg, #0d9488, #14b8a6); color: #fff; border-color: transparent; }
+  .page-btn.active { background: linear-gradient(135deg, #0F172A, #334155); color: #fff; border-color: transparent; }
 </style>
 </head>
 <body>
@@ -96,7 +96,7 @@
     </div>
     <div class="nav-section">
       <div class="nav-section-title">Dashboard</div>
-      <div class="nav-item"><span class="nav-icon">🏠</span>Inicio</div>
+      <div class="nav-item"><span class="nav-icon">🏠</span>Resumen General</div>
       <div class="nav-item"><span class="nav-icon">📊</span>Reportes</div>
     </div>
     <div class="nav-section">
@@ -111,7 +111,7 @@
     <div class="topbar">
       <span class="topbar-title">Lista de Actas</span>
       <input class="search-input" type="text" placeholder="🔍  Buscar por JRV, cantón, cargo…">
-      <span style="font-size:13px;color:#64748b">322 total</span>
+      <span style="font-size:13px;color:#4C6589">322 total</span>
       <span class="topbar-badge">COORDINATOR</span>
     </div>
 
@@ -183,7 +183,7 @@
             <td>La Libertad / La Libertad</td>
             <td>Carlos Pinto</td>
             <td>hace 1h</td>
-            <td><button class="btn-sm btn-view">👁️ Ver</button><span style="font-size:11px;color:#94a3b8;font-style:italic">Solo lectura</span></td>
+            <td><button class="btn-sm btn-view">👁️ Ver</button><span style="font-size:11px;color:#4C6589;font-style:italic">Solo lectura</span></td>
           </tr>
           <tr class="disputa">
             <td><strong>2403-015</strong></td>
@@ -210,7 +210,7 @@
             <td>Santa Elena / Manglaralto</td>
             <td>Luis Mora</td>
             <td>hace 2h</td>
-            <td><button class="btn-sm btn-view">👁️ Ver</button><span style="font-size:11px;color:#94a3b8;font-style:italic">Solo lectura</span></td>
+            <td><button class="btn-sm btn-view">👁️ Ver</button><span style="font-size:11px;color:#4C6589;font-style:italic">Solo lectura</span></td>
           </tr>
         </tbody>
       </table>
