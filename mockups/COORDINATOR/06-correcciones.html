@@ -6,69 +6,69 @@
 <title>COORDINATOR — Correcciones Pendientes</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
-  .status-bar { height: 44px; background: #0d9488; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  body { background: #E2E8F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #E2E8F0; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #0F172A; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
   .status-time { color: #fff; font-size: 14px; font-weight: 600; }
   .status-icons { display: flex; gap: 6px; }
   .status-icons span { color: #fff; font-size: 12px; }
 
-  .toolbar { background: linear-gradient(135deg, #0d9488, #0891b2); padding: 10px 16px 14px; flex-shrink: 0; }
+  .toolbar { background: linear-gradient(135deg, #0F172A, #334155); padding: 10px 16px 14px; flex-shrink: 0; }
   .toolbar-row { display: flex; align-items: center; gap: 10px; }
   .toolbar-title { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
   .toolbar-sub { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 4px; }
 
   .segment-bar { background: #fff; padding: 8px 14px; border-bottom: 1px solid #e8e8e8; display: flex; gap: 6px; flex-shrink: 0; }
-  .seg-btn { flex: 1; padding: 7px 0; border-radius: 10px; font-size: 12px; font-weight: 700; text-align: center; border: none; cursor: pointer; background: #f0f0f0; color: #888; }
-  .seg-btn.active { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; }
+  .seg-btn { flex: 1; padding: 7px 0; border-radius: 10px; font-size: 12px; font-weight: 700; text-align: center; border: none; cursor: pointer; background: #f0f0f0; color: #4C6589; }
+  .seg-btn.active { background: linear-gradient(135deg, #0F172A, #334155); color: #fff; }
 
   .stats-row { display: flex; gap: 8px; padding: 10px 14px; background: #f9f9f9; border-bottom: 1px solid #e8e8e8; flex-shrink: 0; }
   .mini-stat { flex: 1; text-align: center; }
-  .mini-stat-value { font-size: 20px; font-weight: 800; color: #8b5cf6; }
-  .mini-stat-label { font-size: 10px; color: #999; font-weight: 600; }
+  .mini-stat-value { font-size: 20px; font-weight: 800; color: #475569; }
+  .mini-stat-label { font-size: 10px; color: #4C6589; font-weight: 600; }
 
   .scroll-area { flex: 1; overflow-y: auto; padding: 10px 14px; }
   .scroll-area::-webkit-scrollbar { display: none; }
 
-  .corr-card { background: #fff; border-radius: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #8b5cf6; overflow: hidden; }
+  .corr-card { background: #fff; border-radius: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #475569; overflow: hidden; }
   .corr-header { padding: 12px 14px 8px; }
   .corr-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .corr-jrv { font-size: 15px; font-weight: 700; color: #222; }
-  .corr-badge { background: #f5f3ff; color: #8b5cf6; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
-  .corr-cargo { font-size: 12px; color: #555; font-weight: 600; }
-  .corr-meta { font-size: 11px; color: #999; margin-top: 3px; }
+  .corr-jrv { font-size: 15px; font-weight: 700; color: #334550; }
+  .corr-badge { background: #f5f3ff; color: #475569; font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
+  .corr-cargo { font-size: 12px; color: #475569; font-weight: 600; }
+  .corr-meta { font-size: 11px; color: #4C6589; margin-top: 3px; }
 
   .corr-diff { background: #fafafa; padding: 8px 14px; border-top: 1px solid #f0f0f0; }
-  .diff-label { font-size: 10px; font-weight: 700; color: #8b5cf6; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .diff-label { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
   .diff-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-  .diff-field { font-size: 11px; color: #666; font-weight: 600; width: 100px; }
+  .diff-field { font-size: 11px; color: #475569; font-weight: 600; width: 100px; }
   .diff-old { font-size: 11px; color: #ef4444; text-decoration: line-through; }
   .diff-new { font-size: 11px; color: #22c55e; font-weight: 700; }
   .diff-arrow { color: #ccc; font-size: 12px; }
 
   .corr-actions { padding: 10px 14px; display: flex; gap: 8px; background: #fafafa; border-top: 1px solid #f0f0f0; }
   .btn-sm { padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; }
-  .btn-view { background: #f0f9ff; color: #0891b2; }
+  .btn-view { background: #f0f9ff; color: #475569; }
   .btn-approve { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; flex: 1; }
   .btn-reject { background: #fef2f2; color: #ef4444; }
 
   .pending-section { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .pending-title { font-size: 13px; font-weight: 700; color: #555; margin-bottom: 8px; }
+  .pending-title { font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 8px; }
   .pending-item { display: flex; align-items: center; padding: 7px 0; border-bottom: 1px solid #f5f5f5; gap: 10px; }
   .pending-item:last-child { border-bottom: none; }
   .pending-dot { width: 8px; height: 8px; border-radius: 50%; background: #f97316; flex-shrink: 0; }
-  .pending-dot.waiting { background: #94a3b8; }
-  .pending-text { font-size: 12px; color: #444; flex: 1; }
-  .pending-time { font-size: 11px; color: #999; }
+  .pending-dot.waiting { background: #4C6589; }
+  .pending-text { font-size: 12px; color: #475569; flex: 1; }
+  .pending-time { font-size: 11px; color: #4C6589; }
 
   .annotation { background: #f5f3ff; border-left: 3px solid #8b5cf6; padding: 10px 12px; border-radius: 6px; margin-bottom: 10px; }
-  .annotation p { font-size: 11px; color: #555; line-height: 1.5; }
+  .annotation p { font-size: 11px; color: #475569; line-height: 1.5; }
 
   .bottom-nav { background: #fff; border-top: 1px solid #e8e8e8; display: flex; height: 70px; flex-shrink: 0; }
   .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
   .nav-icon { font-size: 20px; }
-  .nav-label { font-size: 10px; color: #aaa; }
-  .nav-item.active .nav-label { color: #0d9488; font-weight: 700; }
+  .nav-label { font-size: 10px; color: #4C6589; }
+  .nav-item.active .nav-label { color: #475569; font-weight: 700; }
 </style>
 </head>
 <body>
@@ -93,7 +93,7 @@
 
   <div class="stats-row">
     <div class="mini-stat"><div class="mini-stat-value">7</div><div class="mini-stat-label">Listas</div></div>
-    <div class="mini-stat"><div class="mini-stat-value" style="color:#94a3b8">5</div><div class="mini-stat-label">Esperando</div></div>
+    <div class="mini-stat"><div class="mini-stat-value" style="color:#4C6589">5</div><div class="mini-stat-label">Esperando</div></div>
     <div class="mini-stat"><div class="mini-stat-value" style="color:#22c55e">34</div><div class="mini-stat-label">Aprobadas</div></div>
   </div>
 

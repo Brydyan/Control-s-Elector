@@ -8,21 +8,21 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #eef0f5;
+      background: #E2E8F0;
       min-height: 100vh;
       display: flex;
     }
     /* SIDEBAR — idéntico al template base */
     .sidebar {
       width: 240px; min-height: 100vh;
-      background: #1a1a2e; color: white;
+      background: #334155; color: white;
       display: flex; flex-direction: column; flex-shrink: 0;
     }
     .sidebar-brand { padding: 28px 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
     .sidebar-logo {
       width: 38px; height: 38px;
-      background: linear-gradient(135deg, #3880ff, #5260ff);
+      background: linear-gradient(135deg, #0F172A, #334155);
       border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px;
     }
     .sidebar-brand-name { font-size: 15px; font-weight: 800; }
@@ -30,18 +30,18 @@
     .sidebar-nav { flex: 1; padding: 16px 12px; }
     .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 16px 0 6px; }
     .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 14px; color: rgba(255,255,255,0.6); cursor: pointer; margin-bottom: 2px; }
-    .nav-item.active { background: linear-gradient(135deg, #3880ff, #5260ff); color: white; font-weight: 600; }
+    .nav-item.active { background: linear-gradient(135deg, #0F172A, #334155); color: white; font-weight: 600; }
     .nav-icon { font-size: 16px; width: 20px; text-align: center; }
     .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
     .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.06); border-radius: 10px; }
-    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #3880ff, #5260ff); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: white; }
+    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: white; }
     .user-name { font-size: 13px; font-weight: 600; color: white; }
     .user-rol { font-size: 11px; color: rgba(255,255,255,0.4); }
     /* MAIN */
     .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
     .topbar { background: white; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #1a1a2e; }
-    .topbar-title p { font-size: 12px; color: #888; margin-top: 1px; }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #334550; }
+    .topbar-title p { font-size: 12px; color: #4C6589; margin-top: 1px; }
     .topbar-right { display: flex; align-items: center; gap: 16px; }
     .readonly-badge { background: #fff3e0; color: #e65100; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; }
     .content { padding: 28px 32px; flex: 1; overflow-y: auto; }
@@ -54,8 +54,8 @@
       font-size: 13px; font-weight: 600; cursor: pointer;
       border: 2px solid transparent;
     }
-    .cargo-tab.active { background: #3880ff; color: white; }
-    .cargo-tab:not(.active) { background: white; color: #555; border-color: #e8e8e8; }
+    .cargo-tab.active { background: #0F172A; color: white; }
+    .cargo-tab:not(.active) { background: white; color: #475569; border-color: #e8e8e8; }
     /* Main content grid */
     .results-grid {
       display: grid;
@@ -64,7 +64,7 @@
     }
     /* Left: cargo info card */
     .cargo-info-card {
-      background: linear-gradient(160deg, #3880ff 0%, #5260ff 100%);
+      background: linear-gradient(160deg, #0F172A 0%, #334155 100%);
       border-radius: 16px; padding: 28px; color: white;
     }
     .cargo-info-card h2 { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
@@ -86,9 +86,9 @@
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 20px;
     }
-    .candidatos-title { font-size: 15px; font-weight: 800; color: #1a1a2e; }
+    .candidatos-title { font-size: 15px; font-weight: 800; color: #334550; }
     .resultados-note {
-      font-size: 11px; color: #888;
+      font-size: 11px; color: #4C6589;
       background: #fff8e1; padding: 4px 10px; border-radius: 8px;
     }
     /* Table */
@@ -99,7 +99,7 @@
       padding: 0 12px 10px;
       font-size: 11px;
       font-weight: 700;
-      color: #aaa;
+      color: #4C6589;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       border-bottom: 2px solid #f0f0f0;
@@ -120,16 +120,16 @@
       font-weight: 800; font-size: 12px;
     }
     .rank-1 { background: #fff3cd; color: #b7791f; }
-    .rank-2 { background: #e8e8e8; color: #555; }
+    .rank-2 { background: #e8e8e8; color: #475569; }
     .rank-3 { background: #fde8d8; color: #9c4221; }
-    .rank-n { background: #f4f5f8; color: #888; }
-    .cand-name { font-size: 14px; font-weight: 700; color: #333; }
-    .cand-partido { font-size: 11px; color: #888; margin-top: 2px; }
+    .rank-n { background: #f4f5f8; color: #4C6589; }
+    .cand-name { font-size: 14px; font-weight: 700; color: #334550; }
+    .cand-partido { font-size: 11px; color: #4C6589; margin-top: 2px; }
     .cand-partido-chip {
-      display: inline-block; background: #e8edff; color: #3880ff;
+      display: inline-block; background: #e8edff; color: #475569;
       padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 600;
     }
-    .votos-col { font-size: 20px; font-weight: 900; color: #333; }
+    .votos-col { font-size: 20px; font-weight: 900; color: #334550; }
     .progress-col { display: flex; align-items: center; gap: 8px; }
     .prog { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
     .prog-fill { height: 100%; border-radius: 4px; }
@@ -137,7 +137,7 @@
     .fill-2     { background: #92949c; }
     .fill-3     { background: #f0a070; }
     .fill-n     { background: #d8d8d8; }
-    .pct-text   { font-size: 12px; font-weight: 700; color: #555; width: 36px; text-align: right; }
+    .pct-text   { font-size: 12px; font-weight: 700; color: #475569; width: 36px; text-align: right; }
     /* Special items */
     .especiales-row {
       display: grid;
@@ -149,8 +149,8 @@
       border-radius: 10px;
     }
     .esp-item { text-align: center; }
-    .esp-label { font-size: 11px; color: #888; }
-    .esp-value { font-size: 18px; font-weight: 800; color: #333; margin-top: 2px; }
+    .esp-label { font-size: 11px; color: #4C6589; }
+    .esp-value { font-size: 18px; font-weight: 800; color: #334550; margin-top: 2px; }
   </style>
 </head>
 <body>
@@ -171,12 +171,8 @@
     <div class="nav-item"><span class="nav-icon">📊</span> Resumen General</div>
     <div class="nav-item active"><span class="nav-icon">📈</span> Resultados por Cargo</div>
     <div class="nav-item"><span class="nav-icon">🗺️</span> Progreso por Cantón</div>
+    <div class="nav-section-label" style="margin-top:24px;">Gestión Operativa</div>
     <div class="nav-item"><span class="nav-icon">📋</span> Lista de Actas</div>
-    <div class="nav-section-label" style="margin-top:24px;">Sistema</div>
-    <div class="nav-item" style="color:rgba(255,255,255,0.25); cursor:not-allowed;">
-      <span class="nav-icon">⚙️</span> Configuración
-      <span style="margin-left:auto; font-size:10px; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:6px;">Solo MASTER</span>
-    </div>
   </nav>
   <div class="sidebar-footer">
     <div class="user-card">
@@ -312,7 +308,7 @@
             <div class="cand-name">Blanca Intriago Morales</div>
             <div class="cand-partido">UNES</div>
           </div>
-          <div><span class="cand-partido-chip" style="background:#f4f5f8;color:#666;">UNES</span></div>
+          <div><span class="cand-partido-chip" style="background:#f4f5f8;color:#475569;">UNES</span></div>
           <div class="votos-col">12,110</div>
           <div class="progress-col">
             <div class="prog"><div class="prog-fill fill-n" style="width:38%"></div></div>
@@ -331,7 +327,7 @@
           </div>
           <div class="esp-item">
             <div class="esp-label">Total Sufragantes</div>
-            <div class="esp-value" style="color:#3880ff;">87,340</div>
+            <div class="esp-value" style="color:#475569;">87,340</div>
           </div>
         </div>
       </div>

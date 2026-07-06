@@ -6,14 +6,14 @@
 <title>OBSERVER — Corrección Solicitada</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #1a1a2e; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
-  .status-bar { height: 44px; background: #16a34a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  body { background: #E2E8F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #E2E8F0; border-radius: 40px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
   .status-time { color: #fff; font-size: 14px; font-weight: 600; }
   .status-icons { display: flex; gap: 6px; }
   .status-icons span { color: #fff; font-size: 12px; }
 
-  .toolbar { background: linear-gradient(135deg, #16a34a, #059669); padding: 10px 16px 14px; flex-shrink: 0; }
+  .toolbar { background: #334155; padding: 10px 16px 14px; flex-shrink: 0; }
   .toolbar-row { display: flex; align-items: center; gap: 10px; }
   .back-btn { color: #fff; font-size: 22px; cursor: pointer; line-height: 1; }
   .toolbar-title { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
@@ -34,21 +34,21 @@
   .motivo-icon { font-size: 16px; }
   .motivo-label { font-size: 11px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: 0.5px; }
   .motivo-text { font-size: 13px; color: #7c3aed; font-style: italic; line-height: 1.5; padding: 8px 10px; background: #faf5ff; border-radius: 8px; }
-  .motivo-coordinator { font-size: 11px; color: #999; margin-top: 6px; }
+  .motivo-coordinator { font-size: 11px; color: #4C6589; margin-top: 6px; }
 
   .review-card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .card-title { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .card-title { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
 
   .vote-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f5f5f5; }
   .vote-row:last-child { border-bottom: none; }
-  .vote-name { font-size: 12px; color: #444; font-weight: 600; flex: 1; }
-  .vote-party { font-size: 10px; color: #999; }
-  .vote-input { width: 68px; padding: 7px 8px; border: 2px solid #e8e8e8; border-radius: 8px; font-size: 14px; font-weight: 700; text-align: center; color: #222; outline: none; }
-  .vote-input:focus { border-color: #16a34a; }
+  .vote-name { font-size: 12px; color: #334550; font-weight: 600; flex: 1; }
+  .vote-party { font-size: 10px; color: #4C6589; }
+  .vote-input { width: 68px; padding: 7px 8px; border: 2px solid #e8e8e8; border-radius: 8px; font-size: 14px; font-weight: 700; text-align: center; color: #334550; outline: none; }
+  .vote-input:focus { border-color: #475569; }
   .vote-input.changed { border-color: #8b5cf6; background: #faf5ff; color: #7c3aed; }
 
   .extra-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-  .extra-field label { display: block; font-size: 11px; font-weight: 600; color: #777; margin-bottom: 4px; }
+  .extra-field label { display: block; font-size: 11px; font-weight: 600; color: #475569; margin-bottom: 4px; }
   .extra-field input { width: 100%; padding: 10px; border: 2px solid #e8e8e8; border-radius: 8px; font-size: 14px; font-weight: 700; text-align: center; outline: none; }
   .extra-field input.changed { border-color: #8b5cf6; background: #faf5ff; color: #7c3aed; }
 
@@ -64,12 +64,12 @@
   /* Nueva imagen */
   .image-card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
   .image-option { display: flex; gap: 8px; }
-  .btn-retake-img { flex: 1; padding: 10px; background: linear-gradient(135deg, #16a34a, #059669); color: #fff; font-size: 12px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; }
-  .btn-keep-img { flex: 1; padding: 10px; background: #f0f0f0; color: #555; font-size: 12px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; }
+  .btn-retake-img { flex: 1; padding: 10px; background: linear-gradient(135deg, #0F172A, #334155); color: #fff; font-size: 12px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; }
+  .btn-keep-img { flex: 1; padding: 10px; background: #f0f0f0; color: #475569; font-size: 12px; font-weight: 700; border: none; border-radius: 10px; cursor: pointer; }
 
   /* Flujo de estado */
   .flow-card { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .flow-title { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .flow-title { font-size: 11px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
   .flow-steps { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
   .flow-step { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
   .flow-step.done { background: #f0fdf4; color: #16a34a; }
@@ -78,7 +78,7 @@
   .flow-arrow { color: #ccc; font-size: 10px; }
 
   .submit-bar { background: #fff; padding: 12px 14px; border-top: 1px solid #e8e8e8; flex-shrink: 0; }
-  .submit-note { font-size: 11px; color: #999; text-align: center; margin-bottom: 8px; }
+  .submit-note { font-size: 11px; color: #4C6589; text-align: center; margin-bottom: 8px; }
   .btn-send { width: 100%; padding: 14px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; font-size: 16px; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; }
 </style>
 </head>
