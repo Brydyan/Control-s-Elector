@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Desktop — Nuevo Registro (Cargo/Partido/Candidato)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #E2E8F0; min-height: 100vh; display: flex; }
+    .sidebar { width: 240px; min-height: 100vh; background: #334155; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-brand { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
+    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar-brand-name { font-size: 15px; font-weight: 800; }
+    .sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px; }
+    .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer; margin-bottom: 1px; }
+    .nav-item.active { background: linear-gradient(135deg, #0F172A, #334155); color: white; font-weight: 600; }
+    .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+    .nav-badge { margin-left: auto; background: #eb445a; color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.06); border-radius: 10px; }
+    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: white; }
+    .user-name { font-size: 13px; font-weight: 600; color: white; }
+    .user-rol { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { background: white; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #334550; }
+    .topbar-title p { font-size: 12px; color: #4C6589; margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .btn-primary { background: linear-gradient(135deg, #0F172A, #334155); color: white; border: none; border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .master-badge { background: linear-gradient(135deg, #0F172A, #334155); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+    .content { padding: 28px 32px; flex: 1; overflow-y: auto; }
+
+    /* Modal overlay */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal { background: white; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { padding: 28px 28px 16px; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; justify-content: space-between; }
+    .modal-header h2 { font-size: 20px; font-weight: 800; color: #334550; }
+    .modal-close { background: #f4f5f8; border: none; border-radius: 8px; width: 36px; height: 36px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+    .modal-close:hover { background: #e8eaf0; }
+    .modal-body { padding: 28px; }
+    .form-group { margin-bottom: 24px; }
+    .form-label { display: block; font-size: 13px; font-weight: 700; color: #334550; margin-bottom: 8px; }
+    .form-input, .form-select { width: 100%; padding: 10px 14px; border: 1px solid #d0d5dd; border-radius: 10px; font-size: 13px; font-family: inherit; }
+    .form-input:focus, .form-select:focus { outline: none; border-color: #334155; background: #f8f9ff; }
+    .form-desc { font-size: 11px; color: #4C6589; margin-top: 4px; }
+
+    /* Tabs para seleccionar tipo de registro */
+    .registro-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+    .registro-tab { padding: 10px 16px; border-radius: 10px; border: 2px solid #e8eaf0; background: white; font-size: 13px; font-weight: 700; color: #4C6589; cursor: pointer; }
+    .registro-tab.active { border-color: #334155; background: #f8f9ff; color: #334550; }
+
+    /* Candidatos lista */
+    .candidatos-list { background: #f8f9ff; border-radius: 12px; padding: 14px; max-height: 200px; overflow-y: auto; }
+    .candidato-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e8eaf0; }
+    .candidato-item:last-child { margin-bottom: 0; }
+    .candidato-checkbox { width: 18px; height: 18px; margin-right: 12px; cursor: pointer; }
+    .candidato-name { flex: 1; font-size: 13px; font-weight: 600; color: #334550; }
+    .candidato-cedula { font-size: 11px; color: #4C6589; font-family: monospace; }
+
+    /* Modal footer */
+    .modal-footer { padding: 20px 28px; border-top: 1px solid #e8e8e8; display: flex; gap: 12px; justify-content: flex-end; }
+    .btn-cancel { background: #f4f5f8; color: #334550; border: none; border-radius: 10px; padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .btn-cancel:hover { background: #e8eaf0; }
+    .btn-create { background: linear-gradient(135deg, #2dd36f, #26a69a); color: white; border: none; border-radius: 10px; padding: 10px 22px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .btn-create:hover { opacity: 0.9; }
+
+    /* Alert info */
+    .info-box { background: #e8edff; border-left: 4px solid #3880ff; border-radius: 8px; padding: 12px 16px; font-size: 12px; color: #475569; margin-bottom: 24px; }
+    .info-box b { color: #334550; }
+
+    /* Tabla de contexto (backdrop) */
+    .table-card { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+    .table-header { display: grid; grid-template-columns: 60px 1fr 140px 120px 100px 120px; gap: 8px; padding: 14px 20px; background: #f8f9ff; border-bottom: 2px solid #eee; font-size: 11px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-row { display: grid; grid-template-columns: 60px 1fr 140px 120px 100px 120px; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #f4f5f8; align-items: center; font-size: 13px; }
+    .table-row:hover { background: #f8f9ff; }
+    .table-row:last-child { border-bottom: none; }
+    .num-badge { width: 28px; height: 28px; background: #E2E8F0; color: #475569; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+    .cargo-name { font-weight: 700; color: #334550; }
+    .cargo-desc { font-size: 11px; color: #4C6589; margin-top: 2px; }
+    .nivel-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .nivel-prov { background: #f0e6ff; color: #7b2ff7; }
+    .action-btns { display: flex; gap: 6px; }
+    .btn-icon { background: #f4f5f8; border: none; border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-row">
+      <div class="sidebar-logo">🗳️</div>
+      <div>
+        <div class="sidebar-brand-name">Control Electoral</div>
+        <div class="sidebar-brand-sub">Santa Elena 2027</div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">📊</span> Resumen General</div>
+    <div class="nav-item"><span class="nav-icon">📈</span> Resultados por Cargo</div>
+    <div class="nav-item"><span class="nav-icon">🗺️</span> Progreso por Cantón</div>
+    <div class="nav-item"><span class="nav-icon">📑</span> Reportes y Estadísticas</div>
+    <div class="nav-section-label">Gestión Operativa</div>
+    <div class="nav-item"><span class="nav-icon">📋</span> Lista de Actas <span class="nav-badge">12</span></div>
+    <div class="nav-item"><span class="nav-icon">⚠️</span> Disputas Activas <span class="nav-badge">3</span></div>
+    <div class="nav-item"><span class="nav-icon">📝</span> Correcciones</div>
+    <div class="nav-section-label">Administración</div>
+    <div class="nav-item active"><span class="nav-icon">⚙️</span> Configuración Electoral</div>
+    <div class="nav-item"><span class="nav-icon">👥</span> Gestión de Usuarios</div>
+    <div class="nav-item"><span class="nav-icon">🔑</span> Sesiones Activas <span class="nav-badge" style="background:#ffa600;">1</span></div>
+    <div class="nav-item"><span class="nav-icon">🧾</span> Logs</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">MR</div>
+      <div><div class="user-name">Marco Ruiz</div><div class="user-rol">MASTER · CNE</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">
+      <h1>Configuración Electoral</h1>
+      <p>Cargos · Partidos · Candidatos · Solo MASTER · Pre-electoral</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-primary">+ Nuevo Registro</button>
+      <div class="master-badge">MASTER</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Tabla de contexto (backdrop) -->
+    <div class="table-card" style="opacity: 0.5; pointer-events: none;">
+      <div class="table-header">
+        <div>#</div>
+        <div>Cargo Electoral</div>
+        <div>Nivel Geográfico</div>
+        <div>JRVs Aplicables</div>
+        <div>Candidatos</div>
+        <div>Acciones</div>
+      </div>
+      <div class="table-row">
+        <div class="num-badge">1</div>
+        <div><div class="cargo-name">Prefecto/a Provincial</div><div class="cargo-desc">Gobierno Provincial Santa Elena</div></div>
+        <div><span class="nivel-badge nivel-prov">PROVINCIA</span></div>
+        <div style="font-weight: 700; color: #334550;">450 (todas)</div>
+        <div>8</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon">🗑️</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL OVERLAY -->
+<div class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>➕ Nuevo Registro</h2>
+      <button class="modal-close">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Info de contexto -->
+      <div class="info-box">
+        <b>¿Qué deseas crear?</b> Selecciona una pestaña para registrar un nuevo Cargo, Partido o Candidato. Pre-electoral: todos los registros son obligatorios antes de iniciar el proceso de votación.
+      </div>
+
+      <!-- Tabs para elegir tipo de registro -->
+      <div class="registro-tabs">
+        <button class="registro-tab active" onclick="switchTab('cargo')">🏛️ Cargo</button>
+        <button class="registro-tab" onclick="switchTab('partido')">🏳️ Partido</button>
+        <button class="registro-tab" onclick="switchTab('candidato')">👤 Candidato</button>
+      </div>
+
+      <!-- TAB: NUEVO CARGO -->
+      <div id="tab-cargo" class="registro-content" style="display: block;">
+        <!-- Nombre del cargo -->
+        <div class="form-group">
+          <label class="form-label">Nombre del Cargo *</label>
+          <input type="text" class="form-input" placeholder="Ej: Concejal Urbano Cantón X">
+          <div class="form-desc">Debe ser único en el sistema</div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <input type="text" class="form-input" placeholder="Descripción breve del cargo">
+          <div class="form-desc">Opcional — aparece como subtítulo en la tabla</div>
+        </div>
+
+        <!-- Nivel Geográfico -->
+        <div class="form-group">
+          <label class="form-label">Nivel Geográfico *</label>
+          <select class="form-select">
+            <option value="">-- Seleccionar nivel --</option>
+            <option>PROVINCIA</option>
+            <option>NACIONAL</option>
+            <option>CANTÓN</option>
+            <option>PARROQUIA</option>
+          </select>
+          <div class="form-desc">Define en cuántas JRVs aplica este cargo</div>
+        </div>
+
+        <!-- Cantón -->
+        <div class="form-group">
+          <label class="form-label">Zona Geográfica</label>
+          <select class="form-select">
+            <option selected>Todas (aplica a todas las JRVs del nivel)</option>
+            <option>Santa Elena (2401)</option>
+            <option>La Libertad (2402)</option>
+            <option>Salinas (2403)</option>
+          </select>
+          <div class="form-desc">Se habilita cuando el nivel es CANTÓN o menor</div>
+        </div>
+
+        <!-- Tipo de zona -->
+        <div class="form-group">
+          <label class="form-label">Tipo de Zona</label>
+          <select class="form-select">
+            <option selected>Todas (urbana + rural)</option>
+            <option>Urbana</option>
+            <option>Rural</option>
+          </select>
+          <div class="form-desc">Filtra si aplica a zonas específicas</div>
+        </div>
+
+        <!-- Candidatos -->
+        <div class="form-group">
+          <label class="form-label">Candidatos para este cargo</label>
+          <div class="candidatos-list">
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">Álvaro López Méndez</div>
+                <div class="candidato-cedula">0914425678 · UPE</div>
+              </div>
+            </div>
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">María Rodríguez Sánchez</div>
+                <div class="candidato-cedula">0912987654 · MNA</div>
+              </div>
+            </div>
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">Carlos Ventura González</div>
+                <div class="candidato-cedula">0913456789 · FPL</div>
+              </div>
+            </div>
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">Lucía Fernández Morales</div>
+                <div class="candidato-cedula">0915678901 · ADC</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-desc" style="margin-top: 8px;">Marcar candidatos que aplican para este cargo</div>
+        </div>
+      </div>
+
+      <!-- TAB: NUEVO PARTIDO -->
+      <div id="tab-partido" class="registro-content" style="display: none;">
+        <!-- Nombre del partido -->
+        <div class="form-group">
+          <label class="form-label">Nombre del Partido / Movimiento *</label>
+          <input type="text" class="form-input" placeholder="Ej: Unión por la Esperanza">
+          <div class="form-desc">Debe ser único en el sistema</div>
+        </div>
+
+        <!-- Sigla -->
+        <div class="form-group">
+          <label class="form-label">Sigla *</label>
+          <input type="text" class="form-input" placeholder="Ej: UPE" maxlength="10" style="text-transform: uppercase;">
+          <div class="form-desc">Código corto del partido (máx 10 caracteres)</div>
+        </div>
+
+        <!-- Descripción -->
+        <div class="form-group">
+          <label class="form-label">Descripción</label>
+          <input type="text" class="form-input" placeholder="Movimiento político regional">
+          <div class="form-desc">Opcional — aparece como subtítulo en la tabla</div>
+        </div>
+
+        <!-- Estado -->
+        <div class="form-group">
+          <label class="form-label">Estado *</label>
+          <select class="form-select">
+            <option selected>Activo</option>
+            <option>Inactivo</option>
+          </select>
+          <div class="form-desc">Partidos inactivos no aparecen en candidaturas nuevas</div>
+        </div>
+
+        <!-- Candidatos disponibles -->
+        <div class="form-group">
+          <label class="form-label">Candidatos del partido</label>
+          <div class="candidatos-list">
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">Álvaro López Méndez</div>
+                <div class="candidato-cedula">0914425678</div>
+              </div>
+            </div>
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">Diego Montoya Ruiz</div>
+                <div class="candidato-cedula">0917890123</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-desc" style="margin-top: 8px;">Marcar candidatos que pertenecen a este partido</div>
+        </div>
+      </div>
+
+      <!-- TAB: NUEVO CANDIDATO -->
+      <div id="tab-candidato" class="registro-content" style="display: none;">
+        <!-- Nombre completo -->
+        <div class="form-group">
+          <label class="form-label">Nombre Completo *</label>
+          <input type="text" class="form-input" placeholder="Ej: Juan Pérez García">
+          <div class="form-desc">Nombre legal del candidato</div>
+        </div>
+
+        <!-- Cédula -->
+        <div class="form-group">
+          <label class="form-label">Cédula de Identidad *</label>
+          <input type="text" class="form-input" placeholder="Ej: 0914425678" maxlength="10">
+          <div class="form-desc">DNI o pasaporte válido en el país</div>
+        </div>
+
+        <!-- Partido -->
+        <div class="form-group">
+          <label class="form-label">Partido / Movimiento *</label>
+          <select class="form-select">
+            <option value="">-- Seleccionar partido --</option>
+            <option>Unión por la Esperanza (UPE)</option>
+            <option>Movimiento Nuevo Amanecer (MNA)</option>
+            <option>Frente Progresista Local (FPL)</option>
+            <option>Alianza de Centro (ADC)</option>
+            <option>Bloque Verde Sostenible (BVS)</option>
+            <option>Candidatura Independiente (IND)</option>
+          </select>
+          <div class="form-desc">Selecciona la agrupación política</div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" placeholder="candidato@example.com">
+          <div class="form-desc">Opcional — para notificaciones</div>
+        </div>
+
+        <!-- Teléfono -->
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input type="tel" class="form-input" placeholder="+593 99 123 4567">
+          <div class="form-desc">Opcional — contacto de emergencia</div>
+        </div>
+
+        <!-- Cargos -->
+        <div class="form-group">
+          <label class="form-label">Cargos a los que aspira</label>
+          <div class="candidatos-list">
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">Prefecto/a Provincial</div>
+                <div class="candidato-cedula">Nivel: PROVINCIA</div>
+              </div>
+            </div>
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">Consejero/a CPCCS</div>
+                <div class="candidato-cedula">Nivel: NACIONAL</div>
+              </div>
+            </div>
+            <div class="candidato-item">
+              <input type="checkbox" class="candidato-checkbox">
+              <div style="flex: 1;">
+                <div class="candidato-name">Alcalde/sa Cantón</div>
+                <div class="candidato-cedula">Nivel: CANTÓN</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-desc" style="margin-top: 8px;">Marcar cargos para los cuales es candidato</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel">Cancelar</button>
+      <button class="btn-create">✨ Crear Registro</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tabName) {
+    // Ocultar todos los tabs
+    const contents = document.querySelectorAll('.registro-content');
+    contents.forEach(c => c.style.display = 'none');
+
+    // Desactivar todos los botones
+    const tabs = document.querySelectorAll('.registro-tab');
+    tabs.forEach(t => t.classList.remove('active'));
+
+    // Mostrar tab seleccionado
+    document.getElementById('tab-' + tabName).style.display = 'block';
+    event.target.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
