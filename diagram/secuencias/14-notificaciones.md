@@ -1,5 +1,6 @@
 # Flujo 14 — Ciclo de Notificaciones Push
 
+n**Estado:** ⏳ PLANEADO — Código backend aún no implementado. Ver [diagram/README.md](../README.md).
 Escenario: ciclo completo desde que se genera un evento hasta que la notificación llega al dispositivo del OBSERVER.
 
 ---

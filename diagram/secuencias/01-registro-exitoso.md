@@ -1,5 +1,7 @@
 # Flujo 01 — Registro de Acta Exitoso (Happy Path Online)
 
+**Estado:** ⏳ PLANEADO — Código backend aún no implementado. Ver [diagram/README.md](../README.md).
+
 Escenario nominal: observador con conexión activa registra su acta correctamente.
 
 ```mermaid
@@ -12,7 +14,7 @@ sequenceDiagram
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 
-    OBS->>APP: Selecciona JRV y cargo a registrar
+    OBS->>APP: Selecciona Cantón y JRV (cualquiera)
     APP->>API: GET /api/jrv/{jrv_id}/cargos
     API->>JPA: findCargosByJrv(jrv_id)
     JPA->>PG: SELECT cargos via jrv_cargo WHERE jrv_id = ?

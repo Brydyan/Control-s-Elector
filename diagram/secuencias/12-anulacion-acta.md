@@ -1,5 +1,6 @@
 # Flujo 12 — Anulación de Acta por MASTER
 
+n**Estado:** ⏳ PLANEADO — Código backend aún no implementado. Ver [diagram/README.md](../README.md).
 ---
 
 ## Escenario

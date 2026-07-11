@@ -1,5 +1,6 @@
 # Flujo 11 — Disputa de Acta y Corrección
 
+n**Estado:** ⏳ PLANEADO — Código backend aún no implementado. Ver [diagram/README.md](../README.md).
 ---
 
 ## Parte A — COORDINATOR marca acta EN_DISPUTA

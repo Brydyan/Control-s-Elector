@@ -1,5 +1,6 @@
 # Flujo 04 — Access Token Expirado: Renovación con Refresh Token
 
+n**Estado:** ⏳ PLANEADO — Código backend aún no implementado. Ver [diagram/README.md](../README.md).
 Escenario: access token vence cada 15 min; el interceptor lo renueva transparentemente sin interrumpir al observador.
 
 ```mermaid
