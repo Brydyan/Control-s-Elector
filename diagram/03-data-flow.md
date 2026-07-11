@@ -39,7 +39,7 @@ diagram/
 | # | Archivo | Escenario |
 |---|---------|-----------|
 | 05 | [05-validacion-fallida.md](secuencias/05-validacion-fallida.md) | Totales incorrectos → 422 → corrección → escalación a coordinator |
-| 07 | [07-rls-acceso-denegado.md](secuencias/07-rls-acceso-denegado.md) | JRV no asignada → invisible por RLS → 404 |
+| 07 | [07-rls-acceso-denegado.md](secuencias/07-rls-acceso-denegado.md) | ⏳ PLANEADO: Intento acceso sin autorización → RLS rechaza |
 | 10 | [10-error-storage.md](secuencias/10-error-storage.md) | Falla upload → IndexedDB + private storage → reintento o exportación manual |
 
 ### Gestión de Actas
@@ -87,4 +87,4 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 | `MASTER` | Registra cargos, partidos, candidatos · gestión global · anula actas |
 | `COORDINATOR` | Gestiona disputas, correcciones y aprobaciones (todas las JRVs) |
 | `ADMIN` | Solo lectura — dashboard y estadísticas en tiempo real |
-| `OBSERVER` | Registra actas por JRV y cargo asignados · corrige si se le solicita |
+| `OBSERVER` | Registra actas (selecciona JRV + Cantón) · corrige si COORDINATOR lo solicita |

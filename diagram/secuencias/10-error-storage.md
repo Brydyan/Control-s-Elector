@@ -1,5 +1,6 @@
 # Flujo 10 — Error al Subir Imagen a Storage (Compensación)
 
+n**Estado:** ⏳ PLANEADO — Código backend aún no implementado. Ver [diagram/README.md](../README.md).
 Escenario: el upload de la evidencia falla; el sistema compensa para no dejar datos huérfanos.
 
 ---

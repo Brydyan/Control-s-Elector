@@ -8,9 +8,27 @@ Referencia consolidada de todos los endpoints definidos en los flujos del sistem
 
 | Método | Endpoint | Rol requerido | Descripción |
 |--------|----------|---------------|-------------|
-| `POST` | `/api/auth/login` | Público | Login con cédula + contraseña → JWT |
-| `POST` | `/api/auth/refresh` | Público | Renueva access token con refresh token |
-| `POST` | `/api/auth/revoke` | MASTER | Revoca refresh tokens de un usuario |
+| `POST` | `/api/v1/auth/login` | Público | Login con email + contraseña → accessToken + refreshToken (httpOnly cookie) |
+| `POST` | `/api/v1/auth/refresh` | Público | Renueva access token usando refresh token (cookie o body) |
+| `POST` | `/api/v1/auth/logout` | Público | Revoca refresh token en DB + borra cookie |
+| `POST` | `/api/v1/auth/register` | MASTER | Crear usuario (solo MASTER puede registrar) |
+| `GET` | `/api/v1/auth/me` | Autenticado | Obtener datos del usuario actual (desde JWT) |
+| `GET` | `/api/v1/menus/me` | Autenticado | Obtener arbol de menus visibles según permisos RBAC |
+
+---
+
+## Actas (OBSERVER · COORDINATOR · MASTER)
+
+| Método | Endpoint | Rol requerido | Descripción |
+|--------|----------|---------------|-------------|
+| `POST` | `/api/v1/actas` | OBSERVER | Registrar acta (jrv_id, cargo_id, votos[], foto) |
+| `GET` | `/api/v1/actas` | OBSERVER · COORDINATOR · MASTER | Listar actas (con filtros) |
+| `GET` | `/api/v1/actas?estado=ENVIADA` | COORDINATOR | Pendientes de revisión |
+| `GET` | `/api/v1/actas?registrada_por={observer_id}` | COORDINATOR | Filtrar por OBSERVER |
+| `GET` | `/api/v1/actas/{id}` | COORDINATOR · MASTER | Detalle acta + foto |
+| `PATCH` | `/api/v1/actas/{id}` | COORDINATOR · OBSERVER | Corregir datos |
+| `PATCH` | `/api/v1/actas/{id}/estado` | COORDINATOR · MASTER | Cambiar estado (APROBADA, EN_DISPUTA, ANULADA) |
+| `GET` | `/api/v1/observers` | COORDINATOR | Listar OBSERVERS activos (para filtrar) |
 
 ---
 
@@ -34,23 +52,7 @@ Referencia consolidada de todos los endpoints definidos en los flujos del sistem
 | Método | Endpoint | Rol requerido | Descripción |
 |--------|----------|---------------|-------------|
 | `POST` | `/api/usuarios` | MASTER | Crear usuario |
-| `POST` | `/api/usuarios/{user_id}/jrvs` | MASTER | Asignar JRVs a un OBSERVER |
 | `GET` | `/api/usuarios/{user_id}` | MASTER | Ver detalle de usuario |
-
----
-
-## Actas
-
-| Método | Endpoint | Rol requerido | Descripción |
-|--------|----------|---------------|-------------|
-| `POST` | `/api/actas` | OBSERVER | Registrar acta (datos + foto WebP) |
-| `GET` | `/api/actas/{acta_id}` | MASTER · COORDINATOR | Ver acta por ID |
-| `GET` | `/api/actas/{acta_id}/detalle` | MASTER · COORDINATOR | Ver acta + detalle votos + audit_log |
-| `GET` | `/api/actas/{acta_id}/evidencia` | MASTER · COORDINATOR | Ver foto del acta |
-| `GET` | `/api/actas/jrv/{jrv_id}` | OBSERVER (sus JRVs) | Ver actas de una JRV |
-| `PATCH` | `/api/actas/{acta_id}` | OBSERVER · COORDINATOR · MASTER | Corregir datos del acta |
-| `PATCH` | `/api/actas/{acta_id}/estado` | COORDINATOR · MASTER | Cambiar estado del acta |
-| `POST` | `/api/actas/escalar` | OBSERVER | Escalar acta al COORDINATOR (MAX_RETRIES) |
 
 ---
 
@@ -58,7 +60,8 @@ Referencia consolidada de todos los endpoints definidos en los flujos del sistem
 
 | Método | Endpoint | Rol requerido | Descripción |
 |--------|----------|---------------|-------------|
-| `GET` | `/api/observer/correcciones-pendientes` | OBSERVER | Actas EN_DISPUTA asignadas al observer |
+| `GET` | `/api/observer/correcciones-pendientes` | OBSERVER | Actas EN_DISPUTA registradas por el observer (requieren corrección) |
+| `GET` | `/api/observer/mis-actas` | OBSERVER | Actas propias por estado (ENVIADA, EN_DISPUTA, CORREGIDA, APROBADA) |
 
 ---
 

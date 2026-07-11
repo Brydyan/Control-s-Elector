@@ -46,12 +46,6 @@ erDiagram
         string rol
     }
 
-    OBSERVER_JRV_ASIGNACION {
-        uuid id PK
-        uuid observer_id FK
-        uuid jrv_id FK
-        timestamp asignado_en
-    }
 
     CARGO {
         uuid id PK
@@ -138,8 +132,6 @@ erDiagram
     CANTON ||--o{ PARROQUIA : "tiene"
     PARROQUIA ||--o{ RECINTO_ELECTORAL : "contiene"
     RECINTO_ELECTORAL ||--o{ JRV : "alberga"
-    USUARIO ||--o{ OBSERVER_JRV_ASIGNACION : "asignado a"
-    JRV ||--o{ OBSERVER_JRV_ASIGNACION : "asignada a"
     JRV ||--o{ JRV_CARGO : "aplica"
     CARGO ||--o{ JRV_CARGO : "aplica en"
     CARGO ||--o{ CANDIDATO : "tiene"
@@ -204,7 +196,7 @@ SUM(acta_detalle.votos WHERE acta_id = ?) + votos_nulos + votos_blancos = total_
 | `MASTER` | Acceso total — registra cargos, partidos, candidatos y puede anular actas |
 | `COORDINATOR` | Global operativo — gestiona disputas, correcciones y aprobaciones |
 | `ADMIN` | Global solo lectura — dashboard y estadísticas en tiempo real |
-| `OBSERVER` | Upload de actas en sus JRVs asignadas y correcciones cuando se le solicita |
+| `OBSERVER` | Registra actas (selecciona JRV + Cantón libremente) y las corrige si COORDINATOR lo solicita |
 
 ---
 

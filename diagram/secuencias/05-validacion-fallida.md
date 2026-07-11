@@ -1,5 +1,6 @@
 # Flujo 05 — Validación de Acta Fallida y Corrección
 
+n**Estado:** ⏳ PLANEADO — Código backend aún no implementado. Ver [diagram/README.md](../README.md).
 ---
 
 ## Parte A — Envío y Rechazo por Validación

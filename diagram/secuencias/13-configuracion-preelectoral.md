@@ -1,5 +1,6 @@
 # Flujo 13 — Configuración Pre-Electoral (MASTER)
 
+n**Estado:** ⏳ PLANEADO — Código backend aún no implementado. Ver [diagram/README.md](../README.md).
 Escenario: MASTER registra toda la información necesaria antes del día de votación.
 
 ---
@@ -73,7 +74,7 @@ sequenceDiagram
 
 ---
 
-## Parte C — Creación de Usuarios OBSERVER y Asignación de JRVs
+## Parte C — Creación de Usuarios OBSERVER
 
 ```mermaid
 sequenceDiagram
@@ -83,26 +84,18 @@ sequenceDiagram
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 
-    Note over MASTER,PG: Paso 1 — Crear usuario OBSERVER\n(realizado en reunión presencial pre-electoral)
+    Note over MASTER,PG: Crear usuarios OBSERVER<br/>(realizado en reunión presencial pre-electoral)
 
-    MASTER->>API: POST /api/usuarios {cedula, nombre_completo, email, rol: OBSERVER}
+    MASTER->>API: POST /api/usuarios {email, password, rol: OBSERVER}
     API->>SVC: crearUsuario(dto)
-    SVC->>SVC: Genera contraseña temporal
-    SVC->>JPA: save(Usuario)
+    SVC->>SVC: Valida email único
+    SVC->>JPA: save(Usuario con rol=OBSERVER)
     JPA->>PG: INSERT usuario
     PG-->>JPA: user_id
-    SVC-->>API: UsuarioDTO + contraseña temporal
-    API-->>MASTER: 201 Created {user_id, password_temporal}
+    SVC-->>API: UsuarioDTO
+    API-->>MASTER: 201 Created {user_id, email}
 
-    Note over MASTER,PG: Paso 2 — Asignar JRVs al OBSERVER
-
-    MASTER->>API: POST /api/usuarios/{user_id}/jrvs {jrv_ids: [42, 43]}
-    API->>SVC: asignarJrvs(user_id, jrv_ids)
-    SVC->>JPA: saveAll(ObserverJrvAsignacion [{observer_id, jrv_id}])
-    JPA->>PG: INSERT observer_jrv_asignacion (bulk)
-    PG-->>JPA: ok
-    SVC-->>API: ok
-    API-->>MASTER: 200 OK — JRVs asignadas al observer
+    Note over MASTER: Repite para cada OBSERVER<br/>(sin pre-asignación de JRVs)<br/>Cada OBSERVER registrará actas<br/>de cualquier JRV durante votación
 ```
 
 ---
@@ -113,9 +106,8 @@ sequenceDiagram
 1. Registrar cargos electorales
 2. Registrar partidos políticos
 3. Registrar candidatos por cargo y partido
-4. Asignar cargos a cada JRV según geografía
+4. Asignar cargos a cada JRV según geografía (JRV_CARGO)
 5. Crear usuarios OBSERVER
-6. Asignar JRVs a cada OBSERVER
 ```
 
-> El orden importa: candidatos dependen de cargos y partidos. Las asignaciones de JRV al OBSERVER dependen de que las JRVs ya tengan cargos configurados.
+> El orden importa: candidatos dependen de cargos y partidos. JRV_CARGO debe estar poblada antes de que OBSERVERS registren actas.

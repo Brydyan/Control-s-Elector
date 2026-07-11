@@ -23,7 +23,7 @@ graph TD
         R_MASTER[ROLE_MASTER<br/>Acceso total + anulación]
         R_COORD[ROLE_COORDINATOR<br/>Global operativo — disputas y correcciones]
         R_ADMIN[ROLE_ADMIN<br/>Global solo lectura — dashboard y stats]
-        R_OBS[ROLE_OBSERVER<br/>JRVs asignadas — upload y correcciones propias]
+        R_OBS[ROLE_OBSERVER<br/>Registra actas libres — ve solo sus registros]
 
         JWT --> ROLES
         ROLES --> R_MASTER
@@ -37,7 +37,7 @@ graph TD
         POL_MASTER[Política MASTER<br/>Sin restricción]
         POL_COORD[Política COORDINATOR<br/>Sin restricción — todas las actas]
         POL_ADMIN[Política ADMIN<br/>Sin restricción — solo lectura vía API]
-        POL_OBS[Política OBSERVER<br/>WHERE jrv_id IN observer_jrv_asignacion]
+        POL_OBS[Política OBSERVER<br/>WHERE registrada_por = current_user_id<br/>Solo sus actas]
 
         RLS --> POL_MASTER
         RLS --> POL_COORD
@@ -82,9 +82,9 @@ graph TD
 |--------|--------|-------------|-------|----------|
 | Gestionar usuarios y configuración | ✅ | ❌ | ❌ | ❌ |
 | Registrar cargos, partidos y candidatos | ✅ | ❌ | ❌ | ❌ |
-| Ver todas las actas | ✅ | ✅ | ✅ | ✅ sus JRVs |
-| Registrar acta | ❌ | ❌ | ❌ | ✅ sus JRVs |
-| Ver evidencias (fotos) | ✅ | ✅ | ✅ | ✅ sus JRVs |
+| Ver todas las actas | ✅ | ✅ | ✅ APROBADAS | ✅ sus registros |
+| Registrar acta | ❌ | ❌ | ❌ | ✅ cualquier JRV |
+| Ver evidencias (fotos) | ✅ | ✅ | ✅ | ✅ sus registros |
 | Marcar acta EN_DISPUTA | ✅ | ✅ | ❌ | ❌ |
 | Corregir acta | ✅ | ✅ | ❌ | ✅ si se le solicita |
 | Aprobar acta | ✅ | ✅ | ❌ | ❌ |
@@ -102,7 +102,7 @@ graph TD
 | `MASTER` | Sin restricción | Todas las filas |
 | `COORDINATOR` | Sin restricción | Todas las filas |
 | `ADMIN` | Sin restricción | Todas las filas (lectura forzada en capa API) |
-| `OBSERVER` | `WHERE jrv_id IN (SELECT jrv_id FROM observer_jrv_asignacion WHERE observer_id = ?)` | Solo JRVs asignadas |
+| `OBSERVER` | `WHERE registrada_por = current_user_id` | Solo sus actas registradas |
 
 ---
 

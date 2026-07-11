@@ -14,11 +14,12 @@ graph TB
         AUTH_GUARD[Route Guards\nRBAC por rol JWT]
 
         subgraph VIEW_OBS["Vista OBSERVER"]
-            UI_CAPTURE[Formulario de Acta\npor JRV y Cargo]
+            UI_SELECT[Selecciona JRV + Cantón\nLibremente]
+            UI_CAPTURE[Formulario de Acta<br/>Cargo por JRV_CARGO]
             IMG_COMPRESS[Compresor WebP\nnativo en cliente]
             OFFLINE_IDB[IndexedDB\nCola Offline]
             OFFLINE_FS[Private Storage\nJRV-id_fecha_obs.webp]
-            PENDING[Correcciones\nPendientes]
+            PENDING[Correcciones de\nCOORDINATOR]
         end
 
         subgraph VIEW_COORD["Vista COORDINATOR / MASTER"]
@@ -80,7 +81,7 @@ graph TB
 | Ruta | Rol requerido | Función |
 |------|--------------|---------|
 | `/login` | Público | Autenticación |
-| `/observer/*` | OBSERVER | Registrar actas, correcciones pendientes |
+| `/observer/*` | OBSERVER | Registrar actas (selecciona JRV + Cantón), correcciones solicitadas |
 | `/coordinator/*` | COORDINATOR · MASTER | Disputas, correcciones, aprobaciones |
 | `/master/*` | MASTER | Cargos, partidos, candidatos, usuarios |
 | `/dashboard/*` | ADMIN · MASTER · COORDINATOR | Resultados en tiempo real |

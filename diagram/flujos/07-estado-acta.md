@@ -1,5 +1,7 @@
 # Flujo 07b — Diagrama de Estados del Acta
 
+**Estado:** 📋 REFERENCIA — Modelo de datos. Estado PLANEADO cuando ActaService se implemente.
+
 Ciclo de vida completo de un acta desde su creación hasta su estado final.
 
 ```mermaid
