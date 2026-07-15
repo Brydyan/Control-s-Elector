@@ -52,7 +52,38 @@ Una sola aplicación con control de acceso basado en roles (RBAC). Las vistas se
 | `MASTER` | Acceso total — registra cargos, partidos, candidatos, usuarios. Puede anular actas y revocar sesiones. |
 | `COORDINATOR` | Global operativo — gestiona disputas, correcciones y aprobaciones en todas las JRVs. |
 | `ADMIN` | Solo lectura — dashboard y estadísticas en tiempo real. No modifica datos. |
-| `OBSERVER` | Registra actas en sus JRVs asignadas. Corrige actas cuando el coordinator lo solicita. |
+| `OBSERVER` | Registra actas en cualquier JRV (libre selección). Corrige actas EN_DISPUTA cuando se le solicita. |
+
+---
+
+## Rutas y Permisos RBAC
+
+| Ruta | Descripción | OBSERVER | COORDINATOR | MASTER | ADMIN |
+|------|-------------|----------|-------------|--------|-------|
+| `/login` | Autenticación | ✅ | ✅ | ✅ | ✅ |
+| **OBSERVER** | | | | | |
+| `/observer/home` | Lista de actas propias | ✅ | ❌ | ❌ | ❌ |
+| `/observer/registro` | Registrar acta nueva (selecciona JRV + Cantón libremente) | ✅ | ❌ | ❌ | ❌ |
+| `/observer/correccion/:id` | Corregir acta EN_DISPUTA | ✅ | ❌ | ❌ | ❌ |
+| `/observer/captura/:id` | Capturar/subir foto del acta | ✅ | ❌ | ❌ | ❌ |
+| **COORDINATOR** | | | | | |
+| `/coordinator/actas` | Listado global de actas con filtros (estado, JRV, OBSERVER) | ❌ | ✅ | ✅ | ❌ |
+| `/coordinator/detalle/:id` | Detalle acta + foto + validaciones | ❌ | ✅ | ✅ | ❌ |
+| `/coordinator/disputar/:id` | Marcar acta EN_DISPUTA (con motivo) | ❌ | ✅ | ✅ | ❌ |
+| `/coordinator/aprobar/:id` | Aprobar acta CORREGIDA o ENVIADA | ❌ | ✅ | ✅ | ❌ |
+| **MASTER** | | | | | |
+| `/master/configuracion` | Cargos, partidos, candidatos, usuarios | ❌ | ❌ | ✅ | ❌ |
+| `/master/cargos` | CRUD cargos electorales | ❌ | ❌ | ✅ | ❌ |
+| `/master/partidos` | CRUD partidos políticos | ❌ | ❌ | ✅ | ❌ |
+| `/master/candidatos` | CRUD candidatos | ❌ | ❌ | ✅ | ❌ |
+| `/master/jrv-cargos` | Mapeo JRV_CARGO (qué cargos aplican por JRV) | ❌ | ❌ | ✅ | ❌ |
+| `/master/usuarios` | Crear/editar usuarios (sin pre-asignación JRVs) | ❌ | ❌ | ✅ | ❌ |
+| `/master/sesiones` | Ver sesiones activas y revocar tokens | ❌ | ❌ | ✅ | ❌ |
+| `/master/anular/:id` | Anular acta APROBADA (irreversible) | ❌ | ❌ | ✅ | ❌ |
+| **DASHBOARD** | | | | | |
+| `/dashboard/resumen` | Totales por estado de acta | ❌ | ✅ | ✅ | ✅ |
+| `/dashboard/resultados` | Votos consolidados por cargo + candidato + cantón | ❌ | ✅ | ✅ | ✅ |
+| `/dashboard/progreso` | Actas registradas vs total por cantón | ❌ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -132,7 +163,7 @@ Upload falla 3 veces
 ## Seguridad
 
 - **JWT** — access token en memoria (15 min), refresh token en localStorage (8h)
-- **RLS PostgreSQL** — OBSERVER solo accede a sus JRVs asignadas
+- **RLS PostgreSQL** — OBSERVER solo ve actas que registró (`registrada_por = current_user_id`)
 - **AuditLog** — cada operación relevante queda registrada con payload JSONB
 - **Locking pesimista** — previene condiciones de carrera por `jrv_id + cargo_id`
 - **Compresión WebP** — reduce imágenes de ~5MB a ~350KB antes de transmitir
