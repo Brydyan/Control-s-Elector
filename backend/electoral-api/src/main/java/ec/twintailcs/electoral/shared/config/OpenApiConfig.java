@@ -39,6 +39,9 @@ public class OpenApiConfig {
     @Value("${app.jwt.issuer:control-elector}")
     private String jwtIssuer;
 
+    @Value("${server.port:8080}")
+    private String serverPort;
+
     @Bean
     public OpenAPI customOpenAPI() {
         // Descripcion larga de la API: text block (Java 15+) para legibilidad.
@@ -90,7 +93,7 @@ public class OpenApiConfig {
                     .name("Propietario - Twin Tail CS")
                     .url("https://twintailcs.xyz/legal")))
             .servers(List.of(
-                new Server().url("http://localhost:8080").description("Local (dev)"),
+                new Server().url("http://localhost:" + serverPort).description("Local (dev)"),
                 new Server().url("https://api-staging.twintailcs.xyz").description("Staging"),
                 new Server().url("https://api.twintailcs.xyz").description("Produccion")))
             // Aplicar el scheme bearer-jwt globalmente. Cada operacion puede
