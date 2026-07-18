@@ -17,5 +17,7 @@ databaseChangeLog:
       file: database/changelog/004-public-ids.sql
   - include:
       file: database/changelog/005-fks.sql
+  - include:
+      file: database/changelog/006-geografia.sql
 
   # Nuevos changelogs se agregan ACA, al final, en orden creciente:
