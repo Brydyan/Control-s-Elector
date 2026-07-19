@@ -57,19 +57,23 @@ Script `infra/sql/02-rls.sql` + RlsInterceptor.java:
 
 ### T-IN-04 — Datos semilla (seed)
 
-**Estado:** TODO
+**Estado:** HECHO ✅
 **Prioridad:** MEDIA
-**Asignado:** sin asignar
-**Depende de:** T-IN-02
+**Asignado:** Andy
+**Depende de:** T-IN-02 ✅
 
 Script `infra/sql/03-seed.sql`:
 
-- [ ] Provincia Santa Elena
-- [ ] Cantones: Santa Elena (2401), La Libertad (2402), Salinas (2403)
-- [ ] Parroquias principales por cantón
-- [ ] JRVs de ejemplo (10-20 por cantón para staging)
-- [ ] Usuario MASTER inicial: `master@twintailcs.xyz`
-- [ ] Cargos: Prefecto, Alcalde, Concejal Urbano, Concejal Rural, Vocal JPR, Consejero CPCCS
+- [x] Provincia Santa Elena (1)
+- [x] Cantones: Santa Elena (2401), La Libertad (2402), Salinas (2403)
+- [x] Parroquias principales por cantón (6)
+- [x] JRVs de ejemplo (15 total: 5 por cantón)
+- [x] Usuario MASTER: creado vía DataSeeder.java en runtime
+- [x] Usuario OBSERVER de ejemplo: juapeperobs@control.ttcs con 3 JRVs asignadas
+- [x] Cargos: 6 electorales
+- [x] Partidos: 5 ejemplos (UP, CREO, RC, ID, CS)
+- [x] Candidatos: 3 ejemplos (Prefecto)
+- [x] JRV_CARGO: todos los cargos en todas las JRVs (cross join)
 
 ---
 
