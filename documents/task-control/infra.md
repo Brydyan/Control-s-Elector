@@ -50,8 +50,8 @@ Script `infra/sql/02-rls.sql` + RlsInterceptor.java:
 - [x] Policy COORDINATOR / ADMIN / MASTER: sin restricción de fila
 - [x] RlsInterceptor Spring filter: convierte publicId (UUID) a internal id (Long) y ejecuta `SET LOCAL app.current_user_id`
 - [x] SecurityConfig: wiring RlsInterceptor después de JwtAuthFilter
-- [ ] Función `current_user_id()` que lee claim del JWT (vía `app.current_user_id` setting)
-- [ ] Verificar que API pasa `SET LOCAL app.current_user_id = ?` antes de queries
+- [x] Función `get_current_user_id()` que lee session variable (vía `app.current_user_id` setting)
+- [x] Verificar que API pasa `SET LOCAL app.current_user_id = ?` antes de queries
 
 ---
 
