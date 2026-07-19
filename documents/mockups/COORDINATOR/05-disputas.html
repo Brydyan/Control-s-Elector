@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COORDINATOR — Gestión de Disputas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #E2E8F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #E2E8F0; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #0F172A; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .status-time { color: #fff; font-size: 14px; font-weight: 600; }
+  .status-icons { display: flex; gap: 6px; }
+  .status-icons span { color: #fff; font-size: 12px; }
+
+  .toolbar { background: linear-gradient(135deg, #0F172A, #334155); padding: 10px 16px 14px; flex-shrink: 0; }
+  .toolbar-row { display: flex; align-items: center; gap: 10px; }
+  .toolbar-title { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
+  .toolbar-sub { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 4px; }
+
+  .alert-banner { background: #fef2f2; border-bottom: 1px solid #fecaca; padding: 10px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .alert-banner .alert-text { font-size: 12px; color: #b91c1c; font-weight: 600; flex: 1; }
+  .alert-banner .alert-count { background: #ef4444; color: #fff; font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 10px; }
+
+  .stats-row { display: flex; gap: 8px; padding: 10px 14px; background: #fff; border-bottom: 1px solid #e8e8e8; flex-shrink: 0; }
+  .mini-stat { flex: 1; text-align: center; }
+  .mini-stat-value { font-size: 20px; font-weight: 800; color: #f97316; }
+  .mini-stat-label { font-size: 10px; color: #4C6589; font-weight: 600; }
+
+  .scroll-area { flex: 1; overflow-y: auto; padding: 10px 14px; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  .section-title { font-size: 12px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; margin-top: 6px; }
+
+  .disputa-card { background: #fff; border-radius: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #f97316; overflow: hidden; }
+  .disputa-card.urgent { border-left-color: #ef4444; }
+  .disputa-header { padding: 12px 14px 6px; }
+  .disputa-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .disputa-jrv { font-size: 15px; font-weight: 700; color: #334550; }
+  .urgente-tag { background: #fef2f2; color: #ef4444; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .disputa-tag { background: #fff7ed; color: #f97316; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; }
+  .disputa-cargo { font-size: 12px; color: #475569; font-weight: 600; }
+  .disputa-meta { font-size: 11px; color: #4C6589; margin-top: 3px; }
+
+  .disputa-motivo { background: #fff7ed; padding: 8px 14px; margin: 0; }
+  .motivo-label { font-size: 10px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .motivo-text { font-size: 12px; color: #475569; font-style: italic; }
+
+  .disputa-actions { padding: 10px 14px; display: flex; gap: 8px; background: #fafafa; border-top: 1px solid #f0f0f0; }
+  .btn-sm { padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; }
+  .btn-view { background: #f0f9ff; color: #475569; }
+  .btn-resolve { background: linear-gradient(135deg, #0F172A, #334155); color: #fff; flex: 1; }
+  .btn-correct { background: #f5f3ff; color: #475569; }
+
+  .flow-card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .flow-title { font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 10px; }
+  .flow-steps { display: flex; align-items: center; gap: 4px; }
+  .flow-step { background: #f0f9ff; color: #475569; font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
+  .flow-step.active { background: #fff7ed; color: #f97316; }
+  .flow-arrow { color: #ccc; font-size: 12px; }
+
+  .bottom-nav { background: #fff; border-top: 1px solid #e8e8e8; display: flex; height: 70px; flex-shrink: 0; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: #4C6589; }
+  .nav-item.active .nav-label { color: #475569; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <span class="toolbar-title">Disputas Activas</span>
+    </div>
+    <div class="toolbar-sub">COORDINATOR gestiona resolución — solicita corrección u aprueba</div>
+  </div>
+
+  <div class="alert-banner">
+    <span style="font-size:18px">⚠️</span>
+    <span class="alert-text">1 disputa urgente — más de 60 min sin resolver</span>
+    <span class="alert-count">12</span>
+  </div>
+
+  <div class="stats-row">
+    <div class="mini-stat"><div class="mini-stat-value">12</div><div class="mini-stat-label">En disputa</div></div>
+    <div class="mini-stat"><div class="mini-stat-value" style="color:#ef4444">1</div><div class="mini-stat-label">Urgentes</div></div>
+    <div class="mini-stat"><div class="mini-stat-value" style="color:#475569">5</div><div class="mini-stat-label">En corrección</div></div>
+    <div class="mini-stat"><div class="mini-stat-value" style="color:#22c55e">28</div><div class="mini-stat-label">Resueltas hoy</div></div>
+  </div>
+
+  <div class="scroll-area">
+
+    <div class="flow-card">
+      <div class="flow-title">Flujo de resolución de disputa</div>
+      <div class="flow-steps">
+        <span class="flow-step">ENVIADA</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step active">EN_DISPUTA</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">CORREGIDA</span>
+        <span class="flow-arrow">→</span>
+        <span class="flow-step">APROBADA</span>
+      </div>
+    </div>
+
+    <div class="section-title">⚠️ Urgente — más de 60 min</div>
+
+    <div class="disputa-card urgent">
+      <div class="disputa-header">
+        <div class="disputa-top">
+          <span class="disputa-jrv">JRV 2401-087</span>
+          <span class="urgente-tag">🔴 URGENTE 1h12m</span>
+        </div>
+        <div class="disputa-cargo">Prefecto/a · Santa Elena · Colonche</div>
+        <div class="disputa-meta">Observer: María González · Marcado en disputa: 08:29</div>
+      </div>
+      <div class="disputa-motivo">
+        <div class="motivo-label">Motivo de disputa</div>
+        <div class="motivo-text">"Los votos no coinciden con el total de sufragantes"</div>
+      </div>
+      <div class="disputa-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+        <button class="btn-sm btn-correct">📝 Pedir corrección</button>
+        <button class="btn-sm btn-resolve">✅ Resolver</button>
+      </div>
+    </div>
+
+    <div class="section-title">Disputas en proceso</div>
+
+    <div class="disputa-card">
+      <div class="disputa-header">
+        <div class="disputa-top">
+          <span class="disputa-jrv">JRV 2402-034</span>
+          <span class="disputa-tag">⚠️ 28 min</span>
+        </div>
+        <div class="disputa-cargo">Alcalde/sa · La Libertad</div>
+        <div class="disputa-meta">Observer: Carlos Pinto · Marcado: 09:13</div>
+      </div>
+      <div class="disputa-motivo">
+        <div class="motivo-label">Motivo de disputa</div>
+        <div class="motivo-text">"Firma del veedor faltante en el documento"</div>
+      </div>
+      <div class="disputa-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+        <button class="btn-sm btn-correct">📝 Pedir corrección</button>
+        <button class="btn-sm btn-resolve">✅ Resolver</button>
+      </div>
+    </div>
+
+    <div class="disputa-card">
+      <div class="disputa-header">
+        <div class="disputa-top">
+          <span class="disputa-jrv">JRV 2403-015</span>
+          <span class="disputa-tag">⚠️ 45 min</span>
+        </div>
+        <div class="disputa-cargo">Consejero/a CPCCS · Salinas</div>
+        <div class="disputa-meta">Observer: Pedro Lara · Marcado: 08:56</div>
+      </div>
+      <div class="disputa-motivo">
+        <div class="motivo-label">Motivo de disputa</div>
+        <div class="motivo-text">"Imagen del acta fuera de foco, números ilegibles"</div>
+      </div>
+      <div class="disputa-actions">
+        <button class="btn-sm btn-view">👁️ Ver</button>
+        <button class="btn-sm btn-correct">📝 Pedir corrección</button>
+        <button class="btn-sm btn-resolve">✅ Resolver</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Inicio</span></div>
+    <div class="nav-item"><span class="nav-icon">📄</span><span class="nav-label">Actas</span></div>
+    <div class="nav-item active"><span class="nav-icon">⚠️</span><span class="nav-label">Disputas</span></div>
+    <div class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">Correcciones</span></div>
+    <div class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">Reportes</span></div>
+  </div>
+</div>
+</body>
+</html>

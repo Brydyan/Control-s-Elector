@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COORDINATOR — Reportes y Estadísticas</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #E2E8F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #E2E8F0; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #0F172A; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .status-time { color: #fff; font-size: 14px; font-weight: 600; }
+  .status-icons { display: flex; gap: 6px; }
+  .status-icons span { color: #fff; font-size: 12px; }
+
+  .toolbar { background: linear-gradient(135deg, #0F172A, #334155); padding: 10px 16px 14px; flex-shrink: 0; }
+  .toolbar-row { display: flex; align-items: center; gap: 10px; }
+  .toolbar-title { color: #fff; font-size: 17px; font-weight: 700; flex: 1; }
+  .live-pill { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 12px; display: flex; align-items: center; gap: 5px; }
+  .dot-pulse { width: 7px; height: 7px; background: #4ade80; border-radius: 50%; box-shadow: 0 0 0 2px rgba(74,222,128,0.4); }
+  .live-pill span { color: #fff; font-size: 10px; font-weight: 600; }
+
+  .progress-banner { background: linear-gradient(135deg, #0F172A, #334155); padding: 0 16px 16px; flex-shrink: 0; }
+  .progress-big { color: #fff; font-size: 40px; font-weight: 900; line-height: 1; }
+  .progress-label { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 4px; margin-bottom: 10px; }
+  .progress-bar-bg { height: 8px; background: rgba(255,255,255,0.2); border-radius: 4px; }
+  .progress-bar-fill { height: 8px; background: #4ade80; border-radius: 4px; width: 68%; }
+
+  .scroll-area { flex: 1; overflow-y: auto; padding: 12px 14px; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  .canton-section { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .section-title { font-size: 13px; font-weight: 700; color: #334550; margin-bottom: 10px; }
+  .canton-row { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; }
+  .canton-row:last-child { border-bottom: none; }
+  .canton-name { font-size: 12px; font-weight: 700; color: #334550; width: 90px; flex-shrink: 0; }
+  .canton-bar-bg { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; }
+  .canton-bar-fill { height: 8px; border-radius: 4px; }
+  .canton-pct { font-size: 12px; font-weight: 700; color: #475569; width: 36px; text-align: right; }
+
+  .stats-section { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .stat-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #f5f5f5; }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-name { font-size: 12px; color: #475569; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .stat-val { font-size: 14px; font-weight: 800; color: #334550; }
+
+  .cargo-section { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .cargo-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid #f5f5f5; }
+  .cargo-row:last-child { border-bottom: none; }
+  .cargo-name { font-size: 12px; color: #475569; flex: 1; }
+  .cargo-pct-bar { display: flex; align-items: center; gap: 6px; }
+  .mini-bar-bg { width: 60px; height: 6px; background: #f0f0f0; border-radius: 3px; }
+  .mini-bar-fill { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #0F172A, #334155); }
+  .cargo-pct-label { font-size: 11px; font-weight: 700; color: #475569; }
+
+  .bottom-nav { background: #fff; border-top: 1px solid #e8e8e8; display: flex; height: 70px; flex-shrink: 0; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: #4C6589; }
+  .nav-item.active .nav-label { color: #475569; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-row">
+      <span class="toolbar-title">Reportes</span>
+      <div class="live-pill"><div class="dot-pulse"></div><span>Realtime</span></div>
+    </div>
+  </div>
+
+  <div class="progress-banner">
+    <div class="progress-big">68%</div>
+    <div class="progress-label">Progreso — 219 / 322 JRVs procesadas</div>
+    <div class="progress-bar-bg"><div class="progress-bar-fill"></div></div>
+  </div>
+
+  <div class="scroll-area">
+
+    <div class="canton-section">
+      <div class="section-title">Progreso por cantón</div>
+      <div class="canton-row">
+        <span class="canton-name">Santa Elena</span>
+        <div class="canton-bar-bg"><div class="canton-bar-fill" style="width:72%;background:linear-gradient(90deg,#0F172A,#334155);height:8px;border-radius:4px;"></div></div>
+        <span class="canton-pct">72%</span>
+      </div>
+      <div class="canton-row">
+        <span class="canton-name">La Libertad</span>
+        <div class="canton-bar-bg"><div class="canton-bar-fill" style="width:65%;background:linear-gradient(90deg,#0F172A,#334155);height:8px;border-radius:4px;"></div></div>
+        <span class="canton-pct">65%</span>
+      </div>
+      <div class="canton-row">
+        <span class="canton-name">Salinas</span>
+        <div class="canton-bar-bg"><div class="canton-bar-fill" style="width:58%;background:linear-gradient(90deg,#0F172A,#334155);height:8px;border-radius:4px;"></div></div>
+        <span class="canton-pct">58%</span>
+      </div>
+    </div>
+
+    <div class="stats-section">
+      <div class="section-title">Resumen de estados</div>
+      <div class="stat-row">
+        <span class="stat-name"><span class="stat-dot" style="background:#3b82f6"></span>Enviadas</span>
+        <span class="stat-val">189</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-name"><span class="stat-dot" style="background:#f97316"></span>En disputa</span>
+        <span class="stat-val">12</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-name"><span class="stat-dot" style="background:#475569"></span>Corregidas</span>
+        <span class="stat-val">7</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-name"><span class="stat-dot" style="background:#22c55e"></span>Aprobadas</span>
+        <span class="stat-val">118</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-name"><span class="stat-dot" style="background:#94a3b8"></span>Anuladas</span>
+        <span class="stat-val" style="color:#94a3b8">3</span>
+      </div>
+    </div>
+
+    <div class="cargo-section">
+      <div class="section-title">Progreso por cargo</div>
+      <div class="cargo-row">
+        <span class="cargo-name">Prefecto/a (PROVINCIA)</span>
+        <div class="cargo-pct-bar"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:85%"></div></div><span class="cargo-pct-label">85%</span></div>
+      </div>
+      <div class="cargo-row">
+        <span class="cargo-name">Consejero/a CPCCS (NAC)</span>
+        <div class="cargo-pct-bar"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:82%"></div></div><span class="cargo-pct-label">82%</span></div>
+      </div>
+      <div class="cargo-row">
+        <span class="cargo-name">Alcalde/sa (CANTÓN)</span>
+        <div class="cargo-pct-bar"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:70%"></div></div><span class="cargo-pct-label">70%</span></div>
+      </div>
+      <div class="cargo-row">
+        <span class="cargo-name">Concejal Urbano</span>
+        <div class="cargo-pct-bar"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:62%"></div></div><span class="cargo-pct-label">62%</span></div>
+      </div>
+      <div class="cargo-row">
+        <span class="cargo-name">Vocal JPR (PARROQUIA)</span>
+        <div class="cargo-pct-bar"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:45%"></div></div><span class="cargo-pct-label">45%</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Inicio</span></div>
+    <div class="nav-item"><span class="nav-icon">📄</span><span class="nav-label">Actas</span></div>
+    <div class="nav-item"><span class="nav-icon">⚠️</span><span class="nav-label">Disputas</span></div>
+    <div class="nav-item"><span class="nav-icon">📝</span><span class="nav-label">Correcciones</span></div>
+    <div class="nav-item active"><span class="nav-icon">📊</span><span class="nav-label">Reportes</span></div>
+  </div>
+</div>
+</body>
+</html>

@@ -9,7 +9,7 @@ Permite a los observadores políticos digitalizar los resultados de las Juntas R
 ## Dignidades Electorales
 
 | Cargo | Nivel | Aplica en |
-|-------|-------|-----------|
+| ------- | ------- | ----------- |
 | Prefecto/a | Provincial | Todas las JRVs |
 | Consejero/a CPCCS | Nacional | Todas las JRVs |
 | Alcalde/sa | Cantonal | JRVs del cantón |
@@ -48,11 +48,42 @@ Una sola aplicación con control de acceso basado en roles (RBAC). Las vistas se
 ## Roles del Sistema
 
 | Rol | Responsabilidad |
-|-----|----------------|
+| ----- | ---------------- |
 | `MASTER` | Acceso total — registra cargos, partidos, candidatos, usuarios. Puede anular actas y revocar sesiones. |
 | `COORDINATOR` | Global operativo — gestiona disputas, correcciones y aprobaciones en todas las JRVs. |
 | `ADMIN` | Solo lectura — dashboard y estadísticas en tiempo real. No modifica datos. |
-| `OBSERVER` | Registra actas en sus JRVs asignadas. Corrige actas cuando el coordinator lo solicita. |
+| `OBSERVER` | Registra actas en cualquier JRV (libre selección). Corrige actas EN_DISPUTA cuando se le solicita. |
+
+---
+
+## Rutas y Permisos RBAC
+
+| Ruta | Descripción | OBSERVER | COORDINATOR | MASTER | ADMIN |
+|------|-------------|----------|-------------|--------|-------|
+| `/login` | Autenticación | ✅ | ✅ | ✅ | ✅ |
+| **OBSERVER** | | | | | |
+| `/observer/home` | Lista de actas propias | ✅ | ❌ | ❌ | ❌ |
+| `/observer/registro` | Registrar acta nueva (selecciona JRV + Cantón libremente) | ✅ | ❌ | ❌ | ❌ |
+| `/observer/correccion/:id` | Corregir acta EN_DISPUTA | ✅ | ❌ | ❌ | ❌ |
+| `/observer/captura/:id` | Capturar/subir foto del acta | ✅ | ❌ | ❌ | ❌ |
+| **COORDINATOR** | | | | | |
+| `/coordinator/actas` | Listado global de actas con filtros (estado, JRV, OBSERVER) | ❌ | ✅ | ✅ | ❌ |
+| `/coordinator/detalle/:id` | Detalle acta + foto + validaciones | ❌ | ✅ | ✅ | ❌ |
+| `/coordinator/disputar/:id` | Marcar acta EN_DISPUTA (con motivo) | ❌ | ✅ | ✅ | ❌ |
+| `/coordinator/aprobar/:id` | Aprobar acta CORREGIDA o ENVIADA | ❌ | ✅ | ✅ | ❌ |
+| **MASTER** | | | | | |
+| `/master/configuracion` | Cargos, partidos, candidatos, usuarios | ❌ | ❌ | ✅ | ❌ |
+| `/master/cargos` | CRUD cargos electorales | ❌ | ❌ | ✅ | ❌ |
+| `/master/partidos` | CRUD partidos políticos | ❌ | ❌ | ✅ | ❌ |
+| `/master/candidatos` | CRUD candidatos | ❌ | ❌ | ✅ | ❌ |
+| `/master/jrv-cargos` | Mapeo JRV_CARGO (qué cargos aplican por JRV) | ❌ | ❌ | ✅ | ❌ |
+| `/master/usuarios` | Crear/editar usuarios (sin pre-asignación JRVs) | ❌ | ❌ | ✅ | ❌ |
+| `/master/sesiones` | Ver sesiones activas y revocar tokens | ❌ | ❌ | ✅ | ❌ |
+| `/master/anular/:id` | Anular acta APROBADA (irreversible) | ❌ | ❌ | ✅ | ❌ |
+| **DASHBOARD** | | | | | |
+| `/dashboard/resumen` | Totales por estado de acta | ❌ | ✅ | ✅ | ✅ |
+| `/dashboard/resultados` | Votos consolidados por cargo + candidato + cantón | ❌ | ✅ | ✅ | ✅ |
+| `/dashboard/progreso` | Actas registradas vs total por cantón | ❌ | ✅ | ✅ | ✅ |
 
 ---
 
@@ -63,7 +94,7 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 ```
 
 | Transición | Quién |
-|------------|-------|
+| ------------ | ------- |
 | `BORRADOR → ENVIADA` | OBSERVER |
 | `ENVIADA → EN_DISPUTA` | COORDINATOR · MASTER |
 | `EN_DISPUTA → CORREGIDA` | OBSERVER o COORDINATOR (sin tiempo de espera) |
@@ -75,18 +106,22 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 ## Stack Tecnológico
 
 ### Frontend
+
 - **Angular 17+** + **Ionic Framework** (TypeScript)
 - RBAC por Route Guards según rol del JWT
 - Compresión nativa WebP en cliente (Canvas API)
 - Estrategia Offline-First: IndexedDB + Private Storage
 
 ### Backend
-- **Java 17** / **Spring Boot** (Web, Security, Data JPA)
+
+- **Java 21** / **Spring Boot 4** (Web, Security, Data JPA)
+- **GraalVM Native Image** — startup ~50ms, RAM ~64MB
 - RBAC con Spring Security + JWT stateless
 - Locking pesimista `SELECT FOR UPDATE` por `jrv_id + cargo_id`
 - AuditLogService con registro completo de operaciones
 
 ### Persistencia
+
 - **PostgreSQL** (Supabase) con Row Level Security (RLS)
 - **Supabase Object Storage** — evidencias en formato `.webp`
 - **Supabase Realtime** — WebSocket para dashboard en tiempo real
@@ -96,6 +131,7 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 ## Gestión de Entornos
 
 ### Staging — Servidor Local
+
 - PostgreSQL dockerizado + emulación de storage local
 - Acceso remoto mediante túnel **Tailscale** sin puertos públicos
 - Pruebas de stress desde dispositivos móviles reales
@@ -103,7 +139,7 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 ### Producción — Nube
 
 | Subdominio | Servicio | Proveedor |
-|------------|---------|-----------|
+| ------------ | --------- | ----------- |
 | `api.twintailcs.xyz` | API REST Spring Boot | Railway Pro |
 | `control.twintailcs.xyz` | App Angular+Ionic (todos los roles) | Vercel |
 
@@ -127,7 +163,7 @@ Upload falla 3 veces
 ## Seguridad
 
 - **JWT** — access token en memoria (15 min), refresh token en localStorage (8h)
-- **RLS PostgreSQL** — OBSERVER solo accede a sus JRVs asignadas
+- **RLS PostgreSQL** — OBSERVER solo ve actas que registró (`registrada_por = current_user_id`)
 - **AuditLog** — cada operación relevante queda registrada con payload JSONB
 - **Locking pesimista** — previene condiciones de carrera por `jrv_id + cargo_id`
 - **Compresión WebP** — reduce imágenes de ~5MB a ~350KB antes de transmitir

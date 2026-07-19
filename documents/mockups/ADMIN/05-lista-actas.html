@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADMIN — Lista de Actas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #E2E8F0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 32px;
+    }
+    .screen {
+      width: 390px;
+      background: #f4f5f8;
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    }
+    .toolbar {
+      background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+      padding: 52px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+    }
+    .back-btn {
+      width: 34px; height: 34px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .toolbar-title { font-size: 18px; font-weight: 700; }
+    /* Searchbar */
+    .searchbar {
+      background: white;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #eee;
+    }
+    .searchbar-input {
+      flex: 1;
+      background: #f4f5f8;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 14px;
+      color: #334550;
+      outline: none;
+    }
+    .searchbar-icon { font-size: 18px; color: #4C6589; }
+    /* Filter chips */
+    .filters {
+      background: white;
+      padding: 8px 16px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      border-bottom: 1px solid #eee;
+    }
+    .filter-chip {
+      white-space: nowrap;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .chip-all { background: #0F172A; color: white; }
+    .chip-enviada { background: #e8edff; color: #3880ff; }
+    .chip-disputa { background: #fff3e0; color: #ffa600; }
+    .chip-aprobada { background: #e8f5e9; color: #2dd36f; }
+    .chip-anulada { background: #fdecea; color: #eb445a; }
+    /* Count info */
+    .count-bar {
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #4C6589;
+      background: #f4f5f8;
+    }
+    /* List */
+    .acta-list { padding: 0 12px; }
+    .acta-item {
+      background: white;
+      border-radius: 14px;
+      padding: 14px;
+      margin: 8px 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      cursor: pointer;
+    }
+    .acta-item-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .acta-jrv { font-size: 15px; font-weight: 700; color: #334550; }
+    .acta-cargo { font-size: 12px; color: #475569; margin-top: 2px; }
+    .acta-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .badge-enviada  { background: #e8edff; color: #3880ff; }
+    .badge-disputa  { background: #fff3e0; color: #ffa600; }
+    .badge-corregida { background: #e8e8ff; color: #475569; }
+    .badge-aprobada { background: #e8f5e9; color: #2dd36f; }
+    .badge-anulada  { background: #fdecea; color: #eb445a; }
+    .acta-item-bottom {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #4C6589;
+    }
+    .acta-observer { display: flex; align-items: center; gap: 4px; }
+    .readonly-label {
+      font-size: 11px;
+      color: #ccc;
+      font-style: italic;
+    }
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #4C6589;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    /* Nav */
+    .nav-tabs {
+      background: white;
+      display: flex;
+      border-top: 1px solid #e8e8e8;
+      padding: 8px 0 20px;
+    }
+    .nav-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      color: #4C6589;
+      padding: 8px 0;
+    }
+    .nav-tab.active { color: #475569; }
+    .nav-tab-icon { font-size: 22px; }
+    /* Annotation */
+    .annotation {
+      width: 280px;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      font-size: 13px;
+      line-height: 1.6;
+      align-self: flex-start;
+      margin-top: 60px;
+    }
+    .annotation h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #334550; border-bottom: 2px solid #475569; padding-bottom: 8px; }
+    .annotation-section { margin-bottom: 14px; }
+    .annotation-section h4 { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .annotation-section ul { padding-left: 16px; color: #475569; }
+    .annotation-section li { margin-bottom: 3px; }
+    code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+    .tag-no { background: #fdecea; color: #eb445a; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div class="screen">
+  <div class="toolbar">
+    <div class="back-btn">←</div>
+    <div class="toolbar-title">📋 Lista de Actas</div>
+  </div>
+
+  <!-- Searchbar -->
+  <div class="searchbar">
+    <span class="searchbar-icon">🔍</span>
+    <input class="searchbar-input" type="text" placeholder="Buscar por JRV, canton, cargo..." readonly />
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-chip chip-all">Todas</div>
+    <div class="filter-chip chip-enviada">Enviadas</div>
+    <div class="filter-chip chip-disputa">En Disputa</div>
+    <div class="filter-chip chip-aprobada">Aprobadas</div>
+    <div class="filter-chip chip-anulada">Anuladas</div>
+  </div>
+
+  <!-- Count -->
+  <div class="count-bar">Mostrando 291 actas · Excluye BORRADOR</div>
+
+  <!-- List -->
+  <div class="acta-list">
+
+    <div class="acta-item">
+      <div class="acta-item-top">
+        <div>
+          <div class="acta-jrv">JRV 001 — Santa Elena</div>
+          <div class="acta-cargo">Prefecto/a Provincial</div>
+        </div>
+        <div class="acta-badge badge-aprobada">APROBADA</div>
+      </div>
+      <div class="acta-item-bottom">
+        <div class="acta-observer">👤 Mario López · 14:32</div>
+        <div class="readonly-label">solo lectura</div>
+      </div>
+    </div>
+
+    <div class="acta-item">
+      <div class="acta-item-top">
+        <div>
+          <div class="acta-jrv">JRV 002 — Santa Elena</div>
+          <div class="acta-cargo">Alcalde/sa Cantón</div>
+        </div>
+        <div class="acta-badge badge-disputa">EN_DISPUTA</div>
+      </div>
+      <div class="acta-item-bottom">
+        <div class="acta-observer">👤 Lucía Vera · 13:05</div>
+        <div class="readonly-label">solo lectura</div>
+      </div>
+    </div>
+
+    <div class="acta-item">
+      <div class="acta-item-top">
+        <div>
+          <div class="acta-jrv">JRV 015 — Chanduy</div>
+          <div class="acta-cargo">Vocal Junta Parroquial</div>
+        </div>
+        <div class="acta-badge badge-enviada">ENVIADA</div>
+      </div>
+      <div class="acta-item-bottom">
+        <div class="acta-observer">👤 Pedro Suárez · 15:10</div>
+        <div class="readonly-label">solo lectura</div>
+      </div>
+    </div>
+
+    <div class="acta-item">
+      <div class="acta-item-top">
+        <div>
+          <div class="acta-jrv">JRV 088 — La Libertad</div>
+          <div class="acta-cargo">Concejal Urbano</div>
+        </div>
+        <div class="acta-badge badge-aprobada">APROBADA</div>
+      </div>
+      <div class="acta-item-bottom">
+        <div class="acta-observer">👤 Ana Torres · 11:48</div>
+        <div class="readonly-label">solo lectura</div>
+      </div>
+    </div>
+
+    <div class="acta-item">
+      <div class="acta-item-top">
+        <div>
+          <div class="acta-jrv">JRV 099 — La Libertad</div>
+          <div class="acta-cargo">Prefecto/a Provincial</div>
+        </div>
+        <div class="acta-badge badge-anulada">ANULADA</div>
+      </div>
+      <div class="acta-item-bottom">
+        <div class="acta-observer">👤 Carlos Pinto · 09:20</div>
+        <div class="readonly-label">solo lectura</div>
+      </div>
+    </div>
+
+    <div class="acta-item">
+      <div class="acta-item-top">
+        <div>
+          <div class="acta-jrv">JRV 120 — Salinas</div>
+          <div class="acta-cargo">Consejero/a CPCCS</div>
+        </div>
+        <div class="acta-badge badge-corregida">CORREGIDA</div>
+      </div>
+      <div class="acta-item-bottom">
+        <div class="acta-observer">👤 Rosa Núñez · 16:00</div>
+        <div class="readonly-label">solo lectura</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-tabs">
+    <div class="nav-tab">
+      <span class="nav-tab-icon">📊</span>
+      Resumen
+    </div>
+    <div class="nav-tab">
+      <span class="nav-tab-icon">📈</span>
+      Resultados
+    </div>
+    <div class="nav-tab">
+      <span class="nav-tab-icon">🗺️</span>
+      Cantones
+    </div>
+    <div class="nav-tab active">
+      <span class="nav-tab-icon">📋</span>
+      Actas
+    </div>
+  </div>
+</div>
+
+<!-- Annotation -->
+<div class="annotation">
+  <h3>📋 Lista de Actas — ADMIN</h3>
+
+  <div class="annotation-section">
+    <h4>Ruta</h4>
+    <ul><li><code>/dashboard/actas</code></li></ul>
+  </div>
+
+  <div class="annotation-section">
+    <h4>Lo que NO tiene ADMIN</h4>
+    <ul>
+      <li><span class="tag-no">NO</span> Botón disputar</li>
+      <li><span class="tag-no">NO</span> Botón aprobar</li>
+      <li><span class="tag-no">NO</span> Botón anular</li>
+      <li><span class="tag-no">NO</span> Botón corregir</li>
+      <li>Label "solo lectura" visible en cada item</li>
+    </ul>
+  </div>
+
+  <div class="annotation-section">
+    <h4>Filtros disponibles</h4>
+    <ul>
+      <li>Por estado (<code>EstadoActa</code>)</li>
+      <li>Buscar por texto (JRV, cantón, cargo)</li>
+      <li>Excluye <code>BORRADOR</code> siempre</li>
+    </ul>
+  </div>
+
+  <div class="annotation-section">
+    <h4>Endpoint</h4>
+    <ul>
+      <li><code>GET /api/dashboard/actas</code></li>
+      <li>Query: <code>?estado=ENVIADA</code></li>
+      <li>Acceso: ADMIN, COORDINATOR, MASTER</li>
+    </ul>
+  </div>
+
+  <div class="annotation-section">
+    <h4>Tap en item</h4>
+    <ul>
+      <li>Navega a detalle del acta</li>
+      <li>Vista read-only para ADMIN</li>
+      <li>Muestra votos por candidato</li>
+      <li>Sin acciones disponibles</li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

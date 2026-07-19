@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Desktop — Configuración Electoral</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #E2E8F0; min-height: 100vh; display: flex; }
+    .sidebar { width: 240px; min-height: 100vh; background: #334155; color: white; display: flex; flex-direction: column; flex-shrink: 0; }
+    .sidebar-brand { padding: 28px 24px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .sidebar-brand-row { display: flex; align-items: center; gap: 10px; }
+    .sidebar-logo { width: 38px; height: 38px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .sidebar-brand-name { font-size: 15px; font-weight: 800; }
+    .sidebar-brand-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+    .sidebar-nav { flex: 1; padding: 12px; }
+    .nav-section-label { font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 1px; padding: 0 12px; margin: 14px 0 4px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 10px; font-size: 13px; color: rgba(255,255,255,0.6); cursor: pointer; margin-bottom: 1px; }
+    .nav-item.active { background: linear-gradient(135deg, #0F172A, #334155); color: white; font-weight: 600; }
+    .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+    .nav-badge { margin-left: auto; background: #eb445a; color: white; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 20px; }
+    .sidebar-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+    .user-card { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.06); border-radius: 10px; }
+    .user-avatar { width: 34px; height: 34px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; color: white; }
+    .user-name { font-size: 13px; font-weight: 600; color: white; }
+    .user-rol { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { background: white; padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8e8e8; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .topbar-title h1 { font-size: 18px; font-weight: 800; color: #334550; }
+    .topbar-title p { font-size: 12px; color: #4C6589; margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; }
+    .btn-primary { background: linear-gradient(135deg, #0F172A, #334155); color: white; border: none; border-radius: 10px; padding: 8px 18px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .master-badge { background: linear-gradient(135deg, #0F172A, #334155); color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+    .content { padding: 28px 32px; flex: 1; overflow-y: auto; }
+    /* Summary cards */
+    .summary-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .sum-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 14px; }
+    .sum-icon { width: 48px; height: 48px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .icon-purple { background: #f0e6ff; }
+    .icon-blue { background: #e8edff; }
+    .icon-green { background: #e8f5e9; }
+    .sum-val { font-size: 32px; font-weight: 900; }
+    .sum-label { font-size: 13px; color: #4C6589; font-weight: 600; }
+    .c-purple { color: #7b2ff7; } .c-blue { color: #3880ff; } .c-green { color: #2dd36f; }
+    /* Tab bar */
+    .tab-bar { display: flex; gap: 4px; background: white; border-radius: 14px; padding: 6px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); width: fit-content; }
+    .tab { padding: 8px 22px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; color: #4C6589; }
+    .tab.active { background: linear-gradient(135deg, #0F172A, #334155); color: white; }
+    /* Table card */
+    .table-card { background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+    .table-header { display: grid; grid-template-columns: 60px 1fr 140px 120px 100px 120px; gap: 8px; padding: 14px 20px; background: #f8f9ff; border-bottom: 2px solid #eee; font-size: 11px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.5px; }
+    .table-row { display: grid; grid-template-columns: 60px 1fr 140px 120px 100px 120px; gap: 8px; padding: 14px 20px; border-bottom: 1px solid #f4f5f8; align-items: center; font-size: 13px; }
+    .table-row:hover { background: #f8f9ff; }
+    .table-row:last-child { border-bottom: none; }
+    .num-badge { width: 28px; height: 28px; background: #E2E8F0; color: #475569; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+    .cargo-name { font-weight: 700; color: #334550; }
+    .cargo-desc { font-size: 11px; color: #4C6589; margin-top: 2px; }
+    .nivel-badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-block; }
+    .nivel-prov { background: #f0e6ff; color: #7b2ff7; }
+    .nivel-nac { background: #e8edff; color: #3880ff; }
+    .nivel-canton { background: #e8f5e9; color: #2dd36f; }
+    .nivel-parroquia { background: #fff3e0; color: #ffa600; }
+    .jrv-count { font-weight: 700; color: #334550; }
+    .action-btns { display: flex; gap: 6px; }
+    .btn-icon { background: #f4f5f8; border: none; border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+    .btn-icon-red { background: #fdecea; }
+    .annotation { background: #E2E8F0; border-left: 3px solid #334155; border-radius: 10px; padding: 12px 16px; font-size: 12px; color: #475569; line-height: 1.7; margin-top: 16px; }
+    .annotation b { color: #475569; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    /* Grid específico para Cargos y Partidos (6 columnas) */
+    #tab-cargos .table-header,
+    #tab-cargos .table-row,
+    #tab-partidos .table-header,
+    #tab-partidos .table-row { grid-template-columns: 60px 1fr 140px 120px 100px 120px; }
+    /* Grid específico para Candidatos (7 columnas) */
+    #tab-candidatos .table-header,
+    #tab-candidatos .table-row { grid-template-columns: 60px 1fr 120px 100px 100px 100px 120px; }
+    /* Grid específico para Recintos (5 columnas) */
+    #tab-recintos .table-header { grid-template-columns: 60px 1fr 140px 120px 120px; }
+    #tab-recintos .table-row { grid-template-columns: 60px 1fr 140px 120px 120px; }
+  </style>
+  <script>
+    function showTab(tabName) {
+      const tabs = document.querySelectorAll('.tab-content');
+      const tabButtons = document.querySelectorAll('.tab');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      document.getElementById('tab-' + tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+  </script>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <div class="sidebar-brand-row">
+      <div class="sidebar-logo">🗳️</div>
+      <div>
+        <div class="sidebar-brand-name">Control Electoral</div>
+        <div class="sidebar-brand-sub">Santa Elena 2027</div>
+      </div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Dashboard</div>
+    <div class="nav-item"><span class="nav-icon">📊</span> Resumen General</div>
+    <div class="nav-item"><span class="nav-icon">📈</span> Resultados por Cargo</div>
+    <div class="nav-item"><span class="nav-icon">🗺️</span> Progreso por Cantón</div>
+    <div class="nav-item"><span class="nav-icon">📑</span> Reportes y Estadísticas</div>
+    <div class="nav-section-label">Gestión Operativa</div>
+    <div class="nav-item"><span class="nav-icon">📋</span> Lista de Actas <span class="nav-badge">12</span></div>
+    <div class="nav-item"><span class="nav-icon">⚠️</span> Disputas Activas <span class="nav-badge">3</span></div>
+    <div class="nav-item"><span class="nav-icon">📝</span> Correcciones</div>
+    <div class="nav-section-label">Administración</div>
+    <div class="nav-item active"><span class="nav-icon">⚙️</span> Configuración Electoral</div>
+    <div class="nav-item"><span class="nav-icon">👥</span> Gestión de Usuarios</div>
+    <div class="nav-item"><span class="nav-icon">🔑</span> Sesiones Activas <span class="nav-badge" style="background:#ffa600;">1</span></div>
+    <div class="nav-item"><span class="nav-icon">🧾</span> Logs</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">MR</div>
+      <div><div class="user-name">Marco Ruiz</div><div class="user-rol">MASTER · CNE</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title">
+      <h1>Configuración Electoral</h1>
+      <p>Cargos · Partidos · Candidatos · Solo MASTER · Pre-electoral</p>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-primary">+ Nuevo Registro</button>
+      <div class="master-badge">MASTER</div>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Summary -->
+    <div class="summary-row">
+      <div class="sum-card">
+        <div class="sum-icon icon-purple">🏛️</div>
+        <div><div class="sum-val c-purple">7</div><div class="sum-label">Cargos activos</div></div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-icon icon-blue">🏳️</div>
+        <div><div class="sum-val c-blue">12</div><div class="sum-label">Partidos / movimientos</div></div>
+      </div>
+      <div class="sum-card">
+        <div class="sum-icon icon-green">👤</div>
+        <div><div class="sum-val c-green">84</div><div class="sum-label">Candidatos registrados</div></div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <div class="tab active" onclick="showTab('cargos')">🏛️ Cargos</div>
+      <div class="tab" onclick="showTab('partidos')">🏳️ Partidos</div>
+      <div class="tab" onclick="showTab('candidatos')">👤 Candidatos</div>
+      <div class="tab" onclick="showTab('recintos')">🏢 Recintos Electorales</div>
+    </div>
+
+    <!-- TAB: CARGOS -->
+    <div id="tab-cargos" class="tab-content active">
+    <div class="table-card">
+      <div class="table-header">
+        <div>#</div>
+        <div>Cargo Electoral</div>
+        <div>Nivel Geográfico</div>
+        <div>JRVs Aplicables</div>
+        <div>Candidatos</div>
+        <div>Acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">1</div>
+        <div><div class="cargo-name">Prefecto/a Provincial</div><div class="cargo-desc">Gobierno Provincial Santa Elena</div></div>
+        <div><span class="nivel-badge nivel-prov">PROVINCIA</span></div>
+        <div class="jrv-count">450 (todas)</div>
+        <div>8</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">2</div>
+        <div><div class="cargo-name">Consejero/a CPCCS</div><div class="cargo-desc">Consejo de Participación Ciudadana</div></div>
+        <div><span class="nivel-badge nivel-nac">NACIONAL</span></div>
+        <div class="jrv-count">450 (todas)</div>
+        <div>14</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">3</div>
+        <div><div class="cargo-name">Alcalde/sa — Santa Elena</div><div class="cargo-desc">Cantón Santa Elena (2401)</div></div>
+        <div><span class="nivel-badge nivel-canton">CANTÓN</span></div>
+        <div class="jrv-count">200 (cantón)</div>
+        <div>6</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">4</div>
+        <div><div class="cargo-name">Alcalde/sa — La Libertad</div><div class="cargo-desc">Cantón La Libertad (2402)</div></div>
+        <div><span class="nivel-badge nivel-canton">CANTÓN</span></div>
+        <div class="jrv-count">150 (cantón)</div>
+        <div>5</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">5</div>
+        <div><div class="cargo-name">Concejal Urbano</div><div class="cargo-desc">Todos los cantones · Zonas urbanas</div></div>
+        <div><span class="nivel-badge nivel-canton">CANTÓN</span></div>
+        <div class="jrv-count">320 (urbanas)</div>
+        <div>18</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">6</div>
+        <div><div class="cargo-name">Concejal Rural</div><div class="cargo-desc">Todos los cantones · Zonas rurales</div></div>
+        <div><span class="nivel-badge nivel-canton">CANTÓN</span></div>
+        <div class="jrv-count">130 (rurales)</div>
+        <div>14</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">7</div>
+        <div><div class="cargo-name">Vocal Junta Parroquial Rural</div><div class="cargo-desc">Parroquias rurales únicamente</div></div>
+        <div><span class="nivel-badge nivel-parroquia">PARROQUIA</span></div>
+        <div class="jrv-count">80 (rurales)</div>
+        <div>19</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- TAB: PARTIDOS -->
+    <div id="tab-partidos" class="tab-content">
+    <div class="table-card">
+      <div class="table-header">
+        <div>#</div>
+        <div>Partido / Movimiento</div>
+        <div>Sigla</div>
+        <div>Candidatos</div>
+        <div>Estado</div>
+        <div>Acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">1</div>
+        <div><div class="cargo-name">Unión por la Esperanza</div><div class="cargo-desc">Movimiento político regional</div></div>
+        <div style="font-weight: 700; color: #334550;">UPE</div>
+        <div class="jrv-count">8</div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">2</div>
+        <div><div class="cargo-name">Movimiento Nuevo Amanecer</div><div class="cargo-desc">Organización social progresista</div></div>
+        <div style="font-weight: 700; color: #334550;">MNA</div>
+        <div class="jrv-count">12</div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">3</div>
+        <div><div class="cargo-name">Frente Progresista Local</div><div class="cargo-desc">Alianza de centro-izquierda</div></div>
+        <div style="font-weight: 700; color: #334550;">FPL</div>
+        <div class="jrv-count">6</div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">4</div>
+        <div><div class="cargo-name">Alianza de Centro</div><div class="cargo-desc">Movimiento de centro político</div></div>
+        <div style="font-weight: 700; color: #334550;">ADC</div>
+        <div class="jrv-count">10</div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">5</div>
+        <div><div class="cargo-name">Bloque Verde Sostenible</div><div class="cargo-desc">Partido ambiental y ecologista</div></div>
+        <div style="font-weight: 700; color: #334550;">BVS</div>
+        <div class="jrv-count">4</div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">6</div>
+        <div><div class="cargo-name">Candidatura Independiente</div><div class="cargo-desc">Candidatos sin afiliación política</div></div>
+        <div style="font-weight: 700; color: #334550;">IND</div>
+        <div class="jrv-count">44</div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- TAB: CANDIDATOS -->
+    <div id="tab-candidatos" class="tab-content">
+    <div class="table-card">
+      <div class="table-header">
+        <div>#</div>
+        <div>Candidato</div>
+        <div>Cédula</div>
+        <div>Cargo</div>
+        <div>Partido</div>
+        <div>Estado</div>
+        <div>Acciones</div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">1</div>
+        <div><div class="cargo-name">Álvaro López Méndez</div><div class="cargo-desc">Mayor de 45 años, experiencia política</div></div>
+        <div style="font-family: monospace; font-weight: 700;">0914425678</div>
+        <div style="font-size: 12px; font-weight: 600;">Prefecto/a Prov.</div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600; padding: 4px 8px; font-size: 10px;">UPE</span></div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">2</div>
+        <div><div class="cargo-name">María Rodríguez Sánchez</div><div class="cargo-desc">Profesional en Administración</div></div>
+        <div style="font-family: monospace; font-weight: 700;">0912987654</div>
+        <div style="font-size: 12px; font-weight: 600;">Prefecto/a Prov.</div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600; padding: 4px 8px; font-size: 10px;">MNA</span></div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">3</div>
+        <div><div class="cargo-name">Carlos Ventura González</div><div class="cargo-desc">Ingeniero Civil, especialista en obras</div></div>
+        <div style="font-family: monospace; font-weight: 700;">0913456789</div>
+        <div style="font-size: 12px; font-weight: 600;">Alcalde/sa Cantón</div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600; padding: 4px 8px; font-size: 10px;">FPL</span></div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">4</div>
+        <div><div class="cargo-name">Lucía Fernández Morales</div><div class="cargo-desc">Abogada en derecho público y constitucional</div></div>
+        <div style="font-family: monospace; font-weight: 700;">0915678901</div>
+        <div style="font-size: 12px; font-weight: 600;">Consejero/a CPCCS</div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600; padding: 4px 8px; font-size: 10px;">ADC</span></div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">5</div>
+        <div><div class="cargo-name">Roberto Castillo Pérez</div><div class="cargo-desc">Contador Público con experiencia tributaria</div></div>
+        <div style="font-family: monospace; font-weight: 700;">0916789012</div>
+        <div style="font-size: 12px; font-weight: 600;">Concejal Urbano</div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600; padding: 4px 8px; font-size: 10px;">BVS</span></div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">6</div>
+        <div><div class="cargo-name">Patricia Jiménez Torres</div><div class="cargo-desc">Docente jubilada con 35 años de servicio</div></div>
+        <div style="font-family: monospace; font-weight: 700;">0911234567</div>
+        <div style="font-size: 12px; font-weight: 600;">Vocal Junta Parroquial</div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600; padding: 4px 8px; font-size: 10px;">IND</span></div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row">
+        <div class="num-badge">7</div>
+        <div><div class="cargo-name">Diego Montoya Ruiz</div><div class="cargo-desc">Empresario local, comerciante</div></div>
+        <div style="font-family: monospace; font-weight: 700;">0917890123</div>
+        <div style="font-size: 12px; font-weight: 600;">Concejal Rural</div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600; padding: 4px 8px; font-size: 10px;">UPE</span></div>
+        <div><span class="nivel-badge nivel-canton" style="background: #e8f5e9; color: #2dd36f;">Activo</span></div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+    </div>
+    </div>
+
+    <!-- TAB: RECINTOS ELECTORALES -->
+    <div id="tab-recintos" class="tab-content">
+    <div class="table-card">
+      <div class="table-header">
+        <div>#</div>
+        <div>Nombre del Recinto</div>
+        <div>Provincia</div>
+        <div>Número de JRV</div>
+        <div>Acciones</div>
+      </div>
+
+      <div class="table-row" style="grid-template-columns: 60px 1fr 140px 120px 120px;">
+        <div class="num-badge">1</div>
+        <div><div class="cargo-name">Centro Cívico Santa Elena</div><div class="cargo-desc">Zona urbana céntrica</div></div>
+        <div><span class="nivel-badge nivel-prov">Santa Elena</span></div>
+        <div class="jrv-count">45</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row" style="grid-template-columns: 60px 1fr 140px 120px 120px;">
+        <div class="num-badge">2</div>
+        <div><div class="cargo-name">Escuela Rural Chanduy</div><div class="cargo-desc">Zona rural parroquia Chanduy</div></div>
+        <div><span class="nivel-badge nivel-canton">Santa Elena</span></div>
+        <div class="jrv-count">12</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row" style="grid-template-columns: 60px 1fr 140px 120px 120px;">
+        <div class="num-badge">3</div>
+        <div><div class="cargo-name">Colegio La Libertad</div><div class="cargo-desc">Cabecera cantonal La Libertad</div></div>
+        <div><span class="nivel-badge nivel-prov" style="background: #e8edff; color: #3880ff;">La Libertad</span></div>
+        <div class="jrv-count">38</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row" style="grid-template-columns: 60px 1fr 140px 120px 120px;">
+        <div class="num-badge">4</div>
+        <div><div class="cargo-name">Complejo Deportivo Salinas</div><div class="cargo-desc">Zona urbana céntrica Salinas</div></div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600;">Salinas</span></div>
+        <div class="jrv-count">28</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row" style="grid-template-columns: 60px 1fr 140px 120px 120px;">
+        <div class="num-badge">5</div>
+        <div><div class="cargo-name">Escuela Rural Santa Rosa</div><div class="cargo-desc">Zona rural Salinas</div></div>
+        <div><span class="nivel-badge nivel-prov" style="background: #fff3e0; color: #ffa600;">Salinas</span></div>
+        <div class="jrv-count">18</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row" style="grid-template-columns: 60px 1fr 140px 120px 120px;">
+        <div class="num-badge">6</div>
+        <div><div class="cargo-name">Colegio Técnico San Pedro</div><div class="cargo-desc">Zona rural La Libertad</div></div>
+        <div><span class="nivel-badge nivel-prov" style="background: #e8edff; color: #3880ff;">La Libertad</span></div>
+        <div class="jrv-count">22</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row" style="grid-template-columns: 60px 1fr 140px 120px 120px;">
+        <div class="num-badge">7</div>
+        <div><div class="cargo-name">Centro de Salud Ancón</div><div class="cargo-desc">Zona rural Ancón</div></div>
+        <div><span class="nivel-badge nivel-prov">Santa Elena</span></div>
+        <div class="jrv-count">28</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+
+      <div class="table-row" style="grid-template-columns: 60px 1fr 140px 120px 120px;">
+        <div class="num-badge">8</div>
+        <div><div class="cargo-name">Coliseo Cerro Verde</div><div class="cargo-desc">Zona urbana La Libertad</div></div>
+        <div><span class="nivel-badge nivel-prov" style="background: #e8edff; color: #3880ff;">La Libertad</span></div>
+        <div class="jrv-count">34</div>
+        <div class="action-btns"><button class="btn-icon">✏️</button><button class="btn-icon btn-icon-red">🗑️</button></div>
+      </div>
+    </div>
+    </div>
+
+    <div class="annotation">
+      <b>Tabla RECINTO:</b> agrupa JRVs por ubicación física — cada recinto puede contener múltiples JRVs<br>
+      <b>Relación:</b> JRV.recinto_id → RECINTO.id (FK)<br>
+      <b>Restricción:</b> no se puede eliminar un recinto con JRVs activas (FK a JRV)<br>
+      <b>Endpoint:</b> <code>POST /api/master/recintos</code> · <code>PUT /api/master/recintos/{id}</code> · <code>DELETE /api/master/recintos/{id}</code>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

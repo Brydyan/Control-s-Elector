@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Desktop — Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #334155; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .login-container { display: flex; width: 960px; height: 580px; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 40px 100px rgba(0,0,0,0.6); }
+    /* Left panel */
+    .left-panel { width: 440px; background: linear-gradient(160deg, #0F172A 0%, #1E293B 50%, #334155 100%); padding: 56px 48px; display: flex; flex-direction: column; justify-content: space-between; color: white; flex-shrink: 0; }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-logo { width: 52px; height: 52px; background: rgba(255,255,255,0.15); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; }
+    .brand-name { font-size: 20px; font-weight: 800; }
+    .brand-sub { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+    .hero-text { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    .hero-text h1 { font-size: 34px; font-weight: 900; line-height: 1.2; margin-bottom: 14px; }
+    .hero-text p { font-size: 14px; opacity: 0.8; line-height: 1.7; }
+    .master-highlight { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); border-radius: 14px; padding: 14px 18px; margin-top: 20px; }
+    .master-highlight h3 { font-size: 13px; font-weight: 800; letter-spacing: 1px; margin-bottom: 6px; }
+    .master-highlight ul { list-style: none; font-size: 12px; opacity: 0.85; line-height: 2; }
+    .master-highlight li::before { content: "• "; opacity: 0.6; }
+    .footer-text { font-size: 12px; opacity: 0.5; }
+    /* Right panel */
+    .right-panel { flex: 1; padding: 56px 48px; display: flex; flex-direction: column; justify-content: center; }
+    .right-panel h2 { font-size: 28px; font-weight: 800; color: #334550; margin-bottom: 4px; }
+    .right-panel .subtitle { font-size: 14px; color: #4C6589; margin-bottom: 32px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+    .input-wrap { display: flex; align-items: center; gap: 10px; border: 2px solid #e8e8e8; border-radius: 12px; padding: 13px 16px; background: #fafafa; transition: border-color 0.2s; }
+    .input-wrap.active { border-color: #334155; background: white; }
+    .input-icon { font-size: 16px; color: #4C6589; }
+    .input-wrap input { border: none; outline: none; font-size: 15px; color: #334550; background: transparent; width: 100%; }
+    .btn-login { width: 100%; padding: 15px; background: linear-gradient(135deg, #0F172A, #334155); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .rol-selector { display: flex; gap: 8px; margin-top: 20px; }
+    .rol-chip { flex: 1; padding: 9px; border-radius: 10px; text-align: center; font-size: 11px; font-weight: 800; cursor: pointer; }
+    .rol-master { background: linear-gradient(135deg, #0F172A, #334155); color: white; }
+    .rol-other { background: #f4f5f8; color: #4C6589; border: 2px solid transparent; }
+    .rol-note { font-size: 11px; color: #4C6589; text-align: center; margin-top: 10px; }
+  </style>
+</head>
+<body>
+<div class="login-container">
+  <div class="left-panel">
+    <div class="brand">
+      <div class="brand-logo">🗳️</div>
+      <div>
+        <div class="brand-name">Control Electoral</div>
+        <div class="brand-sub">Sistema de Registro de Actas</div>
+      </div>
+    </div>
+    <div class="hero-text">
+      <h1>Elecciones Seccionales 2027–2031</h1>
+      <p>Plataforma de observación y registro en tiempo real — Provincia de Santa Elena, Ecuador.</p>
+      <div class="master-highlight">
+        <h3>🔐 ACCESO MASTER</h3>
+        <ul>
+          <li>Configuración pre-electoral completa</li>
+          <li>Gestión total de usuarios y roles</li>
+          <li>Revocación de sesiones activas</li>
+          <li>Anulación de actas aprobadas</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-text">Confidencial · Uso exclusivo de administradores autorizados CNE</div>
+  </div>
+
+  <div class="right-panel">
+    <h2>Acceso MASTER</h2>
+    <div class="subtitle">Control total del sistema electoral</div>
+
+    <div class="form-group">
+      <label>Correo electrónico</label>
+      <div class="input-wrap active">
+        <span class="input-icon">✉️</span>
+        <input type="email" value="master@cne.gob.ec" readonly />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Contraseña</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" value="••••••••" readonly />
+      </div>
+    </div>
+
+    <button class="btn-login">Ingresar al Sistema</button>
+
+    <div class="rol-selector">
+      <div class="rol-chip rol-other">ADMIN</div>
+      <div class="rol-chip rol-other">COORDINATOR</div>
+      <div class="rol-chip rol-master">MASTER</div>
+    </div>
+    <div class="rol-note">El rol se detecta automáticamente desde el JWT · Solo referencia visual</div>
+  </div>
+</div>
+</body>
+</html>

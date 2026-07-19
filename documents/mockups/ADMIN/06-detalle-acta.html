@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADMIN — Detalle de Acta</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #E2E8F0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 32px;
+    }
+    .screen {
+      width: 390px;
+      background: #f4f5f8;
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    }
+    .toolbar {
+      background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+      padding: 52px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: white;
+    }
+    .back-btn {
+      width: 34px; height: 34px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .toolbar-info { flex: 1; }
+    .toolbar-title { font-size: 17px; font-weight: 700; }
+    .toolbar-sub { font-size: 11px; opacity: 0.8; margin-top: 2px; }
+    .estado-badge-toolbar {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      background: rgba(255,255,255,0.2);
+      color: white;
+    }
+    .content { padding: 16px; overflow-y: auto; }
+    /* Info card */
+    .info-card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .info-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 12px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border-bottom: 1px solid #f8f8f8;
+      font-size: 13px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label { color: #4C6589; }
+    .info-value { color: #334550; font-weight: 600; text-align: right; max-width: 60%; }
+    /* Image preview */
+    .image-card {
+      background: white;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .image-header {
+      padding: 12px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .image-placeholder {
+      background: linear-gradient(135deg, #e8edff 0%, #f0f4ff 100%);
+      height: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+      font-size: 13px;
+    }
+    .image-placeholder-icon { font-size: 40px; margin-bottom: 8px; }
+    .image-url { font-size: 10px; color: #4C6589; padding: 8px 16px; word-break: break-all; }
+    /* Votos table */
+    .votos-card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .votos-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 12px;
+    }
+    .votos-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid #f4f5f8;
+    }
+    .votos-row:last-child { border-bottom: none; }
+    .candidato-col { flex: 1; }
+    .candidato-col-name { font-size: 13px; font-weight: 600; color: #334550; }
+    .candidato-col-partido { font-size: 11px; color: #4C6589; }
+    .votos-num {
+      font-size: 18px;
+      font-weight: 800;
+      color: #334550;
+      text-align: right;
+      min-width: 50px;
+    }
+    /* Totales */
+    .total-section {
+      background: #f8f9ff;
+      border-radius: 10px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 4px 0;
+    }
+    .total-row.main {
+      font-weight: 800;
+      font-size: 15px;
+      color: #475569;
+      padding-top: 8px;
+      margin-top: 6px;
+      border-top: 2px solid #e8edff;
+    }
+    /* Readonly banner */
+    .readonly-banner {
+      background: #fff3e0;
+      border: 1px solid #ffe082;
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #795548;
+    }
+    .readonly-banner-icon { font-size: 20px; }
+    .annotation {
+      width: 280px;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+      font-size: 13px;
+      line-height: 1.6;
+      align-self: flex-start;
+      margin-top: 60px;
+    }
+    .annotation h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; color: #334550; border-bottom: 2px solid #475569; padding-bottom: 8px; }
+    .annotation-section { margin-bottom: 14px; }
+    .annotation-section h4 { font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .annotation-section ul { padding-left: 16px; color: #475569; }
+    .annotation-section li { margin-bottom: 3px; }
+    code { background: #f0f0f0; padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+    .tag-no { background: #fdecea; color: #eb445a; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div class="screen">
+  <div class="toolbar">
+    <div class="back-btn">←</div>
+    <div class="toolbar-info">
+      <div class="toolbar-title">JRV 001 — Prefecto/a</div>
+      <div class="toolbar-sub">Santa Elena · La Libertad</div>
+    </div>
+    <div class="estado-badge-toolbar">APROBADA</div>
+  </div>
+
+  <div class="content">
+
+    <!-- Readonly banner -->
+    <div class="readonly-banner">
+      <div class="readonly-banner-icon">👁️</div>
+      <div>Vista de solo lectura. ADMIN no puede modificar actas.</div>
+    </div>
+
+    <!-- Info general -->
+    <div class="info-card">
+      <div class="info-card-title">Información del Acta</div>
+      <div class="info-row">
+        <span class="info-label">N° JRV</span>
+        <span class="info-value">JRV-001</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Cargo</span>
+        <span class="info-value">Prefecto/a Provincial</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Cantón</span>
+        <span class="info-value">Santa Elena (2401)</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Parroquia</span>
+        <span class="info-value">Santa Elena (urbano)</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Observer</span>
+        <span class="info-value">Mario López</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Registrado</span>
+        <span class="info-value">02/03/2027 14:32</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Aprobado por</span>
+        <span class="info-value">Coord. Elena Torres</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Aprobado el</span>
+        <span class="info-value">02/03/2027 15:10</span>
+      </div>
+    </div>
+
+    <!-- Foto del acta -->
+    <div class="image-card">
+      <div class="image-header">📷 Foto del Acta Física</div>
+      <div class="image-placeholder">
+        <div class="image-placeholder-icon">🖼️</div>
+        <div>Imagen WebP almacenada en Supabase</div>
+        <div style="font-size:11px; margin-top:4px; opacity:0.7">~342KB · 1280×960</div>
+      </div>
+      <div class="image-url">storage.supabase.co/object/public/actas/JRV-001_20270302_1432_12.webp</div>
+    </div>
+
+    <!-- Votos por candidato -->
+    <div class="votos-card">
+      <div class="votos-title">Votos por Candidato</div>
+
+      <div class="votos-row">
+        <div class="candidato-col">
+          <div class="candidato-col-name">María Fernanda Ríos</div>
+          <div class="candidato-col-partido">PSC — Social Cristiano</div>
+        </div>
+        <div class="votos-num">89</div>
+      </div>
+
+      <div class="votos-row">
+        <div class="candidato-col">
+          <div class="candidato-col-name">Carlos Villacís Torres</div>
+          <div class="candidato-col-partido">RC — Revolución Ciudadana</div>
+        </div>
+        <div class="votos-num">72</div>
+      </div>
+
+      <div class="votos-row">
+        <div class="candidato-col">
+          <div class="candidato-col-name">Jorge Pinto Andrade</div>
+          <div class="candidato-col-partido">ID — Izquierda Democrática</div>
+        </div>
+        <div class="votos-num">41</div>
+      </div>
+
+      <div class="votos-row">
+        <div class="candidato-col">
+          <div class="candidato-col-name">Blanca Intriago</div>
+          <div class="candidato-col-partido">UNES</div>
+        </div>
+        <div class="votos-num">28</div>
+      </div>
+
+      <!-- Totales -->
+      <div class="total-section">
+        <div class="total-row">
+          <span>Votos nulos</span>
+          <span>12</span>
+        </div>
+        <div class="total-row">
+          <span>Votos blancos</span>
+          <span>8</span>
+        </div>
+        <div class="total-row main">
+          <span>Total sufragantes</span>
+          <span>250</span>
+        </div>
+        <div style="font-size:11px; color:#4C6589; margin-top:6px; text-align:center;">
+          ✅ 89+72+41+28+12+8 = 250 — Validación correcta
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Annotation -->
+<div class="annotation">
+  <h3>📋 Detalle de Acta — ADMIN</h3>
+
+  <div class="annotation-section">
+    <h4>Ruta</h4>
+    <ul><li><code>/dashboard/actas/:id</code></li></ul>
+  </div>
+
+  <div class="annotation-section">
+    <h4>Acciones — ADMIN</h4>
+    <ul>
+      <li><span class="tag-no">NO</span> Disputar</li>
+      <li><span class="tag-no">NO</span> Aprobar</li>
+      <li><span class="tag-no">NO</span> Anular</li>
+      <li><span class="tag-no">NO</span> Corregir</li>
+      <li>Banner naranja explica rol read-only</li>
+    </ul>
+  </div>
+
+  <div class="annotation-section">
+    <h4>Validación mostrada</h4>
+    <ul>
+      <li><code>SUM(votos) + nulos + blancos = total_sufragantes</code></li>
+      <li>Si valida: ✅ verde</li>
+      <li>Si no: ⚠️ rojo con discrepancia</li>
+    </ul>
+  </div>
+
+  <div class="annotation-section">
+    <h4>Imagen</h4>
+    <ul>
+      <li>URL de Supabase Storage</li>
+      <li>Acceso via <code>acta.storageUrl</code></li>
+      <li>No hay tabla evidencia separada</li>
+    </ul>
+  </div>
+
+  <div class="annotation-section">
+    <h4>Endpoint</h4>
+    <ul>
+      <li><code>GET /api/dashboard/actas/{id}</code></li>
+    </ul>
+  </div>
+</div>
+
+</body>
+</html>

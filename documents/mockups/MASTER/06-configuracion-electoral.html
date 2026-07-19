@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Mobile — Configuración Electoral</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #334155; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+    .status-bar { background: #334155; padding: 14px 24px 8px; display: flex; justify-content: space-between; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
+    .toolbar { background: linear-gradient(135deg, #0F172A, #3880ff); padding: 12px 20px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .toolbar-left h1 { font-size: 17px; font-weight: 800; color: white; }
+    .toolbar-left p { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .add-btn { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.4); color: white; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+    /* Segment tabs */
+    .segment { display: flex; background: white; border-bottom: 1px solid #eee; flex-shrink: 0; }
+    .seg-item { flex: 1; text-align: center; padding: 12px 4px; font-size: 12px; font-weight: 700; color: #4C6589; cursor: pointer; border-bottom: 2px solid transparent; }
+    .seg-item.active { color: #475569; border-bottom-color: #475569; }
+    .scroll { flex: 1; overflow-y: auto; padding: 12px; }
+    /* Config section cards */
+    .config-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .config-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .config-header-left { display: flex; align-items: center; gap: 10px; }
+    .config-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .icon-purple { background: #f0e6ff; }
+    .icon-blue { background: #e8edff; }
+    .icon-green { background: #e8f5e9; }
+    .config-title { font-size: 14px; font-weight: 700; color: #334550; }
+    .config-count { font-size: 11px; color: #4C6589; }
+    .config-actions { display: flex; gap: 6px; }
+    .btn-sm { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; }
+    .btn-purple { background: linear-gradient(135deg, #0F172A, #334155); color: white; }
+    .btn-outline { background: #f4f5f8; color: #475569; }
+    /* Item rows */
+    .item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f4f5f8; }
+    .item-row:last-child { border-bottom: none; }
+    .item-left { display: flex; align-items: center; gap: 10px; }
+    .item-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .item-name { font-size: 13px; font-weight: 600; color: #334550; }
+    .item-sub { font-size: 11px; color: #4C6589; }
+    .item-actions { display: flex; gap: 6px; }
+    .icon-btn { background: #f4f5f8; border-radius: 8px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; }
+    .icon-btn-red { background: #fdecea; }
+    /* Partido item */
+    .partido-sigla { background: #f4f5f8; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; color: #475569; }
+    /* Candidato item */
+    .candidato-badge { font-size: 11px; color: #475569; background: #E2E8F0; padding: 3px 8px; border-radius: 20px; font-weight: 700; }
+    /* Summary bar */
+    .summary-bar { background: linear-gradient(135deg, #0F172A, #3880ff); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; display: flex; justify-content: space-around; }
+    .summary-item { text-align: center; color: white; }
+    .summary-val { font-size: 22px; font-weight: 900; }
+    .summary-label { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+    .annotation { background: #E2E8F0; border-left: 3px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #475569; line-height: 1.6; margin: 8px 0; }
+    .annotation b { color: #475569; }
+    /* Bottom nav */
+    .bottom-nav { background: white; border-top: 1px solid #eee; display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 0 4px; flex-shrink: 0; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 9px; font-weight: 600; color: #4C6589; }
+  </style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>▶ ◼ 📶 100%</span></div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <h1>⚙️ Configuración Electoral</h1>
+      <p>Pre-electoral · Solo MASTER</p>
+    </div>
+    <button class="add-btn">+ Nuevo</button>
+  </div>
+
+  <div class="segment">
+    <div class="seg-item active">Cargos</div>
+    <div class="seg-item">Partidos</div>
+    <div class="seg-item">Candidatos</div>
+  </div>
+
+  <div class="scroll">
+    <!-- Summary bar -->
+    <div class="summary-bar">
+      <div class="summary-item"><div class="summary-val">7</div><div class="summary-label">Cargos</div></div>
+      <div class="summary-item"><div class="summary-val">12</div><div class="summary-label">Partidos</div></div>
+      <div class="summary-item"><div class="summary-val">84</div><div class="summary-label">Candidatos</div></div>
+    </div>
+
+    <!-- Cargos tab (active) -->
+    <div class="config-card">
+      <div class="config-header">
+        <div class="config-header-left">
+          <div class="config-icon icon-purple">🏛️</div>
+          <div>
+            <div class="config-title">Cargos Electorales</div>
+            <div class="config-count">7 cargos activos · 3 niveles</div>
+          </div>
+        </div>
+        <button class="btn-sm btn-purple">+ Agregar</button>
+      </div>
+
+      <div class="item-row">
+        <div class="item-left">
+          <div class="item-dot" style="background:#7b2ff7;"></div>
+          <div>
+            <div class="item-name">Prefecto/a Provincial</div>
+            <div class="item-sub">Nivel: PROVINCIA · Todas las JRVs</div>
+          </div>
+        </div>
+        <div class="item-actions">
+          <div class="icon-btn">✏️</div>
+          <div class="icon-btn icon-btn-red">🗑️</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-left">
+          <div class="item-dot" style="background:#3880ff;"></div>
+          <div>
+            <div class="item-name">Consejero/a CPCCS</div>
+            <div class="item-sub">Nivel: NACIONAL · Todas las JRVs</div>
+          </div>
+        </div>
+        <div class="item-actions">
+          <div class="icon-btn">✏️</div>
+          <div class="icon-btn icon-btn-red">🗑️</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-left">
+          <div class="item-dot" style="background:#2dd36f;"></div>
+          <div>
+            <div class="item-name">Alcalde/sa</div>
+            <div class="item-sub">Nivel: CANTON · Por cantón</div>
+          </div>
+        </div>
+        <div class="item-actions">
+          <div class="icon-btn">✏️</div>
+          <div class="icon-btn icon-btn-red">🗑️</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-left">
+          <div class="item-dot" style="background:#ffa600;"></div>
+          <div>
+            <div class="item-name">Concejal Urbano</div>
+            <div class="item-sub">Nivel: CANTON · Zonas urbanas</div>
+          </div>
+        </div>
+        <div class="item-actions">
+          <div class="icon-btn">✏️</div>
+          <div class="icon-btn icon-btn-red">🗑️</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-left">
+          <div class="item-dot" style="background:#ffa600;"></div>
+          <div>
+            <div class="item-name">Concejal Rural</div>
+            <div class="item-sub">Nivel: CANTON · Zonas rurales</div>
+          </div>
+        </div>
+        <div class="item-actions">
+          <div class="icon-btn">✏️</div>
+          <div class="icon-btn icon-btn-red">🗑️</div>
+        </div>
+      </div>
+
+      <div class="item-row">
+        <div class="item-left">
+          <div class="item-dot" style="background:#eb445a;"></div>
+          <div>
+            <div class="item-name">Vocal Junta Parroquial Rural</div>
+            <div class="item-sub">Nivel: PARROQUIA · Solo rurales</div>
+          </div>
+        </div>
+        <div class="item-actions">
+          <div class="icon-btn">✏️</div>
+          <div class="icon-btn icon-btn-red">🗑️</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="annotation">
+      <b>Endpoint:</b> <code>POST /api/master/cargos</code> · <code>PUT /api/master/cargos/{id}</code><br>
+      <b>Tabla JRV_CARGO:</b> define qué cargos aplican por JRV según nivel geográfico<br>
+      <b>Precaución:</b> eliminar cargo con actas registradas — no permitido si existen ACTA_DETALLE
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Dashboard</div></div>
+    <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label">Actas</div></div>
+    <div class="nav-item" style="text-align:center;"><div class="nav-icon">⚙️</div><div class="nav-label" style="color:#475569;">Config</div></div>
+    <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Usuarios</div></div>
+    <div class="nav-item"><div class="nav-icon">🔑</div><div class="nav-label">Sesiones</div></div>
+  </div>
+</div>
+</body>
+</html>

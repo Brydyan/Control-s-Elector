@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ADMIN — Login</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #E2E8F0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .screen {
+      width: 390px;
+      min-height: 844px;
+      background: #f4f5f8;
+      border-radius: 40px;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+    }
+    .header {
+      background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+      padding: 80px 32px 48px;
+      text-align: center;
+      color: white;
+    }
+    .logo {
+      width: 72px;
+      height: 72px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+    .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .header p { font-size: 13px; opacity: 0.8; }
+    .content { padding: 32px 24px; flex: 1; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .input-wrap {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .input-wrap.focused { border-color: #475569; }
+    .input-icon { font-size: 18px; }
+    .input-wrap input {
+      border: none;
+      outline: none;
+      font-size: 15px;
+      width: 100%;
+      color: #334550;
+      background: transparent;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #0F172A 0%, #334155 100%);
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 8px;
+      cursor: pointer;
+      letter-spacing: 0.3px;
+    }
+    .divider { text-align: center; margin: 24px 0; color: #4C6589; font-size: 13px; }
+    .badge-rol {
+      display: inline-block;
+      background: #e8edff;
+      color: #475569;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: #4C6589;
+      margin-top: 24px;
+    }
+    .annotation {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #fff;
+      border-left: 4px solid #475569;
+      padding: 16px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      max-width: 280px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .annotation h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #334550; }
+    .annotation ul { padding-left: 16px; color: #475569; }
+    .annotation li { margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+<div class="annotation">
+  <h3>📋 ADMIN — Login</h3>
+  <ul>
+    <li>Pantalla compartida para todos los roles</li>
+    <li>JWT access token → memoria JS</li>
+    <li>Refresh token → localStorage (8h)</li>
+    <li>Redirección automática a <code>/dashboard</code></li>
+    <li>ADMIN no puede registrar actas</li>
+  </ul>
+</div>
+
+<div class="screen">
+  <div class="header">
+    <div class="logo">🗳️</div>
+    <h1>Control Electoral</h1>
+    <p>Elecciones Seccionales 2027-2031<br>Provincia de Santa Elena</p>
+  </div>
+
+  <div class="content">
+    <div class="form-group">
+      <label>Correo electrónico</label>
+      <div class="input-wrap focused">
+        <span class="input-icon">✉️</span>
+        <input type="email" value="admin@cne.gob.ec" readonly />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Contraseña</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔒</span>
+        <input type="password" value="••••••••" readonly />
+      </div>
+    </div>
+
+    <button class="btn-primary">Iniciar Sesión</button>
+
+    <div class="divider">
+      Iniciando como <span class="badge-rol">ADMIN</span>
+    </div>
+
+    <div class="footer-note">
+      Solo lectura · Dashboard y estadísticas<br>
+      Sin acceso a modificación de datos
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

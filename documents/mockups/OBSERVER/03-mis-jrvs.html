@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OBSERVER — Mis JRVs</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #E2E8F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .phone { width: 390px; height: 844px; background: #E2E8F0; border-radius: 40px; overflow: hidden; box-shadow: 0 40px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+  .status-bar { height: 44px; background: #334155; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; flex-shrink: 0; }
+  .status-time { color: #fff; font-size: 14px; font-weight: 600; }
+  .status-icons { display: flex; gap: 6px; }
+  .status-icons span { color: #fff; font-size: 12px; }
+
+  .toolbar { background: #334155; padding: 10px 16px 12px; flex-shrink: 0; }
+  .toolbar-title { color: #fff; font-size: 17px; font-weight: 700; }
+  .toolbar-sub { color: rgba(255,255,255,0.8); font-size: 12px; margin-top: 3px; }
+
+  .progress-bar-wrap { background: rgba(255,255,255,0.15); border-radius: 20px; height: 6px; margin-top: 10px; }
+  .progress-bar-fill { background: #fff; height: 6px; border-radius: 20px; width: 67%; }
+  .progress-label { display: flex; justify-content: space-between; margin-top: 4px; }
+  .progress-label span { color: rgba(255,255,255,0.8); font-size: 10px; font-weight: 600; }
+
+  .filter-bar { background: #fff; padding: 8px 14px; border-bottom: 1px solid #e8e8e8; display: flex; gap: 6px; overflow-x: auto; flex-shrink: 0; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip { white-space: nowrap; padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; background: #f0f0f0; color: #666; }
+  .filter-chip.active { background: linear-gradient(135deg, #0F172A, #334155); color: #fff; }
+  .filter-chip.orange { background: #fff7ed; color: #f97316; }
+  .filter-chip.blue { background: #eff6ff; color: #3b82f6; }
+  .filter-chip.green { background: #f0fdf4; color: #16a34a; }
+
+  .scroll-area { flex: 1; overflow-y: auto; padding: 10px 14px; }
+  .scroll-area::-webkit-scrollbar { display: none; }
+
+  .jrv-section-title { font-size: 11px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 8px; margin-top: 6px; }
+
+  .jrv-card { background: #fff; border-radius: 14px; padding: 14px; margin-bottom: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid #e0e0e0; }
+  .jrv-card.pending { border-left-color: #f97316; }
+  .jrv-card.done { border-left-color: #22c55e; }
+  .jrv-card.sent { border-left-color: #3b82f6; }
+  .jrv-card.disputa { border-left-color: #ef4444; }
+
+  .jrv-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .jrv-id { font-size: 15px; font-weight: 700; color: #334550; }
+  .state-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 8px; }
+  .badge-orange { background: #fff7ed; color: #f97316; }
+  .badge-blue { background: #eff6ff; color: #3b82f6; }
+  .badge-green { background: #f0fdf4; color: #16a34a; }
+  .badge-red { background: #fef2f2; color: #ef4444; }
+
+  .jrv-location { font-size: 12px; color: #475569; margin-bottom: 4px; }
+  .jrv-cargos { font-size: 11px; color: #4C6589; margin-bottom: 8px; }
+  .jrv-action { padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 700; border: none; cursor: pointer; }
+  .jrv-action.register { background: linear-gradient(135deg, #0F172A, #334155); color: #fff; }
+  .jrv-action.view { background: #f0fdf4; color: #16a34a; }
+  .jrv-action.correct { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; }
+
+  .annotation { background: #f0fdf4; border-left: 3px solid #475569; border-radius: 6px; padding: 10px 12px; margin-bottom: 10px; }
+  .annotation p { font-size: 11px; color: #475569; line-height: 1.5; }
+  .annotation code { background: #dcfce7; color: #475569; padding: 1px 4px; border-radius: 3px; font-size: 11px; }
+
+  .bottom-nav { background: #fff; border-top: 1px solid #e8e8e8; display: flex; height: 70px; flex-shrink: 0; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+  .nav-icon { font-size: 20px; }
+  .nav-label { font-size: 10px; color: #4C6589; }
+  .nav-item.active .nav-label { color: #475569; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar">
+    <span class="status-time">9:41</span>
+    <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-title">Mis JRVs Asignadas</div>
+    <div class="toolbar-sub">12 mesas · Santa Elena · Colonche y Simón Bolívar</div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill"></div></div>
+    <div class="progress-label"><span>8 registradas</span><span>4 pendientes</span></div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="filter-chip active">Todas 12</span>
+    <span class="filter-chip orange">Pendientes 4</span>
+    <span class="filter-chip blue">Enviadas 8</span>
+    <span class="filter-chip green">Aprobadas 3</span>
+  </div>
+
+  <div class="scroll-area">
+
+    <div class="annotation">
+      <p>🔒 Solo ves tus JRVs — acceso restringido por <code>observer_jrv_asignacion</code>. RLS en PG bloquea las demás filas.</p>
+    </div>
+
+    <div class="jrv-section-title">⚠️ Requiere atención</div>
+
+    <div class="jrv-card disputa">
+      <div class="jrv-top">
+        <span class="jrv-id">JRV 2401-087</span>
+        <span class="state-badge badge-red">⚠️ EN_DISPUTA</span>
+      </div>
+      <div class="jrv-location">Colonche · Santa Elena</div>
+      <div class="jrv-cargos">Cargos: Prefecto/a · CPCCS · Concejal Urbano</div>
+      <button class="jrv-action correct">📝 Corregir Acta</button>
+    </div>
+
+    <div class="jrv-section-title">Por registrar</div>
+
+    <div class="jrv-card pending">
+      <div class="jrv-top">
+        <span class="jrv-id">JRV 2401-088</span>
+        <span class="state-badge badge-orange">SIN REGISTRAR</span>
+      </div>
+      <div class="jrv-location">Colonche · Santa Elena</div>
+      <div class="jrv-cargos">Cargos: Prefecto/a · CPCCS · Concejal Urbano</div>
+      <button class="jrv-action register">+ Registrar Acta</button>
+    </div>
+
+    <div class="jrv-card pending">
+      <div class="jrv-top">
+        <span class="jrv-id">JRV 2401-089</span>
+        <span class="state-badge badge-orange">SIN REGISTRAR</span>
+      </div>
+      <div class="jrv-location">Colonche · Santa Elena</div>
+      <div class="jrv-cargos">Cargos: Prefecto/a · CPCCS · Concejal Urbano</div>
+      <button class="jrv-action register">+ Registrar Acta</button>
+    </div>
+
+    <div class="jrv-section-title">Enviadas — en revisión</div>
+
+    <div class="jrv-card sent">
+      <div class="jrv-top">
+        <span class="jrv-id">JRV 2401-083</span>
+        <span class="state-badge badge-blue">ENVIADA</span>
+      </div>
+      <div class="jrv-location">Simón Bolívar · Santa Elena</div>
+      <div class="jrv-cargos">Prefecto/a · enviado hace 22 min</div>
+      <button class="jrv-action view">👁️ Ver</button>
+    </div>
+
+    <div class="jrv-card done">
+      <div class="jrv-top">
+        <span class="jrv-id">JRV 2401-082</span>
+        <span class="state-badge badge-green">APROBADA</span>
+      </div>
+      <div class="jrv-location">Simón Bolívar · Santa Elena</div>
+      <div class="jrv-cargos">Prefecto/a · aprobada hace 1h</div>
+      <button class="jrv-action view">👁️ Ver</button>
+    </div>
+
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">Inicio</span></div>
+    <div class="nav-item active"><span class="nav-icon">📋</span><span class="nav-label">Mis JRVs</span></div>
+    <div class="nav-item"><span class="nav-icon">📄</span><span class="nav-label">Mis Actas</span></div>
+    <div class="nav-item"><span class="nav-icon">👤</span><span class="nav-label">Perfil</span></div>
+  </div>
+</div>
+</body>
+</html>

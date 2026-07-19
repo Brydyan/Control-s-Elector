@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>COORDINATOR Desktop — Detalle de Acta</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #E2E8F0; display: flex; justify-content: center; align-items: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .frame { width: 1280px; height: 800px; background: #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 50px rgba(26,26,46,0.18); display: flex; }
+
+  .sidebar { width: 240px; background: #334155; display: flex; flex-direction: column; flex-shrink: 0; }
+  .sidebar-brand { padding: 20px 20px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .brand-logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #0F172A, #334155); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .logo-text { color: #fff; font-size: 14px; font-weight: 700; }
+  .logo-sub { color: rgba(255,255,255,0.4); font-size: 10px; }
+  .user-info { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+  .user-name { color: #fff; font-size: 13px; font-weight: 700; }
+  .user-badge { display: inline-block; background: linear-gradient(135deg, #0F172A, #334155); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 8px; margin-top: 3px; }
+  .user-sub { color: rgba(255,255,255,0.5); font-size: 11px; margin-top: 2px; }
+  .nav-section { padding: 14px 0 0; }
+  .nav-section-title { padding: 0 20px 6px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 0.8px; }
+  .nav-item { padding: 9px 20px; display: flex; align-items: center; gap: 10px; cursor: pointer; color: rgba(255,255,255,0.6); font-size: 13px; }
+  .nav-item.active { background: rgba(15,23,42,0.35); color: #fff; border-left: 3px solid #0F172A; padding-left: 17px; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge { margin-left: auto; background: #eb445a; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 8px; }
+  .nav-badge.orange { background: #ffa600; }
+
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { height: 64px; background: #fff; border-bottom: 1px solid #e8e8e8; display: flex; align-items: center; padding: 0 28px; gap: 16px; flex-shrink: 0; }
+  .back-btn { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #475569; cursor: pointer; }
+  .topbar-title { font-size: 18px; font-weight: 800; color: #334550; flex: 1; }
+
+  .btn-approve { background: linear-gradient(135deg, #2dd36f, #28ba62); color: #fff; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: none; cursor: pointer; }
+  .btn-dispute-top { background: #fff3e0; color: #ffa600; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 2px solid #ffd699; cursor: pointer; }
+  .btn-correct-top { background: #f5f3ff; color: #475569; padding: 9px 18px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 2px solid #ddd6fe; cursor: pointer; }
+
+  .content { flex: 1; overflow-y: auto; padding: 20px 28px; }
+  .content::-webkit-scrollbar { display: none; }
+
+  .state-banner { background: #e8edff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 18px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .banner-left { display: flex; align-items: center; gap: 12px; }
+  .banner-icon { font-size: 22px; }
+  .banner-title { font-size: 15px; font-weight: 700; color: #1e40af; }
+  .banner-sub { font-size: 12px; color: #3b82f6; margin-top: 2px; }
+  .state-badge { font-size: 12px; font-weight: 700; padding: 5px 12px; border-radius: 10px; background: #3b82f6; color: #fff; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+  .card-title { font-size: 12px; font-weight: 700; color: #4C6589; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .info-row { display: flex; padding: 7px 0; border-bottom: 1px solid #f8fafc; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { font-size: 12px; color: #4C6589; width: 130px; flex-shrink: 0; }
+  .info-value { font-size: 12px; color: #334550; font-weight: 600; }
+
+  .image-placeholder { width: 100%; height: 160px; background: linear-gradient(135deg, #e0f2fe, #bfdbfe); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .image-placeholder span { font-size: 32px; }
+  .image-placeholder p { font-size: 12px; color: #475569; text-align: center; }
+  .image-meta { font-size: 11px; color: #4C6589; }
+
+  .votes-card { background: #fff; border-radius: 12px; padding: 18px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 16px; }
+  table.votes { width: 100%; border-collapse: collapse; }
+  table.votes thead th { font-size: 11px; font-weight: 700; color: #4C6589; text-align: left; padding: 8px 10px; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; letter-spacing: 0.5px; }
+  table.votes tbody td { padding: 9px 10px; font-size: 13px; color: #475569; border-bottom: 1px solid #f8fafc; vertical-align: middle; }
+  table.votes tbody tr:last-child td { border-bottom: none; }
+  .rank { width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+  .rank-1 { background: #fef3c7; color: #d97706; }
+  .rank-2 { background: #f1f5f9; color: #475569; }
+  .rank-3 { background: #fef3c7; color: #92400e; }
+  .bar-wrap { width: 100px; }
+  .mini-bar { height: 6px; background: linear-gradient(90deg, #0F172A, #334155); border-radius: 3px; }
+  .checksum-row { background: #e8f5e9; border-radius: 8px; padding: 10px 12px; margin-top: 10px; display: flex; align-items: center; gap: 8px; }
+  .checksum-row span { font-size: 12px; color: #2dd36f; font-weight: 600; }
+
+  .action-bar { background: #fff; border-top: 2px solid #e8e8e8; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+  .action-label { font-size: 12px; font-weight: 700; color: #4C6589; }
+  .action-btns { display: flex; gap: 10px; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <div class="logo-icon">🗳️</div>
+        <div><div class="logo-text">Control Electoral</div><div class="logo-sub">Santa Elena · 2027–2031</div></div>
+      </div>
+    </div>
+    <div class="user-info">
+      <div class="user-name">Carlos Rodríguez</div>
+      <div><span class="user-badge">COORDINATOR</span></div>
+      <div class="user-sub">3 cantones · Acceso global</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Dashboard</div>
+      <div class="nav-item"><span class="nav-icon">🏠</span>Resumen General</div>
+      <div class="nav-item"><span class="nav-icon">📊</span>Reportes</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title">Gestión Operativa</div>
+      <div class="nav-item active"><span class="nav-icon">📄</span>Lista de Actas<span class="nav-badge">189</span></div>
+      <div class="nav-item"><span class="nav-icon">⚠️</span>Disputas Activas<span class="nav-badge">12</span></div>
+      <div class="nav-item"><span class="nav-icon">📝</span>Correcciones<span class="nav-badge orange">7</span></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="back-btn">‹ Lista de Actas</span>
+      <span class="topbar-title">Detalle de Acta — JRV 2402-011</span>
+      <button class="btn-correct-top">📝 Solicitar Corrección</button>
+      <button class="btn-dispute-top">⚠️ Marcar Disputa</button>
+      <button class="btn-approve">✅ Aprobar Acta</button>
+    </div>
+
+    <div class="content">
+      <div class="state-banner">
+        <div class="banner-left">
+          <span class="banner-icon">📋</span>
+          <div><div class="banner-title">Acta Enviada — Pendiente de revisión</div><div class="banner-sub">COORDINATOR puede aprobar, marcar disputa o solicitar corrección</div></div>
+        </div>
+        <span class="state-badge">ENVIADA</span>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-title">Información del Acta</div>
+          <div class="info-row"><span class="info-label">JRV</span><span class="info-value">2402-011</span></div>
+          <div class="info-row"><span class="info-label">Cargo Electoral</span><span class="info-value">Alcalde/sa</span></div>
+          <div class="info-row"><span class="info-label">Nivel</span><span class="info-value">CANTÓN</span></div>
+          <div class="info-row"><span class="info-label">Cantón</span><span class="info-value">La Libertad</span></div>
+          <div class="info-row"><span class="info-label">Parroquia</span><span class="info-value">La Libertad Centro</span></div>
+          <div class="info-row"><span class="info-label">Observer</span><span class="info-value">Ana Torres</span></div>
+          <div class="info-row"><span class="info-label">Fecha envío</span><span class="info-value">hace 15 min</span></div>
+          <div class="info-row"><span class="info-label">Total sufragantes</span><span class="info-value">250</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Imagen del Acta Física</div>
+          <div class="image-placeholder">
+            <span>🖼️</span>
+            <p>JRV-2402-011_20270202_0926_OBS019.webp<br>Supabase Storage</p>
+          </div>
+          <div class="image-meta">WebP · 361 KB · Subida: 09:26 · Calidad 0.82</div>
+        </div>
+      </div>
+
+      <div class="votes-card">
+        <div class="card-title">Resultados del Acta</div>
+        <table class="votes">
+          <thead><tr><th>#</th><th>Candidato/a</th><th>Partido / Movimiento</th><th>Sigla</th><th>Votos</th><th>Porcentaje</th></tr></thead>
+          <tbody>
+            <tr><td><div class="rank rank-1">1</div></td><td><strong>Candidato A</strong></td><td>Partido Renovación</td><td>PR</td><td><strong>89</strong></td><td><div class="bar-wrap"><div class="mini-bar" style="width:89%"></div></div> 35.6%</td></tr>
+            <tr><td><div class="rank rank-2">2</div></td><td>Candidata B</td><td>Alianza Progresista</td><td>AP</td><td><strong>72</strong></td><td><div class="bar-wrap"><div class="mini-bar" style="width:72%"></div></div> 28.8%</td></tr>
+            <tr><td><div class="rank rank-3">3</div></td><td>Candidato C</td><td>Movimiento Ciudadano</td><td>MC</td><td><strong>41</strong></td><td><div class="bar-wrap"><div class="mini-bar" style="width:41%"></div></div> 16.4%</td></tr>
+            <tr><td><div class="rank" style="background:#f0f9ff;color:#475569">4</div></td><td>Candidata D</td><td>Frente Popular</td><td>FP</td><td><strong>28</strong></td><td><div class="bar-wrap"><div class="mini-bar" style="width:28%"></div></div> 11.2%</td></tr>
+            <tr><td>—</td><td colspan="2" style="color:#4C6589">Votos nulos</td><td>—</td><td>12</td><td></td></tr>
+            <tr><td>—</td><td colspan="2" style="color:#4C6589">Votos en blanco</td><td>—</td><td>8</td><td></td></tr>
+          </tbody>
+        </table>
+        <div class="checksum-row">
+          <span>✅ Validación correcta: 89 + 72 + 41 + 28 + 12 + 8 = 250 (total sufragantes)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <span class="action-label">Acciones disponibles para COORDINATOR en estado ENVIADA</span>
+      <div class="action-btns">
+        <button class="btn-correct-top">📝 Solicitar Corrección al Observer</button>
+        <button class="btn-dispute-top">⚠️ Marcar como Disputa</button>
+        <button class="btn-approve">✅ Aprobar Acta</button>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

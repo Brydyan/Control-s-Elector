@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MASTER Mobile — Lista de Actas</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #334155; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .phone { width: 390px; height: 844px; background: #f4f5f8; border-radius: 40px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,0.6); display: flex; flex-direction: column; }
+    .status-bar { background: #334155; padding: 14px 24px 8px; display: flex; justify-content: space-between; font-size: 12px; color: white; font-weight: 600; flex-shrink: 0; }
+    .toolbar { background: linear-gradient(135deg, #0F172A, #3880ff); padding: 12px 20px 14px; flex-shrink: 0; }
+    .toolbar-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .toolbar-top h1 { font-size: 17px; font-weight: 800; color: white; }
+    .toolbar-top p { font-size: 11px; color: rgba(255,255,255,0.7); }
+    .search-wrap { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 14px; }
+    .search-input { border: none; background: transparent; font-size: 14px; color: white; outline: none; flex: 1; }
+    .search-input::placeholder { color: rgba(255,255,255,0.6); }
+    /* Filter chips */
+    .filter-chips { display: flex; gap: 6px; padding: 8px 12px; background: white; border-bottom: 1px solid #eee; overflow-x: auto; flex-shrink: 0; }
+    .chip { padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+    .chip-active { background: linear-gradient(135deg, #0F172A, #334155); color: white; }
+    .chip-default { background: #f4f5f8; color: #475569; }
+    .scroll { flex: 1; overflow-y: auto; padding: 10px 12px; }
+    /* Acta card */
+    .acta-card { background: white; border-radius: 16px; padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .acta-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+    .acta-jrv { font-size: 15px; font-weight: 800; color: #334550; }
+    .acta-cargo { font-size: 12px; color: #4C6589; margin-top: 2px; }
+    .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-enviada   { background: #e8edff; color: #3880ff; }
+    .badge-aprobada  { background: #e8f5e9; color: #2dd36f; }
+    .badge-disputa   { background: #fff3e0; color: #ffa600; }
+    .badge-corregida { background: #ede8ff; color: #7b61ff; }
+    .badge-anulada   { background: #fdecea; color: #eb445a; }
+    .acta-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .meta-chip { background: #f4f5f8; padding: 3px 8px; border-radius: 8px; font-size: 11px; color: #475569; }
+    .acta-actions { display: flex; gap: 6px; }
+    .action-btn { flex: 1; padding: 8px; border-radius: 10px; font-size: 12px; font-weight: 700; text-align: center; cursor: pointer; border: none; }
+    .btn-view  { background: #f4f5f8; color: #475569; }
+    .btn-anular { background: #fdecea; color: #eb445a; }
+    .btn-resolver { background: #fff3e0; color: #ffa600; }
+    /* Master-only tag on APROBADA cards */
+    .master-action-tag { font-size: 10px; color: #eb445a; font-weight: 700; background: #fdecea; padding: 2px 8px; border-radius: 8px; margin-left: auto; }
+    .annotation { background: #E2E8F0; border-left: 3px solid #334155; border-radius: 8px; padding: 10px 14px; font-size: 11px; color: #475569; line-height: 1.6; margin: 8px 0; }
+    .annotation b { color: #475569; }
+    /* Bottom nav */
+    .bottom-nav { background: white; border-top: 1px solid #eee; display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 0 4px; flex-shrink: 0; }
+    .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 9px; font-weight: 600; color: #4C6589; }
+  </style>
+</head>
+<body>
+<div class="phone">
+  <div class="status-bar"><span>9:41</span><span>▶ ◼ 📶 100%</span></div>
+
+  <div class="toolbar">
+    <div class="toolbar-top">
+      <div>
+        <h1>📋 Lista de Actas</h1>
+        <p>Todas las JRVs · Control total</p>
+      </div>
+      <div style="text-align:right;color:rgba(255,255,255,0.8);font-size:12px;">291 actas<br>total</div>
+    </div>
+    <div class="search-wrap">🔍 <input class="search-input" placeholder="JRV, cantón, cargo, observer..." readonly /></div>
+  </div>
+
+  <div class="filter-chips">
+    <div class="chip chip-active">Todas</div>
+    <div class="chip chip-default">Enviadas (189)</div>
+    <div class="chip chip-default">Disputa (12)</div>
+    <div class="chip chip-default">Aprobadas (118)</div>
+    <div class="chip chip-default">Anuladas (3)</div>
+  </div>
+
+  <div class="scroll">
+
+    <!-- APROBADA — MASTER puede ANULAR -->
+    <div class="acta-card" style="border-left: 3px solid #2dd36f;">
+      <div class="acta-header">
+        <div>
+          <div class="acta-jrv">JRV-001</div>
+          <div class="acta-cargo">Prefecto/a Provincial</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="badge badge-aprobada">APROBADA</span>
+          <span class="master-action-tag">↓ MASTER puede ANULAR</span>
+        </div>
+      </div>
+      <div class="acta-meta">
+        <div class="meta-chip">🗺️ Santa Elena · Zona urbana</div>
+        <div class="meta-chip">👤 Mario López</div>
+        <div class="meta-chip">📅 02/03/2027 14:32</div>
+      </div>
+      <div class="acta-actions">
+        <button class="action-btn btn-view">👁️ Ver Detalle</button>
+        <button class="action-btn btn-anular">⛔ Anular</button>
+      </div>
+    </div>
+
+    <!-- EN_DISPUTA — COORDINATOR/MASTER puede resolver -->
+    <div class="acta-card" style="border-left: 3px solid #ffa600;">
+      <div class="acta-header">
+        <div>
+          <div class="acta-jrv">JRV-002</div>
+          <div class="acta-cargo">Alcalde/sa Cantón</div>
+        </div>
+        <span class="badge badge-disputa">EN_DISPUTA</span>
+      </div>
+      <div class="acta-meta">
+        <div class="meta-chip">🗺️ Santa Elena · Zona urbana</div>
+        <div class="meta-chip">👤 Lucía Vera</div>
+        <div class="meta-chip">⚠️ Disputa activa</div>
+      </div>
+      <div class="acta-actions">
+        <button class="action-btn btn-view">👁️ Ver</button>
+        <button class="action-btn btn-resolver">⚠️ Resolver Disputa</button>
+      </div>
+    </div>
+
+    <!-- ENVIADA -->
+    <div class="acta-card">
+      <div class="acta-header">
+        <div>
+          <div class="acta-jrv">JRV-015</div>
+          <div class="acta-cargo">Vocal Junta Parroquial Rural</div>
+        </div>
+        <span class="badge badge-enviada">ENVIADA</span>
+      </div>
+      <div class="acta-meta">
+        <div class="meta-chip">🗺️ Santa Elena · Chanduy</div>
+        <div class="meta-chip">👤 Pedro Suárez</div>
+        <div class="meta-chip">📅 02/03/2027 15:10</div>
+      </div>
+      <div class="acta-actions">
+        <button class="action-btn btn-view">👁️ Ver Detalle</button>
+        <button class="action-btn" style="background:#e8f5e9;color:#2dd36f;">✅ Aprobar</button>
+      </div>
+    </div>
+
+    <!-- APROBADA segunda -->
+    <div class="acta-card" style="border-left: 3px solid #2dd36f;">
+      <div class="acta-header">
+        <div>
+          <div class="acta-jrv">JRV-088</div>
+          <div class="acta-cargo">Concejal Urbano</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+          <span class="badge badge-aprobada">APROBADA</span>
+          <span class="master-action-tag">↓ MASTER puede ANULAR</span>
+        </div>
+      </div>
+      <div class="acta-meta">
+        <div class="meta-chip">🗺️ La Libertad · Zona urbana</div>
+        <div class="meta-chip">👤 Ana Torres</div>
+      </div>
+      <div class="acta-actions">
+        <button class="action-btn btn-view">👁️ Ver Detalle</button>
+        <button class="action-btn btn-anular">⛔ Anular</button>
+      </div>
+    </div>
+
+    <!-- ANULADA (ya no hay acciones) -->
+    <div class="acta-card" style="opacity:0.7;">
+      <div class="acta-header">
+        <div>
+          <div class="acta-jrv">JRV-099</div>
+          <div class="acta-cargo">Prefecto/a Provincial</div>
+        </div>
+        <span class="badge badge-anulada">ANULADA</span>
+      </div>
+      <div class="acta-meta">
+        <div class="meta-chip">🗺️ La Libertad</div>
+        <div class="meta-chip" style="background:#fdecea;color:#eb445a;">Estado final · Sin acciones</div>
+      </div>
+      <div class="acta-actions">
+        <button class="action-btn btn-view" style="flex:1;">👁️ Ver Detalle (solo lectura)</button>
+      </div>
+    </div>
+
+    <div class="annotation">
+      <b>ANULAR:</b> Solo MASTER · Solo sobre APROBADAS · Estado irreversible<br>
+      <b>APROBAR:</b> COORDINATOR o MASTER · Sobre ENVIADAS o CORREGIDAS<br>
+      <b>Endpoint:</b> <code>PATCH /api/coordinator/actas/{id}/estado</code><br>
+      <b>ANULADA</b> excluida de estadísticas dashboard
+    </div>
+  </div>
+
+  <div class="bottom-nav">
+    <div class="nav-item"><div class="nav-icon">📊</div><div class="nav-label">Dashboard</div></div>
+    <div class="nav-item"><div class="nav-icon">📋</div><div class="nav-label" style="color:#475569;">Actas</div></div>
+    <div class="nav-item"><div class="nav-icon">⚙️</div><div class="nav-label">Config</div></div>
+    <div class="nav-item"><div class="nav-icon">👥</div><div class="nav-label">Usuarios</div></div>
+    <div class="nav-item"><div class="nav-icon">🔑</div><div class="nav-label">Sesiones</div></div>
+  </div>
+</div>
+</body>
+</html>
