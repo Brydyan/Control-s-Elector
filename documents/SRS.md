@@ -264,15 +264,15 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 
 | RF-AUTH-005 | Registrar nuevo usuario |
 |---|---|
-| **Descripción** | MASTER crea nuevo usuario (email, password, rol). |
+| **Descripción** | MASTER crea nuevo usuario (nombre, apellido, password, rol). Email se genera automáticamente. |
 | **Actores** | MASTER |
 | **Endpoint** | `POST /api/v1/auth/register` |
-| **Entrada** | `{ email: string, password: string, rol: "MASTER" | "COORDINATOR" | "ADMIN" | "OBSERVER" }` |
-| **Precondición** | Autenticado como MASTER. Email no existe. Password ≥ 8 caracteres. |
-| **Flujo principal** | 1. Validar permiso (MASTER). 2. Hash password. 3. Crear Usuario con `habilitado = true`. 4. Asignar rol. 5. Retornar `201 Created { publicId, email, rol }`. 6. AUDIT_LOG: `USUARIO_CREADO`. |
-| **Flujo alterno** | Email existe → `409 Conflict`. Rol insuficiente → `403 Forbidden`. Validación fallida → `422`. |
-| **Postcondición** | Usuario creado, listo para login. |
-| **Reglas negocio** | • No retornar password en respuesta. • RNF: log alertado si MASTER crea usuario sin asignación de JRVs (orphaned OBSERVER). |
+| **Entrada** | `{ nombre: string, apellido: string, password: string, rol: "MASTER" | "COORDINATOR" | "ADMIN" | "OBSERVER" }` |
+| **Precondición** | Autenticado como MASTER. Password ≥ 8 caracteres. Nombre/apellido ≥ 2 caracteres. |
+| **Flujo principal** | 1. Validar permiso (MASTER). 2. Generar email con formato `{3 letras nombre}{3 letras apellido}{3 letras rol}@control.ttcs` (normaliza tildes, resuelve colisiones con sufijo numérico). 3. Hash password. 4. Crear Usuario con `habilitado = true`. 5. Asignar rol. 6. Retornar `201 Created { publicId, email, nombre, apellido, rol }`. 7. AUDIT_LOG: `USUARIO_CREADO`. |
+| **Flujo alterno** | Email generado ya existe tras sufijos incrementales → `500 Internal Server Error` (MAX_RETRIES agotados). Rol inválido → `422`. Rol insuficiente (MASTER) → `403 Forbidden`. Validación fallida → `422`. |
+| **Postcondición** | Usuario creado, listo para login con email generado. |
+| **Reglas negocio** | • Email generado automáticamente, no manual. • Normalización: tildes removidas (José → jose), solo letras alfab. en email. • Colisión resuelta: si `juaperobs@` existe, intenta `juaperobs2@`, `juaperobs3@`, etc. (máx 100 reintentos). • No retornar password en respuesta. • RNF: log alertado si MASTER crea usuario sin asignación de JRVs (orphaned OBSERVER). |
 
 #### RF-MENU: Menús Dinámicos por RBAC
 

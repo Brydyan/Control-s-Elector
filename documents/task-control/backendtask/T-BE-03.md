@@ -6,6 +6,15 @@
 
 ---
 
+⚠️ **Nota de alineación con código actual:**
+Este documento fue redactado hace tiempo. El código actual ha evolucionado:
+- **Paquete y estructura:** Este archivo usa `ec.twintailcs.electoral_api.domain`. El código real está organizado por módulo (`ec.twintailcs.electoral.acta.domain`, `ec.twintailcs.electoral.notificacion`, etc.). Sigue el patrón de módulos que ves en `backend/electoral-api/src/main/java/ec/twintailcs/electoral/`.
+- **Rol:** El documento antigua sugería `rol` como un `String` enum en `Usuario`. Ya está IMPLEMENTADO como entidad JPA real (`ec.twintailcs.electoral.auth.domain.Rol`), con una relación `@ManyToOne` en `Usuario`.
+
+Cuando implementes, reutiliza la entidad `Rol` existente, no crees un enum local.
+
+---
+
 ## ¿Qué vas a construir?
 
 Las entidades que representan el corazón del sistema: las **actas electorales**. Una acta registra los votos de una JRV para un cargo específico. También crearás el registro de auditoría (AuditLog) y las notificaciones del sistema.

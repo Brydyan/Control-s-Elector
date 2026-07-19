@@ -38,13 +38,20 @@ docker exec electoral-postgres-dev \
 Lo crea `DataSeeder` (idempotente) en el primer arranque del backend. Si ya
 existe un usuario con ese email, no hace nada.
 
-| Campo    | Valor                         | Variable de entorno       |
-| -------- | ----------------------------- | ------------------------- |
-| Email    | `admin@control-elector.local` | `APP_SEED_ADMIN_EMAIL`    |
-| Password | `admin12345`                  | `APP_SEED_ADMIN_PASSWORD` |
-| Rol      | `MASTER`                      | (hardcoded en el seeder)  |
+**Email se genera automáticamente** con el formato:
+`{3 letras nombre}{3 letras apellido}{3 letras rol}@control.ttcs`
 
-⚠️ **Cambiar antes de cualquier deploy a prod.** Hoy el seeder loggea la
+| Campo    | Valor                                          | Variable de entorno          |
+| -------- | ---------------------------------------------- | ---------------------------- |
+| Nombre   | `Admin`                                        | `APP_SEED_ADMIN_NOMBRE`      |
+| Apellido | `Sistema`                                      | `APP_SEED_ADMIN_APELLIDO`    |
+| Email    | `admsismas@control.ttcs` (generado)            | (calculado automáticamente)  |
+| Password | `admin12345`                                   | `APP_SEED_ADMIN_PASSWORD`    |
+| Rol      | `MASTER`                                       | (hardcoded en el seeder)     |
+
+Ejemplo con valores por defecto: Admin Sistema, MASTER → `admsismas@control.ttcs`
+
+⚠️ **Cambiar antes de cualquier deploy a prod.** El seeder loggea la
 password en `WARN` — visible para cualquiera con acceso a los logs.
 
 Login rápido:
@@ -52,7 +59,7 @@ Login rápido:
 ```bash
 curl -X POST http://localhost:8081/api/v1/auth/login \
     -H "Content-Type: application/json" \
-    -d '{"email":"admin@control-elector.local","password":"admin12345"}'
+    -d '{"email":"admsismas@control.ttcs","password":"admin12345"}'
 ```
 
 ---
@@ -101,14 +108,16 @@ Con el token del admin (login previo), registrar via:
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8081/api/v1/auth/login \
     -H "Content-Type: application/json" \
-    -d '{"email":"admin@control-elector.local","password":"admin12345"}' \
+    -d '{"email":"admsismas@control.ttcs","password":"admin12345"}' \
     | python3 -c "import sys,json;print(json.load(sys.stdin)['accessToken'])")
 
-curl -X POST http://localhost:8081/api/v1/auth/register
+curl -X POST http://localhost:8081/api/v1/auth/register \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
-    -d '{"email":"observer@test.local","password":"obs12345","rol":"OBSERVER"}'
+    -d '{"nombre":"Juan","apellido":"Pérez","password":"obs12345","rol":"OBSERVER"}'
 ```
+
+**Email generado automáticamente:** `juaperobs@control.ttcs` (Juan + Pérez + OBSERVER)
 
 Roles disponibles y su matriz de permisos:
 `backend/electoral-api/src/main/resources/database/changelog/002-rbac-seed.sql`.
