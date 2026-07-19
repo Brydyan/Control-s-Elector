@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: electoral_user
+          POSTGRES_PASSWORD: electoral_pass
+          POSTGRES_DB: electoral_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+      
+      - name: Build Backend (skip tests for now)
+        working-directory: backend/electoral-api
+        run: ./mvnw clean package -DskipTests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/electoral_db
+          SPRING_DATASOURCE_USERNAME: electoral_user
+          SPRING_DATASOURCE_PASSWORD: electoral_pass
+
+  # frontend: (enable when frontend is ready)
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '20'
+  #
+  #     - name: Install Dependencies
+  #       working-directory: frontend/app
+  #       run: npm install
+  #
+  #     - name: Build Frontend
+  #       working-directory: frontend/app
+  #       run: npm run build
