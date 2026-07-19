@@ -24,7 +24,7 @@ PostgreSQL 16 corriendo en Docker local en `localhost:5432`.
 
 **Estado:** TODO
 **Prioridad:** ALTA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** T-BE-03
 
 Crear script `infra/sql/01-schema.sql` con:
