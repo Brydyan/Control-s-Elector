@@ -1,0 +1,33 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Railway
+        run: |
+          curl -L https://railway.app/install.sh | bash
+          railway deploy --service electoral-api
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  # Frontend deployment to Vercel (optional — enable when ready)
+  # deploy-frontend:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - name: Deploy to Vercel
+  #       env:
+  #         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+  #         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  #         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  #       run: |
+  #         npm install -g vercel
+  #         cd frontend/app
+  #         vercel deploy --prod --token $VERCEL_TOKEN --yes
