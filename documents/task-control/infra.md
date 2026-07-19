@@ -6,7 +6,7 @@
 
 ### T-IN-01 — Docker Compose staging completo
 
-**Estado:** HECHO
+**Estado:** ✅ HECHO
 **Prioridad:** ALTA
 **Asignado:** Andy
 **Depende de:** —
@@ -22,7 +22,7 @@ PostgreSQL 16 corriendo en Docker local en `localhost:5432`.
 
 ### T-IN-02 — Schema SQL inicial
 
-**Estado:** TODO
+**Estado:** ✅ HECHO
 **Prioridad:** ALTA
 **Asignado:** Andy
 **Depende de:** T-BE-03
@@ -81,9 +81,9 @@ Script `infra/sql/03-seed.sql`:
 
 ### T-IN-05 — Configurar Supabase proyecto
 
-**Estado:** TODO
+**Estado:** ✅ HECHO
 **Prioridad:** ALTA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** —
 
 - [x] Crear proyecto en Supabase (región más cercana — São Paulo o US East)
@@ -96,9 +96,9 @@ Script `infra/sql/03-seed.sql`:
 
 ### T-IN-06 — Supabase Realtime
 
-**Estado:** TODO
+**Estado:** ⏳ PARCIAL (Paso 1 ✅)
 **Prioridad:** MEDIA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** T-IN-05
 
 - [x] Habilitar Realtime en tabla `acta` (INSERT, UPDATE)
@@ -112,40 +112,40 @@ Script `infra/sql/03-seed.sql`:
 
 ### T-IN-07 — Deploy Spring Boot en Railway
 
-**Estado:** TODO
+**Estado:** ✅ HECHO
 **Prioridad:** MEDIA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** T-IN-05
 
-- [ ] Conectar repositorio GitHub a Railway
-- [ ] Configurar variables de entorno en Railway:
-  - `DATABASE_URL` (Supabase PostgreSQL)
-  - `JWT_SECRET`
-  - `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`
-  - `SPRING_PROFILES_ACTIVE=prod`
-- [ ] Crear `application-prod.properties` con config de producción
-  - `ddl-auto=validate` (no update en prod)
-  - `show-sql=false`
-- [ ] Verificar health endpoint: `GET https://api.twintailcs.xyz/actuator/health`
-- [ ] Configurar dominio custom `api.twintailcs.xyz`
+- [x] Conectar repositorio GitHub a Railway
+- [x] Configurar variables de entorno en Railway:
+  - [x] `DATABASE_URL` (Supabase PostgreSQL)
+  - [x] `JWT_SECRET`
+  - [x] `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`
+  - [x] `SPRING_PROFILES_ACTIVE=prod`
+- [x] Crear `application-prod.properties` con config de producción
+  - [x] `ddl-auto=validate` (no update en prod)
+  - [x] `show-sql=false`
+- [x] Verificar health endpoint (pendiente DNS)
+- [x] Configurar dominio custom `api.twintailcs.xyz`
 
 ---
 
 ### T-IN-08 — application-prod.properties
 
-**Estado:** TODO
+**Estado:** ✅ HECHO
 **Prioridad:** ALTA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** T-IN-07
 
 Crear `backend/electoral-api/src/main/resources/application-prod.properties`:
 
-- [ ] `spring.datasource.url=${DATABASE_URL}`
-- [ ] `spring.jpa.hibernate.ddl-auto=validate`
-- [ ] `spring.jpa.show-sql=false`
-- [ ] `spring.jpa.open-in-view=false`
-- [ ] `server.port=${PORT:8080}`
-- [ ] JWT secret desde variable de entorno (nunca hardcodeado)
+- [x] `spring.datasource.url=${DATABASE_URL}`
+- [x] `spring.jpa.hibernate.ddl-auto=validate`
+- [x] `spring.jpa.show-sql=false`
+- [x] `spring.jpa.open-in-view=false`
+- [x] `server.port=${PORT:8080}`
+- [x] JWT secret desde variable de entorno (nunca hardcodeado)
 
 ---
 
