@@ -76,7 +76,7 @@ mvn clean package -DskipTests
 java -jar target/electoral-api-0.0.1-SNAPSHOT.jar
 ```
 
-El backend escucha en **http://localhost:8080**.
+El backend escucha en **http://localhost:8081**.
 
 ### 2.3 Levantar el frontend (en otra terminal)
 
@@ -93,8 +93,8 @@ El frontend queda disponible en **http://localhost:4200**.
 | Servicio | URL | Credenciales |
 |----------|-----|--------------|
 | Frontend (Angular) | http://localhost:4200 | — |
-| API REST Spring Boot | http://localhost:8080 | — |
-| Health Check | http://localhost:8080/actuator/health | — |
+| API REST Spring Boot | http://localhost:8081 | — |
+| Health Check | http://localhost:8081/actuator/health | — |
 | RustFS Console | http://localhost:9001 | rustfsadmin / rustfsadmin123 |
 | RustFS API | http://localhost:9000 | rustfsadmin / rustfsadmin123 |
 | PostgreSQL | localhost:5432 | electoral_user / electoral_pass |
@@ -191,7 +191,7 @@ docker run --rm --network host minio/mc mb local/electoral-evidences
 
 ### Frontend no se conecta al backend
 
-Verificar `frontend/app/proxy.conf.json` apunta a `http://localhost:8080` (no a `electoral-api`, que es nombre de container del approach anterior).
+Verificar `frontend/app/proxy.conf.json` apunta a `http://localhost:8081` (no a `electoral-api`, que es nombre de container del approach anterior).
 
 ### Reset completo
 
@@ -244,7 +244,7 @@ docker run -e DB_HOST=... \
            -e DB_USER=... \
            -e DB_PASSWORD=... \
            -e SPRING_PROFILES_ACTIVE=prod \
-           -p 8080:8080 \
+           -p 8081:8081 \
            electoral-api:latest
 ```
 

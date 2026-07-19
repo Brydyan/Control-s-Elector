@@ -2,7 +2,6 @@ package ec.twintailcs.electoral.auth.web.dto.mapper;
 
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse.UsuarioActual;
-import ec.twintailcs.electoral.common.UuidResolver;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -10,8 +9,9 @@ import org.mapstruct.Mapping;
  * MapStruct mapper entre {@link Usuario} (entidad) y {@link UsuarioActual} (DTO).
  * Resuelve la relacion {@code usuario.rol → rol.nombre} para que el DTO
  * reciba el nombre del rol como String en lugar de la entidad completa.
+ * Bean registrado en MapperConfig en lugar de @Component auto.
  */
-@Mapper(componentModel = "spring", uses = { UuidResolver.class })
+@Mapper
 public interface UsuarioMapper {
 
     @Mapping(target = "id", source = "publicId")
