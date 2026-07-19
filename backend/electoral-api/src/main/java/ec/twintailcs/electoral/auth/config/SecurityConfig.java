@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import ec.twintailcs.electoral.auth.web.JwtAuthFilter;
+import ec.twintailcs.electoral.shared.security.RlsInterceptor;
 
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
@@ -34,6 +35,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthFilter jwtAuthFilter,
+            RlsInterceptor rlsInterceptor,
             ObjectMapper objectMapper) throws Exception {
 
         http
@@ -74,7 +76,8 @@ public class SecurityConfig {
                                 "Permisos insuficientes"))
             )
             .addFilterBefore(jwtAuthFilter,
-                    UsernamePasswordAuthenticationFilter.class);
+                    UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(rlsInterceptor, JwtAuthFilter.class);
 
         return http.build();
     }

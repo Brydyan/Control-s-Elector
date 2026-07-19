@@ -38,18 +38,20 @@ Crear script `infra/sql/01-schema.sql` con:
 
 ### T-IN-03 — RLS en PostgreSQL
 
-**Estado:** TODO
+**Estado:** HECHO ✅
 **Prioridad:** ALTA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** T-IN-02
 
-Script `infra/sql/02-rls.sql`:
+Script `infra/sql/02-rls.sql` + RlsInterceptor.java:
 
-- [ ] Habilitar RLS en tabla `acta`
-- [ ] Policy OBSERVER: `jrv_id IN (SELECT jrv_id FROM observer_jrv_asignacion WHERE observer_id = current_user_id())`
-- [ ] Policy COORDINATOR / ADMIN / MASTER: sin restricción de fila
-- [ ] Función `current_user_id()` que lee claim del JWT (vía `app.current_user_id` setting)
-- [ ] Verificar que API pasa `SET LOCAL app.current_user_id = ?` antes de queries
+- [x] Habilitar RLS en tabla `acta`, `acta_detalle`, `evidencia`, `audit_log`, `notificacion`
+- [x] Policy OBSERVER: `jrv_id IN (SELECT jrv_id FROM observer_jrv_asignacion WHERE observer_id = get_current_user_id())`
+- [x] Policy COORDINATOR / ADMIN / MASTER: sin restricción de fila
+- [x] RlsInterceptor Spring filter: convierte publicId (UUID) a internal id (Long) y ejecuta `SET LOCAL app.current_user_id`
+- [x] SecurityConfig: wiring RlsInterceptor después de JwtAuthFilter
+- [x] Función `get_current_user_id()` que lee session variable (vía `app.current_user_id` setting)
+- [x] Verificar que API pasa `SET LOCAL app.current_user_id = ?` antes de queries
 
 ---
 
