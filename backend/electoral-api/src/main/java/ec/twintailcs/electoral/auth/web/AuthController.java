@@ -139,11 +139,13 @@ public class AuthController {
      * Solo MASTER puede crear usuarios. Para esta version es asi (el FE
      * tendra un panel admin que lista usuarios). Cuando existan
      * auto-registros via invite, se cambia esta firma.
+     *
+     * Email se genera automáticamente a partir de nombre, apellido y rol.
      */
     @PostMapping("/register")
     @PreAuthorize("hasAuthority('usuario:create') or hasAuthority('MASTER')")
     public ResponseEntity<AuthResponse.UsuarioActual> register(@Valid @RequestBody RegisterRequest body) {
-        Usuario u = registros.register(body.email(), body.password(), body.rol());
+        Usuario u = registros.register(body.nombre(), body.apellido(), body.password(), body.rol());
         return ResponseEntity.status(201).body(usuarioMapper.toDto(u));
     }
 

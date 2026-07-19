@@ -327,6 +327,100 @@ curl http://localhost:8080/api/dashboard/progreso \
 
 ---
 
+---
+
+## Paso 4 — Endpoint de Novedades (ADMIN) — Actas en disputa + Evidencias con observaciones
+
+**Novedad:** Un endpoint adicional específico para ADMIN que lista actas que requieren atención urgente (EN_DISPUTA sin resolver) + evidencias que han sido marcadas con observaciones, para usar como base de reclamos.
+
+Agrega al `DashboardController`:
+
+```java
+/**
+ * GET /api/dashboard/novedades
+ * Solo ADMIN/MASTER/COORDINATOR — lista actas en EN_DISPUTA + evidencias
+ * con observaciones marcadas. Incluye tiempo transcurrido para urgencia.
+ *
+ * Respuesta: List<NovedadDto>
+ */
+@GetMapping("/novedades")
+public ResponseEntity<List<NovedadDto>> novedades() {
+    // 1. Actas en EN_DISPUTA (sin resolver)
+    List<Acta> actasEnDisputa = actaRepository.findByEstado(EstadoActa.EN_DISPUTA);
+    
+    // 2. Evidencias con observaciones marcadas (campo/relación a ser definida en T-BE-16)
+    // List<Evidencia> evidenciasConObs = evidenciaRepository.findByObservacionesIsNotNull();
+    
+    // 3. Mapear ambas a un DTO unificado de "novedad"
+    List<NovedadDto> novedades = new ArrayList<>();
+    for (Acta acta : actasEnDisputa) {
+        long minutosTranscurridos = Duration.between(
+            acta.getRegistradaEn().atZone(ZoneId.systemDefault()),
+            Instant.now().atZone(ZoneId.systemDefault())
+        ).toMinutes();
+        
+        novedades.add(new NovedadDto(
+            acta.getId(),
+            acta.getPublicId(),
+            "ACTA_EN_DISPUTA",
+            acta.getJrv().getId(),
+            acta.getCargo().getNombre(),
+            acta.getRegistrada_por().getNombre() + " " + acta.getRegistrada_por().getApellido(),
+            minutosTranscurridos,
+            acta.getMotivo_disputa()
+        ));
+    }
+    
+    return ResponseEntity.ok(novedades);
+}
+```
+
+Crear DTO:
+
+```java
+// src/main/java/ec/twintailcs/electoral/dto/NovedadDto.java
+package ec.twintailcs.electoral.dto;
+
+import java.util.UUID;
+
+public class NovedadDto {
+    private Long actaId;
+    private UUID actaPublicId;
+    private String tipo;              // "ACTA_EN_DISPUTA", "EVIDENCIA_CON_OBS"
+    private Long jrvId;
+    private String cargo;
+    private String observer;          // nombre + apellido
+    private long minutosTranscurridos;
+    private String motivo;            // motivo de disputa o descripción observación
+
+    public NovedadDto(Long actaId, UUID actaPublicId, String tipo, Long jrvId,
+                     String cargo, String observer, long minutosTranscurridos, String motivo) {
+        this.actaId = actaId;
+        this.actaPublicId = actaPublicId;
+        this.tipo = tipo;
+        this.jrvId = jrvId;
+        this.cargo = cargo;
+        this.observer = observer;
+        this.minutosTranscurridos = minutosTranscurridos;
+        this.motivo = motivo;
+    }
+
+    // Getters
+    public Long getActaId() { return actaId; }
+    public UUID getActaPublicId() { return actaPublicId; }
+    public String getTipo() { return tipo; }
+    public Long getJrvId() { return jrvId; }
+    public String getCargo() { return cargo; }
+    public String getObserver() { return observer; }
+    public long getMinutosTranscurridos() { return minutosTranscurridos; }
+    public String getMotivo() { return motivo; }
+}
+```
+
+**Referencia cruzada:** El concepto de "tiempo transcurrido" para marcar urgencia aparece ya en `documents/mockups/COORDINATOR/desktop/05-disputas.html` (clases `.urgente-tag` y `.disputa-tag`) — ADMIN reutiliza el mismo criterio.
+
+---
+
 ## Errores comunes
 
 | Error | Causa | Solución |
