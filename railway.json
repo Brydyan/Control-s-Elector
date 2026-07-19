@@ -3,8 +3,5 @@
   "build": {
     "builder": "dockerfile",
     "dockerfile": "backend/electoral-api/Dockerfile"
-  },
-  "deploy": {
-    "startCommand": "java -jar target/electoral-api-*.jar"
   }
 }
