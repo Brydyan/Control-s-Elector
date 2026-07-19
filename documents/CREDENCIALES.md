@@ -50,7 +50,7 @@ password en `WARN` — visible para cualquiera con acceso a los logs.
 Login rápido:
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/auth/login \
+curl -X POST http://localhost:8081/api/v1/auth/login \
     -H "Content-Type: application/json" \
     -d '{"email":"admin@control-elector.local","password":"admin12345"}'
 ```
@@ -99,12 +99,12 @@ El contenedor `electoral-rustfs` levanta la consola en `http://localhost:9001`.
 Con el token del admin (login previo), registrar via:
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+TOKEN=$(curl -s -X POST http://localhost:8081/api/v1/auth/login \
     -H "Content-Type: application/json" \
     -d '{"email":"admin@control-elector.local","password":"admin12345"}' \
     | python3 -c "import sys,json;print(json.load(sys.stdin)['accessToken'])")
 
-curl -X POST http://localhost:8080/api/v1/auth/register
+curl -X POST http://localhost:8081/api/v1/auth/register
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"email":"observer@test.local","password":"obs12345","rol":"OBSERVER"}'
@@ -129,12 +129,12 @@ Endpoints útiles para smoke test con cada rol:
 
 | Servicio          | URL                                      |
 | ----------------- | ---------------------------------------- |
-| Backend (API)     | <http://localhost:8080>                  |
-| Swagger UI        | <http://localhost:8080/swagger-ui.html>  |
-| OpenAPI JSON      | <http://localhost:8080/v3/api-docs>      |
-| OpenAPI YAML      | <http://localhost:8080/v3/api-docs.yaml> |
-| Health check      | <http://localhost:8080/actuator/health>  |
-| Menús del usuario | <http://localhost:8080/api/v1/menus/me>  |
+| Backend (API)     | <http://localhost:8081>                  |
+| Swagger UI        | <http://localhost:8081/swagger-ui.html>  |
+| OpenAPI JSON      | <http://localhost:8081/v3/api-docs>      |
+| OpenAPI YAML      | <http://localhost:8081/v3/api-docs.yaml> |
+| Health check      | <http://localhost:8081/actuator/health>  |
+| Menús del usuario | <http://localhost:8081/api/v1/menus/me>  |
 | Postgres (docker) | `localhost:5432`                         |
 | RustFS S3 API     | <http://localhost:9000>                  |
 | RustFS console    | <http://localhost:9001>                  |
