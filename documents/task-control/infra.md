@@ -29,10 +29,10 @@ PostgreSQL 16 corriendo en Docker local en `localhost:5432`.
 
 Crear script `infra/sql/01-schema.sql` con:
 
-- [ ] Tablas del dominio (Hibernate ddl-auto=update lo genera, pero tener script manual)
-- [ ] Índices: `acta(jrv_id, cargo_id)`, `observer_jrv_asignacion(observer_id)`, `refresh_token(token)`
-- [ ] Constraints: unicidad `acta(jrv_id, cargo_id)` donde estado != ANULADA
-- [ ] Extensiones: `uuid-ossp` si se usan UUIDs como PK
+- [x] Tablas del dominio (Hibernate ddl-auto=update lo genera, pero tener script manual)
+- [x] Índices: `acta(jrv_id, cargo_id)`, `observer_jrv_asignacion(observer_id)`, `refresh_token(token)`
+- [x] Constraints: unicidad `acta(jrv_id, cargo_id)` donde estado != ANULADA
+- [x] Extensiones: `uuid-ossp` si se usan UUIDs como PK
 
 ---
 

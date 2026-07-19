@@ -6,6 +6,16 @@
 
 ---
 
+⚠️ **Nota de alineación con código actual:**
+Este documento describe una implementación vía `RestTemplate` directo a Supabase Storage. **El código actual ya tiene `S3StorageService` IMPLEMENTADO**, usando AWS SDK S3 (`software.amazon.awssdk`):
+- **Ubicación real:** `backend/electoral-api/src/main/java/ec/twintailcs/electoral/storage/s3/S3StorageService.java`
+- **Endpoint:** RustFS (MinIO compatible) en dev (`http://localhost:9000`), Supabase Storage en prod
+- **La tarea de esta documento ya está hecha.** Puedes leerla como referencia pedagógica, pero no sigas las instrucciones de RestTemplate + RestTemplate — usa la clase `S3StorageService` que ya existe.
+
+Si necesitas subir archivos, inyecta `S3StorageService` en tu controller y llama `upload(bytes, key, mimeType)`. Ver `EvidenciaController` para un ejemplo real.
+
+---
+
 ## ¿Qué vas a construir?
 
 Un servicio que sube imágenes de actas al bucket de Supabase Storage. Cuando el observer saca la foto del acta física, el backend la recibe y la guarda en Supabase. La URL de la imagen se guarda en el campo `acta.storageUrl`.
