@@ -104,6 +104,7 @@ surefire-reports/
 CLAUDE.md
 backend.md
 frontend.md
+infra.md
 
 # Local Pi runtime state
 .atl/
