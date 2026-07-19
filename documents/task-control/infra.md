@@ -86,11 +86,11 @@ Script `infra/sql/03-seed.sql`:
 **Asignado:** sin asignar
 **Depende de:** —
 
-- [ ] Crear proyecto en Supabase (región más cercana — São Paulo o US East)
-- [ ] Obtener `DATABASE_URL` (prod), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`
-- [ ] Ejecutar scripts RLS en Supabase SQL Editor
-- [ ] Crear bucket en Object Storage: `actas-images` (privado)
-- [ ] Configurar política de acceso al bucket: solo service key puede escribir
+- [x] Crear proyecto en Supabase (región más cercana — São Paulo o US East)
+- [x] Obtener `DATABASE_URL` (prod), `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY`
+- [x] Ejecutar scripts RLS en Supabase SQL Editor
+- [x] Crear bucket en Object Storage: `actas-images` (privado)
+- [x] Configurar política de acceso al bucket: solo service key puede escribir
 
 ---
 
