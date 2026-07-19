@@ -1,9 +1,22 @@
 # T-IN-02 — Schema SQL inicial
 
-**Estado:** TODO
+**Estado:** COMPLETADO ✅ (sesión previa)
 **Dificultad:** Intermedio
 **Tiempo estimado:** 2 horas
 **Depende de:** T-IN-01 ✅
+
+---
+
+⚠️ **Nota sobre integración con Liquibase:**
+El archivo `backend/electoral-api/src/main/resources/database/infra/sql/01-schema.sql` que se crea en esta tarea es un **script de referencia** — contiene todas las tablas (Acta, JrvCargo, Cargo, Partido, Candidato, Notificacion, AuditLog, etc.) para documentación y staging local.
+
+**IMPORTANTE:** Este script **NO está conectado a la cadena real de Liquibase** que usa Hibernate (`db.changelog-master.yaml` solo referencia `changelog/001-007-*.sql`). Por eso las tablas de Acta y amigos NO se crean automáticamente al arrancar la app.
+
+**Decisión pendiente:** Cuando se implemente Acta/Notificacion (T-BE-03 en adelante), decidir si:
+1. Fusionar este script a `changelog/008-actas.sql`, `changelog/009-cargos.sql`, etc., para que Liquibase las gestione
+2. Mantener solo como documentación (y que Hibernate + JPA manejen la creación vía `ddl-auto=update`)
+
+Por ahora, úsalo para testing manual en staging. El código Java de Acta/Notificacion, cuando se implemente, creará sus propias tablas.
 
 ---
 

@@ -6,6 +6,15 @@
 
 ---
 
+⚠️ **Nota de alineación con código actual:**
+Este archivo fue redactado hace tiempo. El código actual usa una arquitectura distinta a la que se describe aquí:
+- **Paquete:** Este documento menciona `ec.twintailcs.electoral_api.domain`. El código real usa **`ec.twintailcs.electoral.<módulo>.domain`** (separado por módulo: `auth`, `evidencia`, `geografia`, etc.), no un paquete `domain` plano.
+- **Storage:** T-BE-14 describe subida vía `RestTemplate` a Supabase Storage. El código real ya usa `S3StorageService` con AWS SDK S3 (`software.amazon.awssdk`) apuntando a RustFS en dev.
+
+Cuando implementes esta tarea, copia la estructura de paquetes que ya existe en el código (ve `backend/electoral-api/src/main/java/ec/twintailcs/electoral/`), no la que aparece aquí.
+
+---
+
 ## ¿Qué vas a construir?
 
 Vas a crear las entidades que representan la estructura electoral: los cargos a elegir (Prefecto, Alcalde, etc.), los partidos políticos, los candidatos, y la tabla que relaciona JRVs con cargos.
