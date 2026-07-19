@@ -53,6 +53,12 @@ public class Usuario {
     @Column(name = "creado_en", nullable = false, updatable = false)
     private Instant creadoEn = Instant.now();
 
+    @Column(nullable = false, length = 100)
+    private String nombre;
+
+    @Column(nullable = false, length = 100)
+    private String apellido;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public UUID getPublicId() { return publicId; }
@@ -69,4 +75,8 @@ public class Usuario {
     public void setHabilitado(boolean habilitado) { this.habilitado = habilitado; }
     public Instant getCreadoEn() { return creadoEn; }
     public void setCreadoEn(Instant creadoEn) { this.creadoEn = creadoEn; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public String getApellido() { return apellido; }
+    public void setApellido(String apellido) { this.apellido = apellido; }
 }
