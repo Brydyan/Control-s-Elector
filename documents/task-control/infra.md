@@ -101,8 +101,8 @@ Script `infra/sql/03-seed.sql`:
 **Asignado:** sin asignar
 **Depende de:** T-IN-05
 
-- [ ] Habilitar Realtime en tabla `acta` (INSERT, UPDATE)
-- [ ] Habilitar Realtime en tabla `notificacion`
+- [x] Habilitar Realtime en tabla `acta` (INSERT, UPDATE)
+- [x] Habilitar Realtime en tabla `notificacion`
 - [ ] Configurar canal en frontend Angular con `@supabase/supabase-js`
 - [ ] Verificar que eventos llegan solo a usuarios con RLS válido
 
