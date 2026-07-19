@@ -1,6 +1,6 @@
 # T-IN-03 — RLS (Row Level Security) en PostgreSQL
 
-**Estado:** TODO
+**Estado:** COMPLETADO ✅
 **Dificultad:** Avanzado
 **Tiempo estimado:** 3 horas
 **Depende de:** T-IN-02 ✅
