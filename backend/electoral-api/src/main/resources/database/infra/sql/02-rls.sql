@@ -39,30 +39,34 @@ ALTER TABLE notificacion ENABLE ROW LEVEL SECURITY;
 CREATE POLICY rls_acta_observer_select ON acta
   FOR SELECT
   USING (
-    -- Si el usuario es OBSERVER:
-    (SELECT r.nombre FROM usuario u LEFT JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id()) = 'OBSERVER'
-    AND jrv_id IN (
-      -- Su jrv_id está en observer_jrv_asignacion
-      SELECT jrv_id FROM observer_jrv_asignacion
-      WHERE observer_id = get_current_user_id()
+    (
+      -- Si el usuario es OBSERVER:
+      (SELECT r.nombre FROM usuario u LEFT JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id()) = 'OBSERVER'
+      AND jrv_id IN (
+        -- Su jrv_id está en observer_jrv_asignacion
+        SELECT jrv_id FROM observer_jrv_asignacion
+        WHERE observer_id = get_current_user_id()
+      )
     )
-  )
-  OR
-  -- Si es COORDINATOR, ADMIN o MASTER: ve todo
-  (SELECT r.nombre FROM usuario u LEFT JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id()) IN ('COORDINATOR', 'ADMIN', 'MASTER');
+    OR
+    -- Si es COORDINATOR, ADMIN o MASTER: ve todo
+    (SELECT r.nombre FROM usuario u LEFT JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id()) IN ('COORDINATOR', 'ADMIN', 'MASTER')
+  );
 
 -- Policy 2: OBSERVER solo puede INSERT actas en sus JRVs
 CREATE POLICY rls_acta_observer_insert ON acta
   FOR INSERT
   WITH CHECK (
-    (SELECT r.nombre FROM usuario u LEFT JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id()) = 'OBSERVER'
-    AND jrv_id IN (
-      SELECT jrv_id FROM observer_jrv_asignacion
-      WHERE observer_id = get_current_user_id()
+    (
+      (SELECT r.nombre FROM usuario u LEFT JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id()) = 'OBSERVER'
+      AND jrv_id IN (
+        SELECT jrv_id FROM observer_jrv_asignacion
+        WHERE observer_id = get_current_user_id()
+      )
     )
-  )
-  OR
-  (SELECT r.nombre FROM usuario u LEFT JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id()) IN ('COORDINATOR', 'MASTER');
+    OR
+    (SELECT r.nombre FROM usuario u LEFT JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id()) IN ('COORDINATOR', 'MASTER')
+  );
 
 -- Policy 3: OBSERVER solo puede UPDATE sus propias actas, COORDINATOR/MASTER pueden actualizar cualquiera
 CREATE POLICY rls_acta_observer_update ON acta
