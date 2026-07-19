@@ -1,10 +1,10 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "nixpacks",
-    "buildpacks": ["java"]
+    "builder": "dockerfile",
+    "dockerfile": "backend/electoral-api/Dockerfile"
   },
   "deploy": {
-    "startCommand": "cd backend/electoral-api && java -jar target/electoral-api-*.jar"
+    "startCommand": "java -jar target/electoral-api-*.jar"
   }
 }
