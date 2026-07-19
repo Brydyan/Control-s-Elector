@@ -13,6 +13,7 @@ jobs:
       - name: Deploy to Railway
         run: |
           curl -L https://railway.app/install.sh | bash
+          source "$HOME/.railway/env"
           railway deploy --service electoral-api
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
