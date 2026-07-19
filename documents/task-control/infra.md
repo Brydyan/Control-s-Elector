@@ -192,13 +192,13 @@ Sin esto, refresh en rutas Angular devuelve 404.
 
 ### T-IN-11 — GitHub Actions básico
 
-**Estado:** TODO
+**Estado:** ✅ HECHO
 **Prioridad:** BAJA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** T-IN-07, T-IN-09
 
-- [ ] Workflow `ci.yml`: en PR → build backend + frontend, correr tests
-- [ ] Workflow `deploy.yml`: en push a `main` → Railway y Vercel despliegan automáticamente
+- [x] Workflow `ci.yml`: en PR → build backend + frontend, correr tests
+- [x] Workflow `deploy.yml`: en push a `main` → Railway y Vercel despliegan automáticamente
 - [ ] Secrets en GitHub: `DATABASE_URL`, `JWT_SECRET`, `SUPABASE_SERVICE_KEY`
 
 ---
