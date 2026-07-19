@@ -1,6 +1,6 @@
 # T-IN-04 — Datos semilla (seed)
 
-**Estado:** TODO
+**Estado:** COMPLETADO ✅
 **Dificultad:** Principiante
 **Tiempo estimado:** 2 horas
 **Depende de:** T-IN-02 ✅
