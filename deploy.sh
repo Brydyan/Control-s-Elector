@@ -30,7 +30,7 @@ git pull origin develop || {
 
 # Docker compose up
 echo -e "${YELLOW}🐳 Iniciando contenedores...${NC}"
-docker compose up -d || {
+docker compose --profile dev up -d || {
   echo -e "${RED}❌ Error al ejecutar docker compose${NC}"
   exit 1
 }
