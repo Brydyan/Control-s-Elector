@@ -212,7 +212,7 @@ Sin esto, refresh en rutas Angular devuelve 404.
 **Asignado:** sin asignar
 **Depende de:** T-IN-01
 
-- [ ] Instalar Tailscale en máquina de staging
-- [ ] Exponer `localhost:8080` solo dentro de la red Tailscale
+- [x] Instalar Tailscale en máquina de staging
+- [x] Exponer `localhost:8080` solo dentro de la red Tailscale
 - [ ] Equipo puede probar staging sin exponer puertos públicos
 - [ ] Documentar IP de staging en `diagram/02-deployment.md`

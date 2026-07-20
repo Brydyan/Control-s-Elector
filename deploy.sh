@@ -10,7 +10,7 @@ NC='\033[0m' # No Color
 echo -e "${YELLOW}🚀 Iniciando despliegue en servidor local...${NC}"
 
 # Ruta del proyecto en HDD
-PROJECT_PATH="/mnt/storage/projects/controls_elector"
+PROJECT_PATH="/mnt/storage/projects/controls_elector/data"
 
 # Verificar que la ruta existe
 if [ ! -d "$PROJECT_PATH" ]; then
@@ -36,4 +36,4 @@ docker compose up -d || {
 }
 
 echo -e "${GREEN}✅ Despliegue completado exitosamente${NC}"
-echo -e "${GREEN}✨ Servidor staging actualizado en: /mnt/storage/projects/controls_elector${NC}"
+echo -e "${GREEN}✨ Servidor staging actualizado en: /mnt/storage/projects/controls_elector/data${NC}"

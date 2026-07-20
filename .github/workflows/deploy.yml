@@ -1,4 +1,4 @@
-name: CD - Despliegue Automático Controls Elector (HDD)
+name: CD - Deploy to Staging (SSH)
 
 on:
   push:
@@ -7,21 +7,17 @@ on:
 
 jobs:
   deploy:
-    name: Desplegar en Servidor Local
-    runs-on: [self-hosted, Linux]
+    name: Deploy to staging server
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Descargar código del repositorio
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          clean: false
 
-      - name: Ejecutar script de despliegue seguro
+      - name: Deploy via SSH
         run: |
-          if [ -f "./deploy.sh" ]; then
-            chmod +x ./deploy.sh
-            ./deploy.sh
-          else
-            echo "El script deploy.sh no se encontró en la raíz del proyecto."
-            exit 1
-          fi
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/key
+          chmod 600 ~/.ssh/key
+          ssh -i ~/.ssh/key -o StrictHostKeyChecking=no brydyan@twintailserver \
+            'cd /mnt/storage/projects/controls_elector/data && git pull origin develop && docker-compose up -d'
