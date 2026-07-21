@@ -36,7 +36,9 @@ AFTER=$(git rev-parse HEAD)
 
 # Docker compose: limpiar contenedores viejos + up con build automático
 echo -e "${YELLOW}🐳 Limpiando contenedores anteriores...${NC}"
-docker compose --profile dev down 2>/dev/null || true
+docker compose --profile dev down -v --remove-orphans || {
+  echo -e "${YELLOW}⚠️  Warning: containers ya estaban parados${NC}"
+}
 
 echo -e "${YELLOW}🐳 Iniciando contenedores...${NC}"
 docker compose --profile dev up --build -d || {
