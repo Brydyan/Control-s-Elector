@@ -34,26 +34,16 @@ git pull origin develop || {
 }
 AFTER=$(git rev-parse HEAD)
 
-# Detectar cambios en backend
-echo -e "${YELLOW}🔍 Verificando cambios en backend...${NC}"
-BACKEND_CHANGED=$(git diff --name-only $BEFORE $AFTER | grep -c "^backend/electoral-api/" || echo 0)
-
-# Docker compose: rebuild backend solo si hay cambios
+# Docker compose: up con build automático (respeta dependencias, reutiliza capas cached)
 echo -e "${YELLOW}🐳 Iniciando contenedores...${NC}"
-if [ "$BACKEND_CHANGED" -gt 0 ]; then
-  echo -e "${YELLOW}♻️  Backend cambió — rebuilding imagen...${NC}"
-  docker compose --profile dev build electoral-api || {
-    echo -e "${RED}❌ Error al buildear electoral-api${NC}"
-    exit 1
-  }
-else
-  echo -e "${GREEN}✓ Backend sin cambios — usando imagen cached${NC}"
-fi
-
-docker compose --profile dev up -d || {
+docker compose --profile dev up --build -d || {
   echo -e "${RED}❌ Error al ejecutar docker compose${NC}"
   exit 1
 }
+
+# Limpiar imágenes dangling (viejas sin usar)
+echo -e "${YELLOW}🧹 Limpiando imágenes viejas...${NC}"
+docker image prune -f --filter "dangling=true" > /dev/null 2>&1
 
 echo -e "${GREEN}✅ Despliegue completado exitosamente${NC}"
 echo -e "${GREEN}✨ Servidor staging actualizado en: /mnt/storage/projects/controls_elector/data${NC}"
