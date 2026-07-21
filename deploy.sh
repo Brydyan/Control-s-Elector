@@ -34,7 +34,10 @@ git pull origin develop || {
 }
 AFTER=$(git rev-parse HEAD)
 
-# Docker compose: up con build automático (respeta dependencias, reutiliza capas cached)
+# Docker compose: limpiar contenedores viejos + up con build automático
+echo -e "${YELLOW}🐳 Limpiando contenedores anteriores...${NC}"
+docker compose --profile dev down 2>/dev/null || true
+
 echo -e "${YELLOW}🐳 Iniciando contenedores...${NC}"
 docker compose --profile dev up --build -d || {
   echo -e "${RED}❌ Error al ejecutar docker compose${NC}"
