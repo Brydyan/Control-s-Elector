@@ -21,15 +21,35 @@ fi
 cd "$PROJECT_PATH"
 echo -e "${YELLOW}📁 Directorio: $PROJECT_PATH${NC}"
 
-# Git pull
+# Git pull + capturar cambios
 echo -e "${YELLOW}📥 Actualizando código desde develop...${NC}"
+git fetch origin develop || {
+  echo -e "${RED}❌ Error al hacer git fetch${NC}"
+  exit 1
+}
+BEFORE=$(git rev-parse HEAD)
 git pull origin develop || {
   echo -e "${RED}❌ Error al hacer git pull${NC}"
   exit 1
 }
+AFTER=$(git rev-parse HEAD)
 
-# Docker compose up
+# Detectar cambios en backend
+echo -e "${YELLOW}🔍 Verificando cambios en backend...${NC}"
+BACKEND_CHANGED=$(git diff --name-only $BEFORE $AFTER | grep -c "^backend/electoral-api/" || echo 0)
+
+# Docker compose: rebuild backend solo si hay cambios
 echo -e "${YELLOW}🐳 Iniciando contenedores...${NC}"
+if [ "$BACKEND_CHANGED" -gt 0 ]; then
+  echo -e "${YELLOW}♻️  Backend cambió — rebuilding imagen...${NC}"
+  docker compose --profile dev build electoral-api || {
+    echo -e "${RED}❌ Error al buildear electoral-api${NC}"
+    exit 1
+  }
+else
+  echo -e "${GREEN}✓ Backend sin cambios — usando imagen cached${NC}"
+fi
+
 docker compose --profile dev up -d || {
   echo -e "${RED}❌ Error al ejecutar docker compose${NC}"
   exit 1
