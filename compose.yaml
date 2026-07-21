@@ -14,12 +14,15 @@
 # El binario nativo de GraalVM queda reservado para deploy en Railway
 # (donde el proceso de build corre fuera del desktop y tiene más memoria).
 #
-# Uso:
-#   docker compose --profile dev up -d   # solo Postgres + RustFS
-#   # en otra terminal: mvn spring-boot:run (backend) / ng serve (frontend)
+# Uso (desarrollo local):
+#   docker compose --profile dev up -d   # Postgres + Backend + RustFS
+#   # en otra terminal: ng serve (frontend)
+#
+# Uso (staging):
+#   docker compose --profile dev up -d   # Auto-deploy backend via deploy.sh + GitHub Actions
 #
 # Variables configurables (ver .env.example): DB_NAME, DB_USER, DB_PASSWORD,
-# DB_PORT, APP_ENV, POSTGRES_MEM_LIMIT, RESTART_POLICY.
+# DB_PORT, APP_ENV, POSTGRES_MEM_LIMIT, RESTART_POLICY, SERVER_PORT.
 # =============================================================================
 
 services:
@@ -70,6 +73,61 @@ services:
           memory: ${POSTGRES_MEM_LIMIT:-512M}
 
   # ---------------------------------------------------------------------------
+  # Electoral API — Spring Boot Backend
+  # ---------------------------------------------------------------------------
+  electoral-api:
+    build:
+      context: ./backend/electoral-api
+      dockerfile: Dockerfile
+    container_name: electoral-api-${APP_ENV:-dev}
+    profiles: ["dev"]
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-electoral_db}
+      DB_USER: ${DB_USER:-electoral_user}
+      DB_PASSWORD: ${DB_PASSWORD:-electoral_pass}
+      # Server
+      SERVER_PORT: 8080
+      SPRING_PROFILES_ACTIVE: dev,docker
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      # S3 / RustFS
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
+      AWS_S3_ENDPOINT: http://rustfs:${S3_PORT:-9000}
+      AWS_S3_REGION: us-east-1
+      AWS_S3_BUCKET: electoral-evidences
+      AWS_S3_PATH_STYLE: "true"
+      # JWT
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-dev-only-change-in-prod-32chars-min-jwt-hmac-key}
+      APP_JWT_REFRESH_PEPPER: ${APP_JWT_REFRESH_PEPPER:-dev-only-control-elector-refresh-pepper}
+      # Seed admin
+      APP_SEED_ADMIN_EMAIL: ${APP_SEED_ADMIN_EMAIL:-admin@control-elector.local}
+      APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD:-admin12345}
+    ports:
+      - "${SERVER_PORT:-8081}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    restart: ${RESTART_POLICY:-no}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ---------------------------------------------------------------------------
   # RustFS — Emulación S3 (storage de evidencias)
   # ---------------------------------------------------------------------------
   # NO se levanta por default. Usá `docker compose --profile dev --profile s3 up -d`
@@ -112,3 +170,10 @@ volumes:
     name: electoral-postgres-${APP_ENV:-dev}-data
   rustfs_data:
     name: electoral-rustfs-data
+
+# -----------------------------------------------------------------------------
+# Red compartida — permite comunicación entre servicios por nombre
+# -----------------------------------------------------------------------------
+networks:
+  default:
+    name: electoral-${APP_ENV:-dev}-network
