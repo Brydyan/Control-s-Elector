@@ -1,8 +1,24 @@
 # T-BE-11 — Endpoints de Actas (OBSERVER)
 
+**Estado:** ❌ **NO IMPLEMENTADO** — ActaService existe. Falta ObserverController.
+
 **Dificultad:** Intermedio
 **Tiempo estimado:** 2-3 horas
 **Depende de:** T-BE-06, T-BE-09
+
+---
+
+## ⚠️ Nota de alineación con código actual
+
+**Ya existe:**
+- `ActaService.registrar()` con validación de votos, locking pesimista, auditlogging
+- `ActaService.marcarEnDisputa()`, `corregir()`, `aprobar()`, `anular()` (ciclo de vida completo)
+- `ObserverJrvAsignacion` entity + repository (aunque OBSERVER ahora selecciona JRV libremente)
+
+**Falta:**
+- `ObserverController` con endpoints `POST /api/v1/observer/actas`, `GET /api/v1/observer/mis-actas`, etc.
+- DTOs para actas (ActaRequestDto ya existe; revisar si completo)
+- Integración con storage para subir imágenes
 
 ---
 
