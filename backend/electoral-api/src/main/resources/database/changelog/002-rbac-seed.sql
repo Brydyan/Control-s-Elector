@@ -17,20 +17,20 @@
 -- changeset electoral:002-01-permisos
 -- 13 permisos del sistema (recurso, accion). ON CONFLICT por el unique
 -- (recurso, accion) -> idempotente.
-INSERT INTO permiso (recurso, accion) VALUES
-    ('evidencia', 'upload'),
-    ('evidencia', 'read'),
-    ('evidencia', 'download'),
-    ('evidencia', 'delete'),
-    ('acta',      'read'),
-    ('acta',      'aprobar'),
-    ('acta',      'rechazar'),
-    ('usuario',   'read'),
-    ('usuario',   'create'),
-    ('usuario',   'update'),
-    ('usuario',   'delete'),
-    ('sesion',    'list'),
-    ('sesion',    'revoke')
+INSERT INTO permiso (public_id, recurso, accion) VALUES
+    (gen_random_uuid(), 'evidencia', 'upload'),
+    (gen_random_uuid(), 'evidencia', 'read'),
+    (gen_random_uuid(), 'evidencia', 'download'),
+    (gen_random_uuid(), 'evidencia', 'delete'),
+    (gen_random_uuid(), 'acta',      'read'),
+    (gen_random_uuid(), 'acta',      'aprobar'),
+    (gen_random_uuid(), 'acta',      'rechazar'),
+    (gen_random_uuid(), 'usuario',   'read'),
+    (gen_random_uuid(), 'usuario',   'create'),
+    (gen_random_uuid(), 'usuario',   'update'),
+    (gen_random_uuid(), 'usuario',   'delete'),
+    (gen_random_uuid(), 'sesion',    'list'),
+    (gen_random_uuid(), 'sesion',    'revoke')
 ON CONFLICT (recurso, accion) DO NOTHING;
 -- rollback DELETE FROM permiso;
 
@@ -44,9 +44,9 @@ ON CONFLICT (recurso, accion) DO NOTHING;
 --   COORDINATOR = ver/aprobar/rechazar; no elimina
 --   ADMIN       = solo lectura
 --   OBSERVER    = sube y ve; acta:read
-INSERT INTO rol_permiso (rol, permiso_id)
-SELECT r.rol, p.id
-FROM (VALUES
+INSERT INTO rol_permiso (public_id, rol_id, permiso_id)
+SELECT gen_random_uuid(), r.id, p.id
+FROM rol r, (VALUES
     -- MASTER
     ('MASTER', 'evidencia', 'upload'),
     ('MASTER', 'evidencia', 'read'),
@@ -80,11 +80,12 @@ FROM (VALUES
     ('OBSERVER', 'evidencia', 'read'),
     ('OBSERVER', 'evidencia', 'download'),
     ('OBSERVER', 'acta',      'read')
-) AS r(rol, recurso, accion)
-JOIN permiso p ON p.recurso = r.recurso AND p.accion = r.accion
-WHERE NOT EXISTS (
-    SELECT 1 FROM rol_permiso rp WHERE rp.rol = r.rol AND rp.permiso_id = p.id
-);
+) AS vals(rol_name, recurso, accion)
+JOIN permiso p ON p.recurso = vals.recurso AND p.accion = vals.accion
+WHERE r.nombre = vals.rol_name
+  AND NOT EXISTS (
+      SELECT 1 FROM rol_permiso rp WHERE rp.rol_id = r.id AND rp.permiso_id = p.id
+  );
 -- rollback DELETE FROM rol_permiso;
 
 
