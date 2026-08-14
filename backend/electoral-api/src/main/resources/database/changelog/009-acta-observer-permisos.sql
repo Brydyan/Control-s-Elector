@@ -12,16 +12,16 @@
 
 
 -- changeset electoral:009-01-permiso-acta-upload
-INSERT INTO permiso (recurso, accion) VALUES
-    ('acta', 'upload')
+INSERT INTO permiso (public_id, recurso, accion) VALUES
+    (gen_random_uuid(), 'acta', 'upload')
 ON CONFLICT (recurso, accion) DO NOTHING;
 -- rollback DELETE FROM permiso WHERE recurso = 'acta' AND accion = 'upload';
 
 
 -- changeset electoral:009-02-rol-permiso-acta-upload
 -- Solo OBSERVER registra/corrige actas.
-INSERT INTO rol_permiso (rol_id, permiso_id)
-SELECT r.id, p.id
+INSERT INTO rol_permiso (public_id, rol_id, permiso_id)
+SELECT gen_random_uuid(), r.id, p.id
 FROM rol r, permiso p
 WHERE r.nombre = 'OBSERVER'
   AND p.recurso = 'acta' AND p.accion = 'upload'
