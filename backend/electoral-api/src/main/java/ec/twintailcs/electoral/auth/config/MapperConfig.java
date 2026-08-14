@@ -1,5 +1,8 @@
 package ec.twintailcs.electoral.auth.config;
 
+import ec.twintailcs.electoral.acta.domain.Acta;
+import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
+import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse.UsuarioActual;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
@@ -94,6 +97,31 @@ public class MapperConfig {
                     entity.getNombre(),
                     entity.getSiglas(),
                     entity.getNumeroLista()
+                );
+            }
+        };
+    }
+
+    @Bean
+    public ActaMapper actaMapper() {
+        return new ActaMapper() {
+            @Override
+            public ActaResponseDto toDto(Acta entity) {
+                if (entity == null) {
+                    return null;
+                }
+                return new ActaResponseDto(
+                    entity.getId(),
+                    entity.getJrv().getId(),
+                    entity.getCargo().getId(),
+                    entity.getRegistradaPor().getId(),
+                    entity.getEstado(),
+                    entity.getStorageUrl(),
+                    entity.getTotalSufragantes(),
+                    entity.getVotosBlancos(),
+                    entity.getVotosNulos(),
+                    entity.getFechaRegistro(),
+                    entity.getMotivoAnulacion()
                 );
             }
         };
