@@ -1,8 +1,106 @@
 # T-BE-10 — Endpoints de Configuración Preelectoral (MASTER)
 
+**Estado:** ✅ **COMPLETADO** — Cargo, Partido, Candidato (CRUD completo).
+
 **Dificultad:** Principiante-Intermedio
-**Tiempo estimado:** 3-4 horas
+**Tiempo estimado:** 2-3 horas (solo controllers + DTOs)
 **Depende de:** T-BE-09
+
+---
+
+## Nota de implementación real (difiere del documento original)
+
+El documento original proponía paquetes planos (`dto/`, `service/`, `controller/`).
+La implementación real sigue el patrón modular ya establecido en el proyecto
+(`electoral/domain`, `electoral/application`, `electoral/web`), igual que
+`evidencia/` y `acta/`:
+
+```
+electoral/
+  domain/                          (ya existia: Cargo, Partido, Candidato, repos)
+  application/
+    ConfiguracionService.java      (create/update/delete/list para los 3)
+  web/
+    CargoController.java
+    PartidoController.java
+    CandidatoController.java
+    ConfiguracionNotFoundException.java   (404)
+    ConfiguracionConflictException.java   (409 - numeroLista duplicado)
+    dto/
+      CargoRequest.java / CargoResponse.java
+      PartidoRequest.java / PartidoResponse.java
+      CandidatoRequest.java / CandidatoResponse.java
+      mapper/
+        CargoMapper.java / PartidoMapper.java / CandidatoMapper.java
+        (registrados como @Bean en auth/config/MapperConfig.java, igual que EvidenciaMapper)
+```
+
+Diferencias clave vs el documento original:
+- **Autorizacion por permisos, no por rol crudo.** El proyecto usa
+  `@PreAuthorize("@authz.has('configuracion:write')")` (patron `Authz` +
+  authorities `recurso:accion` del JWT), no `hasRole('MASTER')` — el JWT no
+  emite authorities `ROLE_*`. Se agrego el permiso `configuracion:write`
+  (solo MASTER) via `008-configuracion.sql`. Lectura (GET) usa
+  `isAuthenticated()` sin permiso dedicado.
+- **Rutas:** `/api/v1/configuracion/{cargos,partidos,candidatos}` (con
+  prefijo `/v1`, consistente con el resto de la API).
+- **Faltaban las tablas en BD.** `cargo`, `partido`, `candidato` y
+  `jrv_cargo` tenian entidad JPA pero ninguna migracion Liquibase (el
+  proyecto usa `ddl-auto=validate`). Se creo
+  `008-configuracion.sql` con las 4 tablas + el permiso.
+- **UsuarioController / asignacion JRV-Cargo / creacion de usuarios:**
+  fuera de alcance de este batch — no implementados.
+
+## Endpoints implementados
+
+```
+GET    /api/v1/configuracion/cargos            (autenticado)
+POST   /api/v1/configuracion/cargos            (MASTER)
+PUT    /api/v1/configuracion/cargos/{id}       (MASTER)
+DELETE /api/v1/configuracion/cargos/{id}       (MASTER)
+
+GET    /api/v1/configuracion/partidos          (autenticado)
+POST   /api/v1/configuracion/partidos          (MASTER)
+PUT    /api/v1/configuracion/partidos/{id}     (MASTER)
+DELETE /api/v1/configuracion/partidos/{id}     (MASTER)
+
+GET    /api/v1/configuracion/candidatos?cargoId=&partidoId=  (autenticado, filtros opcionales)
+POST   /api/v1/configuracion/candidatos        (MASTER)
+PUT    /api/v1/configuracion/candidatos/{id}   (MASTER)
+DELETE /api/v1/configuracion/candidatos/{id}   (MASTER)
+```
+
+## Tests
+
+- `ConfiguracionServiceTest` (7 tests, Mockito puro) — PASA. Cubre
+  create/update, conflicto de `numeroLista` duplicado, cargo/partido no
+  encontrado.
+- `CargoControllerTest`, `PartidoControllerTest`, `CandidatoControllerTest`
+  (`@WebMvcTest`) — escritos siguiendo el patron de `EvidenciaControllerTest`,
+  pero **fallan en este entorno** por un problema preexistente NO relacionado
+  con este cambio: `RlsInterceptor` requiere un bean `JdbcTemplate` que no
+  esta disponible en el slice `@WebMvcTest` (mismo error reproducido en
+  `EvidenciaControllerTest`, que ya existia antes de este trabajo). Requiere
+  arreglo de infraestructura de tests a nivel de proyecto (fuera de alcance
+  de T-BE-10).
+
+---
+
+## ⚠️ Nota de alineación con código actual
+
+**Entidades + Repositories ya existen:**
+- `Cargo.java` + `CargoRepository` (electoral/domain)
+- `Partido.java` + `PartidoRepository` (electoral/domain)
+- `Candidato.java` + `CandidatoRepository` (electoral/domain)
+- `NivelCargo` enum con valores: NACIONAL, PROVINCIA, CANTON, PARROQUIA
+
+**Falta implementar:**
+- CargoController, PartidoController, CandidatoController
+- DTOs (CargoDto, PartidoDto, CandidatoDto)
+- ConfiguracionService (opcional — lógica puede ir directo en controllers)
+- UsuarioController (si aplica; no explorado aún)
+
+**Rutas recomendadas:** `/api/v1/configuracion/cargos`, `/api/v1/configuracion/partidos`, etc. (patrón módulo-endpoint).
 
 ---
 
