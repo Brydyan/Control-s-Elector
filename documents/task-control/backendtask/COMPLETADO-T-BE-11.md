@@ -318,3 +318,12 @@ curl -X POST http://localhost:8080/api/actas \
 | `409 Conflict` | Ya existe acta activa para esa JRV+cargo | Es correcto — usa locking pesimista |
 | `422` en votos | Los votos no suman al total de sufragantes | Verifica: 30 + 17 + 2 + 1 = 50 ✓ |
 | `MultipartFile` no llega | Falta `consumes = multipart/form-data` | Agrega `consumes` o usa `@RequestPart` |
+
+---
+
+## ⚠️ Correcciones post-implementación (2026-08-14)
+
+**Arquitectura**: Removida verificación de `ObserverJrvAsignacion` en `ActaService.registrar()`.
+- **Cambio**: OBSERVER ahora selecciona JRV libremente (sin pre-asignación).
+- **Rationale**: Alineación con decisión anterior (free JRV selection) + bonus endpoints `/jrvs`, `/jrv/{jrvId}/cargos` que soportan eso.
+- **Afectado**: `ActaService.registrar()` (líneas 77-82 removidas), `ObserverJrvAsignacionRepository` (marcado `@Deprecated`), `ObserverControllerTest` (test nuevo `registrarActa_observerSinAsignacionPrevia_puedeRegistrarEnCualquierJrv`).

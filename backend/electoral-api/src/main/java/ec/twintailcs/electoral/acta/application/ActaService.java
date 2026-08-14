@@ -74,12 +74,12 @@ public class ActaService {
         Usuario observer = usuarioRepository.findById(observerId)
             .orElseThrow(() -> new ActaInvalidaException("Observer no encontrado"));
 
-        boolean tieneAsignacion = asignacionRepository.existsByObserverAndJrv(observer, jrv);
-        if (!tieneAsignacion) {
-            throw new AccesoNoPermitidoException(
-                "Observer " + observerId + " no tiene asignación en JRV " + dto.getJrvId()
-            );
-        }
+        // NOTA (2026-08-14): Verificacion de ObserverJrvAsignacion removida.
+        // Decision arquitectonica (Engram 2026-07-11): OBSERVER selecciona JRV
+        // libremente sin pre-asignacion (ver ObserverController /jrvs,
+        // /jrv/{jrvId}/cargos). RLS PostgreSQL + permisos JWT ('acta:upload')
+        // son el control de acceso vigente; ObserverJrvAsignacionRepository
+        // queda @Deprecated para posible uso futuro de grano fino.
 
         actaRepository.findActaActivaConLock(jrv, cargo).ifPresent(actaExistente -> {
             throw new JrvCargoYaRegistradoException(dto.getJrvId(), dto.getCargoId());

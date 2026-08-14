@@ -23,5 +23,7 @@ databaseChangeLog:
       file: database/changelog/007-usuario-nombre-apellido.sql
   - include:
       file: database/changelog/008-configuracion.sql
+  - include:
+      file: database/changelog/009-acta-observer-permisos.sql
 
   # Nuevos changelogs se agregan ACA, al final, en orden creciente:
