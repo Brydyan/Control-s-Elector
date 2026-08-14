@@ -21,5 +21,7 @@ databaseChangeLog:
       file: database/changelog/006-geografia.sql
   - include:
       file: database/changelog/007-usuario-nombre-apellido.sql
+  - include:
+      file: database/changelog/008-configuracion.sql
 
   # Nuevos changelogs se agregan ACA, al final, en orden creciente:

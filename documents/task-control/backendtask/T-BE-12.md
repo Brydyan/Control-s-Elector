@@ -1,8 +1,23 @@
 # T-BE-12 — Endpoints de Coordinación (COORDINATOR + MASTER)
 
+**Estado:** ❌ **NO IMPLEMENTADO** — ActaService lifecycle completo. Falta CoordinatorController.
+
 **Dificultad:** Intermedio
 **Tiempo estimado:** 2 horas
 **Depende de:** T-BE-07, T-BE-09
+
+---
+
+## ⚠️ Nota de alineación con código actual
+
+**Ya existe:**
+- `ActaService.marcarEnDisputa()`, `corregir()`, `aprobar()`, `anular()` con notificaciones automáticas vía NotificacionService
+- Métodos registran auditoría (AuditLogService) y disparan eventos (NotificacionService)
+- Validaciones de transición de estados
+
+**Falta:**
+- `CoordinatorController` con endpoints `GET /api/v1/coordinator/actas`, `POST /api/v1/coordinator/actas/{id}/disputa`, `POST .../correcciones`, `POST .../aprobaciones`, etc.
+- DTOs de respuesta (ActaDto con detalles completos)
 
 ---
 
