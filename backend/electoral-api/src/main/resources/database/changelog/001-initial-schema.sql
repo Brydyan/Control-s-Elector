@@ -33,9 +33,10 @@ CREATE INDEX ix_usuario_rol ON usuario (rol);
 -- changeset electoral:001-02-permiso
 -- (recurso, accion) es unico. Ej: evidencia/upload, acta/aprobar.
 CREATE TABLE permiso (
-    id          BIGSERIAL     PRIMARY KEY,
-    recurso     VARCHAR(64)   NOT NULL,
-    accion      VARCHAR(64)   NOT NULL,
+    id        BIGSERIAL     PRIMARY KEY,
+    public_id UUID          NOT NULL UNIQUE,
+    recurso   VARCHAR(64)   NOT NULL,
+    accion    VARCHAR(64)   NOT NULL,
     descripcion VARCHAR(256),
     CONSTRAINT uk_permiso_recurso_accion UNIQUE (recurso, accion)
 );
@@ -49,11 +50,12 @@ CREATE INDEX ix_permiso_recurso_accion ON permiso (recurso, accion);
 -- para reforzar integridad referencial a nivel DB.
 CREATE TABLE rol_permiso (
     id         BIGSERIAL   PRIMARY KEY,
-    rol        VARCHAR(32) NOT NULL,
+    public_id  UUID        NOT NULL UNIQUE,
+    rol_id     BIGINT      NOT NULL,
     permiso_id BIGINT      NOT NULL
     -- , CONSTRAINT fk_rol_permiso_permiso FOREIGN KEY (permiso_id) REFERENCES permiso (id)
 );
-CREATE INDEX ix_rol_permiso_rol ON rol_permiso (rol);
+CREATE INDEX ix_rol_permiso_rol ON rol_permiso (rol_id);
 CREATE INDEX ix_rol_permiso_permiso ON rol_permiso (permiso_id);
 -- rollback DROP TABLE rol_permiso;
 
