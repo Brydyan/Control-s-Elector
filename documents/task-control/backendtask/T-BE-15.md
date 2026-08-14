@@ -1,8 +1,24 @@
 # T-BE-15 — Tests de Integración Críticos
 
+**Estado:** ❌ **NO IMPLEMENTADO** — Documento pedagógico. Requiere que T-BE-11, T-BE-12 estén implementados primero.
+
 **Dificultad:** Intermedio
 **Tiempo estimado:** 3-4 horas
 **Depende de:** T-BE-11, T-BE-12
+
+---
+
+## ⚠️ Nota de alineación con código actual
+
+**Ya existe:**
+- `AuthControllerTest` (básico, puede servir como referencia)
+- Spring Boot 4.1 + Maven pom.xml con junit5, mockito, rest-assured
+
+**Falta:**
+- Tests para ActaService (registrar, locking, validación de votos)
+- Tests para ObserverController (endpoints, RLS, acceso)
+- Tests para CoordinatorController (transiciones de estado, notificaciones)
+- Tests para DashboardController (agregaciones, filtros)
 
 ---
 
