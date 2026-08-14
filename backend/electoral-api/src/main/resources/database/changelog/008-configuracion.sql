@@ -64,16 +64,16 @@ CREATE TABLE jrv_cargo (
 -- Un unico permiso 'configuracion:write' cubre create/update/delete de
 -- cargo/partido/candidato. La lectura (GET) queda abierta a cualquier
 -- usuario autenticado (isAuthenticated()), sin permiso dedicado.
-INSERT INTO permiso (recurso, accion) VALUES
-    ('configuracion', 'write')
+INSERT INTO permiso (public_id, recurso, accion) VALUES
+    (gen_random_uuid(), 'configuracion', 'write')
 ON CONFLICT (recurso, accion) DO NOTHING;
 -- rollback DELETE FROM permiso WHERE recurso = 'configuracion' AND accion = 'write';
 
 
 -- changeset electoral:008-06-rol-permiso-configuracion
 -- Solo MASTER puede escribir configuracion preelectoral.
-INSERT INTO rol_permiso (rol_id, permiso_id)
-SELECT r.id, p.id
+INSERT INTO rol_permiso (public_id, rol_id, permiso_id)
+SELECT gen_random_uuid(), r.id, p.id
 FROM rol r, permiso p
 WHERE r.nombre = 'MASTER'
   AND p.recurso = 'configuracion' AND p.accion = 'write'
