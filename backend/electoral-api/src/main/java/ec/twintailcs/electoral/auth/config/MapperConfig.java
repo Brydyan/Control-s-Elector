@@ -6,6 +6,15 @@ import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.mapper.EvidenciaMapper;
+import ec.twintailcs.electoral.electoral.domain.Cargo;
+import ec.twintailcs.electoral.electoral.domain.Partido;
+import ec.twintailcs.electoral.electoral.domain.Candidato;
+import ec.twintailcs.electoral.electoral.web.dto.CargoResponse;
+import ec.twintailcs.electoral.electoral.web.dto.PartidoResponse;
+import ec.twintailcs.electoral.electoral.web.dto.CandidatoResponse;
+import ec.twintailcs.electoral.electoral.web.dto.mapper.CargoMapper;
+import ec.twintailcs.electoral.electoral.web.dto.mapper.PartidoMapper;
+import ec.twintailcs.electoral.electoral.web.dto.mapper.CandidatoMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -49,6 +58,63 @@ public class MapperConfig {
                     entity.getEstado(),
                     entity.getCreadoEn(),
                     entity.getActualizadoEn()
+                );
+            }
+        };
+    }
+
+    @Bean
+    public CargoMapper cargoMapper() {
+        return new CargoMapper() {
+            @Override
+            public CargoResponse toDto(Cargo entity) {
+                if (entity == null) {
+                    return null;
+                }
+                return new CargoResponse(
+                    entity.getId(),
+                    entity.getNombre(),
+                    entity.getNivel(),
+                    entity.getPuestos()
+                );
+            }
+        };
+    }
+
+    @Bean
+    public PartidoMapper partidoMapper() {
+        return new PartidoMapper() {
+            @Override
+            public PartidoResponse toDto(Partido entity) {
+                if (entity == null) {
+                    return null;
+                }
+                return new PartidoResponse(
+                    entity.getId(),
+                    entity.getNombre(),
+                    entity.getSiglas(),
+                    entity.getNumeroLista()
+                );
+            }
+        };
+    }
+
+    @Bean
+    public CandidatoMapper candidatoMapper() {
+        return new CandidatoMapper() {
+            @Override
+            public CandidatoResponse toDto(Candidato entity) {
+                if (entity == null) {
+                    return null;
+                }
+                Long cargoId = entity.getCargo() != null ? entity.getCargo().getId() : null;
+                Long partidoId = entity.getPartido() != null ? entity.getPartido().getId() : null;
+                return new CandidatoResponse(
+                    entity.getId(),
+                    entity.getNombre(),
+                    entity.getOrden(),
+                    cargoId,
+                    partidoId
                 );
             }
         };
