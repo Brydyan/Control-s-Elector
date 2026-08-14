@@ -1,64 +1,290 @@
-language: "es"
+# CodeRabbit Configuration for Control Electoral
+# Defines review rules, standards, and checks tailored to the project
 
-reviews:
-  profile: "chill"
-  request_changes_workflow: false
-  high_level_summary: true
-  poem: false
-  review_status: true
-  collapse_walkthrough: false
+rules:
+  # ============================================================================
+  # BACKEND (Java/Spring Boot)
+  # ============================================================================
 
-  path_instructions:
-    - path: "diagram/**/*.md"
-      instructions: |
-        Estos son archivos de documentación de arquitectura en Mermaid.
-        Verifica que:
-        - Los roles usados sean exactamente: MASTER, COORDINATOR, ADMIN, OBSERVER (en inglés, sin tilde).
-        - El flujo de AuditLog siempre sea: AuditLogService → JPA Repository → PostgreSQL. Nunca directo a PG.
-        - Los estados del acta sean: BORRADOR, ENVIADA, EN_DISPUTA, CORREGIDA, APROBADA, ANULADA.
-        - No exista referencia a tabla EVIDENCIA — la foto va en acta.storage_url.
-        - No exista referencia a votos_candidato_a o votos_candidato_b — los votos van en ACTA_DETALLE.
-        - El locking pesimista aplique por jrv_id + cargo_id (no solo jrv_id).
+  - name: "RBAC - Role Enforcement"
+    condition: "file.path.includes('electoral-api/src/main/java') && (file.contains('@PreAuthorize') || file.contains('@RestController'))"
+    rules:
+      - regex: '@PreAuthorize\("hasRole'
+        message: "✅ RBAC gate found"
+      - regex: '@PreAuthorize.*OBSERVER.*COORDINATOR.*MASTER|@PreAuthorize.*MASTER.*only'
+        message: "✅ Role matrix applied correctly"
+      - inverse_regex: "setter without @PreAuthorize|@PutMapping.*@PostMapping.*without auth"
+        message: "⚠️ CRITICAL: Write endpoint missing @PreAuthorize. Check against RBAC matrix in CLAUDE.md"
+    severity: "critical"
+    files: ["**/*Controller.java"]
 
-    - path: "**/*.java"
-      instructions: |
-        Backend Spring Boot — Java 17.
-        Verifica que:
-        - Los endpoints respeten la matriz de permisos definida en diagram/04-security.md.
-        - Solo OBSERVER puede hacer POST /api/actas.
-        - Solo MASTER puede hacer POST /api/auth/revoke y PATCH estado ANULADA.
-        - El AuditLogService se invoque después de cada operación relevante (ver diagram/04-security.md sección Acciones Auditadas).
-        - Las validaciones de acta usen: SUM(acta_detalle.votos) + nulos + blancos = total_sufragantes.
-        - El locking pesimista (SELECT FOR UPDATE) aplique por jrv_id + cargo_id.
-        - RLS se active correctamente vía current_setting('app.user_id') en cada request de OBSERVER.
-        - No se exponga información sobre JRVs no asignadas al OBSERVER (RLS debe devolver 404, no 403).
+  - name: "JPA Entity - Architecture Module Structure"
+    condition: "file.path.includes('electoral-api/src/main/java') && file.contains('public class ') && file.contains('@Entity')"
+    rules:
+      - regex: 'package ec\.twintailcs\.electoral\.[a-z_]+\.domain;'
+        message: "✅ Correct package structure (ec.twintailcs.electoral.<module>.domain)"
+      - inverse_regex: 'public class [A-Z]+ \{.*public [A-Z]+'
+        message: "✅ No implicit public setters (immutable/builders preferred)"
+      - regex: '@GenericGenerator|@JdbcTypeCode|@ColumnDefault'
+        message: "✅ Modern JPA annotations detected"
+    severity: "warning"
+    files: ["**/domain/*.java"]
 
-    - path: "**/*.ts"
-      instructions: |
-        Frontend Angular + Ionic — TypeScript.
-        Verifica que:
-        - Los Route Guards protejan rutas según rol JWT: /observer/* solo OBSERVER, /coordinator/* COORDINATOR+MASTER, /master/* solo MASTER, /dashboard/* ADMIN+MASTER+COORDINATOR.
-        - El access token se guarde en memoria (variable), nunca en localStorage.
-        - El refresh token se guarde en localStorage.
-        - La compresión WebP aplique calidad 0.82 inicial; si resultado > 500KB recomprimir a 0.65.
-        - Dimensiones máximas de imagen: 1920×1080 manteniendo aspect ratio.
-        - Al fallar el upload tras 3 reintentos: guardar en IndexedDB Y en Private Storage con formato JRV-{id}_{YYYYMMDD}_{HHmm}_{obs_id}.webp.
-        - El formulario de acta incluya jrv_id y cargo_id en el payload.
+  - name: "MapStruct Mapper - Configuration Pattern"
+    condition: "file.path.includes('electoral-api') && (file.name.includes('Mapper') || file.contains('@Mapper'))"
+    rules:
+      - inverse_regex: 'componentModel = "spring"'
+        message: "✅ Mapper avoids componentModel='spring' (uses @Configuration bean instead)"
+      - regex: '@Mapping\(target = "publicId".*source = "[a-zA-Z_]+'
+        message: "✅ UUID mapping pattern applied (publicId exposed in DTOs, not internal id)"
+      - inverse_regex: '@Mapper.*class [A-Za-z]+Mapper'
+        message: "✅ Mapper is interface, implementation in MapperConfig @Configuration bean"
+    severity: "info"
+    files: ["**/config/MapperConfig.java", "**/*Mapper.java"]
 
-    - path: "**/*.sql"
-      instructions: |
-        PostgreSQL + Supabase.
-        Verifica que:
-        - Las políticas RLS de OBSERVER usen observer_jrv_asignacion (no una sola jrv_id).
-        - La tabla audit_log tenga columna payload de tipo JSONB.
-        - No exista tabla evidencia — la URL va en acta.storage_url.
-        - La unicidad de acta se garantice por (jrv_id, cargo_id).
+  - name: "DTO - Public ID Exposure"
+    condition: "file.path.includes('electoral-api') && file.name.endsWith('Dto.java')"
+    rules:
+      - regex: 'private UUID publicId'
+        message: "✅ DTO exposes publicId (not internal id) for REST responses"
+      - inverse_regex: 'private Long id;|private long id;'
+        message: "⚠️ WARNING: DTO should not expose internal Long id; use UUID publicId instead"
+      - regex: '@JsonProperty|@NotNull|@NotBlank'
+        message: "✅ Validation annotations present"
+    severity: "warning"
+    files: ["**/*Dto.java"]
 
-  auto_review:
-    enabled: true
-    drafts: false
-    base_branches:
-      - "main"
+  - name: "Service Layer - Audit Log Integration"
+    condition: "file.path.includes('electoral-api/src/main/java') && file.name.endsWith('Service.java') && file.contains('@Service')"
+    rules:
+      - regex: 'AuditLogService|auditLogService\.registrar'
+        message: "✅ Service logs to AuditLogService (audit trail captured)"
+      - inverse_regex: '@Transactional|@Service.*public class'
+        message: "✅ @Transactional applied (data consistency)"
+    severity: "info"
+    files: ["**/service/*Service.java"]
 
-chat:
-  auto_reply: true
+  - name: "Locking Strategy - Pessimistic Lock"
+    condition: "file.contains('SELECT FOR UPDATE') || file.contains('LockModeType.PESSIMISTIC')"
+    rules:
+      - regex: 'SELECT FOR UPDATE NOWAIT|LockModeType\.PESSIMISTIC_WRITE|.setLockMode\(LockModeType\.PESSIMISTIC_WRITE\)'
+        message: "✅ Pessimistic locking applied (concurrent access prevented)"
+      - regex: 'jrv_id.*cargo_id'
+        message: "✅ Lock targets jrv_id + cargo_id composite (correct uniqueness)"
+    severity: "critical"
+    files: ["**/repository/*.java", "**/service/*Service.java"]
+
+  - name: "Liquibase Migration - UUID & Public ID"
+    condition: "file.path.includes('database/changelog') && file.name.endsWith('.sql')"
+    rules:
+      - regex: 'public_id UUID NOT NULL UNIQUE'
+        message: "✅ public_id column exists with proper constraints"
+      - regex: 'gen_random_uuid\(\)'
+        message: "✅ UUID generation via gen_random_uuid() (deterministic)"
+      - inverse_regex: 'INSERT INTO [a-z_]+ \\(.*\\) VALUES.*NULL.*NULL'
+        message: "⚠️ WARNING: Check for NULL values in required columns (public_id, role_id)"
+      - regex: 'changeset electoral:[0-9]+-[a-z0-9-]+'
+        message: "✅ Liquibase changeset ID follows convention (electoral:NNN-description)"
+    severity: "warning"
+    files: ["**/database/changelog/*.sql"]
+
+  - name: "Controller - Endpoint Naming & HTTP Methods"
+    condition: "file.path.includes('electoral-api/src/main/java') && file.contains('@RestController')"
+    rules:
+      - regex: '@GetMapping|@PostMapping|@PutMapping|@DeleteMapping'
+        message: "✅ Proper HTTP method mapping"
+      - regex: '@GetMapping.*@PostMapping.*@PutMapping'
+        message: "✅ Multiple HTTP methods in controller"
+      - regex: '"api/v1/[a-z]+/[a-z]+"'
+        message: "✅ REST endpoint follows /api/v1/{resource}/{action} pattern"
+      - inverse_regex: 'CurrentUser\.id\(\)|SecurityContextHolder'
+        message: "⚠️ User extraction: verify use of CurrentUser.id() helper (not SecurityContextHolder directly)"
+    severity: "info"
+    files: ["**/*Controller.java"]
+
+  # ============================================================================
+  # FRONTEND (Angular/TypeScript)
+  # ============================================================================
+
+  - name: "Route Guards - RBAC Protection"
+    condition: "file.path.includes('frontend/app/src') && (file.name.includes('guard') || file.contains('CanActivate'))"
+    rules:
+      - regex: 'canActivate|CanActivate'
+        message: "✅ Route guard implemented"
+      - regex: 'OBSERVER|COORDINATOR|ADMIN|MASTER'
+        message: "✅ Role constants referenced (RBAC check)"
+      - inverse_regex: 'token|JWT|Bearer'
+        message: "⚠️ Route guard should validate JWT token/role; verify token handling"
+    severity: "warning"
+    files: ["**/*guard.ts"]
+
+  - name: "Component - Template Binding Safety"
+    condition: "file.path.includes('frontend/app/src') && (file.name.endsWith('.ts') && file.contains('Component'))"
+    rules:
+      - regex: 'SafePipe|safe|DomSanitizer'
+        message: "✅ Unsafe HTML handling addressed with SafePipe/DomSanitizer"
+      - inverse_regex: '\\[innerHTML\\].*model\\.\\w+|\\[innerHTML\\].*field'
+        message: "✅ innerHTML binding is sanitized (no XSS risk)"
+    severity: "critical"
+    files: ["**/*.component.ts"]
+
+  - name: "Offline-First - IndexedDB/Storage"
+    condition: "file.path.includes('frontend/app/src') && (file.contains('IndexedDB') || file.contains('localStorage') || file.contains('Storage'))"
+    rules:
+      - regex: 'IndexedDB|dexie|idb'
+        message: "✅ IndexedDB used for offline resilience (not localStorage for sensitive data)"
+      - inverse_regex: 'localStorage.*token|localStorage.*password|localStorage.*secret'
+        message: "⚠️ CRITICAL: Never store JWT/secrets in localStorage; use memory + sessionStorage if needed"
+    severity: "critical"
+    files: ["**/service/*storage*.ts", "**/service/*offline*.ts"]
+
+  # ============================================================================
+  # SECURITY & CONFIGURATION
+  # ============================================================================
+
+  - name: "Security - Sensitive Data Exposure"
+    condition: "file.name.includes('.env') || file.name.includes('application') || file.name.includes('config')"
+    rules:
+      - inverse_regex: 'PASSWORD|API_KEY|SECRET|TOKEN|SUPABASE_KEY'
+        message: "✅ No hardcoded secrets in config files"
+      - regex: 'env\.|process\.env|System\.getenv'
+        message: "✅ Environment variables used for secrets"
+    severity: "critical"
+    files: [".env*", "application*.properties", "application*.yaml", "**/*config*.properties"]
+
+  - name: "Dependencies - Security Audit"
+    condition: "file.name === 'pom.xml' || file.name === 'package.json' || file.name === 'build.gradle'"
+    rules:
+      - regex: '<version>|"version":|version ='
+        message: "✅ Dependency versions pinned"
+      - inverse_regex: 'SNAPSHOT|latest|\*'
+        message: "✅ No wildcard/SNAPSHOT versions (reproducible builds)"
+    severity: "warning"
+    files: ["pom.xml", "package.json", "build.gradle.kts"]
+
+  # ============================================================================
+  # DOCUMENTATION & CONVENTIONS
+  # ============================================================================
+
+  - name: "Javadoc - Public API Documentation"
+    condition: "file.path.includes('electoral-api/src/main/java') && (file.contains('public class') || file.contains('public interface'))"
+    rules:
+      - regex: '/\\*\\*.*@param|/\\*\\*.*@return'
+        message: "✅ Javadoc present on public classes/methods"
+      - inverse_regex: 'public [A-Z][a-zA-Z]+\\(.*\\) \\{.*no javadoc'
+        message: "ℹ️ INFO: Public method should have Javadoc"
+    severity: "info"
+    files: ["**/*Controller.java", "**/*Service.java", "**/domain/*.java"]
+
+  - name: "Commit Message - Conventional Format"
+    condition: "commit.message"
+    rules:
+      - regex: '^(feat|fix|refactor|test|docs|chore|ci)(\(.+?\))?:\s.{1,50}'
+        message: "✅ Commit follows Conventional Commits format"
+      - inverse_regex: '^(feat|fix|refactor|test|docs|chore|ci)'
+        message: "⚠️ Use Conventional Commits: feat(scope): description"
+    severity: "info"
+
+  # ============================================================================
+  # PROJECT-SPECIFIC CHECKS
+  # ============================================================================
+
+  - name: "Task Documentation Alignment"
+    condition: "file.path.includes('documents/task-control/backendtask') && file.name.startsWith('T-BE-')"
+    rules:
+      - regex: 'COMPLETADO|✅|IMPLEMENTADO'
+        message: "✅ Task marked complete"
+      - inverse_regex: 'TODO|PENDIENTE|⏳'
+        message: "ℹ️ INFO: Task in progress or pending"
+    severity: "info"
+    files: ["documents/task-control/backendtask/*.md"]
+
+  - name: "Estado Acta State Machine Validation"
+    condition: "file.contains('BORRADOR') || file.contains('ENVIADA') || file.contains('EN_DISPUTA')"
+    rules:
+      - regex: 'BORRADOR.*ENVIADA.*EN_DISPUTA.*CORREGIDA.*APROBADA'
+        message: "✅ Acta state machine order verified"
+      - regex: 'ANULADA.*irreversible|ANULADA.*final'
+        message: "✅ ANULADA as final irreversible state noted"
+    severity: "info"
+
+review:
+  # Default review mode
+  auto_review: true
+
+  # Request changes only for critical severity
+  request_changes_on: ["critical", "high"]
+
+  # Auto-approve if only info/warning level issues
+  auto_approve_on: ["info", "warning"]
+
+  # Comment style
+  tone: "professional"
+  include_code_snippets: true
+
+  # Max comments per review (avoid spamming)
+  max_comments: 20
+
+  # Summary format
+  summary: |
+    ## CodeRabbit Review Summary
+
+    **Project**: Control Electoral System
+    **Standards**: Spring Boot 4.x, Angular 17+, PostgreSQL RLS, Liquibase migrations
+    **Checks**: RBAC enforcement, pessimistic locking, DTO patterns, security audit
+
+    ---
+
+    {issues_summary}
+
+ignore:
+  # Ignore generated files
+  paths:
+    - "**/node_modules/**"
+    - "**/target/**"
+    - "**/.gradle/**"
+    - "**/.m2/**"
+    - "**/dist/**"
+    - "**/build/**"
+
+  # Ignore test snapshots
+  extensions:
+    - ".snap"
+    - ".lock"
+    - ".idea"
+
+  # Ignore vendor/third-party
+  patterns:
+    - "^vendor/"
+    - "^third_party/"
+
+# Severity levels and how to handle them
+severity_config:
+  critical:
+    label: "🔴 CRITICAL"
+    action: "request_changes"
+    notify: true
+
+  high:
+    label: "🟠 HIGH"
+    action: "request_changes"
+    notify: false
+
+  warning:
+    label: "🟡 WARNING"
+    action: "comment"
+    notify: false
+
+  info:
+    label: "ℹ️ INFO"
+    action: "comment"
+    notify: false
+
+# Enable/disable features
+features:
+  auto_fix_suggestions: true
+  security_audit: true
+  performance_hints: false
+  documentation_check: true
+  code_style_check: true
+  test_coverage_check: false  # requires CI integration
