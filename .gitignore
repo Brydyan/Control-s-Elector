@@ -109,5 +109,8 @@ infra.md
 # Local Pi runtime state
 .atl/
 /.pi
-/openspec
 /.playwright-mcp
+
+# openspec/ SI se versiona: es el trabajo de SDD (proposal, design, spec, tasks,
+# verify-report) que el equipo comparte y revisa. Estaba ignorado por estar en
+# el bloque de estado local de herramientas. Ver openspec/ROADMAP.md.
