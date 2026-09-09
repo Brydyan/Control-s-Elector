@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.JwtService.InvalidJwtException;
 import ec.twintailcs.electoral.auth.application.RegisterService;
 import ec.twintailcs.electoral.auth.domain.Usuario;
+import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
 import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
@@ -57,16 +58,18 @@ public class AuthController {
     private final UsuarioRepository usuarios;
     private final JwtService jwt;
     private final UsuarioMapper usuarioMapper;
+        private final CurrentUser currentUser;
 
     public AuthController(AuthService auth, RegisterService registros,
                           UsuarioRepository usuarios,
                           JwtService jwt,
-                          UsuarioMapper usuarioMapper) {
+                          UsuarioMapper usuarioMapper, CurrentUser currentUser) {
         this.auth = auth;
         this.registros = registros;
         this.usuarios = usuarios;
         this.jwt = jwt;
         this.usuarioMapper = usuarioMapper;
+            this.currentUser = currentUser;
     }
 
     @PostMapping("/login")
@@ -100,7 +103,7 @@ public class AuthController {
         JwtService.TokenPair pair = auth.refresh(refresh);
 
         // Necesitamos los datos del usuario para construir la respuesta.
-        UUID publicId = UUID.fromString(jwt.parse(pair.access()).subject());
+        UUID publicId = UUID.fromString(jwt.parseAccess(pair.access()).subject());
         Usuario u = usuarios.findByPublicId(publicId).orElseThrow();
 
         AuthResponse payload = new AuthResponse(
@@ -129,8 +132,11 @@ public class AuthController {
 
     /** Informacion del usuario actual (parseado del access token en el SecurityContext). */
     @GetMapping("/me")
-    public AuthResponse.UsuarioActual me(org.springframework.security.core.Authentication auth) {
-        String email = auth.getName();
+    public AuthResponse.UsuarioActual me() {
+        String email = currentUser.email();
+        if (email == null) {
+            throw new AuthService.AuthException("No autenticado");
+        }
         Usuario u = usuarios.findByEmail(email).orElseThrow();
         return usuarioMapper.toDto(u);
     }

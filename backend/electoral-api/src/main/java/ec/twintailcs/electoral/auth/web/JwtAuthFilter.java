@@ -56,7 +56,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring("Bearer ".length());
         try {
-            JwtService.ParsedJwt parsed = jwt.parse(token);
+            JwtService.ParsedJwt parsed = jwt.parseAccess(token);
 
             List<SimpleGrantedAuthority> auths = parsed.perms().stream()
                     .map(p -> new SimpleGrantedAuthority(p))
