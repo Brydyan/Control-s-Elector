@@ -1,67 +1,97 @@
 package ec.twintailcs.electoral.shared.security;
 
-import ec.twintailcs.electoral.auth.config.UserPrincipal;
-import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import javax.sql.DataSource;
+import org.springframework.jdbc.datasource.DataSourceUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.servlet.HandlerInterceptor;
+
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 
 /**
- * Interceptor que establece la session variable de PostgreSQL app.current_user_id
- * antes de cada query. Necesario para que RLS funcione.
+ * HandlerInterceptor que enlaza el contexto RLS al ciclo de vida de la
+ * transacción JPA/Spring del request actual.
  *
- * Flujo:
- * 1. Usuario hace request con JWT
- * 2. JwtAuthFilter extrae el publicId del JWT y lo pone en UserPrincipal
- * 3. Este filter lo convierte a internal id (Long) consultando UsuarioRepository
- * 4. Ejecuta: SET LOCAL app.current_user_id = '123'
- * 5. Todas las queries de este request usan esa variable
- * 6. RLS policies usan get_current_user_id() para filtrar filas
+ * <p>Flujo correcto (antes era incorrecto):
+ * <ol>
+ *   <li>El {@link RlsAuthenticationBridge} corre justo después del JWT y
+ *       guarda (userId, rolName) en {@link RlsContext} (ThreadLocal).</li>
+ *   <li>Cuando arranca el handler, este interceptor mira si ya hay una
+ *       transacción activa; si la hay, registra un
+ *       {@link RlsTransactionSynchronization} que Spring invocará en
+ *       {@code afterBegin()} sobre la MISMA conexión transaccional.</li>
+ *   <li>Si no hay transacción activa (rara vez), aplica SET LOCAL directo
+ *       sobre la conexión ligada al request vía
+ *       {@link DataSourceUtils#getConnection(DataSource)}.</li>
+ * </ol>
+ *
+ * <p>Notas:
+ * <ul>
+ *   <li>NO llamamos {@code sync.afterBegin()} manualmente: Spring ya lo hace
+ *       cuando registra el synchronization dentro de una transacción activa.
+ *       Llamarlo dos veces duplica el SET LOCAL y deja la conexión en estado
+ *       ambiguo.</li>
+ *   <li>Si el SET LOCAL falla, lanzamos — el request no debe continuar con
+ *       RLS desincronizado. Antes el interceptor original logueaba y seguía.</li>
+ * </ul>
  */
 @Component
-public class RlsInterceptor extends OncePerRequestFilter {
+public class RlsInterceptor implements HandlerInterceptor {
 
-    private final JdbcTemplate jdbcTemplate;
-    private final UsuarioRepository usuarioRepository;
+    private final DataSource dataSource;
 
-    public RlsInterceptor(JdbcTemplate jdbcTemplate, UsuarioRepository usuarioRepository) {
-        this.jdbcTemplate = jdbcTemplate;
-        this.usuarioRepository = usuarioRepository;
+    public RlsInterceptor(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
-        try {
-            // Obtener el usuario autenticado del JWT (vía Spring Security)
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth != null && auth.getPrincipal() instanceof UserPrincipal) {
-                UserPrincipal userPrincipal = (UserPrincipal) auth.getPrincipal();
-
-                // Convertir publicId (UUID) a internal id (Long)
-                var usuario = usuarioRepository.findByPublicId(userPrincipal.id());
-                if (usuario.isPresent()) {
-                    Long userId = usuario.get().getId();
-                    // Establecer la session variable para RLS
-                    // SET LOCAL es seguro: solo afecta esta transacción/query
-                    jdbcTemplate.execute("SET LOCAL app.current_user_id = '" + userId + "'");
-                }
-            }
-        } catch (Exception e) {
-            // Si falla la setup de RLS, loguear pero continuar
-            // El request seguirá pero RLS puede ser más restrictivo
-            logger.warn("Error setting RLS context", e);
+    public boolean preHandle(HttpServletRequest request,
+                             HttpServletResponse response,
+                             Object handler) throws IOException {
+        RlsContext.Value value = RlsContext.get();
+        if (value == null) {
+            // No hay usuario autenticado en este request. La cadena de filtros
+            // de Spring Security rechazará el endpoint si requiere auth, así
+            // que acá solo dejamos pasar.
+            return true;
         }
 
-        filterChain.doFilter(request, response);
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            // Registramos el sync; Spring invocará afterBegin() cuando la
+            // transacción actual termine de arrancar, sobre la MISMA conexión.
+            TransactionSynchronizationManager.registerSynchronization(
+                    new RlsTransactionSynchronization(dataSource, value));
+        } else {
+            // Fallback: no hay transacción (raro). Aplicamos SET LOCAL sobre
+            // la conexión ligada al request y la devolvemos al pool al final.
+            applyLocalDirectly(value);
+        }
+
+        return true;
+    }
+
+    private void applyLocalDirectly(RlsContext.Value value) {
+        Connection connection = DataSourceUtils.getConnection(dataSource);
+        try {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SET LOCAL app.current_user_id = ?")) {
+                ps.setLong(1, value.userId());
+                ps.execute();
+            }
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SET LOCAL app.current_user_rol = ?")) {
+                ps.setString(1, value.rolName());
+                ps.execute();
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "No se pudo aplicar contexto RLS al request", e);
+        } finally {
+            DataSourceUtils.releaseConnection(connection, dataSource);
+        }
     }
 }
