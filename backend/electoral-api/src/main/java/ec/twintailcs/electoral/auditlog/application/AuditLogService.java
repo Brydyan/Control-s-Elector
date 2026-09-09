@@ -49,6 +49,21 @@ public class AuditLogService {
         registrar(usuarioId, accion, entidad, entidadId, detalle, null);
     }
 
+
+    public void recordLogin(Long usuarioId, String ip) { recordAuth(usuarioId, "login", ip); }
+    public void recordLoginFail(String email, String ip) { recordAuth(null, "login_fail", ip); }
+    public void recordRefresh(Long usuarioId) { recordAuth(usuarioId, "refresh", null); }
+    public void recordRefreshFail(String ip) { recordAuth(null, "refresh_fail", ip); }
+    public void recordLogout(Long usuarioId) { recordAuth(usuarioId, "logout", null); }
+
+    @Transactional
+    private void recordAuth(Long usuarioId, String accion, String ip) {
+        AuditLog entry = new AuditLog();
+        entry.setEntidad("auth"); entry.setEntidadId(usuarioId == null ? 0L : usuarioId);
+        entry.setAccion(accion); entry.setDetalle("{}"); entry.setIpAddress(ip); entry.setRegistradoPor(usuarioId);
+        auditLogRepository.save(entry);
+    }
+
     private String obtenerIpReal(HttpServletRequest request) {
         if (request == null) return "sistema";
 

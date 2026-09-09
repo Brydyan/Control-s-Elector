@@ -6,6 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Reserved for future AOP-based declarative permission enforcement.
+ *
  * Marca un endpoint que requiere AL MENOS UNO de los permisos
  * especificados.
  *
