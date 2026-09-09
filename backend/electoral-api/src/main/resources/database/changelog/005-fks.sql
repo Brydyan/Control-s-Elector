@@ -1,104 +1,54 @@
 --liquibase formatted sql
 
--- ============================================================================
--- 005 - Tabla rol + migracion de datos.
---
--- Normaliza el rol de VARCHAR a entidad propia con FK.
---   Antes: usuario.rol     VARCHAR(32)  (string suelto)
---          rol_permiso.rol VARCHAR(32)  (string suelto)
---   Despues: TABLA rol (id, nombre, public_id) con FKs desde usuario y
---            rol_permiso. Refuerza integridad referencial a nivel DB.
---
--- Las FKs de 001-initial-schema (evidencia->usuario, sesion->usuario,
--- menu_permiso->menu, menu_permiso->permiso, rol_permiso->permiso) fueron
--- creadas por una version anterior de este archivo y ya existen en la DB.
--- menu.parent_id tiene FK inline desde 003-01.
--- jrv_id y cargo_id en evidencia quedan sin FK (tablas JRV/Cargo no existen).
--- ============================================================================
-
-
--- ============================================================================
--- PARTE A: Tabla rol
--- ============================================================================
-
 -- changeset electoral:005-01-create-rol
-CREATE TABLE rol (
-    id         BIGSERIAL     PRIMARY KEY,
-    nombre     VARCHAR(32)   NOT NULL,
-    public_id  UUID          NOT NULL DEFAULT gen_random_uuid(),
-    creado_en  TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
-    CONSTRAINT uk_rol_nombre UNIQUE (nombre)
+CREATE TABLE IF NOT EXISTS rol (
+    id BIGSERIAL PRIMARY KEY,
+    nombre VARCHAR(32) NOT NULL UNIQUE,
+    public_id UUID NOT NULL DEFAULT gen_random_uuid(),
+    creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
--- rollback DROP TABLE rol;
-
+-- rollback DROP TABLE IF EXISTS rol;
 
 -- changeset electoral:005-02-seed-rol
-INSERT INTO rol (nombre) VALUES
-    ('MASTER'),
-    ('COORDINATOR'),
-    ('ADMIN'),
-    ('OBSERVER')
-ON CONFLICT (nombre) DO NOTHING;
+INSERT INTO rol (nombre) VALUES ('MASTER'), ('COORDINATOR'), ('ADMIN'), ('OBSERVER') ON CONFLICT (nombre) DO NOTHING;
 -- rollback DELETE FROM rol WHERE nombre IN ('MASTER','COORDINATOR','ADMIN','OBSERVER');
 
+-- changeset electoral:005-03-add-rol-id-columns
+ALTER TABLE usuario ADD COLUMN IF NOT EXISTS rol_id BIGINT;
+ALTER TABLE rol_permiso ADD COLUMN IF NOT EXISTS rol_id BIGINT;
+-- rollback ALTER TABLE usuario DROP COLUMN IF EXISTS rol_id; ALTER TABLE rol_permiso DROP COLUMN IF EXISTS rol_id;
 
--- changeset electoral:005-03-add-rol-id-to-usuario
-ALTER TABLE usuario ADD COLUMN rol_id BIGINT;
--- rollback ALTER TABLE usuario DROP COLUMN rol_id;
+-- changeset electoral:005-04-migrate-roles
+DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='usuario' AND column_name='rol') THEN
+        UPDATE usuario u SET rol_id = r.id FROM rol r WHERE r.nombre = u.rol AND u.rol_id IS NULL;
+    END IF;
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='rol_permiso' AND column_name='rol') THEN
+        UPDATE rol_permiso rp SET rol_id = r.id FROM rol r WHERE r.nombre = rp.rol AND rp.rol_id IS NULL;
+    END IF;
+END $$;
+-- rollback UPDATE usuario SET rol_id = NULL; UPDATE rol_permiso SET rol_id = NULL;
 
+-- changeset electoral:005-05-finalize-role-fks
+ALTER TABLE usuario ALTER COLUMN rol_id SET NOT NULL;
+ALTER TABLE usuario ADD CONSTRAINT fk_usuario_rol FOREIGN KEY (rol_id) REFERENCES rol(id);
+CREATE INDEX IF NOT EXISTS ix_usuario_rol_id ON usuario(rol_id);
+ALTER TABLE rol_permiso ALTER COLUMN rol_id SET NOT NULL;
+ALTER TABLE rol_permiso ADD CONSTRAINT fk_rol_permiso_rol FOREIGN KEY (rol_id) REFERENCES rol(id);
+CREATE INDEX IF NOT EXISTS ix_rol_permiso_rol_id ON rol_permiso(rol_id);
+-- rollback ALTER TABLE usuario DROP CONSTRAINT IF EXISTS fk_usuario_rol; ALTER TABLE rol_permiso DROP CONSTRAINT IF EXISTS fk_rol_permiso_rol;
 
--- changeset electoral:005-04-migrate-usuario-rol
-UPDATE usuario u
-    SET rol_id = (SELECT id FROM rol WHERE nombre = u.rol);
--- rollback UPDATE usuario SET rol_id = NULL;
-
-
--- changeset electoral:005-05-finalize-usuario-rol
-ALTER TABLE usuario
-    ALTER COLUMN rol_id SET NOT NULL,
-    ADD CONSTRAINT fk_usuario_rol FOREIGN KEY (rol_id) REFERENCES rol (id);
-CREATE INDEX ix_usuario_rol_id ON usuario (rol_id);
--- rollback ALTER TABLE usuario DROP CONSTRAINT fk_usuario_rol;
---   DROP INDEX ix_usuario_rol_id;
-
-
--- changeset electoral:005-06-drop-usuario-rol-varchar
-ALTER TABLE usuario DROP COLUMN rol;
+-- changeset electoral:005-06-drop-legacy-role-columns
+ALTER TABLE usuario DROP COLUMN IF EXISTS rol;
+ALTER TABLE rol_permiso DROP COLUMN IF EXISTS rol;
 DROP INDEX IF EXISTS ix_usuario_rol;
--- rollback ALTER TABLE usuario ADD COLUMN rol VARCHAR(32);
---        CREATE INDEX ix_usuario_rol ON usuario (rol);
-
-
--- changeset electoral:005-07-add-rol-id-to-rol-permiso
-ALTER TABLE rol_permiso ADD COLUMN rol_id BIGINT;
--- rollback ALTER TABLE rol_permiso DROP COLUMN rol_id;
-
-
--- changeset electoral:005-08-migrate-rol-permiso-rol
-UPDATE rol_permiso rp
-    SET rol_id = (SELECT id FROM rol WHERE nombre = rp.rol);
--- rollback UPDATE rol_permiso SET rol_id = NULL;
-
-
--- changeset electoral:005-09-finalize-rol-permiso-rol
-ALTER TABLE rol_permiso
-    ALTER COLUMN rol_id SET NOT NULL,
-    ADD CONSTRAINT fk_rol_permiso_rol FOREIGN KEY (rol_id) REFERENCES rol (id);
-CREATE INDEX ix_rol_permiso_rol_id ON rol_permiso (rol_id);
--- rollback ALTER TABLE rol_permiso DROP CONSTRAINT fk_rol_permiso_rol;
---   DROP INDEX ix_rol_permiso_rol_id;
-
-
--- changeset electoral:005-10-drop-rol-permiso-rol-varchar
-ALTER TABLE rol_permiso DROP COLUMN rol;
 DROP INDEX IF EXISTS ix_rol_permiso_rol;
--- rollback ALTER TABLE rol_permiso ADD COLUMN rol VARCHAR(32);
---        CREATE INDEX ix_rol_permiso_rol ON rol_permiso (rol);
+-- rollback -- legacy columns intentionally not restored
 
-
--- ============================================================================
--- NOTA: Las FKs de 001-initial-schema (evidencia→usuario, sesion→usuario,
--- rol_permiso→permiso, menu_permiso→menu, menu_permiso→permiso) fueron
--- creadas por una version anterior de este archivo. Ya estan en la DB:
---   SELECT conname FROM pg_constraint WHERE contype='f' AND conrelid::regclass::text NOT IN ('databasechangelog','databasechangeloglock');
--- ============================================================================
+-- changeset electoral:005-07-missing-foreign-keys
+ALTER TABLE rol_permiso ADD CONSTRAINT fk_rol_permiso_permiso FOREIGN KEY (permiso_id) REFERENCES permiso(id);
+ALTER TABLE menu_permiso ADD CONSTRAINT fk_menu_permiso_menu FOREIGN KEY (menu_id) REFERENCES menu(id);
+ALTER TABLE menu_permiso ADD CONSTRAINT fk_menu_permiso_permiso FOREIGN KEY (permiso_id) REFERENCES permiso(id);
+ALTER TABLE sesion ADD CONSTRAINT fk_sesion_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id);
+ALTER TABLE evidencia ADD CONSTRAINT fk_evidencia_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(id);
+-- rollback ALTER TABLE rol_permiso DROP CONSTRAINT IF EXISTS fk_rol_permiso_permiso;

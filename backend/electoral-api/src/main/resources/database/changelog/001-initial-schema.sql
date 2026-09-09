@@ -16,6 +16,14 @@
 -- ============================================================================
 
 
+-- changeset electoral:001-00-extensions
+-- Habilitamos pgcrypto para gen_random_uuid() (usado en seeds 002/004/005/008/009
+-- y en el default de public_id de tablas creadas acá). Sin esto, los seeds que
+-- insertan UUIDs fallan en una BD limpia.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- rollback DROP EXTENSION IF EXISTS pgcrypto;
+
+
 -- changeset electoral:001-01-usuario
 CREATE TABLE usuario (
     id            BIGSERIAL     PRIMARY KEY,
