@@ -21,7 +21,8 @@ CREATE TABLE audit_log (
  ip_address VARCHAR(64), registrado_por BIGINT REFERENCES usuario(id), timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE notificacion (
- id BIGSERIAL PRIMARY KEY, destinatario_id BIGINT NOT NULL REFERENCES usuario(id), mensaje VARCHAR(500) NOT NULL,
+ id BIGSERIAL PRIMARY KEY, destinatario_id BIGINT NOT NULL REFERENCES usuario(id), tipo VARCHAR(64) NOT NULL,
+ acta_id BIGINT REFERENCES acta(id), mensaje VARCHAR(500) NOT NULL,
  leida BOOLEAN NOT NULL DEFAULT FALSE, creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE UNIQUE INDEX uk_acta_activa ON acta(jrv_id, cargo_id) WHERE estado IN ('BORRADOR','ENVIADA','EN_DISPUTA','CORREGIDA');

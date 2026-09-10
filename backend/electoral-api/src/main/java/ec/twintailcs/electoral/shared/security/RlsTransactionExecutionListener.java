@@ -4,9 +4,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.jdbc.datasource.ConnectionHolder;
 import org.springframework.transaction.TransactionExecution;
 import org.springframework.transaction.TransactionExecutionListener;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Applies the authenticated RLS context immediately after Spring opens a
@@ -35,14 +36,18 @@ public final class RlsTransactionExecutionListener implements TransactionExecuti
             return;
         }
 
-        Connection connection = DataSourceUtils.getConnection(dataSource);
+        Object resource = TransactionSynchronizationManager.getResource(dataSource);
+        if (!(resource instanceof ConnectionHolder holder)) {
+            throw new IllegalStateException(
+                    "RLS requires the transaction-bound DataSource connection");
+        }
+
         try {
+            Connection connection = holder.getConnection();
             setLocal(connection, "app.current_user_id", Long.toString(value.userId()));
             setLocal(connection, "app.current_user_rol", value.rolName());
         } catch (SQLException ex) {
             throw new IllegalStateException("Could not establish PostgreSQL RLS context", ex);
-        } finally {
-            DataSourceUtils.releaseConnection(connection, dataSource);
         }
     }
 

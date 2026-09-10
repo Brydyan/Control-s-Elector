@@ -32,7 +32,8 @@ public class AuditLogService {
         AuditLog log = new AuditLog();
 
         if (usuarioId != null) {
-            log.setRegistradoPor(usuarioId);
+            usuarioRepository.findById(usuarioId)
+                    .ifPresent(usuario -> log.setRegistradoPor(usuario.getId()));
         }
 
         log.setAccion(accion);
