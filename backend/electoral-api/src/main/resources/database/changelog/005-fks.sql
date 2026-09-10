@@ -1,18 +1,5 @@
 --liquibase formatted sql
 
--- changeset electoral:005-01-create-rol
-CREATE TABLE IF NOT EXISTS rol (
-    id BIGSERIAL PRIMARY KEY,
-    nombre VARCHAR(32) NOT NULL UNIQUE,
-    public_id UUID NOT NULL DEFAULT gen_random_uuid(),
-    creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
--- rollback DROP TABLE IF EXISTS rol;
-
--- changeset electoral:005-02-seed-rol
-INSERT INTO rol (nombre) VALUES ('MASTER'), ('COORDINATOR'), ('ADMIN'), ('OBSERVER') ON CONFLICT (nombre) DO NOTHING;
--- rollback DELETE FROM rol WHERE nombre IN ('MASTER','COORDINATOR','ADMIN','OBSERVER');
-
 -- changeset electoral:005-03-add-rol-id-columns
 ALTER TABLE usuario ADD COLUMN IF NOT EXISTS rol_id BIGINT;
 ALTER TABLE rol_permiso ADD COLUMN IF NOT EXISTS rol_id BIGINT;
