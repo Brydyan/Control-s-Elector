@@ -13,7 +13,7 @@ public interface NotificacionRepository extends JpaRepository<Notificacion, Long
     List<Notificacion> findByActaId(Long actaId);
     List<Notificacion> findByTipo(String tipo);
 
-    List<Notificacion> findByDestinatarioIdAndLeidaFalseOrderByCreadaEnDesc(Long destinatarioId);
+    List<Notificacion> findByDestinatarioIdAndLeidaFalseOrderByCreadoEnDesc(Long destinatarioId);
 
     long countByDestinatarioIdAndLeidaFalse(Long destinatarioId);
 
