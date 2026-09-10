@@ -22,8 +22,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * <p>Importante:
  * <ul>
- *   <li>NO ejecuta SET LOCAL acá: eso lo hace {@link RlsInterceptor} en
- *       preHandle(), dentro del contexto transaccional correcto.</li>
+ *   <li>NO ejecuta SET LOCAL acá: eso lo hace
+ *       {@link RlsTransactionExecutionListener} al abrir la transacción.</li>
  *   <li>Si la resolución falla, lanza. Antes el interceptor original
  *       logueaba y seguía, dejando RLS desincronizado. Eso era la causa
  *       de que OBSERVER pudiera ver actas ajenas.</li>

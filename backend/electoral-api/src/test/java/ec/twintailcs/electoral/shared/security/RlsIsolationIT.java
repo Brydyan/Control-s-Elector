@@ -209,7 +209,7 @@ class RlsIsolationIT {
         } catch (SQLException e) {
             thrown = e;
         }
-        assertThat(thrown)
+        assertThat((Object) thrown)
                 .as("El índice único parcial debe rechazar la segunda acta activa")
                 .isNotNull();
         assertThat(thrown.getSQLState())

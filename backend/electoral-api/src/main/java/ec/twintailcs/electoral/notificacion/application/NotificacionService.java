@@ -22,10 +22,12 @@ public class NotificacionService {
     @Transactional
     public void notificar(Usuario destinatario, String tipo, Acta acta, String mensaje) {
         Notificacion notif = new Notificacion();
-        notif.setDestinatario(destinatario);
-        notif.setTipo(tipo);
-        notif.setActa(acta);
-        notif.setMensaje(mensaje);
+        notif.setDestinatarioId(destinatario.getId());
+        // tipo + acta van serializados al mensaje para mantener el modelo
+        // de Notificacion estable. Si más adelante hace falta, se agregan
+        // columnas dedicadas en otro PR.
+        String fullMensaje = "[" + tipo + "]" + (acta != null ? " (acta " + acta.getId() + ")" : "") + " " + mensaje;
+        notif.setMensaje(fullMensaje);
         notif.setLeida(false);
         notificacionRepository.save(notif);
     }
