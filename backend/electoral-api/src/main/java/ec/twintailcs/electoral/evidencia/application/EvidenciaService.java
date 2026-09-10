@@ -1,5 +1,7 @@
 package ec.twintailcs.electoral.evidencia.application;
 
+import ec.twintailcs.electoral.acta.domain.Acta;
+import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaRepository;
@@ -47,46 +49,67 @@ public class EvidenciaService {
     private final EvidenciaRepository repository;
     private final S3StorageService s3;
     private final UsuarioRepository usuarios;
+    private final ActaRepository actaRepository;
 
-    public EvidenciaService(EvidenciaRepository repository, S3StorageService s3, UsuarioRepository usuarios) {
+    public EvidenciaService(EvidenciaRepository repository, S3StorageService s3,
+                              UsuarioRepository usuarios, ActaRepository actaRepository) {
         this.repository = repository;
         this.s3 = s3;
         this.usuarios = usuarios;
+        this.actaRepository = actaRepository;
     }
 
     /**
-     * Sube un archivo a S3 y persiste la metadata.
+     * Sube un archivo a S3 y persiste la metadata vinculada al acta.
      *
-     * @param file    multipart desde el controller
-     * @param jrvId   FK al acta
-     * @param cargoId FK al cargo
-     * @param userId  OBSERVER que sube (de CurrentUser)
-     * @return evidencia persistida con id
+     * <p>T-BE-14 cerrado: cada evidencia ahora pertenece a un acta específico
+     * (FK NOT NULL definida en 013-t-be-14-16.sql). El service valida que
+     * el acta exista, no esté ANULADA, y que el usuario sea el registrador
+     * del acta (o COORDINATOR/MASTER, que pueden agregar fotos de revisión).
+     *
+     * @param file          multipart desde el controller
+     * @param actaId        FK al acta
+     * @param callerPublicId OBSERVER que sube (de CurrentUser)
+     * @return evidencia persistida
      */
     @Transactional
-    public Evidencia upload(MultipartFile file, Long jrvId, Long cargoId, UUID callerPublicId) {
+    public Evidencia upload(MultipartFile file, Long actaId, UUID callerPublicId) {
         validate(file);
-        String s3Key = buildKey(jrvId, cargoId);
 
-        // Resuelve el usuario PRIMERO — fail early antes de cualquier side-effect en S3.
         Usuario u = usuarios.findByPublicId(callerPublicId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"));
+
+        Acta acta = actaRepository.findById(actaId)
+                .orElseThrow(() -> new IllegalArgumentException("Acta no encontrada: " + actaId));
+        if (acta.getEstado() == ec.twintailcs.electoral.acta.domain.EstadoActa.ANULADA) {
+            throw new IllegalArgumentException("No se pueden subir evidencias a un acta ANULADA");
+        }
+        // El registrador del acta puede subir fotos. COORDINATOR/MASTER también.
+        String rol = u.getRolNombre();
+        boolean esRegistrador = acta.getRegistradaPor().getId().equals(u.getId());
+        boolean esPrivilegiado = "COORDINATOR".equals(rol) || "MASTER".equals(rol);
+        if (!esRegistrador && !esPrivilegiado) {
+            throw new IllegalArgumentException(
+                    "Solo el registrador del acta (o COORDINATOR/MASTER) puede subir fotos");
+        }
+
+        String s3Key = buildKey(actaId);
 
         long size = file.getSize();
         String contentType = file.getContentType();
         String sha256 = computeSha256(file);
 
-        // Sube a S3 (try-with-resources garantiza cierre del stream).
+        // Sube a S3 primero; si la DB falla, compensamos.
         try (InputStream in = file.getInputStream()) {
             s3.upload(s3Key, in, size, contentType);
         } catch (IOException e) {
             throw new IllegalArgumentException("cannot read uploaded file: " + e.getMessage());
         }
 
-        // Persiste. Si esto falla, compensamos borrando el objeto en S3.
         Evidencia evidencia = new Evidencia();
-        evidencia.setJrvId(jrvId);
-        evidencia.setCargoId(cargoId);
+        evidencia.setActa(acta);
+        evidencia.setJrvId(acta.getJrv().getId());
+        evidencia.setCargoId(acta.getCargo().getId());
         evidencia.setUsuarioId(u.getId());
         evidencia.setS3Key(s3Key);
         evidencia.setSizeBytes(size);
@@ -183,8 +206,8 @@ public class EvidenciaService {
         }
     }
 
-    static String buildKey(Long jrvId, Long cargoId) {
-        return "actas/" + jrvId + "/" + cargoId + "/"
+    static String buildKey(Long actaId) {
+        return "actas/" + actaId + "/"
                 + UUID.randomUUID() + ".webp";
     }
 
