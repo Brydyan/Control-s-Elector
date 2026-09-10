@@ -37,7 +37,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * Test de integracion HTTP end-to-end: controller -> service -> RLS -> DB.
  *
  * Migrado de @WebMvcTest a @SpringBootTest para que JdbcTemplate/DataSource
- * esten disponibles (RlsInterceptor los requiere) y para probar la
+ * esten disponibles (RlsAuthenticationBridge + RlsTransactionExecutionListener
+ * los requieren para resolver userId via JPA y bindear el contexto RLS en
+ * afterBegin() sobre la conexion transaccional) y para probar la
  * autorizacion real via JWT + @PreAuthorize (no mocks de CurrentUser).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
