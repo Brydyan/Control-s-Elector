@@ -27,10 +27,20 @@ public class CurrentUser {
         return auth;
     }
 
-    /** Email del usuario logueado (subject del JWT), o null si no hay auth. */
+    /**
+     * Email del usuario logueado (claim {@code email} del JWT).
+     *
+     * Si el principal es un {@link UserPrincipal} (camino normal via
+     * JwtAuthFilter) usamos su email explicito. Como fallback (p.ej.
+     * tests que setean un principal distinto), usamos
+     * {@link Authentication#getName()} que para UserDetails o
+     * AuthenticatedPrincipal devuelve el username. Null si no hay auth.
+     */
     public String email() {
         Authentication a = authOrNull();
-        return a == null ? null : a.getName();
+        if (a == null) return null;
+        if (a.getPrincipal() instanceof UserPrincipal up) return up.email();
+        return a.getName();
     }
 
     /**

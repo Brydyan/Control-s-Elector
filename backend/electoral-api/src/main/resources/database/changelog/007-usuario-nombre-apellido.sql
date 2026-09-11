@@ -3,8 +3,8 @@
 -- Agregar campos nombre y apellido a la tabla usuario
 -- para generacion automatica de emails en formato {nombre}{apellido}{rol}@control.ttcs
 
-ALTER TABLE usuario ADD COLUMN nombre VARCHAR(100) NOT NULL DEFAULT '';
-ALTER TABLE usuario ADD COLUMN apellido VARCHAR(100) NOT NULL DEFAULT '';
+ALTER TABLE usuario ADD COLUMN IF NOT EXISTS nombre VARCHAR(100) NOT NULL DEFAULT '';
+ALTER TABLE usuario ADD COLUMN IF NOT EXISTS apellido VARCHAR(100) NOT NULL DEFAULT '';
 
 -- rollback
 -- ALTER TABLE usuario DROP COLUMN apellido;

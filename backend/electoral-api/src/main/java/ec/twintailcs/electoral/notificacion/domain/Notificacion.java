@@ -5,7 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import ec.twintailcs.electoral.acta.domain.Acta;
 import java.time.Instant;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -31,6 +34,13 @@ public class Notificacion {
     @Column(name = "destinatario_id", nullable = false)
     private Long destinatarioId;
 
+    @Column(nullable = false, length = 64)
+    private String tipo;
+
+    @ManyToOne
+    @JoinColumn(name = "acta_id")
+    private Acta acta;
+
     @Column(nullable = false, length = 500)
     private String mensaje;
 
@@ -54,6 +64,22 @@ public class Notificacion {
 
     public void setDestinatarioId(Long destinatarioId) {
         this.destinatarioId = destinatarioId;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public Acta getActa() {
+        return acta;
+    }
+
+    public void setActa(Acta acta) {
+        this.acta = acta;
     }
 
     public String getMensaje() {

@@ -4,7 +4,7 @@ import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
-import ec.twintailcs.electoral.acta.web.dto.ActaRequestDto;
+import ec.twintailcs.electoral.acta.web.ActaRequestDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.CargoConEstadoDto;
 import ec.twintailcs.electoral.acta.web.dto.JrvConEstadoDto;

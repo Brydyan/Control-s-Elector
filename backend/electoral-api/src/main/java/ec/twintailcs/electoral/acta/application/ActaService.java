@@ -281,6 +281,7 @@ public class ActaService {
         acta.setEstado(EstadoActa.CORREGIDA);
 
         actaDetalleRepository.deleteByActa(acta);
+        actaDetalleRepository.flush();
         persistirDetalles(acta, dto.getDetalles());
 
         Acta actaActualizada = actaRepository.save(acta);

@@ -14,6 +14,7 @@ import com.nimbusds.jwt.JWTClaimsSet;
 import ec.twintailcs.electoral.auth.application.AuthService;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.RegisterService;
+import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.domain.Rol;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
@@ -54,6 +55,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private UsuarioMapper usuarioMapper;
+
+    @MockitoBean
+    private CurrentUser currentUser;
 
     @BeforeEach
     void setUpMapper() {
@@ -118,7 +122,7 @@ class AuthControllerTest {
                 .subject(publicId.toString())
                 .build();
         JwtService.ParsedJwt parsedJwt = new JwtService.ParsedJwt(claimsSet);
-        when(jwtService.parse(eq("newAccessTokenVal"))).thenReturn(parsedJwt);
+        when(jwtService.parseAccess(eq("newAccessTokenVal"))).thenReturn(parsedJwt);
         when(usuarioRepository.findByPublicId(publicId)).thenReturn(Optional.of(usuario));
 
         mockMvc.perform(post("/api/v1/auth/refresh")

@@ -4,7 +4,6 @@ import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
-import ec.twintailcs.electoral.acta.web.dto.ActaRequestDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.AnulacionDto;
 import ec.twintailcs.electoral.acta.web.dto.DisputaDto;
