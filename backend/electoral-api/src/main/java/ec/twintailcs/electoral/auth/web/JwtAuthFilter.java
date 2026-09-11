@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.lang.NonNull;
@@ -36,6 +37,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
 
+    private static final String ROLE_PREFIX = "ROLE_";
+
     private final JwtService jwt;
 
     public JwtAuthFilter(JwtService jwt) {
@@ -58,9 +61,32 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         try {
             JwtService.ParsedJwt parsed = jwt.parseAccess(token);
 
-            List<SimpleGrantedAuthority> auths = parsed.perms().stream()
-                    .map(p -> new SimpleGrantedAuthority(p))
-                    .toList();
+            // 1) Permisos crudos (recurso:accion) que usan @authz.has(...) y
+            //    hasAuthority(...) en expresiones SpEL. Cada perm se conserva
+            //    tal cual viene del JWT.
+            List<SimpleGrantedAuthority> auths = new ArrayList<>();
+            for (String perm : parsed.perms()) {
+                if (perm != null && !perm.isBlank()) {
+                    auths.add(new SimpleGrantedAuthority(perm));
+                }
+            }
+
+            // 2) Rol canonico Spring Security (ROLE_<rol>) que usan
+            //    hasRole(...) / hasAnyRole(...) en @PreAuthorize. Sin este
+            //    authority los endpoints @PreAuthorize("hasAnyRole(...)")
+            //    devuelven 403 incluso con token valido.
+            String rol = parsed.rol();
+            if (rol == null || rol.isBlank()) {
+                // Token malformado (sin rol): misma ruta que token invalido.
+                // SecurityConfig devuelve 401 al endpoint protegido.
+                throw new JwtService.InvalidJwtException("JWT sin rol");
+            }
+            String roleAuthority = ROLE_PREFIX + rol;
+            boolean roleAlreadyPresent = auths.stream()
+                    .anyMatch(a -> roleAuthority.equals(a.getAuthority()));
+            if (!roleAlreadyPresent) {
+                auths.add(new SimpleGrantedAuthority(roleAuthority));
+            }
 
             var principal = new UserPrincipal(
                     UUID.fromString(parsed.subject()),

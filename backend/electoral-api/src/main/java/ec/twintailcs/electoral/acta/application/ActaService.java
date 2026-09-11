@@ -199,6 +199,10 @@ public class ActaService {
         acta.setEstado(EstadoActa.CORREGIDA);
 
         actaDetalleRepository.deleteByActa(acta);
+        // Forzar DELETE a DB antes del INSERT: el orden de sentencias en la
+        // misma transaccion JPA dejaria la unique key (acta_id, candidato_id)
+        // ocupada por filas viejas al reinsertar.
+        actaDetalleRepository.flush();
         for (ActaDetalleDto detalleDto : dto.getDetalles()) {
             Candidato candidato = candidatoRepository.findById(detalleDto.getCandidatoId())
                 .orElseThrow(() -> new ActaInvalidaException(

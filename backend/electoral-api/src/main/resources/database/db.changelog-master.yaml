@@ -10,4 +10,4 @@ databaseChangeLog:
   - include: { file: database/changelog/009-acta-observer-permisos.sql }
   - include: { file: database/changelog/010-tablas-jpa.sql }
   - include: { file: database/changelog/011-rls.sql }
-      - include: { file: database/changelog/012-acta-anular-permiso.sql }
+  - include: { file: database/changelog/012-acta-anular-permiso.sql }

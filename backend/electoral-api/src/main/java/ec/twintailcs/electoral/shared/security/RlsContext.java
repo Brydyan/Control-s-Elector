@@ -4,8 +4,8 @@ package ec.twintailcs.electoral.shared.security;
  * Holder en ThreadLocal para el contexto de RLS del request actual.
  *
  * <p>Lo puebla {@link RlsAuthenticationBridge} después de que el filtro JWT
- * identificó al usuario, y lo consume {@link RlsInterceptor} justo antes
- * del handler para enlazarlo a la transacción.
+ * identificó al usuario, y lo consume
+ * {@link RlsTransactionExecutionListener} al abrir una transacción.
  *
  * <p>{@link RlsAuthenticationBridge} siempre llama a {@link #clear()} en el
  * bloque finally, así que no hay riesgo de leak entre requests que comparten

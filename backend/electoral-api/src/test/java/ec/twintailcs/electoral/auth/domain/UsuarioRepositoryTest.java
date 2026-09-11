@@ -54,6 +54,8 @@ class UsuarioRepositoryTest {
     void shouldAutoGenerateUuidV7AndRoundTrip() {
         Usuario usuario = new Usuario();
         usuario.setEmail("test@example.com");
+        usuario.setNombre("Test");
+        usuario.setApellido("User");
         usuario.setPasswordHash("hashedpassword");
         usuario.setRol(obtenerRol("OBSERVER"));
         usuario.setHabilitado(true);
@@ -75,6 +77,8 @@ class UsuarioRepositoryTest {
 
         Usuario u1 = new Usuario();
         u1.setEmail("user1@example.com");
+        u1.setNombre("User");
+        u1.setApellido("One");
         u1.setPasswordHash("hashed1");
         u1.setRol(rol);
 
@@ -85,8 +89,8 @@ class UsuarioRepositoryTest {
             org.springframework.dao.DataIntegrityViolationException.class,
             () -> {
                 jdbcTemplate.update(
-                    "INSERT INTO usuario (email, password_hash, rol_id, habilitado, creado_en, public_id) " +
-                    "VALUES ('user2@example.com', 'hashed2', ?, true, NOW(), ?)",
+                    "INSERT INTO usuario (email, password_hash, rol_id, habilitado, creado_en, nombre, apellido, public_id) " +
+                    "VALUES ('user2@example.com', 'hashed2', ?, true, NOW(), 'User', 'Two', ?)",
                     rol.getId(), publicId
                 );
             }
@@ -97,6 +101,8 @@ class UsuarioRepositoryTest {
     void shouldNotUpdatePublicIdWhenEntityIsModified() {
         Usuario usuario = new Usuario();
         usuario.setEmail("immutable@example.com");
+        usuario.setNombre("Immutable");
+        usuario.setApellido("User");
         usuario.setPasswordHash("hashed");
         usuario.setRol(obtenerRol("OBSERVER"));
 
