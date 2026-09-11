@@ -6,37 +6,62 @@ import jakarta.persistence.*;
 @Table(name = "jrv")
 public class Jrv {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, length = 20)
-    private String numero;
+  @Column(nullable = false, length = 20)
+  private String numero;
 
-    @Column(nullable = false, length = 200)
-    private String recinto;
+  @Column(nullable = false, length = 200)
+  private String recinto;
 
-    @Column(nullable = false)
-    private Integer totalElectores;
+  @Column(nullable = false)
+  private Integer totalElectores;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parroquia_id", nullable = false)
-    private Parroquia parroquia;
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "parroquia_id", nullable = false)
+  private Parroquia parroquia;
 
-    public Jrv() {}
+  public Jrv() {}
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+  public Long getId() {
+    return id;
+  }
 
-    public String getNumero() { return numero; }
-    public void setNumero(String numero) { this.numero = numero; }
+  public void setId(Long id) {
+    this.id = id;
+  }
 
-    public String getRecinto() { return recinto; }
-    public void setRecinto(String recinto) { this.recinto = recinto; }
+  public String getNumero() {
+    return numero;
+  }
 
-    public Integer getTotalElectores() { return totalElectores; }
-    public void setTotalElectores(Integer totalElectores) { this.totalElectores = totalElectores; }
+  public void setNumero(String numero) {
+    this.numero = numero;
+  }
 
-    public Parroquia getParroquia() { return parroquia; }
-    public void setParroquia(Parroquia parroquia) { this.parroquia = parroquia; }
+  public String getRecinto() {
+    return recinto;
+  }
+
+  public void setRecinto(String recinto) {
+    this.recinto = recinto;
+  }
+
+  public Integer getTotalElectores() {
+    return totalElectores;
+  }
+
+  public void setTotalElectores(Integer totalElectores) {
+    this.totalElectores = totalElectores;
+  }
+
+  public Parroquia getParroquia() {
+    return parroquia;
+  }
+
+  public void setParroquia(Parroquia parroquia) {
+    this.parroquia = parroquia;
+  }
 }

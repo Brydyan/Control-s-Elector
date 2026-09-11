@@ -22,103 +22,102 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 /**
  * Traduce excepciones a respuestas JSON consistentes.
  *
- * Formato uniforme:
- *   { timestamp, status, error, message, fields? }
+ * <p>Formato uniforme: { timestamp, status, error, message, fields? }
  *
- * Un solo lugar para revisar cuando algo falla. Los controllers no se
- * enteran de los detalles HTTP: tiran RuntimeException y este handler
- * las clasifica.
+ * <p>Un solo lugar para revisar cuando algo falla. Los controllers no se enteran de los detalles
+ * HTTP: tiran RuntimeException y este handler las clasifica.
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+  private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    @ExceptionHandler(EvidenciaNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> notFound(EvidenciaNotFoundException ex) {
-        return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
-    }
+  @ExceptionHandler(EvidenciaNotFoundException.class)
+  public ResponseEntity<Map<String, Object>> notFound(EvidenciaNotFoundException ex) {
+    return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
+  }
 
-    /** AccessDeniedException de @PreAuthorize -> 403 FORBIDDEN. */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> accessDenied(AccessDeniedException ex) {
-        return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
-    }
+  /** AccessDeniedException de @PreAuthorize -> 403 FORBIDDEN. */
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<Map<String, Object>> accessDenied(AccessDeniedException ex) {
+    return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
+  }
 
-    /**
-     * ActaInvalidaException -> 400 BAD_REQUEST. Contrato explícito:
-     * errores de validación de dominio del módulo de actas (acta
-     * inexistente, votos que no cuadran, JRV/cargo/observer no
-     * encontrados, candidato no encontrado al corregir) deben llegar al
-     * cliente como 400. El catch-all genérico devolvería 500, ocultando
-     * el contrato detrás de un error de servidor.
-     */
-    @ExceptionHandler(ActaInvalidaException.class)
-    public ResponseEntity<Map<String, Object>> actaInvalida(ActaInvalidaException ex) {
-        return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
-    }
+  /**
+   * ActaInvalidaException -> 400 BAD_REQUEST. Contrato explícito: errores de validación de dominio
+   * del módulo de actas (acta inexistente, votos que no cuadran, JRV/cargo/observer no encontrados,
+   * candidato no encontrado al corregir) deben llegar al cliente como 400. El catch-all genérico
+   * devolvería 500, ocultando el contrato detrás de un error de servidor.
+   */
+  @ExceptionHandler(ActaInvalidaException.class)
+  public ResponseEntity<Map<String, Object>> actaInvalida(ActaInvalidaException ex) {
+    return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+  }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> invalidArg(MethodArgumentNotValidException ex) {
-        Map<String, String> fields = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(e ->
-                fields.put(e.getField(), e.getDefaultMessage()));
-        return body(HttpStatus.BAD_REQUEST, "validation failed", fields);
-    }
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<Map<String, Object>> invalidArg(MethodArgumentNotValidException ex) {
+    Map<String, String> fields = new HashMap<>();
+    ex.getBindingResult()
+        .getFieldErrors()
+        .forEach(e -> fields.put(e.getField(), e.getDefaultMessage()));
+    return body(HttpStatus.BAD_REQUEST, "validation failed", fields);
+  }
 
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, Object>> constraint(ConstraintViolationException ex) {
-        return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
-    }
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<Map<String, Object>> constraint(ConstraintViolationException ex) {
+    return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+  }
 
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<Map<String, Object>> tooLarge(MaxUploadSizeExceededException ex) {
-        return body(HttpStatus.PAYLOAD_TOO_LARGE, "file exceeds max upload size", null);
-    }
+  @ExceptionHandler(MaxUploadSizeExceededException.class)
+  public ResponseEntity<Map<String, Object>> tooLarge(MaxUploadSizeExceededException ex) {
+    return body(HttpStatus.PAYLOAD_TOO_LARGE, "file exceeds max upload size", null);
+  }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> illegalArg(IllegalArgumentException ex) {
-        return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
-    }
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<Map<String, Object>> illegalArg(IllegalArgumentException ex) {
+    return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+  }
 
-    /**
-     * ActaEstadoInvalidoException -> 409 CONFLICT. Explicito: la anotacion
-     * @ResponseStatus de la excepcion es ocultada por el catch-all generico
-     * de abajo. Mapeo explicito para preservar el contrato HTTP.
-     */
-    @ExceptionHandler(ActaEstadoInvalidoException.class)
-    public ResponseEntity<Map<String, Object>> estadoInvalido(ActaEstadoInvalidoException ex) {
-        return body(HttpStatus.CONFLICT, ex.getMessage(), null);
-    }
+  /**
+   * ActaEstadoInvalidoException -> 409 CONFLICT. Explicito: la anotacion @ResponseStatus de la
+   * excepcion es ocultada por el catch-all generico de abajo. Mapeo explicito para preservar el
+   * contrato HTTP.
+   */
+  @ExceptionHandler(ActaEstadoInvalidoException.class)
+  public ResponseEntity<Map<String, Object>> estadoInvalido(ActaEstadoInvalidoException ex) {
+    return body(HttpStatus.CONFLICT, ex.getMessage(), null);
+  }
 
-    /**
-     * JrvCargoYaRegistradoException -> 409 CONFLICT. Misma razon que arriba:
-     * el catch-all enmascara @ResponseStatus, asi que se mapea explicitamente.
-     */
-    @ExceptionHandler(JrvCargoYaRegistradoException.class)
-    public ResponseEntity<Map<String, Object>> jrvCargoDuplicado(JrvCargoYaRegistradoException ex) {
-        return body(HttpStatus.CONFLICT, ex.getMessage(), null);
-    }
+  /**
+   * JrvCargoYaRegistradoException -> 409 CONFLICT. Misma razon que arriba: el catch-all
+   * enmascara @ResponseStatus, asi que se mapea explicitamente.
+   */
+  @ExceptionHandler(JrvCargoYaRegistradoException.class)
+  public ResponseEntity<Map<String, Object>> jrvCargoDuplicado(JrvCargoYaRegistradoException ex) {
+    return body(HttpStatus.CONFLICT, ex.getMessage(), null);
+  }
 
-    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<Map<String, Object>> typeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
-        return body(HttpStatus.BAD_REQUEST, "invalid parameter format: " + ex.getName(), null);
-    }
+  @ExceptionHandler(
+      org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<Map<String, Object>> typeMismatch(
+      org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex) {
+    return body(HttpStatus.BAD_REQUEST, "invalid parameter format: " + ex.getName(), null);
+  }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> generic(Exception ex) {
-        log.error("Unhandled exception", ex);
-        return body(HttpStatus.INTERNAL_SERVER_ERROR, "internal error", null);
-    }
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<Map<String, Object>> generic(Exception ex) {
+    log.error("Unhandled exception", ex);
+    return body(HttpStatus.INTERNAL_SERVER_ERROR, "internal error", null);
+  }
 
-    private ResponseEntity<Map<String, Object>> body(
-            HttpStatus status, String message, Map<String, String> fields) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", Instant.now().toString());
-        body.put("status", status.value());
-        body.put("error", status.getReasonPhrase());
-        body.put("message", message);
-        if (fields != null) body.put("fields", fields);
-        return ResponseEntity.status(status).body(body);
-    }
+  private ResponseEntity<Map<String, Object>> body(
+      HttpStatus status, String message, Map<String, String> fields) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now().toString());
+    body.put("status", status.value());
+    body.put("error", status.getReasonPhrase());
+    body.put("message", message);
+    if (fields != null) body.put("fields", fields);
+    return ResponseEntity.status(status).body(body);
+  }
 }

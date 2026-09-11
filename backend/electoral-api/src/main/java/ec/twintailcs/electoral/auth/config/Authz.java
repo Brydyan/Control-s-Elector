@@ -11,7 +11,8 @@ import org.springframework.stereotype.Component;
 /**
  * Bean para usar en expresiones SpEL de @PreAuthorize.
  *
- * Uso:
+ * <p>Uso:
+ *
  * <pre>{@code
  * @PreAuthorize("@authz.has('evidencia:upload')")
  * @PreAuthorize("@authz.hasAny({'acta:aprobar','acta:rechazar'})")
@@ -22,22 +23,22 @@ import org.springframework.stereotype.Component;
 @Component("authz")
 public class Authz {
 
-    /** Verifica que el usuario autenticado tenga EXACTAMENTE este permiso. */
-    public boolean has(String permission) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || "anonymousUser".equals(auth.getName())) return false;
-        return auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(permission::equals);
-    }
+  /** Verifica que el usuario autenticado tenga EXACTAMENTE este permiso. */
+  public boolean has(String permission) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || "anonymousUser".equals(auth.getName())) return false;
+    return auth.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority)
+        .anyMatch(permission::equals);
+  }
 
-    /** Verifica que el usuario tenga AL MENOS UNO de los permisos. */
-    public boolean hasAny(String... permissions) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null || "anonymousUser".equals(auth.getName())) return false;
-        Set<String> required = Arrays.stream(permissions).collect(Collectors.toSet());
-        return auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(required::contains);
-    }
+  /** Verifica que el usuario tenga AL MENOS UNO de los permisos. */
+  public boolean hasAny(String... permissions) {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null || "anonymousUser".equals(auth.getName())) return false;
+    Set<String> required = Arrays.stream(permissions).collect(Collectors.toSet());
+    return auth.getAuthorities().stream()
+        .map(GrantedAuthority::getAuthority)
+        .anyMatch(required::contains);
+  }
 }

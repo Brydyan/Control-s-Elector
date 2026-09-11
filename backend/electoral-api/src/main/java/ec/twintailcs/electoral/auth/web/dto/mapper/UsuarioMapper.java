@@ -6,15 +6,14 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
 /**
- * MapStruct mapper entre {@link Usuario} (entidad) y {@link UsuarioActual} (DTO).
- * Resuelve la relacion {@code usuario.rol → rol.nombre} para que el DTO
- * reciba el nombre del rol como String en lugar de la entidad completa.
- * Bean registrado en MapperConfig en lugar de @Component auto.
+ * MapStruct mapper entre {@link Usuario} (entidad) y {@link UsuarioActual} (DTO). Resuelve la
+ * relacion {@code usuario.rol → rol.nombre} para que el DTO reciba el nombre del rol como String en
+ * lugar de la entidad completa. Bean registrado en MapperConfig en lugar de @Component auto.
  */
 @Mapper
 public interface UsuarioMapper {
 
-    @Mapping(target = "id", source = "publicId")
-    @Mapping(target = "rol", source = "rol.nombre")
-    UsuarioActual toDto(Usuario entity);
+  @Mapping(target = "id", source = "publicId")
+  @Mapping(target = "rol", source = "rol.nombre")
+  UsuarioActual toDto(Usuario entity);
 }

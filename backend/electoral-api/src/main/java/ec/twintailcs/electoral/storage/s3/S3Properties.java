@@ -6,58 +6,57 @@ import org.springframework.stereotype.Component;
 /**
  * Configuracion del bucket S3 (RustFS local / Supabase Storage en prod).
  *
- * Las propiedades se leen de application*.properties bajo el prefijo `aws.s3.*`.
- * Ver {@link application.properties} para los defaults.
+ * <p>Las propiedades se leen de application*.properties bajo el prefijo `aws.s3.*`. Ver {@link
+ * application.properties} para los defaults.
  *
- * Sensible a cambios en runtime: cuando se modifica una propiedad,
- * Spring reinicia el contexto si se usa @RefreshScope o
- * se implementa el patron de recarga correspondiente.
+ * <p>Sensible a cambios en runtime: cuando se modifica una propiedad, Spring reinicia el contexto
+ * si se usa @RefreshScope o se implementa el patron de recarga correspondiente.
  */
 @Component
 @ConfigurationProperties(prefix = "aws.s3")
 public class S3Properties {
 
-    /** ID del bucket (ej: electoral-evidences). */
-    private String bucket;
+  /** ID del bucket (ej: electoral-evidences). */
+  private String bucket;
 
-    /** Region (us-east-1 por default). */
-    private String region = "us-east-1";
+  /** Region (us-east-1 por default). */
+  private String region = "us-east-1";
 
-    /** Endpoint custom (null = AWS real). Para RustFS va http://localhost:9000. */
-    private String endpoint;
+  /** Endpoint custom (null = AWS real). Para RustFS va http://localhost:9000. */
+  private String endpoint;
 
-    /** Path style para S3-compatible (RustFS, MinIO). True por default. */
-    private boolean pathStyleAccessEnabled = true;
+  /** Path style para S3-compatible (RustFS, MinIO). True por default. */
+  private boolean pathStyleAccessEnabled = true;
 
-    public String getBucket() {
-        return bucket;
-    }
+  public String getBucket() {
+    return bucket;
+  }
 
-    public void setBucket(String bucket) {
-        this.bucket = bucket;
-    }
+  public void setBucket(String bucket) {
+    this.bucket = bucket;
+  }
 
-    public String getRegion() {
-        return region;
-    }
+  public String getRegion() {
+    return region;
+  }
 
-    public void setRegion(String region) {
-        this.region = region;
-    }
+  public void setRegion(String region) {
+    this.region = region;
+  }
 
-    public String getEndpoint() {
-        return endpoint;
-    }
+  public String getEndpoint() {
+    return endpoint;
+  }
 
-    public void setEndpoint(String endpoint) {
-        this.endpoint = endpoint;
-    }
+  public void setEndpoint(String endpoint) {
+    this.endpoint = endpoint;
+  }
 
-    public boolean isPathStyleAccessEnabled() {
-        return pathStyleAccessEnabled;
-    }
+  public boolean isPathStyleAccessEnabled() {
+    return pathStyleAccessEnabled;
+  }
 
-    public void setPathStyleAccessEnabled(boolean pathStyleAccessEnabled) {
-        this.pathStyleAccessEnabled = pathStyleAccessEnabled;
-    }
+  public void setPathStyleAccessEnabled(boolean pathStyleAccessEnabled) {
+    this.pathStyleAccessEnabled = pathStyleAccessEnabled;
+  }
 }
