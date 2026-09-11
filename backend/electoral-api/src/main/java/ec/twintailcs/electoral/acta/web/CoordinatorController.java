@@ -41,7 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/v1/coordinator")
-@PreAuthorize("hasAnyRole('COORDINATOR', 'MASTER')")
+@PreAuthorize("hasAnyAuthority('acta:aprobar','acta:rechazar','acta:disputar','acta:read','acta:anular')")
 public class CoordinatorController {
 
     private final ActaService actaService;
@@ -134,7 +134,7 @@ public class CoordinatorController {
      * Anular un acta APROBADA. SOLO MASTER puede hacer esto.
      */
     @DeleteMapping("/actas/{actaId}")
-    @PreAuthorize("hasRole('MASTER')")
+    @PreAuthorize("hasAuthority('acta:anular')")
     public ResponseEntity<Void> anular(@PathVariable Long actaId,
                                        @Valid @RequestBody AnulacionDto dto,
                                        HttpServletRequest request) {

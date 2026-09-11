@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -67,6 +68,42 @@ public class AuditLogService {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("message", detalle);
         return payload;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordLogin(Long usuarioId, String ip) {
+        recordAuth(usuarioId, "login", "Login successful", ip);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordLoginFail(String email, String ip) {
+        recordAuth(null, "login_fail", "Login failed for " + email, ip);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordRefresh(Long usuarioId) {
+        recordAuth(usuarioId, "refresh", "Token refreshed", null);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordRefreshFail(String ip) {
+        recordAuth(null, "refresh_fail", "Refresh failed", ip);
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void recordLogout(Long usuarioId) {
+        recordAuth(usuarioId, "logout", "Logout successful", null);
+    }
+
+    private void recordAuth(Long usuarioId, String accion, String detalle, String ip) {
+        AuditLog entry = new AuditLog();
+        entry.setEntidad("auth");
+        entry.setEntidadId(usuarioId == null ? 0L : usuarioId);
+        entry.setAccion(accion);
+        entry.setDetalle(toJsonPayload(detalle));
+        entry.setIpAddress(ip);
+        entry.setRegistradoPor(usuarioId);
+        auditLogRepository.save(entry);
     }
 
     private String obtenerIpReal(HttpServletRequest request) {

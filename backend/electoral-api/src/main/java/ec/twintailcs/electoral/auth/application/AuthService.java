@@ -51,10 +51,12 @@ public class AuthService {
     private final JwtService jwt;
     private final PasswordHasher hasher;
     private final String refreshPepper;
+        private final ec.twintailcs.electoral.auditlog.application.AuditLogService auditLog;
 
     public AuthService(UsuarioRepository usuarios, SesionRepository sesiones,
                        RolPermisoRepository rolPermisos, JwtService jwt,
                        PasswordHasher hasher,
+                           ec.twintailcs.electoral.auditlog.application.AuditLogService auditLog,
                        @org.springframework.beans.factory.annotation.Value(
                                "${app.jwt.refresh-pepper:control-elector-refresh}") String refreshPepper) {
         this.usuarios = usuarios;
@@ -63,18 +65,17 @@ public class AuthService {
         this.jwt = jwt;
         this.hasher = hasher;
         this.refreshPepper = refreshPepper;
+            this.auditLog = auditLog;
     }
 
     /** Login: valida credenciales y emite tokens. */
     @Transactional
     public JwtService.TokenPair login(String email, String password,
                                       String ipCliente, String userAgent) {
-        Usuario u = usuarios.findByEmail(email)
-                .orElseThrow(() -> new AuthException("Credenciales invalidas"));
-        if (!u.isHabilitado()) {
-            throw new AuthException("Usuario deshabilitado");
-        }
-        if (!hasher.matches(password, u.getPasswordHash())) {
+        Usuario u = usuarios.findByEmail(email).orElse(null);
+        if (u == null || !u.isHabilitado() || !hasher.matches(password, u.getPasswordHash())) {
+            auditLog.recordLoginFail(email, ipCliente);
+            // 401 generico para no filtrar si el user existe o no.
             throw new AuthException("Credenciales invalidas");
         }
 
@@ -100,37 +101,48 @@ public class AuthService {
         sesion.setRefreshHash(refreshHash);
         sesiones.save(sesion);
 
-        log.info("Login OK: usuario={} sesion={}", u.getEmail(), sesionId);
+        auditLog.recordLogin(u.getId(), ipCliente);
+            log.info("Login OK: usuario={} sesion={}", u.getEmail(), sesionId);
         return pair;
     }
 
     /** Refresh: valida el refresh token, emite uno nuevo, rota. */
     @Transactional
     public JwtService.TokenPair refresh(String refreshToken) {
-        // El refresh es un JWT firmado por nosotros. Lo validamos primero.
-        JwtService.ParsedJwt parsed = jwt.parse(refreshToken);
-        if (!"refresh".equals(parsed.claims().getClaim("typ"))) {
-            throw new AuthException("Token no es de tipo refresh");
+        // El refresh es un JWT firmado por nosotros. parseRefresh valida firma,
+        // exp, iss y typ=refresh en un solo paso.
+        JwtService.ParsedJwt parsed;
+        try {
+            parsed = jwt.parseRefresh(refreshToken);
+        } catch (JwtService.InvalidJwtException e) {
+            auditLog.recordRefreshFail(null);
+            throw new AuthException(e.getMessage());
         }
 
         String hash = hashOf(refreshToken);
-        Sesion sesion = sesiones.findByRefreshHash(hash)
-                .orElseThrow(() -> new AuthException("Refresh token invalido o ya usado"));
-
-        if (!sesion.activa()) {
-            throw new AuthException("Sesion revocada o expirada");
+        Sesion sesion = sesiones.findByRefreshHash(hash).orElse(null);
+        if (sesion == null || !sesion.activa()) {
+            auditLog.recordRefreshFail(null);
+            throw new AuthException("Refresh token invalido o ya usado");
         }
 
         UUID publicId;
         try {
             publicId = UUID.fromString(parsed.subject());
         } catch (IllegalArgumentException | NullPointerException e) {
-            // Tokens emitidos antes de la migracion UUIDv7 tenian sub numerico.
-            // En dev no hay datos legacy, pero el handle generico evita 500.
+            auditLog.recordRefreshFail(null);
             throw new AuthException("Token invalido");
         }
-        Usuario u = usuarios.findByPublicId(publicId)
-                .orElseThrow(() -> new AuthException("Usuario no existe"));
+        Usuario u = usuarios.findByPublicId(publicId).orElse(null);
+        if (u == null) {
+            auditLog.recordRefreshFail(null);
+            throw new AuthException("Usuario no existe");
+        }
+        // Usuario deshabilitado: NO renovamos sesion.
+        if (!u.isHabilitado()) {
+            auditLog.recordRefreshFail(null);
+            throw new AuthException("Usuario deshabilitado");
+        }
 
         // emite nuevo par con el mismo sesionId (revocacion explicita del
         // refresh anterior: cambia el hash guardado, el viejo deja de servir)
@@ -141,6 +153,7 @@ public class AuthService {
         sesion.setUltimoUsoEn(Instant.now());
         sesiones.save(sesion);
 
+        auditLog.recordRefresh(u.getId());
         return pair;
     }
 
@@ -152,7 +165,8 @@ public class AuthService {
             s.setRevocado(true);
             s.setUltimoUsoEn(Instant.now());
             sesiones.save(s);
-            log.info("Logout: sesion={} revocada", s.getSesionId());
+            auditLog.recordLogout(s.getUsuarioId());
+                log.info("Logout: sesion={} revocada", s.getSesionId());
         });
     }
 

@@ -156,12 +156,18 @@ class CoordinatorControllerTest {
         master.setHabilitado(true);
         master = usuarioRepo.saveAndFlush(master);
 
+        // Permisos espejados del seed liquibase (002-rbac-seed.sql +
+        // 012-acta-anular-permiso.sql). El controller ahora autoriza por
+        // granularidad (acta:aprobar/rechazar/disputar/read/anular), asi
+        // que los JWTs de test deben llevar las mismas authorities que
+        // un usuario real obtendria al loguearse. OBSERVER se mantiene
+        // SIN ninguno de los granulares para preservar el 403 negativo.
         observerToken = jwtService.issue(observer.getPublicId(), observer.getEmail(), "OBSERVER",
                 List.of("acta:upload"), "session-observer").access();
         coordinatorToken = jwtService.issue(coordinator.getPublicId(), coordinator.getEmail(), "COORDINATOR",
-                List.of(), "session-coordinator").access();
+                List.of("acta:read", "acta:aprobar", "acta:rechazar"), "session-coordinator").access();
         masterToken = jwtService.issue(master.getPublicId(), master.getEmail(), "MASTER",
-                List.of(), "session-master").access();
+                List.of("acta:read", "acta:aprobar", "acta:rechazar", "acta:anular"), "session-master").access();
 
         Provincia provincia = provinciaRepo.saveAndFlush(new Provincia("Santa Elena", "24"));
         Canton canton = new Canton();
