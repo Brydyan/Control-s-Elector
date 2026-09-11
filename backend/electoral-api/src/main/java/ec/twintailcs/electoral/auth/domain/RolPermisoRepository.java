@@ -8,34 +8,35 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface RolPermisoRepository extends JpaRepository<RolPermiso, Long> {
 
-    Optional<RolPermiso> findByPublicId(UUID publicId);
+  Optional<RolPermiso> findByPublicId(UUID publicId);
 
-    /** Lista de permisos asignados al rol (devuelve el objeto completo). */
-    @Query("SELECT rp FROM RolPermiso rp WHERE rp.rol.nombre = :rolNombre")
-    List<RolPermiso> findByRolNombre(String rolNombre);
+  /** Lista de permisos asignados al rol (devuelve el objeto completo). */
+  @Query("SELECT rp FROM RolPermiso rp WHERE rp.rol.nombre = :rolNombre")
+  List<RolPermiso> findByRolNombre(String rolNombre);
 
-    /**
-     * Authority strings del usuario via JOIN: Usuario.rol -> RolPermiso -> Permiso.
-     * Hibernate 7 (Spring Boot 4) rechaza string concat en JPQL, uso
-     * CONCAT(...) con sus overloads posicionales.
-     *
-     * La comparacion {@code u.rol = rp.rol} funciona entre entidades:
-     * JPQL traduce a {@code u.rol_id = rp.rol_id} internamente.
-     */
-    @Query("""
+  /**
+   * Authority strings del usuario via JOIN: Usuario.rol -> RolPermiso -> Permiso. Hibernate 7
+   * (Spring Boot 4) rechaza string concat en JPQL, uso CONCAT(...) con sus overloads posicionales.
+   *
+   * <p>La comparacion {@code u.rol = rp.rol} funciona entre entidades: JPQL traduce a {@code
+   * u.rol_id = rp.rol_id} internamente.
+   */
+  @Query(
+      """
             SELECT CONCAT(p.recurso, ':', p.accion)
             FROM Permiso p, RolPermiso rp, Usuario u
             WHERE rp.permisoId = p.id
               AND u.id = :usuarioId
               AND u.rol = rp.rol
             """)
-    List<String> findAuthorityStringsByUsuarioId(Long usuarioId);
+  List<String> findAuthorityStringsByUsuarioId(Long usuarioId);
 
-    /** Idem por nombre de rol directo (para seeders y tests). */
-    @Query("""
+  /** Idem por nombre de rol directo (para seeders y tests). */
+  @Query(
+      """
             SELECT CONCAT(p.recurso, ':', p.accion)
             FROM Permiso p, RolPermiso rp
             WHERE rp.permisoId = p.id AND rp.rol.nombre = :rol
             """)
-    List<String> findAuthorityStringsByRol(String rol);
+  List<String> findAuthorityStringsByRol(String rol);
 }

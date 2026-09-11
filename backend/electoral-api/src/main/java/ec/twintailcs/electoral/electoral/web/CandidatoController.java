@@ -26,62 +26,66 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Endpoints REST para la configuracion preelectoral de Candidatos.
  *
- * Rutas:
- *   GET    /api/v1/configuracion/candidatos?cargoId=&partidoId=  # cualquier autenticado, filtros opcionales
- *   POST   /api/v1/configuracion/candidatos                      # MASTER
- *   PUT    /api/v1/configuracion/candidatos/{id}                 # MASTER
- *   DELETE /api/v1/configuracion/candidatos/{id}                 # MASTER
+ * <p>Rutas: GET /api/v1/configuracion/candidatos?cargoId=&partidoId= # cualquier autenticado,
+ * filtros opcionales POST /api/v1/configuracion/candidatos # MASTER PUT
+ * /api/v1/configuracion/candidatos/{id} # MASTER DELETE /api/v1/configuracion/candidatos/{id} #
+ * MASTER
  */
 @RestController
 @RequestMapping("/api/v1/configuracion/candidatos")
 public class CandidatoController {
 
-    private final ConfiguracionService service;
-    private final CandidatoMapper mapper;
-    private final CurrentUser currentUser;
-    private final UsuarioRepository usuarios;
+  private final ConfiguracionService service;
+  private final CandidatoMapper mapper;
+  private final CurrentUser currentUser;
+  private final UsuarioRepository usuarios;
 
-    public CandidatoController(ConfiguracionService service, CandidatoMapper mapper,
-                               CurrentUser currentUser, UsuarioRepository usuarios) {
-        this.service = service;
-        this.mapper = mapper;
-        this.currentUser = currentUser;
-        this.usuarios = usuarios;
-    }
+  public CandidatoController(
+      ConfiguracionService service,
+      CandidatoMapper mapper,
+      CurrentUser currentUser,
+      UsuarioRepository usuarios) {
+    this.service = service;
+    this.mapper = mapper;
+    this.currentUser = currentUser;
+    this.usuarios = usuarios;
+  }
 
-    private Long masterId() {
-        return usuarios.findByPublicId(currentUser.id())
-            .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"))
-            .getId();
-    }
+  private Long masterId() {
+    return usuarios
+        .findByPublicId(currentUser.id())
+        .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"))
+        .getId();
+  }
 
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping
-    public List<CandidatoResponse> listar(@RequestParam(required = false) Long cargoId,
-                                          @RequestParam(required = false) Long partidoId) {
-        return service.listCandidatos(cargoId, partidoId).stream().map(mapper::toDto).toList();
-    }
+  @PreAuthorize("isAuthenticated()")
+  @GetMapping
+  public List<CandidatoResponse> listar(
+      @RequestParam(required = false) Long cargoId,
+      @RequestParam(required = false) Long partidoId) {
+    return service.listCandidatos(cargoId, partidoId).stream().map(mapper::toDto).toList();
+  }
 
-    @PreAuthorize("@authz.has('configuracion:write')")
-    @PostMapping
-    public ResponseEntity<CandidatoResponse> crear(@Valid @RequestBody CandidatoRequest dto,
-                                                    HttpServletRequest request) {
-        Candidato candidato = service.createCandidato(dto, masterId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(candidato));
-    }
+  @PreAuthorize("@authz.has('configuracion:write')")
+  @PostMapping
+  public ResponseEntity<CandidatoResponse> crear(
+      @Valid @RequestBody CandidatoRequest dto, HttpServletRequest request) {
+    Candidato candidato = service.createCandidato(dto, masterId(), request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(candidato));
+  }
 
-    @PreAuthorize("@authz.has('configuracion:write')")
-    @PutMapping("/{id}")
-    public CandidatoResponse actualizar(@PathVariable Long id, @Valid @RequestBody CandidatoRequest dto,
-                                        HttpServletRequest request) {
-        Candidato candidato = service.updateCandidato(id, dto, masterId(), request);
-        return mapper.toDto(candidato);
-    }
+  @PreAuthorize("@authz.has('configuracion:write')")
+  @PutMapping("/{id}")
+  public CandidatoResponse actualizar(
+      @PathVariable Long id, @Valid @RequestBody CandidatoRequest dto, HttpServletRequest request) {
+    Candidato candidato = service.updateCandidato(id, dto, masterId(), request);
+    return mapper.toDto(candidato);
+  }
 
-    @PreAuthorize("@authz.has('configuracion:write')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id, HttpServletRequest request) {
-        service.deleteCandidato(id, masterId(), request);
-        return ResponseEntity.noContent().build();
-    }
+  @PreAuthorize("@authz.has('configuracion:write')")
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> eliminar(@PathVariable Long id, HttpServletRequest request) {
+    service.deleteCandidato(id, masterId(), request);
+    return ResponseEntity.noContent().build();
+  }
 }

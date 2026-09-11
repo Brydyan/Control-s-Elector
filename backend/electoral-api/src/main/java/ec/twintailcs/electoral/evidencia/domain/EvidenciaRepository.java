@@ -7,15 +7,15 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EvidenciaRepository extends JpaRepository<Evidencia, Long> {
 
-    /** Buscar por publicId (UUIDv7). */
-    Optional<Evidencia> findByPublicId(UUID publicId);
+  /** Buscar por publicId (UUIDv7). */
+  Optional<Evidencia> findByPublicId(UUID publicId);
 
-    /** Todas las evidencias de un acta (JRV + cargo). */
-    List<Evidencia> findByJrvIdAndCargoId(Long jrvId, Long cargoId);
+  /** Todas las evidencias de un acta (JRV + cargo). */
+  List<Evidencia> findByJrvIdAndCargoId(Long jrvId, Long cargoId);
 
-    /** Evidencias del OBSERVER (su propio historial). */
-    List<Evidencia> findByUsuarioId(Long usuarioId);
+  /** Evidencias del OBSERVER (su propio historial). */
+  List<Evidencia> findByUsuarioId(Long usuarioId);
 
-    /** Bandeja de aprobacion: todo lo pendiente de revision. */
-    List<Evidencia> findByEstado(EstadoEvidencia estado);
+  /** Bandeja de aprobacion: todo lo pendiente de revision. */
+  List<Evidencia> findByEstado(EstadoEvidencia estado);
 }

@@ -14,28 +14,30 @@ import org.springframework.transaction.support.AbstractPlatformTransactionManage
 @Configuration
 public class RlsTransactionConfig {
 
-    @Bean
-    RlsTransactionExecutionListener rlsTransactionExecutionListener(DataSource dataSource) {
-        return new RlsTransactionExecutionListener(dataSource);
-    }
+  @Bean
+  RlsTransactionExecutionListener rlsTransactionExecutionListener(DataSource dataSource) {
+    return new RlsTransactionExecutionListener(dataSource);
+  }
 
-    @Bean
-    SmartInitializingSingleton registerRlsTransactionListener(
-            Collection<PlatformTransactionManager> transactionManagers,
-            RlsTransactionExecutionListener listener) {
-        return () -> transactionManagers.forEach(manager -> {
-            if (!(manager instanceof AbstractPlatformTransactionManager transactionManager)) {
+  @Bean
+  SmartInitializingSingleton registerRlsTransactionListener(
+      Collection<PlatformTransactionManager> transactionManagers,
+      RlsTransactionExecutionListener listener) {
+    return () ->
+        transactionManagers.forEach(
+            manager -> {
+              if (!(manager instanceof AbstractPlatformTransactionManager transactionManager)) {
                 throw new IllegalStateException(
-                        "RLS requires an AbstractPlatformTransactionManager: "
-                                + manager.getClass().getName());
-            }
+                    "RLS requires an AbstractPlatformTransactionManager: "
+                        + manager.getClass().getName());
+              }
 
-            Collection<TransactionExecutionListener> listeners = new ArrayList<>(
-                    transactionManager.getTransactionExecutionListeners());
-            if (!listeners.contains(listener)) {
+              Collection<TransactionExecutionListener> listeners =
+                  new ArrayList<>(transactionManager.getTransactionExecutionListeners());
+              if (!listeners.contains(listener)) {
                 listeners.add(listener);
                 transactionManager.setTransactionExecutionListeners(listeners);
-            }
-        });
-    }
+              }
+            });
+  }
 }

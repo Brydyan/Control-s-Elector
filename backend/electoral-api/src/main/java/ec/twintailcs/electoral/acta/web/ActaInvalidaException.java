@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
 public class ActaInvalidaException extends RuntimeException {
-    public ActaInvalidaException(String mensaje) {
-        super(mensaje);
-    }
+  public ActaInvalidaException(String mensaje) {
+    super(mensaje);
+  }
 }

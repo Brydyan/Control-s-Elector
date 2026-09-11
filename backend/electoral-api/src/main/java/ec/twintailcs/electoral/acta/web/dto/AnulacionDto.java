@@ -4,11 +4,16 @@ import jakarta.validation.constraints.NotBlank;
 
 public class AnulacionDto {
 
-    @NotBlank(message = "El motivo de anulación es obligatorio")
-    private String motivo;
+  @NotBlank(message = "El motivo de anulación es obligatorio")
+  private String motivo;
 
-    public AnulacionDto() {}
+  public AnulacionDto() {}
 
-    public String getMotivo() { return motivo; }
-    public void setMotivo(String motivo) { this.motivo = motivo; }
+  public String getMotivo() {
+    return motivo;
+  }
+
+  public void setMotivo(String motivo) {
+    this.motivo = motivo;
+  }
 }

@@ -8,23 +8,15 @@ import org.junit.jupiter.api.Test;
 
 class MenuResponseTest {
 
-    @Test
-    void shouldConstructWithUuidTypes() {
-        UUID id = UUID.randomUUID();
-        UUID parentId = UUID.randomUUID();
-        MenuResponse.MenuNode node = new MenuResponse.MenuNode(
-                id,
-                parentId,
-                "test.code",
-                "Test Label",
-                "icon",
-                "/route",
-                1,
-                true,
-                List.of()
-        );
+  @Test
+  void shouldConstructWithUuidTypes() {
+    UUID id = UUID.randomUUID();
+    UUID parentId = UUID.randomUUID();
+    MenuResponse.MenuNode node =
+        new MenuResponse.MenuNode(
+            id, parentId, "test.code", "Test Label", "icon", "/route", 1, true, List.of());
 
-        assertThat(node.id()).isEqualTo(id);
-        assertThat(node.parentId()).isEqualTo(parentId);
-    }
+    assertThat(node.id()).isEqualTo(id);
+    assertThat(node.parentId()).isEqualTo(parentId);
+  }
 }

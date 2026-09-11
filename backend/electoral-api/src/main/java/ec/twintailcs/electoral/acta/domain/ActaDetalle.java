@@ -16,94 +16,92 @@ import jakarta.persistence.Version;
  * Línea del acta: una fila por candidato dentro del acta.
  *
  * <p>Reglas:
+ *
  * <ul>
- *   <li>UNIQUE(acta_id, candidato_id): no se puede repetir candidato en la misma acta.</li>
- *   <li>{@code @Version} protege contra ediciones concurrentes durante
- *       disputa/corrección.</li>
- *   <li>FK a Acta con ON DELETE CASCADE: si se borra el acta (MASTER),
- *       se borran sus líneas.</li>
+ *   <li>UNIQUE(acta_id, candidato_id): no se puede repetir candidato en la misma acta.
+ *   <li>{@code @Version} protege contra ediciones concurrentes durante disputa/corrección.
+ *   <li>FK a Acta con ON DELETE CASCADE: si se borra el acta (MASTER), se borran sus líneas.
  * </ul>
  */
 @Entity
 @Table(name = "acta_detalle")
 public class ActaDetalle {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Version
-    @Column(nullable = false)
-    private Long version;
+  @Version
+  @Column(nullable = false)
+  private Long version;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "acta_id", nullable = false)
-    private Acta acta;
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "acta_id", nullable = false)
+  private Acta acta;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "candidato_id", nullable = false)
-    private Candidato candidato;
+  @ManyToOne(optional = false, fetch = FetchType.LAZY)
+  @JoinColumn(name = "candidato_id", nullable = false)
+  private Candidato candidato;
 
-    @Column(nullable = false)
-    private Integer votos;
+  @Column(nullable = false)
+  private Integer votos;
 
-    /**
-     * Notas libres del coordinator/MASTER sobre esta línea del acta
-     * (T-BE-16). Por ejemplo: "voto observado, esperar recuento".
-     */
-    @Column(columnDefinition = "text")
-    private String observaciones;
+  /**
+   * Notas libres del coordinator/MASTER sobre esta línea del acta (T-BE-16). Por ejemplo: "voto
+   * observado, esperar recuento".
+   */
+  @Column(columnDefinition = "text")
+  private String observaciones;
 
-    public ActaDetalle() {
-    }
+  public ActaDetalle() {}
 
-    public ActaDetalle(Acta acta, Candidato candidato, Integer votos) {
-        this.acta = acta;
-        this.candidato = candidato;
-        this.votos = votos;
-    }
+  public ActaDetalle(Acta acta, Candidato candidato, Integer votos) {
+    this.acta = acta;
+    this.candidato = candidato;
+    this.votos = votos;
+  }
 
-    public Long getId() {
-        return id;
-    }
+  public Long getId() {
+    return id;
+  }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  public void setId(Long id) {
+    this.id = id;
+  }
 
-    public Long getVersion() {
-        return version;
-    }
+  public Long getVersion() {
+    return version;
+  }
 
-    public Acta getActa() {
-        return acta;
-    }
+  public Acta getActa() {
+    return acta;
+  }
 
-    public void setActa(Acta acta) {
-        this.acta = acta;
-    }
+  public void setActa(Acta acta) {
+    this.acta = acta;
+  }
 
-    public Candidato getCandidato() {
-        return candidato;
-    }
+  public Candidato getCandidato() {
+    return candidato;
+  }
 
-    public void setCandidato(Candidato candidato) {
-        this.candidato = candidato;
-    }
+  public void setCandidato(Candidato candidato) {
+    this.candidato = candidato;
+  }
 
-    public Integer getVotos() {
-        return votos;
-    }
+  public Integer getVotos() {
+    return votos;
+  }
 
-    public void setVotos(Integer votos) {
-        this.votos = votos;
-    }
+  public void setVotos(Integer votos) {
+    this.votos = votos;
+  }
 
-    public String getObservaciones() {
-        return observaciones;
-    }
+  public String getObservaciones() {
+    return observaciones;
+  }
 
-    public void setObservaciones(String observaciones) {
-        this.observaciones = observaciones;
-    }
+  public void setObservaciones(String observaciones) {
+    this.observaciones = observaciones;
+  }
 }

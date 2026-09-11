@@ -6,8 +6,11 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
-    Optional<Usuario> findByEmail(String email);
-    Optional<Usuario> findByPublicId(UUID publicId);
-    boolean existsByEmail(String email);
-    List<Usuario> findByRol(Rol rol);
+  Optional<Usuario> findByEmail(String email);
+
+  Optional<Usuario> findByPublicId(UUID publicId);
+
+  boolean existsByEmail(String email);
+
+  List<Usuario> findByRol(Rol rol);
 }
