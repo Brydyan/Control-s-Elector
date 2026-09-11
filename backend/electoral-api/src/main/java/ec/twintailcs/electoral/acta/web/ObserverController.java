@@ -4,12 +4,12 @@ import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
+import ec.twintailcs.electoral.acta.web.ActaRequestDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.CargoConEstadoDto;
 import ec.twintailcs.electoral.acta.web.dto.JrvConEstadoDto;
 import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
 import ec.twintailcs.electoral.auth.config.CurrentUser;
-import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.JrvCargo;
@@ -38,16 +38,21 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Endpoints REST usados por el OBSERVER para registrar y corregir actas.
+ * Endpoints REST usados por el OBSERVER para registrar, guardar en borrador
+ * y corregir actas.
  *
- * Rutas:
- *   GET  /api/v1/observer/mis-actas                    # propias actas (filtro RLS: registrada_por)
- *   GET  /api/v1/observer/correcciones-pendientes       # propias actas EN_DISPUTA
- *   GET  /api/v1/observer/jrvs                          # JRVs + resumen de cargos pendientes/registrados
- *   GET  /api/v1/observer/jrv/{jrvId}/cargos             # cargos aplicables a una JRV + estado de registro
- *   POST /api/v1/observer/actas                          # registrar nueva acta
- *   PUT  /api/v1/observer/actas/{actaId}/corregir         # corregir acta propia EN_DISPUTA
- *   POST /api/v1/observer/actas/{actaId}/imagen           # TODO: subir imagen (T-BE-14)
+ * <p>Rutas:
+ * <ul>
+ *   <li>GET  /api/v1/observer/mis-actas</li>
+ *   <li>GET  /api/v1/observer/correcciones-pendientes</li>
+ *   <li>GET  /api/v1/observer/jrvs</li>
+ *   <li>GET  /api/v1/observer/jrv/{jrvId}/cargos</li>
+ *   <li>POST /api/v1/observer/actas (alta directa como ENVIADA, legacy)</li>
+ *   <li>POST /api/v1/observer/actas/borrador (guardar o reanudar BORRADOR)</li>
+ *   <li>POST /api/v1/observer/actas/{id}/enviar (BORRADOR → ENVIADA)</li>
+ *   <li>PUT  /api/v1/observer/actas/{id}/corregir (corregir EN_DISPUTA)</li>
+ *   <li>POST /api/v1/observer/actas/{id}/imagen (T-BE-14, sigue 501)</li>
+ * </ul>
  */
 @RestController
 @RequestMapping("/api/v1/observer")
@@ -83,10 +88,6 @@ public class ObserverController {
             .getId();
     }
 
-    /**
-     * GET /api/v1/observer/mis-actas
-     * Actas registradas por el OBSERVER autenticado. Filtro opcional por estado.
-     */
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/mis-actas")
     public List<ActaResponseDto> misActas(@RequestParam(required = false) EstadoActa estado) {
@@ -97,10 +98,6 @@ public class ObserverController {
             .toList();
     }
 
-    /**
-     * GET /api/v1/observer/correcciones-pendientes
-     * Actas EN_DISPUTA del OBSERVER autenticado que necesitan corrección.
-     */
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/correcciones-pendientes")
     public List<ActaResponseDto> correccionesPendientes() {
@@ -111,10 +108,6 @@ public class ObserverController {
             .toList();
     }
 
-    /**
-     * GET /api/v1/observer/jrvs
-     * Todas las JRVs con el resumen de cargos pendientes/registrados (actas no ANULADA).
-     */
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/jrvs")
     public List<JrvConEstadoDto> jrvs() {
@@ -133,10 +126,6 @@ public class ObserverController {
         return new JrvConEstadoDto(jrv.getId(), jrv.getNumero(), parroquia, pendientes, (int) registrados);
     }
 
-    /**
-     * GET /api/v1/observer/jrv/{jrvId}/cargos
-     * Cargos aplicables a la JRV indicando si ya existe acta activa registrada.
-     */
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/jrv/{jrvId}/cargos")
     public List<CargoConEstadoDto> cargosDeJrv(@PathVariable Long jrvId) {
@@ -158,8 +147,10 @@ public class ObserverController {
     }
 
     /**
-     * POST /api/v1/observer/actas
-     * Registra una nueva acta. La JRV se elige libremente (sin pre-asignación).
+     * POST /api/v1/observer/actas — alta directa como ENVIADA.
+     * Mantenido por compatibilidad con clientes que ya cargan todos los
+     * datos. Equivale a {@code guardarBorrador()} seguido de
+     * {@code enviar()}.
      */
     @PreAuthorize("@authz.has('acta:upload')")
     @PostMapping("/actas")
@@ -170,28 +161,47 @@ public class ObserverController {
     }
 
     /**
-     * PUT /api/v1/observer/actas/{actaId}/corregir
-     * El OBSERVER corrige su propia acta EN_DISPUTA.
+     * POST /api/v1/observer/actas/borrador — guarda o reanuda un BORRADOR.
+     * No exige integridad electoral; el observador puede ir guardando
+     * mientras junta los datos del acta.
      */
+    @PreAuthorize("@authz.has('acta:upload')")
+    @PostMapping("/actas/borrador")
+    public ResponseEntity<ActaResponseDto> guardarBorrador(@Valid @RequestBody ActaRequestDto dto,
+                                                            HttpServletRequest request) {
+        Acta acta = actaService.guardarBorrador(dto, observerId(), request);
+        return ResponseEntity.ok(actaMapper.toDto(acta));
+    }
+
+    /**
+     * POST /api/v1/observer/actas/{actaId}/enviar —
+     * transición BORRADOR → ENVIADA con validación completa.
+     */
+    @PreAuthorize("@authz.has('acta:upload')")
+    @PostMapping("/actas/{actaId}/enviar")
+    public ActaResponseDto enviarBorrador(@PathVariable Long actaId,
+                                           HttpServletRequest request) {
+        Acta acta = actaService.enviar(actaId, observerId(), request);
+        return actaMapper.toDto(acta);
+    }
+
     @PreAuthorize("@authz.has('acta:upload')")
     @PutMapping("/actas/{actaId}/corregir")
     public ActaResponseDto corregirActa(@PathVariable Long actaId,
                                          @Valid @RequestBody ActaRequestDto dto,
                                          HttpServletRequest request) {
-        // false = no es coordinator, es el propio observer corrigiendo su acta
         Acta acta = actaService.corregir(actaId, dto, observerId(), false, request);
         return actaMapper.toDto(acta);
     }
 
     /**
-     * POST /api/v1/observer/actas/{actaId}/imagen
-     * Placeholder: la integracion real con Supabase Storage se conecta en T-BE-14.
+     * POST /api/v1/observer/actas/{actaId}/imagen — placeholder.
+     * Implementación real en T-BE-14 / PR δ.
      */
     @PreAuthorize("@authz.has('acta:upload')")
     @PostMapping(value = "/actas/{actaId}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> subirImagen(@PathVariable Long actaId,
                                              @RequestPart("imagen") MultipartFile imagen) {
-        // TODO(T-BE-14): subir a Supabase Storage y persistir Acta.storageUrl.
         return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
     }
 }

@@ -22,6 +22,24 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT a FROM Acta a WHERE a.jrv = :jrv AND a.cargo = :cargo AND a.estado != 'ANULADA'")
     Optional<Acta> findActaActivaConLock(@Param("jrv") Jrv jrv, @Param("cargo") Cargo cargo);
+        /**
+         * Busca un acta no-anulada del observador para (jrv, cargo). Usado por
+         * guardarBorrador() para reanudar en lugar de duplicar.
+         */
+        @Query("SELECT a FROM Acta a WHERE a.jrv.id = :jrvId AND a.cargo.id = :cargoId "
+                + "AND a.registradaPor.id = :observerId AND a.estado != 'ANULADA'")
+        Optional<Acta> findActaActivaBy(@Param("jrvId") Long jrvId,
+                                         @Param("cargoId") Long cargoId,
+                                         @Param("observerId") Long observerId);
+
+        /**
+         * Lock pesimista por id. Usado en transiciones (disputar/corregir/
+         * aprobar/anular) para serializar cambios concurrentes sobre la misma fila.
+         */
+        @Lock(LockModeType.PESSIMISTIC_WRITE)
+        @Query("SELECT a FROM Acta a WHERE a.id = :id")
+        Optional<Acta> findByIdWithLock(@Param("id") Long id);
+
 
     @Query("""
         SELECT a FROM Acta a
