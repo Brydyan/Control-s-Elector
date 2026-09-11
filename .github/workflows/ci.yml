@@ -9,7 +9,30 @@ on:
       - 'pom.xml'
 
 jobs:
-  backend:
+  backend-format:
+    name: Backend Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Fetch formatting baseline
+        run: git fetch origin develop:refs/remotes/origin/develop
+
+      - name: Check Java formatting
+        working-directory: backend/electoral-api
+        run: ./mvnw -B spotless:check
+
+  backend-test:
+    name: Backend Tests & Coverage
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -28,30 +51,22 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      
+
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
-      
-      - name: Fetch formatting baseline
-        run: git fetch origin develop:refs/remotes/origin/develop
-
-      - name: Check Java formatting
-        working-directory: backend/electoral-api
-        run: ./mvnw -B spotless:check
 
       - name: Verify Backend
         working-directory: backend/electoral-api
-        run: ./mvnw -B clean verify
+        run: ./mvnw -B clean verify -Dspotless.check.skip=true
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/electoral_db
           SPRING_DATASOURCE_USERNAME: electoral_user
           SPRING_DATASOURCE_PASSWORD: electoral_pass
+
 
   # frontend: (enable when frontend is ready)
   #   runs-on: ubuntu-latest
