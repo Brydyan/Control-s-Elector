@@ -1,6 +1,7 @@
 --liquibase formatted sql
 
--- changeset electoral:011-01-rls-functions
+-- changeset electoral:011-01-rls-functions splitStatements:false
+-- splitStatements:false evita que Liquibase parta los CREATE FUNCTION por ';' y rompa los dollar-quotes.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE OR REPLACE FUNCTION get_current_user_id() RETURNS BIGINT AS $$ SELECT (current_setting('app.current_user_id', true))::BIGINT; $$ LANGUAGE SQL STABLE;
 CREATE OR REPLACE FUNCTION get_current_user_rol_name() RETURNS TEXT AS $$ SELECT r.nombre::TEXT FROM usuario u JOIN rol r ON u.rol_id = r.id WHERE u.id = get_current_user_id(); $$ LANGUAGE SQL STABLE;

@@ -281,7 +281,10 @@ public class ActaService {
         acta.setEstado(EstadoActa.CORREGIDA);
 
         actaDetalleRepository.deleteByActa(acta);
-        persistirDetalles(acta, dto.getDetalles());
+            // Force DELETE to the database before INSERT: JPA statement ordering
+            // could leave the unique key (acta_id, candidato_id) occupied by old rows.
+            actaDetalleRepository.flush();
+            persistirDetalles(acta, dto.getDetalles());
 
         Acta actaActualizada = actaRepository.save(acta);
 
@@ -423,7 +426,4 @@ public class ActaService {
         }
     }
 
-    // Tipos auxiliares privados --------------------------------------------
-
-    @SuppressWarnings("unused")
     }

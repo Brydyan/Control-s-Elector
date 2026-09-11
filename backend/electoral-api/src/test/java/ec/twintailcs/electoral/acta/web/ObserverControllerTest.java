@@ -22,6 +22,8 @@ import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
+import ec.twintailcs.electoral.electoral.domain.JrvCargo;
+import ec.twintailcs.electoral.electoral.domain.JrvCargoRepository;
 import ec.twintailcs.electoral.electoral.domain.NivelCargo;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
@@ -109,6 +111,9 @@ class ObserverControllerTest {
     @Autowired
     private CargoRepository cargoRepo;
 
+        @Autowired
+        private JrvCargoRepository jrvCargoRepo;
+
     @Autowired
     private PartidoRepository partidoRepo;
 
@@ -130,6 +135,8 @@ class ObserverControllerTest {
 
         observer = new Usuario();
         observer.setEmail("observer-" + UUID.randomUUID() + "@test.local");
+        observer.setNombre("Observer");
+        observer.setApellido("Test");
         observer.setPasswordHash("hash");
         observer.setRol(rolObserver);
         observer.setHabilitado(true);
@@ -161,6 +168,12 @@ class ObserverControllerTest {
         jrv = jrvRepo.saveAndFlush(jrv);
 
         cargo = cargoRepo.saveAndFlush(new Cargo("Alcalde/sa", NivelCargo.CANTON, 1));
+
+        // ActaService.validarCargoHabilitadoEnJrv exige un JrvCargo activo para
+        // el par (jrv, cargo); sin este insert, todos los POST /actas devuelven
+        // 400 "El cargo X no está habilitado en la JRV Y". `activo` queda en true
+        // por el default del constructor.
+        jrvCargoRepo.saveAndFlush(new JrvCargo(jrv, cargo));
 
         Partido partidoA = partidoRepo.saveAndFlush(new Partido("Partido A", "PA", 1));
         Partido partidoB = partidoRepo.saveAndFlush(new Partido("Partido B", "PB", 2));
@@ -351,6 +364,7 @@ class ObserverControllerTest {
         jrvLibre.setTotalElectores(300);
         jrvLibre.setParroquia(parroquia);
         jrvLibre = jrvRepo.saveAndFlush(jrvLibre);
+        jrvCargoRepo.saveAndFlush(new JrvCargo(jrvLibre, cargo));
 
         assertThat(asignacionRepo.findByJrv(jrvLibre)).isEmpty();
 
