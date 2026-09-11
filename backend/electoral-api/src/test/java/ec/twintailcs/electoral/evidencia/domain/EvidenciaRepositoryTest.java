@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.evidencia.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ec.twintailcs.electoral.acta.domain.Acta;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,6 +48,10 @@ class EvidenciaRepositoryTest {
      * filas existentes, sembramos manualmente un set minimo antes de
      * cada test. Las tablas jrv y cargo no tienen FK hacia evidencia,
      * pero las sembramos igual para que los helpers no fallen.
+     *
+     * <p>Sembramos ademas un {@code acta} minima en estado ENVIADA:
+     * evidencia.acta_id es NOT NULL desde PR71 (changelog 013-03) y
+     * {@link Evidencia#getActa()} es la asociacion obligatoria.
      */
     @BeforeEach
     void seedParentRows() {
@@ -74,6 +79,10 @@ class EvidenciaRepositoryTest {
             "INSERT INTO usuario (email, password_hash, rol_id, habilitado, creado_en, nombre, apellido, public_id) "
           + "VALUES ('evidencia-test@test.local', 'hash', ?, true, NOW(), 'Test', 'User', ?)",
             rolId, UUID.randomUUID());
+        jdbcTemplate.update(
+            "INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado, total_sufragantes, votos_blancos, votos_nulos) "
+          + "VALUES (?, ?, ?, 'ENVIADA', 100, 0, 0)",
+            firstJrvId(), firstCargoId(), firstUsuarioId());
     }
 
     @Test
@@ -82,6 +91,7 @@ class EvidenciaRepositoryTest {
         evidencia.setJrvId(firstJrvId());
         evidencia.setCargoId(firstCargoId());
         evidencia.setUsuarioId(firstUsuarioId());
+        evidencia.setActa(entityManager.getReference(Acta.class, firstActaId()));
         evidencia.setS3Key("actas/1/2/test.webp");
         evidencia.setSizeBytes(1024L);
         evidencia.setContentType("image/webp");
@@ -105,6 +115,7 @@ class EvidenciaRepositoryTest {
         ev1.setJrvId(firstJrvId());
         ev1.setCargoId(firstCargoId());
         ev1.setUsuarioId(firstUsuarioId());
+        ev1.setActa(entityManager.getReference(Acta.class, firstActaId()));
         ev1.setS3Key("actas/1/2/test1.webp");
         ev1.setSizeBytes(1024L);
         ev1.setContentType("image/webp");
@@ -114,16 +125,16 @@ class EvidenciaRepositoryTest {
         UUID publicId = saved1.getPublicId();
 
         // Forzamos un insert SQL nativo con JdbcTemplate para evitar que Hibernate intercepte y autogenere un UUID nuevo.
-        // FKs padres (jrv, cargo, usuario) son validos (los mismos del primer insert); la tabla evidencia
-        // NO tiene UNIQUE (jrv_id, cargo_id, usuario_id), asi que reusarlos es seguro y dispara
+        // FKs padres (acta, jrv, cargo, usuario) son validos (los mismos del primer insert); la tabla evidencia
+        // NO tiene UNIQUE (acta_id, jrv_id, cargo_id, usuario_id), asi que reusarlos es seguro y dispara
         // uk_evidencia_public_id (la constraint que el test pretende validar).
         org.junit.jupiter.api.Assertions.assertThrows(
             org.springframework.dao.DataIntegrityViolationException.class,
             () -> {
                 jdbcTemplate.update(
-                    "INSERT INTO evidencia (jrv_id, cargo_id, usuario_id, s3_key, size_bytes, content_type, sha256, estado, version, creado_en, actualizado_en, public_id) " +
-                    "VALUES (?, ?, ?, 'actas/1/2/test2.webp', 1024, 'image/webp', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b856', 'EN_REVISION', 0, NOW(), NOW(), ?)",
-                    firstJrvId(), firstCargoId(), firstUsuarioId(), publicId
+                    "INSERT INTO evidencia (acta_id, jrv_id, cargo_id, usuario_id, s3_key, size_bytes, content_type, sha256, estado, version, creado_en, actualizado_en, public_id) " +
+                    "VALUES (?, ?, ?, ?, 'actas/1/2/test2.webp', 1024, 'image/webp', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b856', 'EN_REVISION', 0, NOW(), NOW(), ?)",
+                    firstActaId(), firstJrvId(), firstCargoId(), firstUsuarioId(), publicId
                 );
             }
         );
@@ -135,6 +146,7 @@ class EvidenciaRepositoryTest {
         evidencia.setJrvId(firstJrvId());
         evidencia.setCargoId(firstCargoId());
         evidencia.setUsuarioId(firstUsuarioId());
+        evidencia.setActa(entityManager.getReference(Acta.class, firstActaId()));
         evidencia.setS3Key("actas/1/2/test_immutability.webp");
         evidencia.setSizeBytes(1024L);
         evidencia.setContentType("image/webp");
@@ -159,4 +171,5 @@ class EvidenciaRepositoryTest {
     private Long firstJrvId() { return jdbcTemplate.queryForObject("SELECT id FROM jrv ORDER BY id LIMIT 1", Long.class); }
     private Long firstCargoId() { return jdbcTemplate.queryForObject("SELECT id FROM cargo ORDER BY id LIMIT 1", Long.class); }
     private Long firstUsuarioId() { return jdbcTemplate.queryForObject("SELECT id FROM usuario ORDER BY id LIMIT 1", Long.class); }
+    private Long firstActaId() { return jdbcTemplate.queryForObject("SELECT id FROM acta ORDER BY id LIMIT 1", Long.class); }
 }

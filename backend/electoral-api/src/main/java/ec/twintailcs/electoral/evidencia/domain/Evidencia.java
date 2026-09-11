@@ -1,38 +1,44 @@
 package ec.twintailcs.electoral.evidencia.domain;
 
+import ec.twintailcs.electoral.acta.domain.Acta;
+import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
 import org.hibernate.annotations.UuidGenerator;
-import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 
 /**
- * Evidencia fotografica subida por un OBSERVER al digitalizar un acta.
+ * Evidencia fotográfica subida por un OBSERVER al digitalizar un acta.
  *
- * El binario vive en S3 (ver {@code s3_key}). En la DB guardamos
- * solo metadata: clave S3, tamano, hash, estado de revision.
+ * <p>Desde PR δ cada evidencia está vinculada a un {@link Acta} específico
+ * (FK NOT NULL + ON DELETE CASCADE en 013-t-be-14-16.sql). El binario vive
+ * en S3 ({@code s3_key}); en DB guardamos solo metadata.
  *
- * Decisiones de diseno:
- * - {@code @Version}: previene actualizaciones concurrentes (alguien aprueba
- *   mientras se sube). Hibernate lanza OptimisticLockException.
- * - indices en (jrv_id, cargo_id) y (usuario_id) por patron de consulta.
- * - {@code sha256} sin constraint unique ahora; cuando se integre con la mesa
- *   de actas se podra convertir en unique para deduplicacion.
- *
- * Las FK a JRV/Cargo/Usuario se modelaran como columnas long simples;
- * los modelos reales se completan cuando existan las otras tablas.
+ * <p>Decisiones de diseño:
+ * <ul>
+ *   <li>{@code @Version} previene actualizaciones concurrentes.</li>
+ *   <li>{@code acta}: la asociación al acta; se valida en
+ *       {@link ec.twintailcs.electoral.evidencia.application.EvidenciaService}
+ *       que el usuario sea el registrador o COORDINATOR/MASTER.</li>
+ *   <li>{@code sha256} queda sin UNIQUE por ahora; sirve para auditoría
+ *       y futura deduplicación.</li>
+ * </ul>
  */
 @Entity
 @Table(name = "evidencia", indexes = {
+        @Index(name = "ix_evidencia_acta", columnList = "acta_id"),
         @Index(name = "ix_evidencia_jrv_cargo", columnList = "jrv_id, cargo_id"),
         @Index(name = "ix_evidencia_usuario", columnList = "usuario_id"),
         @Index(name = "ix_evidencia_estado", columnList = "estado")
@@ -47,6 +53,10 @@ public class Evidencia {
     @Column(name = "public_id", nullable = false, unique = true, updatable = false)
     private UUID publicId;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "acta_id", nullable = false)
+    private Acta acta;
+
     @Column(name = "jrv_id", nullable = false)
     private Long jrvId;
 
@@ -56,7 +66,7 @@ public class Evidencia {
     @Column(name = "usuario_id", nullable = false)
     private Long usuarioId;
 
-    /** Path completo dentro del bucket: actas/{jrvId}/{cargoId}/{uuid}.webp */
+    /** Path completo dentro del bucket: actas/{actaId}/{uuid}.webp */
     @Column(name = "s3_key", nullable = false, length = 512)
     private String s3Key;
 
@@ -66,7 +76,6 @@ public class Evidencia {
     @Column(name = "content_type", nullable = false, length = 64)
     private String contentType;
 
-    /** SHA-256 hex (64 chars). Nullable para no romper migracion; se llena en upload nuevo. */
     @Column(name = "sha256", length = 64)
     private String sha256;
 
@@ -87,6 +96,8 @@ public class Evidencia {
     public Long getId() { return id; }
     public UUID getPublicId() { return publicId; }
     public void setPublicId(UUID publicId) { this.publicId = publicId; }
+    public Acta getActa() { return acta; }
+    public void setActa(Acta acta) { this.acta = acta; }
     public Long getJrvId() { return jrvId; }
     public void setJrvId(Long jrvId) { this.jrvId = jrvId; }
     public Long getCargoId() { return cargoId; }

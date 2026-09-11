@@ -11,6 +11,7 @@ import ec.twintailcs.electoral.acta.web.dto.JrvConEstadoDto;
 import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
 import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.JrvCargo;
 import ec.twintailcs.electoral.electoral.domain.JrvCargoRepository;
@@ -65,6 +66,7 @@ public class ObserverController {
     private final UsuarioRepository usuarioRepository;
     private final JrvRepository jrvRepository;
     private final JrvCargoRepository jrvCargoRepository;
+    private final EvidenciaService evidenciaService;
 
     public ObserverController(ActaService actaService,
                                ActaRepository actaRepository,
@@ -72,7 +74,8 @@ public class ObserverController {
                                CurrentUser currentUser,
                                UsuarioRepository usuarioRepository,
                                JrvRepository jrvRepository,
-                               JrvCargoRepository jrvCargoRepository) {
+                               JrvCargoRepository jrvCargoRepository,
+                               EvidenciaService evidenciaService) {
         this.actaService = actaService;
         this.actaRepository = actaRepository;
         this.actaMapper = actaMapper;
@@ -80,6 +83,7 @@ public class ObserverController {
         this.usuarioRepository = usuarioRepository;
         this.jrvRepository = jrvRepository;
         this.jrvCargoRepository = jrvCargoRepository;
+        this.evidenciaService = evidenciaService;
     }
 
     private Long observerId() {
@@ -195,13 +199,14 @@ public class ObserverController {
     }
 
     /**
-     * POST /api/v1/observer/actas/{actaId}/imagen — placeholder.
-     * Implementación real en T-BE-14 / PR δ.
+     * POST /api/v1/observer/actas/{actaId}/imagen — T-BE-14 cerrado en PR δ.
+     * Sube la foto del acta a Supabase Storage vía EvidenciaService.
      */
     @PreAuthorize("@authz.has('acta:upload')")
     @PostMapping(value = "/actas/{actaId}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Void> subirImagen(@PathVariable Long actaId,
                                              @RequestPart("imagen") MultipartFile imagen) {
-        return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+        evidenciaService.upload(imagen, actaId, currentUser.id());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 }
