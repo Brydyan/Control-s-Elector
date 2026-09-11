@@ -59,7 +59,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = header.substring("Bearer ".length());
         try {
-            JwtService.ParsedJwt parsed = jwt.parse(token);
+            JwtService.ParsedJwt parsed = jwt.parseAccess(token);
 
             // 1) Permisos crudos (recurso:accion) que usan @authz.has(...) y
             //    hasAuthority(...) en expresiones SpEL. Cada perm se conserva

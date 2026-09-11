@@ -63,7 +63,8 @@ public class JwtService {
         String access = sign(builder -> builder
                 .subject(publicId.toString())
                 .issuer(issuer)
-                .claim("email", email)
+                .claim("typ", "access")
+                    .claim("email", email)
                 .claim("rol", rol)
                 .claim("sid", sesionId)
                 .claim("perms", permissions)
@@ -91,14 +92,27 @@ public class JwtService {
                 throw new InvalidJwtException("Firma JWT invalida");
             }
             JWTClaimsSet claims = jwt.getJWTClaimsSet();
-            if (claims.getExpirationTime() != null
-                    && claims.getExpirationTime().toInstant().isBefore(Instant.now())) {
-                throw new InvalidJwtException("JWT expirado");
+            if (claims.getIssuer() == null || !issuer.equals(claims.getIssuer())) {
+                throw new InvalidJwtException("Issuer JWT invalido");
             }
+            if (claims.getExpirationTime() == null) throw new InvalidJwtException("Falta exp");
+            if (!claims.getExpirationTime().toInstant().isAfter(Instant.now())) throw new InvalidJwtException("JWT expirado");
+            if (claims.getClaim("typ") == null) throw new InvalidJwtException("Falta typ");
             return new ParsedJwt(claims);
         } catch (java.text.ParseException | JOSEException e) {
             throw new InvalidJwtException("No se pudo parsear JWT: " + e.getMessage());
         }
+    }
+
+    public ParsedJwt parseAccess(String token) {
+        ParsedJwt parsed = parse(token);
+        if (!"access".equals(parsed.type())) throw new InvalidJwtException("Token no es de tipo access");
+        return parsed;
+    }
+    public ParsedJwt parseRefresh(String token) {
+        ParsedJwt parsed = parse(token);
+        if (!"refresh".equals(parsed.type())) throw new InvalidJwtException("Token no es de tipo refresh");
+        return parsed;
     }
 
     /** Token invalido (firma rota, expirado o malformado). Mapea a 401. */
@@ -129,6 +143,7 @@ public class JwtService {
         public String email()   { return (String) claims.getClaim("email"); }
         public String rol()     { return (String) claims.getClaim("rol"); }
         public String sesionId(){ return (String) claims.getClaim("sid"); }
+            public String type() { return (String) claims.getClaim("typ"); }
         @SuppressWarnings("unchecked")
         public List<String> perms() {
             Object p = claims.getClaim("perms");
