@@ -12,7 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 @Deprecated
 public interface ObserverJrvAsignacionRepository extends JpaRepository<ObserverJrvAsignacion, Long> {
-    boolean existsByObserverAndJrv(Usuario observer, Jrv jrv);
-    List<ObserverJrvAsignacion> findByObserver(Usuario observer);
+    boolean existsByUsuarioAndJrv(Usuario usuario, Jrv jrv);
+    List<ObserverJrvAsignacion> findByUsuario(Usuario usuario);
     List<ObserverJrvAsignacion> findByJrv(Jrv jrv);
 }

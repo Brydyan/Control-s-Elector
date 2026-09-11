@@ -1,11 +1,28 @@
 package ec.twintailcs.electoral.notificacion.domain;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import java.time.Instant;
-import ec.twintailcs.electoral.auth.domain.Usuario;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import ec.twintailcs.electoral.acta.domain.Acta;
+import java.time.Instant;
+import org.hibernate.annotations.CreationTimestamp;
 
+/**
+ * Notificación enviada a un usuario (disputa abierta, corrección solicitada,
+ * acta aprobada/anulada).
+ *
+ * <p>Nota histórica: la columna se llama {@code destinatario_id} (no
+ * {@code observer_id}) desde la consolidación del esquema en PR α.
+ *
+ * <p>El {@code NotificacionService} persiste filas en operaciones críticas.
+ * Falta el canal de entrega (controller + websocket/email/push); eso se
+ * cierra en PR δ junto con T-BE-16.
+ */
 @Entity
 @Table(name = "notificacion")
 public class Notificacion {
@@ -14,54 +31,74 @@ public class Notificacion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "destinatario_id", nullable = false)
-    private Usuario destinatario;
+    @Column(name = "destinatario_id", nullable = false)
+    private Long destinatarioId;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false, length = 64)
     private String tipo;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "acta_id")
     private Acta acta;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 500)
     private String mensaje;
 
     @Column(nullable = false)
     private Boolean leida = false;
 
     @CreationTimestamp
-    @Column(name = "creada_en", updatable = false)
-    private Instant creadaEn;
+    @Column(name = "creado_en", nullable = false, updatable = false)
+    private Instant creadoEn;
 
-    public Notificacion() {}
-
-    public Notificacion(Usuario destinatario, String tipo, Acta acta, String mensaje) {
-        this.destinatario = destinatario;
-        this.tipo = tipo;
-        this.acta = acta;
-        this.mensaje = mensaje;
-        this.leida = false;
+    public Notificacion() {
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public Usuario getDestinatario() { return destinatario; }
-    public void setDestinatario(Usuario destinatario) { this.destinatario = destinatario; }
+    public Long getDestinatarioId() {
+        return destinatarioId;
+    }
 
-    public String getTipo() { return tipo; }
-    public void setTipo(String tipo) { this.tipo = tipo; }
+    public void setDestinatarioId(Long destinatarioId) {
+        this.destinatarioId = destinatarioId;
+    }
 
-    public Acta getActa() { return acta; }
-    public void setActa(Acta acta) { this.acta = acta; }
+    public String getTipo() {
+        return tipo;
+    }
 
-    public String getMensaje() { return mensaje; }
-    public void setMensaje(String mensaje) { this.mensaje = mensaje; }
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
 
-    public Boolean getLeida() { return leida; }
-    public void setLeida(Boolean leida) { this.leida = leida; }
+    public Acta getActa() {
+        return acta;
+    }
 
-    public Instant getCreadaEn() { return creadaEn; }
+    public void setActa(Acta acta) {
+        this.acta = acta;
+    }
+
+    public String getMensaje() {
+        return mensaje;
+    }
+
+    public void setMensaje(String mensaje) {
+        this.mensaje = mensaje;
+    }
+
+    public Boolean getLeida() {
+        return leida;
+    }
+
+    public void setLeida(Boolean leida) {
+        this.leida = leida;
+    }
+
+    public Instant getCreadoEn() {
+        return creadoEn;
+    }
 }

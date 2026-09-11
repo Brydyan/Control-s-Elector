@@ -16,6 +16,14 @@
 -- ============================================================================
 
 
+-- changeset electoral:001-00-extensions
+-- Habilitamos pgcrypto para gen_random_uuid() (usado en seeds 002/004/005/008/009
+-- y en el default de public_id de tablas creadas acá). Sin esto, los seeds que
+-- insertan UUIDs fallan en una BD limpia.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- rollback DROP EXTENSION IF EXISTS pgcrypto;
+
+
 -- changeset electoral:001-01-usuario
 CREATE TABLE usuario (
     id            BIGSERIAL     PRIMARY KEY,
@@ -105,3 +113,25 @@ CREATE INDEX ix_evidencia_jrv_cargo ON evidencia (jrv_id, cargo_id);
 CREATE INDEX ix_evidencia_usuario ON evidencia (usuario_id);
 CREATE INDEX ix_evidencia_estado ON evidencia (estado);
 -- rollback DROP TABLE evidencia;
+
+
+-- changeset electoral:001-06-rol
+-- Tabla de roles del sistema. MAESTRA de (MASTER/COORDINATOR/ADMIN/OBSERVER).
+-- Antes era una columna VARCHAR en usuario/rol_permiso; la normalizacion a
+-- entidad propia y la migracion de datos quedan en 005 (FKs, drop legacy col).
+-- Se crea ACA (no en 005) porque 002-02-rol-permiso hace JOIN contra esta tabla.
+CREATE TABLE IF NOT EXISTS rol (
+    id         BIGSERIAL   PRIMARY KEY,
+    nombre     VARCHAR(32) NOT NULL UNIQUE,
+    public_id  UUID        NOT NULL DEFAULT gen_random_uuid(),
+    creado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+-- rollback DROP TABLE IF EXISTS rol;
+
+
+-- changeset electoral:001-07-seed-rol
+-- Semilla minima de roles. 002-02-rol-permiso resuelve el JOIN rol_id contra
+-- los nombres sembrados aca. Idempotente: ON CONFLICT no hace nada.
+INSERT INTO rol (nombre) VALUES ('MASTER'), ('COORDINATOR'), ('ADMIN'), ('OBSERVER')
+ON CONFLICT (nombre) DO NOTHING;
+-- rollback DELETE FROM rol WHERE nombre IN ('MASTER','COORDINATOR','ADMIN','OBSERVER');

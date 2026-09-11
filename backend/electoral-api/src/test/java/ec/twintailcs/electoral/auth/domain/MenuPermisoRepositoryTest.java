@@ -14,6 +14,10 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+// MenuPermisoTest: Liquibase (002/003) ya siembra menu y permiso con multiples
+// filas, asi que los helpers firstMenuId()/secondMenuId()/firstPermisoId()/
+// secondPermisoId() tienen datos para resolver. No requiere @BeforeEach extra.
+
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -41,7 +45,7 @@ class MenuPermisoRepositoryTest {
 
     @Test
     void shouldAutoGenerateUuidV7AndRoundTrip() {
-        MenuPermiso mp = new MenuPermiso(1L, 1L);
+        MenuPermiso mp = new MenuPermiso(firstMenuId(), firstPermisoId());
         MenuPermiso saved = repository.saveAndFlush(mp);
 
         assertThat(saved.getId()).isNotNull();
@@ -55,7 +59,7 @@ class MenuPermisoRepositoryTest {
 
     @Test
     void shouldThrowExceptionWhenDuplicatePublicIdIsPersisted() {
-        MenuPermiso mp1 = new MenuPermiso(10L, 10L);
+        MenuPermiso mp1 = new MenuPermiso(firstMenuId(), firstPermisoId());
         MenuPermiso saved1 = repository.saveAndFlush(mp1);
         UUID publicId = saved1.getPublicId();
 
@@ -64,8 +68,8 @@ class MenuPermisoRepositoryTest {
             () -> {
                 jdbcTemplate.update(
                     "INSERT INTO menu_permiso (menu_id, permiso_id, public_id) " +
-                    "VALUES (11, 11, ?)",
-                    publicId
+                    "VALUES (?, ?, ?)",
+                    secondMenuId(), secondPermisoId(), publicId
                 );
             }
         );
@@ -73,7 +77,7 @@ class MenuPermisoRepositoryTest {
 
     @Test
     void shouldNotUpdatePublicIdWhenEntityIsModified() {
-        MenuPermiso mp = new MenuPermiso(20L, 20L);
+        MenuPermiso mp = new MenuPermiso(firstMenuId(), firstPermisoId());
         MenuPermiso saved = repository.saveAndFlush(mp);
         UUID originalPublicId = saved.getPublicId();
 
@@ -86,4 +90,9 @@ class MenuPermisoRepositoryTest {
         MenuPermiso retrieved = repository.findById(saved.getId()).orElseThrow();
         assertThat(retrieved.getPublicId()).isEqualTo(originalPublicId);
     }
+
+    private Long firstMenuId() { return jdbcTemplate.queryForObject("SELECT id FROM menu ORDER BY id LIMIT 1", Long.class); }
+    private Long secondMenuId() { return jdbcTemplate.queryForObject("SELECT id FROM menu ORDER BY id OFFSET 1 LIMIT 1", Long.class); }
+    private Long firstPermisoId() { return jdbcTemplate.queryForObject("SELECT id FROM permiso ORDER BY id LIMIT 1", Long.class); }
+    private Long secondPermisoId() { return jdbcTemplate.queryForObject("SELECT id FROM permiso ORDER BY id OFFSET 1 LIMIT 1", Long.class); }
 }
