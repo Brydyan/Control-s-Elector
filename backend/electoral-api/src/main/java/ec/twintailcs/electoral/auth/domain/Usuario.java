@@ -40,6 +40,7 @@ public class Usuario {
     private String email;
 
     /** BCrypt hash. Nunca plain text. */
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @Column(nullable = false, length = 100)
     private String passwordHash;
 
