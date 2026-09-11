@@ -149,7 +149,7 @@ public class AuthController {
      * Email se genera automáticamente a partir de nombre, apellido y rol.
      */
     @PostMapping("/register")
-    @PreAuthorize("hasAuthority('usuario:create') or hasAuthority('MASTER')")
+    @PreAuthorize("hasAuthority('usuario:create') or hasRole('MASTER')")
     public ResponseEntity<AuthResponse.UsuarioActual> register(@Valid @RequestBody RegisterRequest body) {
         Usuario u = registros.register(body.nombre(), body.apellido(), body.password(), body.rol());
         return ResponseEntity.status(201).body(usuarioMapper.toDto(u));

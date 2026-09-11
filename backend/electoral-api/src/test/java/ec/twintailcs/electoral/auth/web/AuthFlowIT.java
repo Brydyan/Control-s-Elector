@@ -28,7 +28,6 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -128,8 +127,15 @@ class AuthFlowIT {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        JsonNode body = objectMapper.readTree(loginResult.getResponse().getContentAsString());
-        String refresh = body.get("refreshToken").asText();
+        // El refresh token viaja SOLO en la cookie httpOnly "refresh_token"
+        // que AuthController.login emite via Set-Cookie. NUNCA aparece en
+        // el JSON de respuesta (no se expone al FE).
+        jakarta.servlet.http.Cookie refreshCookie =
+                loginResult.getResponse().getCookie("refresh_token");
+        assertThat(refreshCookie)
+                .as("Login debe emitir cookie httpOnly refresh_token")
+                .isNotNull();
+        String refresh = refreshCookie.getValue();
 
         // Intentar usar el refresh como Bearer debe fallar con 401.
         mockMvc.perform(get("/api/v1/auth/me")
@@ -194,7 +200,7 @@ class AuthFlowIT {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                { "email": "ghost@nowhere.local", "password": "x" }
+                                { "email": "ghost@nowhere.local", "password": "wrongpass1" }
                                 """))
                 .andExpect(status().isUnauthorized());
 
@@ -225,8 +231,13 @@ class AuthFlowIT {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String refresh = objectMapper.readTree(login.getResponse().getContentAsString())
-                .get("refreshToken").asText();
+        // Refresh vive SOLO en cookie httpOnly emitida por login (Set-Cookie).
+        jakarta.servlet.http.Cookie refreshCookie =
+                login.getResponse().getCookie("refresh_token");
+        assertThat(refreshCookie)
+                .as("Login debe emitir cookie httpOnly refresh_token")
+                .isNotNull();
+        String refresh = refreshCookie.getValue();
 
         // Deshabilitamos al admin.
         admin.setHabilitado(false);
