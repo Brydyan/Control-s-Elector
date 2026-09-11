@@ -29,7 +29,7 @@ import org.springframework.web.multipart.MultipartFile;
  * Endpoints REST para la gestion de evidencias fotograficas.
  *
  * Rutas:
- *   POST   /api/v1/evidencias                       # subir (multipart)
+ *   POST   /api/v1/evidencias                       # subir (multipart) — actaId
  *   GET    /api/v1/evidencias/{id}                   # ver metadata
  *   GET    /api/v1/evidencias/{id}/download-url      # presigned GET (15 min)
  *   PATCH  /api/v1/evidencias/{id}/estado            # aprobar / rechazar
@@ -37,9 +37,8 @@ import org.springframework.web.multipart.MultipartFile;
  *
  * Convenciones multipart:
  *   - El archivo viaja como part "file"
- *   - Los metadatos (jrvId, cargoId) viajan como part "metadata"
- *     serializada como JSON (application/json) o form fields.
- *     Acu usamos form fields para simplicidad con clientes nativos.
+ *   - El actaId viaja como form field {@code actaId}.
+ *   - Antes (T-BE-14 abierto) se usaba jrvId+cargoId; ahora la FK es al acta.
  */
 @RestController
 @RequestMapping("/api/v1/evidencias")
@@ -58,11 +57,10 @@ public class EvidenciaController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<EvidenciaResponse> upload(
             @RequestPart("file") MultipartFile file,
-            @RequestParam("jrvId") Long jrvId,
-            @RequestParam("cargoId") Long cargoId) {
+            @RequestParam("actaId") Long actaId) {
 
         UUID userId = CurrentUser.staticId();
-        Evidencia e = service.upload(file, jrvId, cargoId, userId);
+        Evidencia e = service.upload(file, actaId, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(evidenciaMapper.toDto(e));
     }
 

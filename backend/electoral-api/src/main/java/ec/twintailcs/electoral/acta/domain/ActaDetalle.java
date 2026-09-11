@@ -47,6 +47,13 @@ public class ActaDetalle {
     @Column(nullable = false)
     private Integer votos;
 
+    /**
+     * Notas libres del coordinator/MASTER sobre esta línea del acta
+     * (T-BE-16). Por ejemplo: "voto observado, esperar recuento".
+     */
+    @Column(columnDefinition = "text")
+    private String observaciones;
+
     public ActaDetalle() {
     }
 
@@ -90,5 +97,13 @@ public class ActaDetalle {
 
     public void setVotos(Integer votos) {
         this.votos = votos;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
     }
 }
