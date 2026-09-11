@@ -17,36 +17,35 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Configuracion programatica del spec OpenAPI 3.1 generado por springdoc.
  *
- * Springdoc ya escanea los controllers y arma paths/operaciones automaticamente;
- * esta clase agrega la metadata que no se puede inferir del codigo:
- *   - Info: titulo, version, descripcion, contacto, licencia.
- *   - Servers: URLs por entorno (local / staging / prod) para que el
- *     Swagger UI tenga el dropdown "Select a server" y los clients
- *     generados apunten al ambiente correcto.
- *   - SecurityScheme: JWT Bearer HTTP para que el boton "Authorize" del
- *     Swagger UI registre el token y se envie en cada request de prueba.
- *   - Tags: agrupacion logica por dominio (Auth, Evidencias, futuras Actas/JRVs).
+ * <p>Springdoc ya escanea los controllers y arma paths/operaciones automaticamente; esta clase
+ * agrega la metadata que no se puede inferir del codigo: - Info: titulo, version, descripcion,
+ * contacto, licencia. - Servers: URLs por entorno (local / staging / prod) para que el Swagger UI
+ * tenga el dropdown "Select a server" y los clients generados apunten al ambiente correcto. -
+ * SecurityScheme: JWT Bearer HTTP para que el boton "Authorize" del Swagger UI registre el token y
+ * se envie en cada request de prueba. - Tags: agrupacion logica por dominio (Auth, Evidencias,
+ * futuras Actas/JRVs).
  *
- * Los endpoints siguen protegidos por Spring Security — esta clase solo
- * documenta el contrato; no habilita ni relaja ninguna ruta.
+ * <p>Los endpoints siguen protegidos por Spring Security — esta clase solo documenta el contrato;
+ * no habilita ni relaja ninguna ruta.
  */
 @Configuration
 public class OpenApiConfig {
 
-    /** Nombre canonico del security scheme. Se referencia en {@code @SecurityRequirement}. */
-    public static final String SECURITY_SCHEME_BEARER = "bearer-jwt";
+  /** Nombre canonico del security scheme. Se referencia en {@code @SecurityRequirement}. */
+  public static final String SECURITY_SCHEME_BEARER = "bearer-jwt";
 
-    @Value("${app.jwt.issuer:control-elector}")
-    private String jwtIssuer;
+  @Value("${app.jwt.issuer:control-elector}")
+  private String jwtIssuer;
 
-    @Value("${server.port:8080}")
-    private String serverPort;
+  @Value("${server.port:8080}")
+  private String serverPort;
 
-    @Bean
-    public OpenAPI customOpenAPI() {
-        // Descripcion larga de la API: text block (Java 15+) para legibilidad.
-        // Markdown ligero — el Swagger UI lo renderiza.
-        String apiDescription = """
+  @Bean
+  public OpenAPI customOpenAPI() {
+    // Descripcion larga de la API: text block (Java 15+) para legibilidad.
+    // Markdown ligero — el Swagger UI lo renderiza.
+    String apiDescription =
+        """
             API REST para el registro, validacion y consolidacion de \
             actas electorales de la Provincia de Santa Elena — \
             Elecciones Seccionales 2027-2031.
@@ -73,52 +72,66 @@ public class OpenApiConfig {
             ```
             """;
 
-        // Descripcion del security scheme: concatenacion normal para evitar
-        // que un triple-quote interno cierre el text block prematuramente.
-        String bearerDescription =
-            "JWT firmado HS256 (Nimbus JOSE+JWT). Issuer: **" + jwtIssuer
+    // Descripcion del security scheme: concatenacion normal para evitar
+    // que un triple-quote interno cierre el text block prematuramente.
+    String bearerDescription =
+        "JWT firmado HS256 (Nimbus JOSE+JWT). Issuer: **"
+            + jwtIssuer
             + "**. Obtener via POST /api/v1/auth/login con email + password. "
             + "TTL access: 15 min (default). Refresh via cookie httpOnly o body.";
 
-        return new OpenAPI()
-            .info(new Info()
+    return new OpenAPI()
+        .info(
+            new Info()
                 .title("Control Electoral API")
                 .version("0.0.1-SNAPSHOT")
                 .description(apiDescription)
-                .contact(new Contact()
-                    .name("Twin Tail CS")
-                    .url("https://twintailcs.xyz")
-                    .email("dev@twintailcs.xyz"))
-                .license(new License()
-                    .name("Propietario - Twin Tail CS")
-                    .url("https://twintailcs.xyz/legal")))
-            .servers(List.of(
+                .contact(
+                    new Contact()
+                        .name("Twin Tail CS")
+                        .url("https://twintailcs.xyz")
+                        .email("dev@twintailcs.xyz"))
+                .license(
+                    new License()
+                        .name("Propietario - Twin Tail CS")
+                        .url("https://twintailcs.xyz/legal")))
+        .servers(
+            List.of(
                 new Server().url("http://localhost:" + serverPort).description("Local (dev)"),
                 new Server().url("https://api-staging.twintailcs.xyz").description("Staging"),
                 new Server().url("https://api.twintailcs.xyz").description("Produccion")))
-            // Aplicar el scheme bearer-jwt globalmente. Cada operacion puede
-            // sobreescribirlo con @SecurityRequirement(name = "") si es publico.
-            .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_BEARER))
-            .tags(List.of(
-                new Tag().name("Auth")
+        // Aplicar el scheme bearer-jwt globalmente. Cada operacion puede
+        // sobreescribirlo con @SecurityRequirement(name = "") si es publico.
+        .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_BEARER))
+        .tags(
+            List.of(
+                new Tag()
+                    .name("Auth")
                     .description("Login, refresh, logout y registro de usuarios (RBAC)."),
-                new Tag().name("Evidencias")
-                    .description("Subida, descarga, aprobacion y borrado de "
-                        + "evidencias fotograficas de actas (.webp)."),
-                new Tag().name("Actas")
-                    .description("Registro y ciclo de vida de actas electorales "
-                        + "(Borrador, Enviada, EnDisputa, Corregida, Aprobada, Anulada)."),
-                new Tag().name("JRV")
-                    .description("Juntas Receptoras del Voto: asignacion de "
-                        + "observadores, consulta por canton/parroquia.")
-            ))
-            .components(new Components()
-                .addSecuritySchemes(SECURITY_SCHEME_BEARER,
+                new Tag()
+                    .name("Evidencias")
+                    .description(
+                        "Subida, descarga, aprobacion y borrado de "
+                            + "evidencias fotograficas de actas (.webp)."),
+                new Tag()
+                    .name("Actas")
+                    .description(
+                        "Registro y ciclo de vida de actas electorales "
+                            + "(Borrador, Enviada, EnDisputa, Corregida, Aprobada, Anulada)."),
+                new Tag()
+                    .name("JRV")
+                    .description(
+                        "Juntas Receptoras del Voto: asignacion de "
+                            + "observadores, consulta por canton/parroquia.")))
+        .components(
+            new Components()
+                .addSecuritySchemes(
+                    SECURITY_SCHEME_BEARER,
                     new SecurityScheme()
                         .name(SECURITY_SCHEME_BEARER)
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
                         .bearerFormat("JWT")
                         .description(bearerDescription)));
-    }
+  }
 }

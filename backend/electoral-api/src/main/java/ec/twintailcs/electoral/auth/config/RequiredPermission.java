@@ -8,10 +8,10 @@ import java.lang.annotation.Target;
 /**
  * Reserved for future AOP-based declarative permission enforcement.
  *
- * Marca un endpoint que requiere AL MENOS UNO de los permisos
- * especificados.
+ * <p>Marca un endpoint que requiere AL MENOS UNO de los permisos especificados.
  *
- * Uso:
+ * <p>Uso:
+ *
  * <pre>{@code
  * @RequiredPermission("evidencia:upload")
  * @PostMapping(...)
@@ -22,13 +22,13 @@ import java.lang.annotation.Target;
  * public ResponseEntity<> cambiarEstado(...) { ... }
  * }</pre>
  *
- * Si el usuario no tiene NINGUNO de los permisos, se lanza
- * AccessDeniedException y SecurityConfig lo mapea a 403 FORBIDDEN.
+ * Si el usuario no tiene NINGUNO de los permisos, se lanza AccessDeniedException y SecurityConfig
+ * lo mapea a 403 FORBIDDEN.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface RequiredPermission {
 
-    /** Uno o mas permisos; con que el usuario tenga UNO, pasa. */
-    String[] value();
+  /** Uno o mas permisos; con que el usuario tenga UNO, pasa. */
+  String[] value();
 }

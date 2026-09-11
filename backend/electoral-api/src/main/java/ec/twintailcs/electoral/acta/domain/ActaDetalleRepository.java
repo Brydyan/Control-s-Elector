@@ -6,13 +6,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ActaDetalleRepository extends JpaRepository<ActaDetalle, Long> {
-    List<ActaDetalle> findByActaId(Long actaId);
-    List<ActaDetalle> findByCandidatoId(Long candidatoId);
+  List<ActaDetalle> findByActaId(Long actaId);
 
-    List<ActaDetalle> findByActa(Acta acta);
+  List<ActaDetalle> findByCandidatoId(Long candidatoId);
 
-    void deleteByActa(Acta acta);
+  List<ActaDetalle> findByActa(Acta acta);
 
-    @Query("SELECT COALESCE(SUM(d.votos), 0) FROM ActaDetalle d WHERE d.acta = :acta")
-    Integer sumarVotosByActa(@Param("acta") Acta acta);
+  void deleteByActa(Acta acta);
+
+  @Query("SELECT COALESCE(SUM(d.votos), 0) FROM ActaDetalle d WHERE d.acta = :acta")
+  Integer sumarVotosByActa(@Param("acta") Acta acta);
 }

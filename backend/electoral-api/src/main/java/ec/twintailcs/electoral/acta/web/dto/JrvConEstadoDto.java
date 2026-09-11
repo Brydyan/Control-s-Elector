@@ -5,10 +5,4 @@ package ec.twintailcs.electoral.acta.web.dto;
  * Usado para que el OBSERVER elija libremente en qué JRV registrar un acta.
  */
 public record JrvConEstadoDto(
-        Long id,
-        String numero,
-        String parroquia,
-        int cargosPendientes,
-        int cargosRegistrados
-) {
-}
+    Long id, String numero, String parroquia, int cargosPendientes, int cargosRegistrados) {}

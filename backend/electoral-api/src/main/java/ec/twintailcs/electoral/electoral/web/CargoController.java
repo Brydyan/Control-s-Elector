@@ -25,61 +25,63 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Endpoints REST para la configuracion preelectoral de Cargos.
  *
- * Rutas:
- *   GET    /api/v1/configuracion/cargos       # cualquier usuario autenticado
- *   POST   /api/v1/configuracion/cargos       # MASTER
- *   PUT    /api/v1/configuracion/cargos/{id}  # MASTER
- *   DELETE /api/v1/configuracion/cargos/{id}  # MASTER
+ * <p>Rutas: GET /api/v1/configuracion/cargos # cualquier usuario autenticado POST
+ * /api/v1/configuracion/cargos # MASTER PUT /api/v1/configuracion/cargos/{id} # MASTER DELETE
+ * /api/v1/configuracion/cargos/{id} # MASTER
  */
 @RestController
 @RequestMapping("/api/v1/configuracion/cargos")
 public class CargoController {
 
-    private final ConfiguracionService service;
-    private final CargoMapper mapper;
-    private final CurrentUser currentUser;
-    private final UsuarioRepository usuarios;
+  private final ConfiguracionService service;
+  private final CargoMapper mapper;
+  private final CurrentUser currentUser;
+  private final UsuarioRepository usuarios;
 
-    public CargoController(ConfiguracionService service, CargoMapper mapper,
-                           CurrentUser currentUser, UsuarioRepository usuarios) {
-        this.service = service;
-        this.mapper = mapper;
-        this.currentUser = currentUser;
-        this.usuarios = usuarios;
-    }
+  public CargoController(
+      ConfiguracionService service,
+      CargoMapper mapper,
+      CurrentUser currentUser,
+      UsuarioRepository usuarios) {
+    this.service = service;
+    this.mapper = mapper;
+    this.currentUser = currentUser;
+    this.usuarios = usuarios;
+  }
 
-    private Long masterId() {
-        return usuarios.findByPublicId(currentUser.id())
-            .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"))
-            .getId();
-    }
+  private Long masterId() {
+    return usuarios
+        .findByPublicId(currentUser.id())
+        .orElseThrow(() -> new IllegalArgumentException("Usuario no existe"))
+        .getId();
+  }
 
-    @PreAuthorize("isAuthenticated()")
-    @GetMapping
-    public List<CargoResponse> listar() {
-        return service.listCargos().stream().map(mapper::toDto).toList();
-    }
+  @PreAuthorize("isAuthenticated()")
+  @GetMapping
+  public List<CargoResponse> listar() {
+    return service.listCargos().stream().map(mapper::toDto).toList();
+  }
 
-    @PreAuthorize("@authz.has('configuracion:write')")
-    @PostMapping
-    public ResponseEntity<CargoResponse> crear(@Valid @RequestBody CargoRequest dto,
-                                                HttpServletRequest request) {
-        Cargo cargo = service.createCargo(dto, masterId(), request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(cargo));
-    }
+  @PreAuthorize("@authz.has('configuracion:write')")
+  @PostMapping
+  public ResponseEntity<CargoResponse> crear(
+      @Valid @RequestBody CargoRequest dto, HttpServletRequest request) {
+    Cargo cargo = service.createCargo(dto, masterId(), request);
+    return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(cargo));
+  }
 
-    @PreAuthorize("@authz.has('configuracion:write')")
-    @PutMapping("/{id}")
-    public CargoResponse actualizar(@PathVariable Long id, @Valid @RequestBody CargoRequest dto,
-                                    HttpServletRequest request) {
-        Cargo cargo = service.updateCargo(id, dto, masterId(), request);
-        return mapper.toDto(cargo);
-    }
+  @PreAuthorize("@authz.has('configuracion:write')")
+  @PutMapping("/{id}")
+  public CargoResponse actualizar(
+      @PathVariable Long id, @Valid @RequestBody CargoRequest dto, HttpServletRequest request) {
+    Cargo cargo = service.updateCargo(id, dto, masterId(), request);
+    return mapper.toDto(cargo);
+  }
 
-    @PreAuthorize("@authz.has('configuracion:write')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id, HttpServletRequest request) {
-        service.deleteCargo(id, masterId(), request);
-        return ResponseEntity.noContent().build();
-    }
+  @PreAuthorize("@authz.has('configuracion:write')")
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> eliminar(@PathVariable Long id, HttpServletRequest request) {
+    service.deleteCargo(id, masterId(), request);
+    return ResponseEntity.noContent().build();
+  }
 }

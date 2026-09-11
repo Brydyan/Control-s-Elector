@@ -4,8 +4,8 @@ import ec.twintailcs.electoral.auth.application.AuthService;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.JwtService.InvalidJwtException;
 import ec.twintailcs.electoral.auth.application.RegisterService;
-import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.config.CurrentUser;
+import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
 import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
@@ -16,8 +16,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.UUID;
 import java.util.Map;
+import java.util.UUID;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -33,172 +33,179 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Endpoints de autenticacion.
  *
- * Convenciones:
- *  - access token: viaja solo en Authorization: Bearer <token> en cada
- *    request subsecuente.
- *  - refresh token: viaja en cookie httpOnly "refresh_token" para que
- *    no sea accesible desde JS. Tambien puede venir en body para
- *    clientes no-browser (Flutter mobile). Misma logica para ambos.
+ * <p>Convenciones: - access token: viaja solo en Authorization: Bearer <token> en cada request
+ * subsecuente. - refresh token: viaja en cookie httpOnly "refresh_token" para que no sea accesible
+ * desde JS. Tambien puede venir en body para clientes no-browser (Flutter mobile). Misma logica
+ * para ambos.
  *
- * Los tres refresh-token sources (cookie, body, header) se prueban en
- * ese orden en refresh(). Logout solo opera con el refresh en cookie o
- * body (no requiere auth access; revocacion es idempotente).
+ * <p>Los tres refresh-token sources (cookie, body, header) se prueban en ese orden en refresh().
+ * Logout solo opera con el refresh en cookie o body (no requiere auth access; revocacion es
+ * idempotente).
  */
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    /** Nombre canonico de la cookie que transporta el refresh token. */
-    public static final String REFRESH_COOKIE = "refresh_token";
-    /** TTL de la cookie refresh en segundos; debe matchear refreshTtl. */
-    public static final long REFRESH_COOKIE_MAX_AGE_SEC = 7 * 24 * 3600L;
+  /** Nombre canonico de la cookie que transporta el refresh token. */
+  public static final String REFRESH_COOKIE = "refresh_token";
 
-    private final AuthService auth;
-    private final RegisterService registros;
-    private final UsuarioRepository usuarios;
-    private final JwtService jwt;
-    private final UsuarioMapper usuarioMapper;
-        private final CurrentUser currentUser;
+  /** TTL de la cookie refresh en segundos; debe matchear refreshTtl. */
+  public static final long REFRESH_COOKIE_MAX_AGE_SEC = 7 * 24 * 3600L;
 
-    public AuthController(AuthService auth, RegisterService registros,
-                          UsuarioRepository usuarios,
-                          JwtService jwt,
-                          UsuarioMapper usuarioMapper, CurrentUser currentUser) {
-        this.auth = auth;
-        this.registros = registros;
-        this.usuarios = usuarios;
-        this.jwt = jwt;
-        this.usuarioMapper = usuarioMapper;
-            this.currentUser = currentUser;
+  private final AuthService auth;
+  private final RegisterService registros;
+  private final UsuarioRepository usuarios;
+  private final JwtService jwt;
+  private final UsuarioMapper usuarioMapper;
+  private final CurrentUser currentUser;
+
+  public AuthController(
+      AuthService auth,
+      RegisterService registros,
+      UsuarioRepository usuarios,
+      JwtService jwt,
+      UsuarioMapper usuarioMapper,
+      CurrentUser currentUser) {
+    this.auth = auth;
+    this.registros = registros;
+    this.usuarios = usuarios;
+    this.jwt = jwt;
+    this.usuarioMapper = usuarioMapper;
+    this.currentUser = currentUser;
+  }
+
+  @PostMapping("/login")
+  public ResponseEntity<AuthResponse> login(
+      @Valid @RequestBody LoginRequest body, HttpServletRequest req) {
+    JwtService.TokenPair pair =
+        auth.login(
+            body.email(), body.password(),
+            req.getRemoteAddr(), req.getHeader("User-Agent"));
+
+    Usuario u = usuarios.findByEmail(body.email()).orElseThrow();
+    // Permisos NO se exponen en el body — quedan en el JWT (claim "perms")
+    // para uso interno (JwtAuthFilter -> @PreAuthorize). El FE obtiene
+    // el sidebar via GET /api/v1/menus/me.
+
+    AuthResponse payload =
+        new AuthResponse(
+            pair.access(),
+            "Bearer",
+            pair.accessTtl().toSeconds(),
+            pair.sesionId(),
+            usuarioMapper.toDto(u));
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(pair.refresh()))
+        .body(payload);
+  }
+
+  @PostMapping("/refresh")
+  public ResponseEntity<AuthResponse> refresh(
+      @RequestBody(required = false) RefreshRequest body, HttpServletRequest req) {
+    String refresh = readRefresh(req, body);
+    JwtService.TokenPair pair = auth.refresh(refresh);
+
+    // Necesitamos los datos del usuario para construir la respuesta.
+    UUID publicId = UUID.fromString(jwt.parseAccess(pair.access()).subject());
+    Usuario u = usuarios.findByPublicId(publicId).orElseThrow();
+
+    AuthResponse payload =
+        new AuthResponse(
+            pair.access(),
+            "Bearer",
+            pair.accessTtl().toSeconds(),
+            pair.sesionId(),
+            usuarioMapper.toDto(u));
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(pair.refresh()))
+        .body(payload);
+  }
+
+  @PostMapping("/logout")
+  public ResponseEntity<Void> logout(
+      @RequestBody(required = false) RefreshRequest body, HttpServletRequest req) {
+    String refresh = readRefresh(req, body);
+    auth.logout(refresh);
+    // Borrar la cookie (Max-Age=0)
+    return ResponseEntity.noContent()
+        .header(
+            HttpHeaders.SET_COOKIE,
+            REFRESH_COOKIE + "=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0")
+        .build();
+  }
+
+  /** Informacion del usuario actual (parseado del access token en el SecurityContext). */
+  @GetMapping("/me")
+  public AuthResponse.UsuarioActual me() {
+    String email = currentUser.email();
+    if (email == null) {
+      throw new AuthService.AuthException("No autenticado");
     }
+    Usuario u = usuarios.findByEmail(email).orElseThrow();
+    return usuarioMapper.toDto(u);
+  }
 
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest body,
-                                              HttpServletRequest req) {
-        JwtService.TokenPair pair = auth.login(
-                body.email(), body.password(),
-                req.getRemoteAddr(), req.getHeader("User-Agent"));
+  /**
+   * Solo MASTER puede crear usuarios. Para esta version es asi (el FE tendra un panel admin que
+   * lista usuarios). Cuando existan auto-registros via invite, se cambia esta firma.
+   *
+   * <p>Email se genera automáticamente a partir de nombre, apellido y rol.
+   */
+  @PostMapping("/register")
+  @PreAuthorize("hasAuthority('usuario:create') or hasRole('MASTER')")
+  public ResponseEntity<AuthResponse.UsuarioActual> register(
+      @Valid @RequestBody RegisterRequest body) {
+    Usuario u = registros.register(body.nombre(), body.apellido(), body.password(), body.rol());
+    return ResponseEntity.status(201).body(usuarioMapper.toDto(u));
+  }
 
-        Usuario u = usuarios.findByEmail(body.email()).orElseThrow();
-        // Permisos NO se exponen en el body — quedan en el JWT (claim "perms")
-        // para uso interno (JwtAuthFilter -> @PreAuthorize). El FE obtiene
-        // el sidebar via GET /api/v1/menus/me.
+  // --------- helpers ---------
 
-        AuthResponse payload = new AuthResponse(
-                pair.access(), "Bearer",
-                pair.accessTtl().toSeconds(),
-                pair.sesionId(),
-                usuarioMapper.toDto(u)
-        );
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(pair.refresh()))
-                .body(payload);
-    }
-
-    @PostMapping("/refresh")
-    public ResponseEntity<AuthResponse> refresh(@RequestBody(required = false) RefreshRequest body,
-                                                HttpServletRequest req) {
-        String refresh = readRefresh(req, body);
-        JwtService.TokenPair pair = auth.refresh(refresh);
-
-        // Necesitamos los datos del usuario para construir la respuesta.
-        UUID publicId = UUID.fromString(jwt.parseAccess(pair.access()).subject());
-        Usuario u = usuarios.findByPublicId(publicId).orElseThrow();
-
-        AuthResponse payload = new AuthResponse(
-                pair.access(), "Bearer",
-                pair.accessTtl().toSeconds(),
-                pair.sesionId(),
-                usuarioMapper.toDto(u)
-        );
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(pair.refresh()))
-                .body(payload);
-    }
-
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestBody(required = false) RefreshRequest body,
-                                       HttpServletRequest req) {
-        String refresh = readRefresh(req, body);
-        auth.logout(refresh);
-        // Borrar la cookie (Max-Age=0)
-        return ResponseEntity.noContent()
-                .header(HttpHeaders.SET_COOKIE,
-                        REFRESH_COOKIE + "=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0")
-                .build();
-    }
-
-    /** Informacion del usuario actual (parseado del access token en el SecurityContext). */
-    @GetMapping("/me")
-    public AuthResponse.UsuarioActual me() {
-        String email = currentUser.email();
-        if (email == null) {
-            throw new AuthService.AuthException("No autenticado");
+  /** Lee refresh token de cookie, body o ambos. Devuelve null-safe. */
+  private String readRefresh(HttpServletRequest req, RefreshRequest body) {
+    if (req.getCookies() != null) {
+      for (var c : req.getCookies()) {
+        if (REFRESH_COOKIE.equals(c.getName())) {
+          return c.getValue();
         }
-        Usuario u = usuarios.findByEmail(email).orElseThrow();
-        return usuarioMapper.toDto(u);
+      }
     }
-
-    /**
-     * Solo MASTER puede crear usuarios. Para esta version es asi (el FE
-     * tendra un panel admin que lista usuarios). Cuando existan
-     * auto-registros via invite, se cambia esta firma.
-     *
-     * Email se genera automáticamente a partir de nombre, apellido y rol.
-     */
-    @PostMapping("/register")
-    @PreAuthorize("hasAuthority('usuario:create') or hasRole('MASTER')")
-    public ResponseEntity<AuthResponse.UsuarioActual> register(@Valid @RequestBody RegisterRequest body) {
-        Usuario u = registros.register(body.nombre(), body.apellido(), body.password(), body.rol());
-        return ResponseEntity.status(201).body(usuarioMapper.toDto(u));
+    if (body != null && body.refreshToken() != null) {
+      return body.refreshToken();
     }
+    throw new AuthService.AuthException("No se encontro refresh token");
+  }
 
-    // --------- helpers ---------
+  /** Cookie httpOnly + Secure + SameSite=Strict. Max-Age configura el TTL del refresh. */
+  private String buildRefreshCookie(String value) {
+    return REFRESH_COOKIE
+        + "="
+        + value
+        + "; HttpOnly; Secure; SameSite=Strict; Path=/"
+        + "; Max-Age="
+        + REFRESH_COOKIE_MAX_AGE_SEC;
+  }
 
-    /** Lee refresh token de cookie, body o ambos. Devuelve null-safe. */
-    private String readRefresh(HttpServletRequest req, RefreshRequest body) {
-        if (req.getCookies() != null) {
-            for (var c : req.getCookies()) {
-                if (REFRESH_COOKIE.equals(c.getName())) {
-                    return c.getValue();
-                }
-            }
-        }
-        if (body != null && body.refreshToken() != null) {
-            return body.refreshToken();
-        }
-        throw new AuthService.AuthException("No se encontro refresh token");
-    }
+  // ─── Mapeo excepciones → JSON 401 ─────────────────────────────────────────
 
-    /** Cookie httpOnly + Secure + SameSite=Strict. Max-Age configura el TTL del refresh. */
-    private String buildRefreshCookie(String value) {
-        return REFRESH_COOKIE + "=" + value
-                + "; HttpOnly; Secure; SameSite=Strict; Path=/"
-                + "; Max-Age=" + REFRESH_COOKIE_MAX_AGE_SEC;
-    }
+  @ExceptionHandler(AuthService.AuthException.class)
+  public ResponseEntity<Map<String, Object>> authError(AuthService.AuthException ex) {
+    return errorBody(HttpStatus.UNAUTHORIZED, ex.getMessage());
+  }
 
-    // ─── Mapeo excepciones → JSON 401 ─────────────────────────────────────────
+  @ExceptionHandler(InvalidJwtException.class)
+  public ResponseEntity<Map<String, Object>> badJwt(InvalidJwtException ex) {
+    return errorBody(HttpStatus.UNAUTHORIZED, ex.getMessage());
+  }
 
-    @ExceptionHandler(AuthService.AuthException.class)
-    public ResponseEntity<Map<String, Object>> authError(AuthService.AuthException ex) {
-        return errorBody(HttpStatus.UNAUTHORIZED, ex.getMessage());
-    }
-
-    @ExceptionHandler(InvalidJwtException.class)
-    public ResponseEntity<Map<String, Object>> badJwt(InvalidJwtException ex) {
-        return errorBody(HttpStatus.UNAUTHORIZED, ex.getMessage());
-    }
-
-    private static ResponseEntity<Map<String, Object>> errorBody(HttpStatus status, String message) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", Instant.now().toString());
-        body.put("status", status.value());
-        body.put("error", status.getReasonPhrase());
-        body.put("message", message);
-        return ResponseEntity.status(status)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(body);
-    }
+  private static ResponseEntity<Map<String, Object>> errorBody(HttpStatus status, String message) {
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("timestamp", Instant.now().toString());
+    body.put("status", status.value());
+    body.put("error", status.getReasonPhrase());
+    body.put("message", message);
+    return ResponseEntity.status(status).contentType(MediaType.APPLICATION_JSON).body(body);
+  }
 }

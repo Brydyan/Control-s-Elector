@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.CONFLICT)
 public class ActaEstadoInvalidoException extends RuntimeException {
-    public ActaEstadoInvalidoException(String mensaje) {
-        super(mensaje);
-    }
+  public ActaEstadoInvalidoException(String mensaje) {
+    super(mensaje);
+  }
 }

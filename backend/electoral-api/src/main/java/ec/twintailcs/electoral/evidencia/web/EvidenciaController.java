@@ -28,77 +28,70 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Endpoints REST para la gestion de evidencias fotograficas.
  *
- * Rutas:
- *   POST   /api/v1/evidencias                       # subir (multipart) — actaId
- *   GET    /api/v1/evidencias/{id}                   # ver metadata
- *   GET    /api/v1/evidencias/{id}/download-url      # presigned GET (15 min)
- *   PATCH  /api/v1/evidencias/{id}/estado            # aprobar / rechazar
- *   DELETE /api/v1/evidencias/{id}                  # eliminar
+ * <p>Rutas: POST /api/v1/evidencias # subir (multipart) — actaId GET /api/v1/evidencias/{id} # ver
+ * metadata GET /api/v1/evidencias/{id}/download-url # presigned GET (15 min) PATCH
+ * /api/v1/evidencias/{id}/estado # aprobar / rechazar DELETE /api/v1/evidencias/{id} # eliminar
  *
- * Convenciones multipart:
- *   - El archivo viaja como part "file"
- *   - El actaId viaja como form field {@code actaId}.
- *   - Antes (T-BE-14 abierto) se usaba jrvId+cargoId; ahora la FK es al acta.
+ * <p>Convenciones multipart: - El archivo viaja como part "file" - El actaId viaja como form field
+ * {@code actaId}. - Antes (T-BE-14 abierto) se usaba jrvId+cargoId; ahora la FK es al acta.
  */
 @RestController
 @RequestMapping("/api/v1/evidencias")
 public class EvidenciaController {
 
-    private final EvidenciaService service;
-    private final EvidenciaMapper evidenciaMapper;
+  private final EvidenciaService service;
+  private final EvidenciaMapper evidenciaMapper;
 
-    public EvidenciaController(EvidenciaService service, EvidenciaMapper evidenciaMapper) {
-        this.service = service;
-        this.evidenciaMapper = evidenciaMapper;
-    }
+  public EvidenciaController(EvidenciaService service, EvidenciaMapper evidenciaMapper) {
+    this.service = service;
+    this.evidenciaMapper = evidenciaMapper;
+  }
 
-    @RequiredPermission("evidencia:upload")
-    @PreAuthorize("@authz.has('evidencia:upload')")
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<EvidenciaResponse> upload(
-            @RequestPart("file") MultipartFile file,
-            @RequestParam("actaId") Long actaId) {
+  @RequiredPermission("evidencia:upload")
+  @PreAuthorize("@authz.has('evidencia:upload')")
+  @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<EvidenciaResponse> upload(
+      @RequestPart("file") MultipartFile file, @RequestParam("actaId") Long actaId) {
 
-        UUID userId = CurrentUser.staticId();
-        Evidencia e = service.upload(file, actaId, userId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(evidenciaMapper.toDto(e));
-    }
+    UUID userId = CurrentUser.staticId();
+    Evidencia e = service.upload(file, actaId, userId);
+    return ResponseEntity.status(HttpStatus.CREATED).body(evidenciaMapper.toDto(e));
+  }
 
-    @RequiredPermission("evidencia:read")
-    @PreAuthorize("@authz.has('evidencia:read')")
-    @GetMapping("/{id}")
-    public EvidenciaResponse get(@PathVariable UUID id) {
-        return evidenciaMapper.toDto(service.get(id));
-    }
+  @RequiredPermission("evidencia:read")
+  @PreAuthorize("@authz.has('evidencia:read')")
+  @GetMapping("/{id}")
+  public EvidenciaResponse get(@PathVariable UUID id) {
+    return evidenciaMapper.toDto(service.get(id));
+  }
 
-    @RequiredPermission("evidencia:download")
-    @PreAuthorize("@authz.has('evidencia:download')")
-    @GetMapping("/{id}/download-url")
-    public DownloadUrlResponse downloadUrl(@PathVariable UUID id) {
-        String url = service.presignDownload(id);
-        return new DownloadUrlResponse(id, url);
-    }
+  @RequiredPermission("evidencia:download")
+  @PreAuthorize("@authz.has('evidencia:download')")
+  @GetMapping("/{id}/download-url")
+  public DownloadUrlResponse downloadUrl(@PathVariable UUID id) {
+    String url = service.presignDownload(id);
+    return new DownloadUrlResponse(id, url);
+  }
 
-    @RequiredPermission({"acta:aprobar", "acta:rechazar"})
-    @PreAuthorize("@authz.hasAny('acta:aprobar','acta:rechazar')")
-    @PatchMapping("/{id}/estado")
-    public EvidenciaResponse cambiarEstado(
-            @PathVariable UUID id,
-            @Valid @org.springframework.web.bind.annotation.RequestBody
-                    CambiarEstadoRequest body) {
-        Evidencia e = service.cambiarEstado(id, body.estado());
-        return evidenciaMapper.toDto(e);
-    }
+  @RequiredPermission({"acta:aprobar", "acta:rechazar"})
+  @PreAuthorize("@authz.hasAny('acta:aprobar','acta:rechazar')")
+  @PatchMapping("/{id}/estado")
+  public EvidenciaResponse cambiarEstado(
+      @PathVariable UUID id,
+      @Valid @org.springframework.web.bind.annotation.RequestBody CambiarEstadoRequest body) {
+    Evidencia e = service.cambiarEstado(id, body.estado());
+    return evidenciaMapper.toDto(e);
+  }
 
-    @RequiredPermission("evidencia:delete")
-    @PreAuthorize("@authz.has('evidencia:delete')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        service.delete(id, CurrentUser.staticId());
-        return ResponseEntity.noContent().build();
-    }
+  @RequiredPermission("evidencia:delete")
+  @PreAuthorize("@authz.has('evidencia:delete')")
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> delete(@PathVariable UUID id) {
+    service.delete(id, CurrentUser.staticId());
+    return ResponseEntity.noContent().build();
+  }
 
-    /** Tipico: devolver 201 + Location header. Acu devolvemos la entidad. */
-    @SuppressWarnings("unused")
-    private static class LocationBuilder {}
+  /** Tipico: devolver 201 + Location header. Acu devolvemos la entidad. */
+  @SuppressWarnings("unused")
+  private static class LocationBuilder {}
 }

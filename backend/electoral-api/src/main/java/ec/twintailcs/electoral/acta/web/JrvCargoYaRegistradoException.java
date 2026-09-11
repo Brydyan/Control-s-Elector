@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.CONFLICT)
 public class JrvCargoYaRegistradoException extends RuntimeException {
-    public JrvCargoYaRegistradoException(Long jrvId, Long cargoId) {
-        super("Ya existe un acta activa para JRV " + jrvId + " y cargo " + cargoId);
-    }
+  public JrvCargoYaRegistradoException(Long jrvId, Long cargoId) {
+    super("Ya existe un acta activa para JRV " + jrvId + " y cargo " + cargoId);
+  }
 }
