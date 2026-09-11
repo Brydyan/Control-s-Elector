@@ -9,6 +9,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
+import ec.twintailcs.electoral.electoral.application.usecase.ActualizarCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.CrearCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.EliminarCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.ListarCandidatosUseCase;
 import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
@@ -40,9 +44,26 @@ class ConfiguracionServiceTest {
 
   @BeforeEach
   void setUp() {
+    CrearCandidatoUseCase crearCandidatoUseCase =
+        new CrearCandidatoUseCase(
+            candidatoRepository, cargoRepository, partidoRepository, auditLogService);
+    ActualizarCandidatoUseCase actualizarCandidatoUseCase =
+        new ActualizarCandidatoUseCase(
+            candidatoRepository, cargoRepository, partidoRepository, auditLogService);
+    EliminarCandidatoUseCase eliminarCandidatoUseCase =
+        new EliminarCandidatoUseCase(candidatoRepository, auditLogService);
+    ListarCandidatosUseCase listarCandidatosUseCase =
+        new ListarCandidatosUseCase(candidatoRepository);
+
     service =
         new ConfiguracionService(
-            cargoRepository, partidoRepository, candidatoRepository, auditLogService);
+            cargoRepository,
+            partidoRepository,
+            auditLogService,
+            crearCandidatoUseCase,
+            actualizarCandidatoUseCase,
+            eliminarCandidatoUseCase,
+            listarCandidatosUseCase);
   }
 
   @Test

@@ -1,8 +1,11 @@
 package ec.twintailcs.electoral.electoral.application;
 
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
+import ec.twintailcs.electoral.electoral.application.usecase.ActualizarCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.CrearCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.EliminarCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.ListarCandidatosUseCase;
 import ec.twintailcs.electoral.electoral.domain.Candidato;
-import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
 import ec.twintailcs.electoral.electoral.domain.Partido;
@@ -29,18 +32,27 @@ public class ConfiguracionService {
 
   private final CargoRepository cargoRepository;
   private final PartidoRepository partidoRepository;
-  private final CandidatoRepository candidatoRepository;
   private final AuditLogService auditLogService;
+  private final CrearCandidatoUseCase crearCandidatoUseCase;
+  private final ActualizarCandidatoUseCase actualizarCandidatoUseCase;
+  private final EliminarCandidatoUseCase eliminarCandidatoUseCase;
+  private final ListarCandidatosUseCase listarCandidatosUseCase;
 
   public ConfiguracionService(
       CargoRepository cargoRepository,
       PartidoRepository partidoRepository,
-      CandidatoRepository candidatoRepository,
-      AuditLogService auditLogService) {
+      AuditLogService auditLogService,
+      CrearCandidatoUseCase crearCandidatoUseCase,
+      ActualizarCandidatoUseCase actualizarCandidatoUseCase,
+      EliminarCandidatoUseCase eliminarCandidatoUseCase,
+      ListarCandidatosUseCase listarCandidatosUseCase) {
     this.cargoRepository = cargoRepository;
     this.partidoRepository = partidoRepository;
-    this.candidatoRepository = candidatoRepository;
     this.auditLogService = auditLogService;
+    this.crearCandidatoUseCase = crearCandidatoUseCase;
+    this.actualizarCandidatoUseCase = actualizarCandidatoUseCase;
+    this.eliminarCandidatoUseCase = eliminarCandidatoUseCase;
+    this.listarCandidatosUseCase = listarCandidatosUseCase;
   }
 
   // ─── Cargo ──────────────────────────────────────────────────────────────
@@ -175,104 +187,21 @@ public class ConfiguracionService {
 
   // ─── Candidato ──────────────────────────────────────────────────────────
 
-  @Transactional
   public Candidato createCandidato(
       CandidatoRequest dto, Long masterId, HttpServletRequest request) {
-    Cargo cargo =
-        cargoRepository
-            .findById(dto.cargoId())
-            .orElseThrow(
-                () -> new ConfiguracionNotFoundException("Cargo no encontrado: " + dto.cargoId()));
-
-    Partido partido =
-        partidoRepository
-            .findById(dto.partidoId())
-            .orElseThrow(
-                () ->
-                    new ConfiguracionNotFoundException(
-                        "Partido no encontrado: " + dto.partidoId()));
-
-    Candidato candidato = new Candidato(dto.nombre(), dto.orden(), cargo, partido);
-    Candidato guardado = candidatoRepository.save(candidato);
-
-    auditLogService.registrar(
-        masterId,
-        "CREAR_CANDIDATO",
-        "candidato",
-        guardado.getId(),
-        "Candidato: " + dto.nombre() + " para cargo " + cargo.getNombre(),
-        request);
-    return guardado;
+    return crearCandidatoUseCase.execute(dto, masterId, request);
   }
 
-  @Transactional
   public Candidato updateCandidato(
       Long id, CandidatoRequest dto, Long masterId, HttpServletRequest request) {
-    Candidato candidato =
-        candidatoRepository
-            .findById(id)
-            .orElseThrow(
-                () -> new ConfiguracionNotFoundException("Candidato no encontrado: " + id));
-
-    Cargo cargo =
-        cargoRepository
-            .findById(dto.cargoId())
-            .orElseThrow(
-                () -> new ConfiguracionNotFoundException("Cargo no encontrado: " + dto.cargoId()));
-
-    Partido partido =
-        partidoRepository
-            .findById(dto.partidoId())
-            .orElseThrow(
-                () ->
-                    new ConfiguracionNotFoundException(
-                        "Partido no encontrado: " + dto.partidoId()));
-
-    candidato.setNombre(dto.nombre());
-    candidato.setOrden(dto.orden());
-    candidato.setCargo(cargo);
-    candidato.setPartido(partido);
-    Candidato actualizado = candidatoRepository.save(candidato);
-
-    auditLogService.registrar(
-        masterId,
-        "ACTUALIZAR_CANDIDATO",
-        "candidato",
-        id,
-        "Candidato actualizado: " + dto.nombre(),
-        request);
-    return actualizado;
+    return actualizarCandidatoUseCase.execute(id, dto, masterId, request);
   }
 
-  @Transactional
   public void deleteCandidato(Long id, Long masterId, HttpServletRequest request) {
-    Candidato candidato =
-        candidatoRepository
-            .findById(id)
-            .orElseThrow(
-                () -> new ConfiguracionNotFoundException("Candidato no encontrado: " + id));
-
-    candidatoRepository.delete(candidato);
-
-    auditLogService.registrar(
-        masterId,
-        "ELIMINAR_CANDIDATO",
-        "candidato",
-        id,
-        "Candidato eliminado: " + candidato.getNombre(),
-        request);
+    eliminarCandidatoUseCase.execute(id, masterId, request);
   }
 
   public List<Candidato> listCandidatos(Long cargoId, Long partidoId) {
-    if (cargoId != null && partidoId != null) {
-      return candidatoRepository.findByCargoIdAndPartidoId(cargoId, partidoId);
-    }
-    if (cargoId != null) {
-      return candidatoRepository.findByCargoId(cargoId);
-    }
-    if (partidoId != null) {
-      return candidatoRepository.findByPartidoId(partidoId);
-    }
-    return candidatoRepository.findAll();
+    return listarCandidatosUseCase.execute(cargoId, partidoId);
   }
 }
