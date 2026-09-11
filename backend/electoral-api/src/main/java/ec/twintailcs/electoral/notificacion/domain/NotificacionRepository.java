@@ -13,11 +13,11 @@ public interface NotificacionRepository extends JpaRepository<Notificacion, Long
     List<Notificacion> findByActaId(Long actaId);
     List<Notificacion> findByTipo(String tipo);
 
-    List<Notificacion> findByDestinatarioAndLeidaFalseOrderByCreadaEnDesc(Usuario destinatario);
+    List<Notificacion> findByDestinatarioIdAndLeidaFalseOrderByCreadoEnDesc(Long destinatarioId);
 
-    long countByDestinatarioAndLeidaFalse(Usuario destinatario);
+    long countByDestinatarioIdAndLeidaFalse(Long destinatarioId);
 
     @Modifying
-    @Query("UPDATE Notificacion n SET n.leida = true WHERE n.destinatario = :usuario")
-    void marcarTodasLeidas(@Param("usuario") Usuario usuario);
+    @Query("UPDATE Notificacion n SET n.leida = true WHERE n.destinatarioId = :destinatarioId")
+    void marcarTodasLeidas(@Param("destinatarioId") Long destinatarioId);
 }

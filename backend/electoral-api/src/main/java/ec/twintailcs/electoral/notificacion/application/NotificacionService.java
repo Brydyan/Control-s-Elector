@@ -4,6 +4,7 @@ import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.notificacion.domain.Notificacion;
 import ec.twintailcs.electoral.notificacion.domain.NotificacionRepository;
+import java.util.Objects;
 import java.util.logging.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +23,11 @@ public class NotificacionService {
     @Transactional
     public void notificar(Usuario destinatario, String tipo, Acta acta, String mensaje) {
         Notificacion notif = new Notificacion();
-        notif.setDestinatario(destinatario);
-        notif.setTipo(tipo);
+        Usuario recipient = Objects.requireNonNull(destinatario, "destinatario is required");
+        notif.setDestinatarioId(recipient.getId());
+        notif.setTipo(Objects.requireNonNull(tipo, "tipo is required"));
         notif.setActa(acta);
-        notif.setMensaje(mensaje);
+        notif.setMensaje(Objects.requireNonNull(mensaje, "mensaje is required"));
         notif.setLeida(false);
         notificacionRepository.save(notif);
     }

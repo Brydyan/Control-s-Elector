@@ -4,6 +4,7 @@ import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
+import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.AnulacionDto;
 import ec.twintailcs.electoral.acta.web.dto.DisputaDto;
 import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
@@ -73,13 +74,13 @@ public class CoordinatorController {
      * Ejemplo: GET /api/v1/coordinator/actas?estado=ENVIADA&jrvId=5
      */
     @GetMapping("/actas")
-    public ResponseEntity<List<Acta>> listarActas(
+    public ResponseEntity<List<ActaResponseDto>> listarActas(
             @RequestParam(required = false) EstadoActa estado,
             @RequestParam(required = false) Long jrvId,
             @RequestParam(required = false) Long cargoId) {
 
         List<Acta> actas = actaRepository.findWithFilters(estado, jrvId, cargoId, null);
-        return ResponseEntity.ok(actas);
+        return ResponseEntity.ok(actas.stream().map(actaMapper::toDto).toList());
     }
 
     /**

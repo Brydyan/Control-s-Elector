@@ -131,6 +131,8 @@ class CoordinatorControllerTest {
 
         observer = new Usuario();
         observer.setEmail("observer-" + UUID.randomUUID() + "@test.local");
+        observer.setNombre("Observer");
+        observer.setApellido("Test");
         observer.setPasswordHash("hash");
         observer.setRol(rolObserver);
         observer.setHabilitado(true);
@@ -138,6 +140,8 @@ class CoordinatorControllerTest {
 
         coordinator = new Usuario();
         coordinator.setEmail("coordinator-" + UUID.randomUUID() + "@test.local");
+        coordinator.setNombre("Coordinator");
+        coordinator.setApellido("Test");
         coordinator.setPasswordHash("hash");
         coordinator.setRol(rolCoordinator);
         coordinator.setHabilitado(true);
@@ -145,6 +149,8 @@ class CoordinatorControllerTest {
 
         master = new Usuario();
         master.setEmail("master-" + UUID.randomUUID() + "@test.local");
+        master.setNombre("Master");
+        master.setApellido("Test");
         master.setPasswordHash("hash");
         master.setRol(rolMaster);
         master.setHabilitado(true);

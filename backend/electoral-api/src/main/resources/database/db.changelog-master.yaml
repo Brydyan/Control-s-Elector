@@ -1,29 +1,12 @@
-# Liquibase master changelog — orquestador.
-#
-# Incluye cada changelog en ORDEN EXPLICITO. No usar includeAll para tener
-# control determinista de la secuencia de aplicacion.
-#
-# Referenciado desde application.properties:
-#   spring.liquibase.change-log=classpath:database/db.changelog-master.yaml
-
 databaseChangeLog:
-  - include:
-      file: database/changelog/001-initial-schema.sql
-  - include:
-      file: database/changelog/002-rbac-seed.sql
-  - include:
-      file: database/changelog/003-menus.sql
-  - include:
-      file: database/changelog/004-public-ids.sql
-  - include:
-      file: database/changelog/005-fks.sql
-  - include:
-      file: database/changelog/006-geografia.sql
-  - include:
-      file: database/changelog/007-usuario-nombre-apellido.sql
-  - include:
-      file: database/changelog/008-configuracion.sql
-  - include:
-      file: database/changelog/009-acta-observer-permisos.sql
-
-  # Nuevos changelogs se agregan ACA, al final, en orden creciente:
+  - include: { file: database/changelog/001-initial-schema.sql }
+  - include: { file: database/changelog/002-rbac-seed.sql }
+  - include: { file: database/changelog/003-menus.sql }
+  - include: { file: database/changelog/004-public-ids.sql }
+  - include: { file: database/changelog/005-fks.sql }
+  - include: { file: database/changelog/006-geografia.sql }
+  - include: { file: database/changelog/007-usuario-nombre-apellido.sql }
+  - include: { file: database/changelog/008-configuracion.sql }
+  - include: { file: database/changelog/009-acta-observer-permisos.sql }
+  - include: { file: database/changelog/010-tablas-jpa.sql }
+  - include: { file: database/changelog/011-rls.sql }

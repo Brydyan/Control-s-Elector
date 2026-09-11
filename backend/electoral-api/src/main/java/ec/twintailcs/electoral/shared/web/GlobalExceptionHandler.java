@@ -1,5 +1,8 @@
 package ec.twintailcs.electoral.shared.web;
 
+import ec.twintailcs.electoral.acta.web.ActaEstadoInvalidoException;
+import ec.twintailcs.electoral.acta.web.ActaInvalidaException;
+import ec.twintailcs.electoral.acta.web.JrvCargoYaRegistradoException;
 import ec.twintailcs.electoral.evidencia.web.EvidenciaNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
@@ -42,6 +45,19 @@ public class GlobalExceptionHandler {
         return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
     }
 
+    /**
+     * ActaInvalidaException -> 400 BAD_REQUEST. Contrato explícito:
+     * errores de validación de dominio del módulo de actas (acta
+     * inexistente, votos que no cuadran, JRV/cargo/observer no
+     * encontrados, candidato no encontrado al corregir) deben llegar al
+     * cliente como 400. El catch-all genérico devolvería 500, ocultando
+     * el contrato detrás de un error de servidor.
+     */
+    @ExceptionHandler(ActaInvalidaException.class)
+    public ResponseEntity<Map<String, Object>> actaInvalida(ActaInvalidaException ex) {
+        return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> invalidArg(MethodArgumentNotValidException ex) {
         Map<String, String> fields = new HashMap<>();
@@ -63,6 +79,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> illegalArg(IllegalArgumentException ex) {
         return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+    }
+
+    /**
+     * ActaEstadoInvalidoException -> 409 CONFLICT. Explicito: la anotacion
+     * @ResponseStatus de la excepcion es ocultada por el catch-all generico
+     * de abajo. Mapeo explicito para preservar el contrato HTTP.
+     */
+    @ExceptionHandler(ActaEstadoInvalidoException.class)
+    public ResponseEntity<Map<String, Object>> estadoInvalido(ActaEstadoInvalidoException ex) {
+        return body(HttpStatus.CONFLICT, ex.getMessage(), null);
+    }
+
+    /**
+     * JrvCargoYaRegistradoException -> 409 CONFLICT. Misma razon que arriba:
+     * el catch-all enmascara @ResponseStatus, asi que se mapea explicitamente.
+     */
+    @ExceptionHandler(JrvCargoYaRegistradoException.class)
+    public ResponseEntity<Map<String, Object>> jrvCargoDuplicado(JrvCargoYaRegistradoException ex) {
+        return body(HttpStatus.CONFLICT, ex.getMessage(), null);
     }
 
     @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)

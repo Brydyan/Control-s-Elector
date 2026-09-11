@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
+import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.mapper.EvidenciaMapper;
@@ -39,6 +40,9 @@ class EvidenciaControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private UsuarioRepository usuarioRepository;
 
     @MockitoBean
     private EvidenciaMapper evidenciaMapper;
