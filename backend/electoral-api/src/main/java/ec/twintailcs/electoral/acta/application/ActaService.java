@@ -424,7 +424,4 @@ public class ActaService {
         }
     }
 
-    // Tipos auxiliares privados --------------------------------------------
-
-    @SuppressWarnings("unused")
     }
