@@ -86,6 +86,8 @@ class PartidoControllerTest {
 
         Usuario master = new Usuario();
         master.setEmail("master-" + UUID.randomUUID() + "@test.local");
+        master.setNombre("Master");
+        master.setApellido("Test");
         master.setPasswordHash("hash");
         master.setRol(rolMaster);
         master.setHabilitado(true);
@@ -93,6 +95,8 @@ class PartidoControllerTest {
 
         Usuario observer = new Usuario();
         observer.setEmail("observer-" + UUID.randomUUID() + "@test.local");
+        observer.setNombre("Observer");
+        observer.setApellido("Test");
         observer.setPasswordHash("hash");
         observer.setRol(rolObserver);
         observer.setHabilitado(true);

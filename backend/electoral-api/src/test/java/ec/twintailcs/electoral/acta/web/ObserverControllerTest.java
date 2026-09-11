@@ -130,6 +130,8 @@ class ObserverControllerTest {
 
         observer = new Usuario();
         observer.setEmail("observer-" + UUID.randomUUID() + "@test.local");
+        observer.setNombre("Observer");
+        observer.setApellido("Test");
         observer.setPasswordHash("hash");
         observer.setRol(rolObserver);
         observer.setHabilitado(true);

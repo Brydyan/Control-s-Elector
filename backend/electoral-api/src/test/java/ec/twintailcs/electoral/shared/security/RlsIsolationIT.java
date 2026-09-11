@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -73,10 +74,29 @@ class RlsIsolationIT {
     private long masterId;
     private long jrvId;
     private long cargoId;
+    private long cargoBId;
+
+    // Nombre del rol no-superuser usado para validar la aplicacion real
+    // de las policies. PostgreSQL superusers bypassan RLS por atributo,
+    // asi que el postgres por defecto del container no sirve para probar.
+    private static final String RLS_USER_NAME = "rls_app_user";
+    private static final String RLS_PASSWORD = "rls_app_pwd";
 
     @BeforeAll
-    static void startContainer() {
+    static void startContainer() throws SQLException {
         POSTGRES.start();
+        // Crear el rol no-superuser una sola vez, antes de cualquier test.
+        // Lo hacemos aca (no en @BeforeEach) porque DROP ROLE falla si el rol
+        // tiene privilegios sobre objetos; recrearlo en cada test seria fragil.
+        try (Connection bootstrap = DriverManager.getConnection(
+                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())) {
+            bootstrap.createStatement().execute(
+                "DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='" + RLS_USER_NAME + "') THEN "
+              + "CREATE ROLE " + RLS_USER_NAME + " LOGIN PASSWORD '" + RLS_PASSWORD + "' NOSUPERUSER NOBYPASSRLS; "
+              + "END IF; END $$;");
+            bootstrap.createStatement().execute(
+                "GRANT CONNECT ON DATABASE " + POSTGRES.getDatabaseName() + " TO " + RLS_USER_NAME);
+        }
     }
 
     @AfterAll
@@ -84,13 +104,36 @@ class RlsIsolationIT {
         POSTGRES.stop();
     }
 
+    @AfterEach
+    void tearDown() throws Exception {
+        if (adminConn != null) {
+            try { adminConn.close(); } catch (SQLException ignored) { }
+            adminConn = null;
+        }
+    }
+
     @BeforeEach
     void setUp() throws Exception {
         adminConn = DriverManager.getConnection(
                 POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
         adminConn.setAutoCommit(false);
+        try (var stmt = adminConn.createStatement()) {
+            stmt.execute("DROP SCHEMA public CASCADE");
+            stmt.execute("CREATE SCHEMA public");
+        }
+        adminConn.commit();
 
         applyChangelogs();
+        // Re-grant privilegios al rol no-superuser. DROP SCHEMA CASCADE borra
+        // los objetos pero el rol sobrevive; los GRANT sobre los objetos nuevos
+        // hay que reaplicarlos en cada test.
+        try (var stmt = adminConn.createStatement()) {
+            stmt.execute("GRANT USAGE ON SCHEMA public TO " + RLS_USER_NAME);
+            stmt.execute("GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO " + RLS_USER_NAME);
+            stmt.execute("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO " + RLS_USER_NAME);
+        }
+        adminConn.commit();
+
         seedData();
     }
 
@@ -155,6 +198,12 @@ class RlsIsolationIT {
                 cargoId = rs.getLong(1);
             }
 
+            stmt.execute("INSERT INTO cargo (nombre, nivel, puestos) VALUES ('Alcalde/sa', 'CANTON', 1)");
+            try (ResultSet rs = stmt.executeQuery("SELECT id FROM cargo WHERE nombre='Alcalde/sa'")) {
+                rs.next();
+                cargoBId = rs.getLong(1);
+            }
+
             // Usuarios con rol real (FK a tabla rol poblada por 005-seed).
             obsAId = insertUsuario(stmt, "OBSERVER", "rlstest-obsA@test");
             obsBId = insertUsuario(stmt, "OBSERVER", "rlstest-obsB@test");
@@ -170,8 +219,8 @@ class RlsIsolationIT {
             rs.next();
             rolId = rs.getLong(1);
         }
-        stmt.execute("INSERT INTO usuario (email, password_hash, rol_id, habilitado, creado_en, nombre, apellido) "
-                + "VALUES ('" + email + "', 'hash', " + rolId + ", true, NOW(), 'Test', '" + rolNombre + "')");
+        stmt.execute("INSERT INTO usuario (email, password_hash, rol_id, habilitado, creado_en, nombre, apellido, public_id) "
+                + "VALUES ('" + email + "', 'hash', " + rolId + ", true, NOW(), 'Test', '" + rolNombre + "', '" + UUID.randomUUID() + "')");
         try (ResultSet rs = stmt.executeQuery("SELECT id FROM usuario WHERE email='" + email + "'")) {
             rs.next();
             return rs.getLong(1);
@@ -185,7 +234,7 @@ class RlsIsolationIT {
     @Test
     void observerOnlySeesOwnActas() throws Exception {
         insertActaEnviada(obsAId, jrvId, cargoId);
-        insertActaEnviada(obsBId, jrvId, cargoId);
+        insertActaEnviada(obsBId, jrvId, cargoBId);
 
         int visibleObsA = countActasVisibleAs(obsAId, "OBSERVER");
         int visibleObsB = countActasVisibleAs(obsBId, "OBSERVER");
@@ -242,13 +291,15 @@ class RlsIsolationIT {
      */
     private int countActasVisibleAs(long userId, String rolName) throws SQLException {
         try (Connection conn = DriverManager.getConnection(
-                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())) {
+                POSTGRES.getJdbcUrl(), RLS_USER_NAME, RLS_PASSWORD)) {
             conn.setAutoCommit(false);
-            try (PreparedStatement ps = conn.prepareStatement("SET LOCAL app.current_user_id = ?")) {
-                ps.setLong(1, userId);
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT set_config('app.current_user_id', ?, true)")) {
+                ps.setString(1, Long.toString(userId));
                 ps.execute();
             }
-            try (PreparedStatement ps = conn.prepareStatement("SET LOCAL app.current_user_rol = ?")) {
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT set_config('app.current_user_rol', ?, true)")) {
                 ps.setString(1, rolName);
                 ps.execute();
             }

@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Map;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -16,7 +17,8 @@ import org.hibernate.type.SqlTypes;
  * aprobación, anulación de actas; CRUD de configuración).
  *
  * <p>La columna {@code detalle} es JSONB en Postgres: almacenamos
- * un payload arbitrario que el {@code AuditLogService} serializa a JSON.
+ * un payload arbitrario tipado como {@code Map<String,Object>} que el
+ * {@code AuditLogService} construye como JSON estructurado.
  * Hibernate 6 lo mapea vía {@link SqlTypes#JSON} → JSONB nativo.
  *
  * <p>La columna {@code ip_address} se completa en el servicio leyendo
@@ -42,12 +44,17 @@ public class AuditLog {
     private String accion;
 
     /**
-     * Payload arbitrario en JSON. Hibernate 6 lo mapea a JSONB nativo
-     * de Postgres; el servicio lo construye con un ObjectMapper.
+     * Payload arbitrario en JSONB. Hibernate 6 lo mapea a JSONB nativo
+     * de Postgres vía {@link SqlTypes#JSON}: el {@code Map} se serializa
+     * a JSON al persistir y se deserializa al leer.
+     *
+     * <p>El {@code AuditLogService} construye el payload (por ejemplo
+     * {@code {"message": texto}}) para que la columna jsonb acepte el
+     * detalle sin coercionar a texto crudo.
      */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private String detalle;
+    private Map<String, Object> detalle;
 
     @Column(name = "ip_address", length = 64)
     private String ipAddress;
@@ -90,11 +97,11 @@ public class AuditLog {
         this.accion = accion;
     }
 
-    public String getDetalle() {
+    public Map<String, Object> getDetalle() {
         return detalle;
     }
 
-    public void setDetalle(String detalle) {
+    public void setDetalle(Map<String, Object> detalle) {
         this.detalle = detalle;
     }
 
