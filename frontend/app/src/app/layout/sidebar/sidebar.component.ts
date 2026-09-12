@@ -8,6 +8,8 @@ import { MenuNode } from '../../core/menu/menu.model';
 import { MenuService } from '../../core/menu/menu.service';
 import { LayoutService } from '../layout.service';
 
+import { IonIcon } from '@ionic/angular/standalone';
+
 export interface DynamicNavSection {
   label: string;
   items: DynamicNavItem[];
@@ -24,7 +26,7 @@ export interface DynamicNavItem {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, IonIcon],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
 })
@@ -103,7 +105,7 @@ export class SidebarComponent implements OnInit {
         items: [
           {
             label: 'Mis JRVs',
-            icon: '🗳️',
+            icon: 'grid-outline',
             route: '/observer/mis-jrvs',
           },
         ],
@@ -122,23 +124,23 @@ export class SidebarComponent implements OnInit {
   private mapIcon(icono?: string): string {
     switch (icono) {
       case 'home':
-        return '📊';
+        return 'home-outline';
       case 'document':
       case 'add-circle':
-        return '📋';
+        return 'document-text-outline';
       case 'checkmark':
-        return '✅';
+        return 'checkmark-circle-outline';
       case 'image':
       case 'cloud-upload':
-        return '📸';
+        return 'camera-outline';
       case 'settings':
-        return '⚙️';
+        return 'settings-outline';
       case 'people':
-        return '👥';
+        return 'people-outline';
       case 'pulse':
-        return '📈';
+        return 'analytics-outline';
       default:
-        return '🔹';
+        return 'document-text-outline';
     }
   }
 
@@ -146,7 +148,13 @@ export class SidebarComponent implements OnInit {
     const sections: DynamicNavSection[] = [
       {
         label: 'Dashboard',
-        items: [{ label: 'Resumen General', icon: '📊', route: '/dashboard' }],
+        items: [
+          {
+            label: 'Resumen General',
+            icon: 'home-outline',
+            route: '/dashboard',
+          },
+        ],
       },
     ];
 
@@ -154,7 +162,13 @@ export class SidebarComponent implements OnInit {
     if (role === 'OBSERVER' || role === 'MASTER') {
       sections.push({
         label: 'Operación Electoral',
-        items: [{ label: 'Mis JRVs', icon: '🗳️', route: '/observer/mis-jrvs' }],
+        items: [
+          {
+            label: 'Mis JRVs',
+            icon: 'grid-outline',
+            route: '/observer/mis-jrvs',
+          },
+        ],
       });
     }
 

@@ -16,7 +16,7 @@
         (click)="layout.closeSidebar()"
         aria-label="Cerrar menú lateral"
       >
-        ✕
+        <ion-icon name="close-outline" aria-hidden="true"></ion-icon>
       </button>
     </div>
   </div>
@@ -32,7 +32,11 @@
             aria-disabled="true"
             [attr.title]="item.label"
           >
-            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <ion-icon
+              class="nav-icon"
+              [name]="item.icon"
+              aria-hidden="true"
+            ></ion-icon>
             <span class="nav-label">{{ item.label }}</span>
             @if (item.tag) {
               <span class="nav-tag">{{ item.tag }}</span>
@@ -47,7 +51,11 @@
             (click)="layout.closeSidebar()"
             [attr.title]="item.label"
           >
-            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <ion-icon
+              class="nav-icon"
+              [name]="item.icon"
+              aria-hidden="true"
+            ></ion-icon>
             <span class="nav-label">{{ item.label }}</span>
           </a>
         }
@@ -72,7 +80,7 @@
         aria-label="Cerrar sesión"
         title="Cerrar sesión"
       >
-        ↩
+        <ion-icon name="log-out-outline" aria-hidden="true"></ion-icon>
       </button>
     </div>
   </div>

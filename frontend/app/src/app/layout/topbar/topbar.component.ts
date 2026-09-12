@@ -1,4 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
+import { IonIcon } from '@ionic/angular/standalone';
 
 import { AuthStore } from '../../core/auth/auth.store';
 import { Role } from '../../core/auth/domain/user.model';
@@ -11,6 +12,7 @@ const READ_ONLY_ROLES: Role[] = ['ADMIN'];
 @Component({
   selector: 'app-topbar',
   standalone: true,
+  imports: [IonIcon],
   templateUrl: './topbar.component.html',
   styleUrl: './topbar.component.scss',
 })

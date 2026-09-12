@@ -15,7 +15,11 @@
           : 'Contraer menú lateral'
       "
     >
-      <span class="menu-icon">☰</span>
+      <ion-icon
+        class="menu-icon"
+        name="menu-outline"
+        aria-hidden="true"
+      ></ion-icon>
     </button>
 
     <div class="topbar-title">
@@ -40,7 +44,7 @@
     </div>
 
     <button class="bell-btn" type="button" aria-label="Notificaciones">
-      🔔
+      <ion-icon name="notifications-outline" aria-hidden="true"></ion-icon>
       @if (notifications() > 0) {
         <span class="bell-badge">{{ notifications() }}</span>
       }
