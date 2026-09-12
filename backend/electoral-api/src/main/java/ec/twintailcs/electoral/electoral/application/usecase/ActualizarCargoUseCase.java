@@ -3,9 +3,8 @@ package ec.twintailcs.electoral.electoral.application.usecase;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.web.dto.CargoRequest;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +20,7 @@ public class ActualizarCargoUseCase {
   }
 
   @Transactional
-  public Cargo execute(Long id, CargoRequest dto, Long masterId, HttpServletRequest request) {
+  public Cargo execute(Long id, CargoRequest dto, Long masterId, String ipAddress) {
     Cargo cargo =
         cargoRepository
             .findById(id)
@@ -32,8 +31,8 @@ public class ActualizarCargoUseCase {
     cargo.setPuestos(dto.puestos());
     Cargo actualizado = cargoRepository.save(cargo);
 
-    auditLogService.registrar(
-        masterId, "ACTUALIZAR_CARGO", "cargo", id, "Cargo actualizado: " + dto.nombre(), request);
+    auditLogService.registrarConIp(
+        masterId, "ACTUALIZAR_CARGO", "cargo", id, "Cargo actualizado: " + dto.nombre(), ipAddress);
     return actualizado;
   }
 }

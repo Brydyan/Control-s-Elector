@@ -5,11 +5,10 @@ import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.web.dto.CandidatoRequest;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,8 +32,7 @@ public class ActualizarCandidatoUseCase {
   }
 
   @Transactional
-  public Candidato execute(
-      Long id, CandidatoRequest dto, Long masterId, HttpServletRequest request) {
+  public Candidato execute(Long id, CandidatoRequest dto, Long masterId, String ipAddress) {
     Candidato candidato =
         candidatoRepository
             .findById(id)
@@ -61,13 +59,13 @@ public class ActualizarCandidatoUseCase {
     candidato.setPartido(partido);
     Candidato actualizado = candidatoRepository.save(candidato);
 
-    auditLogService.registrar(
+    auditLogService.registrarConIp(
         masterId,
         "ACTUALIZAR_CANDIDATO",
         "candidato",
         id,
         "Candidato actualizado: " + dto.nombre(),
-        request);
+        ipAddress);
     return actualizado;
   }
 }

@@ -11,8 +11,8 @@ import static org.mockito.Mockito.when;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.NivelCargo;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.web.dto.CargoRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +66,7 @@ class ActualizarCargoUseCaseTest {
 
     verify(cargoRepository).save(existente);
     verify(auditLogService)
-        .registrar(
+        .registrarConIp(
             eq(99L),
             eq("ACTUALIZAR_CARGO"),
             eq("cargo"),

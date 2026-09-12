@@ -75,16 +75,28 @@ public class ConfiguracionService {
 
   // ─── Cargo ──────────────────────────────────────────────────────────────
 
+  public Cargo createCargo(CargoRequest dto, Long masterId, String ipAddress) {
+    return crearCargoUseCase.execute(dto, masterId, ipAddress);
+  }
+
   public Cargo createCargo(CargoRequest dto, Long masterId, HttpServletRequest request) {
-    return crearCargoUseCase.execute(dto, masterId, request);
+    return createCargo(dto, masterId, extractIp(request));
+  }
+
+  public Cargo updateCargo(Long id, CargoRequest dto, Long masterId, String ipAddress) {
+    return actualizarCargoUseCase.execute(id, dto, masterId, ipAddress);
   }
 
   public Cargo updateCargo(Long id, CargoRequest dto, Long masterId, HttpServletRequest request) {
-    return actualizarCargoUseCase.execute(id, dto, masterId, request);
+    return updateCargo(id, dto, masterId, extractIp(request));
+  }
+
+  public void deleteCargo(Long id, Long masterId, String ipAddress) {
+    eliminarCargoUseCase.execute(id, masterId, ipAddress);
   }
 
   public void deleteCargo(Long id, Long masterId, HttpServletRequest request) {
-    eliminarCargoUseCase.execute(id, masterId, request);
+    deleteCargo(id, masterId, extractIp(request));
   }
 
   public List<Cargo> listCargos() {
@@ -93,17 +105,29 @@ public class ConfiguracionService {
 
   // ─── Partido ────────────────────────────────────────────────────────────
 
+  public Partido createPartido(PartidoRequest dto, Long masterId, String ipAddress) {
+    return crearPartidoUseCase.execute(dto, masterId, ipAddress);
+  }
+
   public Partido createPartido(PartidoRequest dto, Long masterId, HttpServletRequest request) {
-    return crearPartidoUseCase.execute(dto, masterId, request);
+    return createPartido(dto, masterId, extractIp(request));
+  }
+
+  public Partido updatePartido(Long id, PartidoRequest dto, Long masterId, String ipAddress) {
+    return actualizarPartidoUseCase.execute(id, dto, masterId, ipAddress);
   }
 
   public Partido updatePartido(
       Long id, PartidoRequest dto, Long masterId, HttpServletRequest request) {
-    return actualizarPartidoUseCase.execute(id, dto, masterId, request);
+    return updatePartido(id, dto, masterId, extractIp(request));
+  }
+
+  public void deletePartido(Long id, Long masterId, String ipAddress) {
+    eliminarPartidoUseCase.execute(id, masterId, ipAddress);
   }
 
   public void deletePartido(Long id, Long masterId, HttpServletRequest request) {
-    eliminarPartidoUseCase.execute(id, masterId, request);
+    deletePartido(id, masterId, extractIp(request));
   }
 
   public List<Partido> listPartidos() {
@@ -112,21 +136,42 @@ public class ConfiguracionService {
 
   // ─── Candidato ──────────────────────────────────────────────────────────
 
+  public Candidato createCandidato(CandidatoRequest dto, Long masterId, String ipAddress) {
+    return crearCandidatoUseCase.execute(dto, masterId, ipAddress);
+  }
+
   public Candidato createCandidato(
       CandidatoRequest dto, Long masterId, HttpServletRequest request) {
-    return crearCandidatoUseCase.execute(dto, masterId, request);
+    return createCandidato(dto, masterId, extractIp(request));
+  }
+
+  public Candidato updateCandidato(Long id, CandidatoRequest dto, Long masterId, String ipAddress) {
+    return actualizarCandidatoUseCase.execute(id, dto, masterId, ipAddress);
   }
 
   public Candidato updateCandidato(
       Long id, CandidatoRequest dto, Long masterId, HttpServletRequest request) {
-    return actualizarCandidatoUseCase.execute(id, dto, masterId, request);
+    return updateCandidato(id, dto, masterId, extractIp(request));
+  }
+
+  public void deleteCandidato(Long id, Long masterId, String ipAddress) {
+    eliminarCandidatoUseCase.execute(id, masterId, ipAddress);
   }
 
   public void deleteCandidato(Long id, Long masterId, HttpServletRequest request) {
-    eliminarCandidatoUseCase.execute(id, masterId, request);
+    deleteCandidato(id, masterId, extractIp(request));
   }
 
   public List<Candidato> listCandidatos(Long cargoId, Long partidoId) {
     return listarCandidatosUseCase.execute(cargoId, partidoId);
+  }
+
+  private String extractIp(HttpServletRequest request) {
+    if (request == null) return null;
+    String xForwardedFor = request.getHeader("X-Forwarded-For");
+    if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+      return xForwardedFor.split(",")[0].trim();
+    }
+    return request.getRemoteAddr();
   }
 }
