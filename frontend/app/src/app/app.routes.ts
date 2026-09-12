@@ -20,7 +20,9 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
+          import('./features/dashboard/dashboard.page').then(
+            (m) => m.DashboardPage,
+          ),
         data: {
           title: 'Resumen General',
           subtitle: 'Elecciones Seccionales 2027 · Provincia Santa Elena',
@@ -31,7 +33,9 @@ export const routes: Routes = [
         path: 'observer/mis-jrvs',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/observer/pages/mis-jrvs/mis-jrvs.page').then((m) => m.MisJrvsPage),
+          import('./features/observer/pages/mis-jrvs/mis-jrvs.page').then(
+            (m) => m.MisJrvsPage,
+          ),
         data: {
           roles: ['OBSERVER', 'ADMIN', 'MASTER'],
           title: 'Mis JRVs Asignadas',
@@ -41,7 +45,9 @@ export const routes: Routes = [
         path: 'observer/jrv/:jrvId/cargos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/observer/pages/jrv-cargos/jrv-cargos.page').then((m) => m.JrvCargosPage),
+          import('./features/observer/pages/jrv-cargos/jrv-cargos.page').then(
+            (m) => m.JrvCargosPage,
+          ),
         data: {
           roles: ['OBSERVER', 'ADMIN', 'MASTER'],
           title: 'Dignidades de JRV',

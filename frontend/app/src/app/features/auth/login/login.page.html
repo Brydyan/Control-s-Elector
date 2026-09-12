@@ -22,7 +22,9 @@
       </div>
     </div>
 
-    <div class="footer-text">Confidencial · Uso exclusivo de veedores autorizados</div>
+    <div class="footer-text">
+      Confidencial · Uso exclusivo de veedores autorizados
+    </div>
   </aside>
 
   <!-- Right: form -->
@@ -48,7 +50,7 @@
           />
         </div>
         @if (form.controls.email.touched && form.controls.email.invalid) {
-          <span class="field-error">Ingresa un correo electrónico válido.</span>
+        <span class="field-error">Ingresa un correo electrónico válido.</span>
         }
       </div>
 
@@ -77,12 +79,14 @@
           </button>
         </div>
         @if (form.controls.password.touched && form.controls.password.invalid) {
-          <span class="field-error">La contraseña debe tener al menos 8 caracteres.</span>
+        <span class="field-error"
+          >La contraseña debe tener al menos 8 caracteres.</span
+        >
         }
       </div>
 
       @if (errorMessage()) {
-        <div class="form-error" role="alert">{{ errorMessage() }}</div>
+      <div class="form-error" role="alert">{{ errorMessage() }}</div>
       }
 
       <button class="btn-login" type="submit" [disabled]="loading()">
@@ -95,6 +99,8 @@
       <div class="rol-chip rol-other">COORDINATOR</div>
       <div class="rol-chip rol-other">MASTER</div>
     </div>
-    <p class="rol-note">El rol se detecta automáticamente desde el JWT · Solo referencia visual</p>
+    <p class="rol-note">
+      El rol se detecta automáticamente desde el JWT · Solo referencia visual
+    </p>
   </section>
 </div>

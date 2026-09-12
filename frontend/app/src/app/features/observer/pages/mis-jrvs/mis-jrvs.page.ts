@@ -12,7 +12,6 @@ import {
 import { JrvConEstado } from '../../models/observer.model';
 import { ObserverService } from '../../services/observer.service';
 
-
 type FilterTab = 'TODAS' | 'PENDIENTES' | 'COMPLETADAS';
 
 @Component({
@@ -54,7 +53,8 @@ export class MisJrvsPage implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'No se pudieron cargar las mesas asignadas. Verifica tu conexión.';
+        this.error =
+          'No se pudieron cargar las mesas asignadas. Verifica tu conexión.';
         this.loading = false;
         console.error('Error fetching JRVs:', err);
       },

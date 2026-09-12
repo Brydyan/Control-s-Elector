@@ -23,7 +23,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const store = inject(AuthStore);
   const repo = inject(AuthRepository);
 
-  const isAuthEndpoint = req.url.includes('/auth/login') || req.url.includes('/auth/refresh');
+  const isAuthEndpoint =
+    req.url.includes('/auth/login') || req.url.includes('/auth/refresh');
   const token = store.accessToken();
 
   const authorized = token

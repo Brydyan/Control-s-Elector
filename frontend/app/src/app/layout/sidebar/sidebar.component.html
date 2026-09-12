@@ -10,7 +10,7 @@
   </div>
 
   <nav class="sidebar-nav">
-    @for (section of sections; track section.label) {
+    @for (section of sections(); track section.label) {
       <div class="nav-section-label">{{ section.label }}</div>
 
       @for (item of section.items; track item.label) {
@@ -43,7 +43,12 @@
         <div class="user-name">{{ displayName() }}</div>
         <div class="user-rol">{{ roleLabel() }}</div>
       </div>
-      <button class="user-exit" type="button" (click)="logout()" aria-label="Cerrar sesión">
+      <button
+        class="user-exit"
+        type="button"
+        (click)="logout()"
+        aria-label="Cerrar sesión"
+      >
         ↩
       </button>
     </div>

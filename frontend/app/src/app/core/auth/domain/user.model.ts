@@ -9,7 +9,7 @@
 export type Role = 'MASTER' | 'COORDINATOR' | 'ADMIN' | 'OBSERVER';
 
 export interface CurrentUser {
-  id: number;
+  id: string;
   email: string;
   role: Role;
   permissions: string[];

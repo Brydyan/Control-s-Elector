@@ -26,7 +26,11 @@ interface RouteMeta {
 export class MainLayoutComponent {
   private readonly router = inject(Router);
 
-  readonly meta = signal<RouteMeta>({ title: '', subtitle: '', notifications: 0 });
+  readonly meta = signal<RouteMeta>({
+    title: '',
+    subtitle: '',
+    notifications: 0,
+  });
 
   constructor() {
     // Later navigations: recompute whenever a navigation finishes.

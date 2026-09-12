@@ -3,14 +3,16 @@
   <div class="progress-banner-left">
     <div class="banner-head">
       <h2>Progreso de Escrutinio</h2>
-      <p>{{ sentActas }} de {{ totalJrv }} JRVs han enviado actas registradas</p>
+      <p>
+        {{ sentActas }} de {{ totalJrv }} JRVs han enviado actas registradas
+      </p>
     </div>
     <div class="progress-bar-banner">
       <div class="progress-bar-banner-fill" [style.width.%]="overallPct"></div>
     </div>
     <div class="banner-cantons">
       @for (c of cantons; track c.code) {
-        <span>{{ c.name }}: {{ pct(c) }}% ({{ c.done }}/{{ c.total }})</span>
+      <span>{{ c.name }}: {{ pct(c) }}% ({{ c.done }}/{{ c.total }})</span>
       }
     </div>
   </div>
@@ -23,11 +25,11 @@
 <!-- Stats row -->
 <section class="stats-row">
   @for (s of stats; track s.key) {
-    <div class="stat-card" [class]="'c-' + s.key">
-      <div class="stat-card-label">{{ s.label }}</div>
-      <div class="stat-card-value" [class]="'v-' + s.key">{{ s.value }}</div>
-      <div class="stat-card-sub">{{ s.sub }}</div>
-    </div>
+  <div class="stat-card" [class]="'c-' + s.key">
+    <div class="stat-card-label">{{ s.label }}</div>
+    <div class="stat-card-value" [class]="'v-' + s.key">{{ s.value }}</div>
+    <div class="stat-card-sub">{{ s.sub }}</div>
+  </div>
   }
 </section>
 
@@ -38,18 +40,24 @@
     <div class="card-title">🗺️ Progreso por Cantón</div>
 
     @for (c of cantons; track c.code) {
-      <div class="canton-row">
-        <div class="canton-row-header">
-          <div>
-            <div class="canton-name">{{ c.name }}</div>
-            <div class="canton-meta">{{ c.done }}/{{ c.total }} JRVs · Código {{ c.code }}</div>
+    <div class="canton-row">
+      <div class="canton-row-header">
+        <div>
+          <div class="canton-name">{{ c.name }}</div>
+          <div class="canton-meta">
+            {{ c.done }}/{{ c.total }} JRVs · Código {{ c.code }}
           </div>
-          <div class="canton-pct" [class]="'tier-' + tier(c)">{{ pct(c) }}%</div>
         </div>
-        <div class="prog-bar">
-          <div class="prog-fill" [class]="'fill-' + tier(c)" [style.width.%]="pct(c)"></div>
-        </div>
+        <div class="canton-pct" [class]="'tier-' + tier(c)">{{ pct(c) }}%</div>
       </div>
+      <div class="prog-bar">
+        <div
+          class="prog-fill"
+          [class]="'fill-' + tier(c)"
+          [style.width.%]="pct(c)"
+        ></div>
+      </div>
+    </div>
     }
   </article>
 
@@ -58,14 +66,14 @@
     <div class="card-title">🕐 Actas Recientes</div>
 
     @for (a of recentActas; track $index) {
-      <div class="acta-row">
-        <div class="acta-info">
-          <div class="acta-jrv">{{ a.jrv }} — {{ a.canton }}</div>
-          <div class="acta-cargo">{{ a.cargo }}</div>
-        </div>
-        <span class="badge" [class]="'badge-' + a.status">{{ a.status }}</span>
-        <span class="acta-time">{{ a.time }}</span>
+    <div class="acta-row">
+      <div class="acta-info">
+        <div class="acta-jrv">{{ a.jrv }} — {{ a.canton }}</div>
+        <div class="acta-cargo">{{ a.cargo }}</div>
       </div>
+      <span class="badge" [class]="'badge-' + a.status">{{ a.status }}</span>
+      <span class="acta-time">{{ a.time }}</span>
+    </div>
     }
   </article>
 </section>

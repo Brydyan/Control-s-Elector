@@ -11,10 +11,10 @@ export interface LoginRequestDto {
 }
 
 export interface CurrentUserDto {
-  id: number;
+  id: string;
   email: string;
   rol: string;
-  permisos: string[];
+  permisos?: string[];
 }
 
 export interface AuthResponseDto {

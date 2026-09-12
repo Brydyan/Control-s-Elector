@@ -20,7 +20,9 @@ describe('LoadingStateComponent', () => {
   });
 
   it('should display default loading message', () => {
-    const msgEl = fixture.nativeElement.querySelector('.loading-state__message');
+    const msgEl = fixture.nativeElement.querySelector(
+      '.loading-state__message',
+    );
     expect(msgEl.textContent).toContain('Cargando información...');
   });
 

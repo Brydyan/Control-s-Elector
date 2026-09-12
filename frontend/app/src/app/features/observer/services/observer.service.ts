@@ -38,12 +38,16 @@ export class ObserverService {
   }
 
   getCargosDeJrv(jrvId: number): Observable<CargoConEstado[]> {
-    return this.http.get<CargoConEstado[]>(`${this.baseUrl}/jrv/${jrvId}/cargos`);
+    return this.http.get<CargoConEstado[]>(
+      `${this.baseUrl}/jrv/${jrvId}/cargos`,
+    );
   }
 
   getCandidatosPorCargo(cargoId: number): Observable<CandidatoInfo[]> {
     return forkJoin({
-      candidatos: this.http.get<CandidatoDto[]>(`${this.configUrl}/candidatos?cargoId=${cargoId}`),
+      candidatos: this.http.get<CandidatoDto[]>(
+        `${this.configUrl}/candidatos?cargoId=${cargoId}`,
+      ),
       partidos: this.http.get<PartidoDto[]>(`${this.configUrl}/partidos`),
     }).pipe(
       map(({ candidatos, partidos }) => {
@@ -70,13 +74,19 @@ export class ObserverService {
   }
 
   enviarBorrador(actaId: number): Observable<ActaResponse> {
-    return this.http.post<ActaResponse>(`${this.baseUrl}/actas/${actaId}/enviar`, {});
+    return this.http.post<ActaResponse>(
+      `${this.baseUrl}/actas/${actaId}/enviar`,
+      {},
+    );
   }
 
   subirImagenActa(actaId: number, file: File): Observable<void> {
     const formData = new FormData();
     formData.append('imagen', file);
-    return this.http.post<void>(`${this.baseUrl}/actas/${actaId}/imagen`, formData);
+    return this.http.post<void>(
+      `${this.baseUrl}/actas/${actaId}/imagen`,
+      formData,
+    );
   }
 
   getMisActas(): Observable<ActaResponse[]> {
@@ -84,6 +94,8 @@ export class ObserverService {
   }
 
   getCorreccionesPendientes(): Observable<ActaResponse[]> {
-    return this.http.get<ActaResponse[]>(`${this.baseUrl}/correcciones-pendientes`);
+    return this.http.get<ActaResponse[]>(
+      `${this.baseUrl}/correcciones-pendientes`,
+    );
   }
 }

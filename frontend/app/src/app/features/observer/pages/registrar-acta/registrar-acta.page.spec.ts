@@ -21,8 +21,22 @@ describe('RegistrarActaPage', () => {
 
     observerServiceSpy.getCandidatosPorCargo.and.returnValue(
       of([
-        { id: 1, nombre: 'Candidato A', orden: 1, cargoId: 2, partidoId: 10, partidoSiglas: 'PA' },
-        { id: 2, nombre: 'Candidato B', orden: 2, cargoId: 2, partidoId: 20, partidoSiglas: 'PB' },
+        {
+          id: 1,
+          nombre: 'Candidato A',
+          orden: 1,
+          cargoId: 2,
+          partidoId: 10,
+          partidoSiglas: 'PA',
+        },
+        {
+          id: 2,
+          nombre: 'Candidato B',
+          orden: 2,
+          cargoId: 2,
+          partidoId: 20,
+          partidoSiglas: 'PB',
+        },
       ]),
     );
 

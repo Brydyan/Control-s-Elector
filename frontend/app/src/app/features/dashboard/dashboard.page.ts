@@ -45,10 +45,25 @@ export class DashboardPage {
 
   readonly stats: StatCard[] = [
     { key: 'total', label: 'Total Actas', value: 291, sub: 'De 450 JRVs' },
-    { key: 'enviada', label: 'Enviadas', value: 142, sub: 'Pendientes revisión' },
-    { key: 'disputa', label: 'En Disputa', value: 18, sub: 'Requieren corrección' },
+    {
+      key: 'enviada',
+      label: 'Enviadas',
+      value: 142,
+      sub: 'Pendientes revisión',
+    },
+    {
+      key: 'disputa',
+      label: 'En Disputa',
+      value: 18,
+      sub: 'Requieren corrección',
+    },
     { key: 'aprobada', label: 'Aprobadas', value: 128, sub: 'Confirmadas' },
-    { key: 'anulada', label: 'Anuladas', value: 3, sub: 'Excluidas del conteo' },
+    {
+      key: 'anulada',
+      label: 'Anuladas',
+      value: 3,
+      sub: 'Excluidas del conteo',
+    },
   ];
 
   readonly cantons: CantonProgress[] = [
@@ -58,15 +73,47 @@ export class DashboardPage {
   ];
 
   readonly recentActas: RecentActa[] = [
-    { jrv: 'JRV 088', canton: 'La Libertad', cargo: 'Prefecto/a Provincial', status: 'APROBADA', time: '16:42' },
-    { jrv: 'JRV 120', canton: 'Salinas', cargo: 'Consejero/a CPCCS', status: 'CORREGIDA', time: '16:38' },
-    { jrv: 'JRV 002', canton: 'Santa Elena', cargo: 'Alcalde/sa Cantón', status: 'EN_DISPUTA', time: '16:21' },
-    { jrv: 'JRV 015', canton: 'Chanduy', cargo: 'Vocal Junta Parroquial', status: 'ENVIADA', time: '16:10' },
-    { jrv: 'JRV 001', canton: 'Santa Elena', cargo: 'Prefecto/a Provincial', status: 'APROBADA', time: '14:32' },
+    {
+      jrv: 'JRV 088',
+      canton: 'La Libertad',
+      cargo: 'Prefecto/a Provincial',
+      status: 'APROBADA',
+      time: '16:42',
+    },
+    {
+      jrv: 'JRV 120',
+      canton: 'Salinas',
+      cargo: 'Consejero/a CPCCS',
+      status: 'CORREGIDA',
+      time: '16:38',
+    },
+    {
+      jrv: 'JRV 002',
+      canton: 'Santa Elena',
+      cargo: 'Alcalde/sa Cantón',
+      status: 'EN_DISPUTA',
+      time: '16:21',
+    },
+    {
+      jrv: 'JRV 015',
+      canton: 'Chanduy',
+      cargo: 'Vocal Junta Parroquial',
+      status: 'ENVIADA',
+      time: '16:10',
+    },
+    {
+      jrv: 'JRV 001',
+      canton: 'Santa Elena',
+      cargo: 'Prefecto/a Provincial',
+      status: 'APROBADA',
+      time: '14:32',
+    },
   ];
 
   pct(canton: CantonProgress): number {
-    return canton.total === 0 ? 0 : Math.round((canton.done / canton.total) * 100);
+    return canton.total === 0
+      ? 0
+      : Math.round((canton.done / canton.total) * 100);
   }
 
   /** Color tier by completion: full → green, mid → blue, low → amber. */

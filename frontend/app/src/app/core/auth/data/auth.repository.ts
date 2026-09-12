@@ -40,12 +40,20 @@ export class AuthRepository {
 
   refresh(): Observable<Session> {
     return this.http
-      .post<AuthResponseDto>(`${this.base}/refresh`, {}, { withCredentials: true })
+      .post<AuthResponseDto>(
+        `${this.base}/refresh`,
+        {},
+        { withCredentials: true },
+      )
       .pipe(map((dto) => this.toSession(dto)));
   }
 
   logout(): Observable<void> {
-    return this.http.post<void>(`${this.base}/logout`, {}, { withCredentials: true });
+    return this.http.post<void>(
+      `${this.base}/logout`,
+      {},
+      { withCredentials: true },
+    );
   }
 
   me(): Observable<CurrentUser> {
