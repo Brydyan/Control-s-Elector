@@ -1,10 +1,12 @@
 .app-card {
   background-color: var(--surface-card);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-sm);
   transition:
     box-shadow var(--transition-base),
     border-color var(--transition-base);
@@ -14,7 +16,7 @@
   }
 
   &--elevated {
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-card);
 
     &:hover {
       box-shadow: var(--shadow-md);
