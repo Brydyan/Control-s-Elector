@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.electoral.web;
+package ec.twintailcs.electoral.electoral.domain;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

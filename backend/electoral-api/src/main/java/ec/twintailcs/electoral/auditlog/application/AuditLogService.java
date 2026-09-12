@@ -53,9 +53,34 @@ public class AuditLogService {
   }
 
   @Transactional
+  public void registrarConIp(
+      Long usuarioId,
+      String accion,
+      String entidad,
+      Long entidadId,
+      String detalle,
+      String ipAddress) {
+    AuditLog log = new AuditLog();
+
+    if (usuarioId != null) {
+      usuarioRepository
+          .findById(usuarioId)
+          .ifPresent(usuario -> log.setRegistradoPor(usuario.getId()));
+    }
+
+    log.setAccion(accion);
+    log.setEntidad(entidad);
+    log.setEntidadId(entidadId);
+    log.setDetalle(toJsonPayload(detalle));
+    log.setIpAddress(ipAddress != null && !ipAddress.isBlank() ? ipAddress : "sistema");
+
+    auditLogRepository.save(log);
+  }
+
+  @Transactional
   public void registrar(
       Long usuarioId, String accion, String entidad, Long entidadId, String detalle) {
-    registrar(usuarioId, accion, entidad, entidadId, detalle, null);
+    registrarConIp(usuarioId, accion, entidad, entidadId, detalle, null);
   }
 
   /**

@@ -10,8 +10,8 @@ import static org.mockito.Mockito.when;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.NivelCargo;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,7 +54,7 @@ class EliminarCargoUseCaseTest {
 
     verify(cargoRepository).delete(cargo);
     verify(auditLogService)
-        .registrar(
+        .registrarConIp(
             eq(99L),
             eq("ELIMINAR_CARGO"),
             eq("cargo"),

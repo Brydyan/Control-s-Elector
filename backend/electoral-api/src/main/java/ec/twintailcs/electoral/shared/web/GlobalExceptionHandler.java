@@ -3,6 +3,8 @@ package ec.twintailcs.electoral.shared.web;
 import ec.twintailcs.electoral.acta.web.ActaEstadoInvalidoException;
 import ec.twintailcs.electoral.acta.web.ActaInvalidaException;
 import ec.twintailcs.electoral.acta.web.JrvCargoYaRegistradoException;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.evidencia.web.EvidenciaNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
@@ -35,6 +37,18 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(EvidenciaNotFoundException.class)
   public ResponseEntity<Map<String, Object>> notFound(EvidenciaNotFoundException ex) {
     return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
+  }
+
+  @ExceptionHandler(ConfiguracionNotFoundException.class)
+  public ResponseEntity<Map<String, Object>> configuracionNotFound(
+      ConfiguracionNotFoundException ex) {
+    return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
+  }
+
+  @ExceptionHandler(ConfiguracionConflictException.class)
+  public ResponseEntity<Map<String, Object>> configuracionConflict(
+      ConfiguracionConflictException ex) {
+    return body(HttpStatus.CONFLICT, ex.getMessage(), null);
   }
 
   /** AccessDeniedException de @PreAuthorize -> 403 FORBIDDEN. */

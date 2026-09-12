@@ -3,8 +3,7 @@ package ec.twintailcs.electoral.electoral.application.usecase;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +19,7 @@ public class EliminarCargoUseCase {
   }
 
   @Transactional
-  public void execute(Long id, Long masterId, HttpServletRequest request) {
+  public void execute(Long id, Long masterId, String ipAddress) {
     Cargo cargo =
         cargoRepository
             .findById(id)
@@ -28,7 +27,12 @@ public class EliminarCargoUseCase {
 
     cargoRepository.delete(cargo);
 
-    auditLogService.registrar(
-        masterId, "ELIMINAR_CARGO", "cargo", id, "Cargo eliminado: " + cargo.getNombre(), request);
+    auditLogService.registrarConIp(
+        masterId,
+        "ELIMINAR_CARGO",
+        "cargo",
+        id,
+        "Cargo eliminado: " + cargo.getNombre(),
+        ipAddress);
   }
 }

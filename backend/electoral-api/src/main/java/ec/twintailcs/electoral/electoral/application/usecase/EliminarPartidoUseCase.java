@@ -1,10 +1,9 @@
 package ec.twintailcs.electoral.electoral.application.usecase;
 
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +20,7 @@ public class EliminarPartidoUseCase {
   }
 
   @Transactional
-  public void execute(Long id, Long masterId, HttpServletRequest request) {
+  public void execute(Long id, Long masterId, String ipAddress) {
     Partido partido =
         partidoRepository
             .findById(id)
@@ -29,12 +28,12 @@ public class EliminarPartidoUseCase {
 
     partidoRepository.delete(partido);
 
-    auditLogService.registrar(
+    auditLogService.registrarConIp(
         masterId,
         "ELIMINAR_PARTIDO",
         "partido",
         id,
         "Partido eliminado: " + partido.getSiglas(),
-        request);
+        ipAddress);
   }
 }

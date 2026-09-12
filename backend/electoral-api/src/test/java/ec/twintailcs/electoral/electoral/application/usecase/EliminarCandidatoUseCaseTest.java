@@ -10,7 +10,7 @@ import static org.mockito.Mockito.when;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ class EliminarCandidatoUseCaseTest {
 
     verify(candidatoRepository).delete(candidato);
     verify(auditLogService)
-        .registrar(
+        .registrarConIp(
             eq(99L),
             eq("ELIMINAR_CANDIDATO"),
             eq("candidato"),

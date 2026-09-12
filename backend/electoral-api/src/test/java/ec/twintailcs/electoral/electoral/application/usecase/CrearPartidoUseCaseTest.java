@@ -9,9 +9,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionConflictException;
 import ec.twintailcs.electoral.electoral.web.dto.PartidoRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,7 +66,7 @@ class CrearPartidoUseCaseTest {
 
     verify(partidoRepository).save(any(Partido.class));
     verify(auditLogService)
-        .registrar(
+        .registrarConIp(
             eq(99L),
             eq("CREAR_PARTIDO"),
             eq("partido"),
