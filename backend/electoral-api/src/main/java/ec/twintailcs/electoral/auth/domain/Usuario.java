@@ -13,6 +13,9 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 /**
@@ -24,6 +27,9 @@ import org.hibernate.annotations.UuidGenerator;
 @Table(
     name = "usuario",
     indexes = {@Index(name = "ix_usuario_email", columnList = "email", unique = true)})
+@Getter
+@Setter
+@NoArgsConstructor
 public class Usuario {
 
   @Id
@@ -58,80 +64,47 @@ public class Usuario {
   @Column(nullable = false, length = 100)
   private String apellido;
 
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
-  }
-
-  public UUID getPublicId() {
-    return publicId;
-  }
-
-  public void setPublicId(UUID publicId) {
-    this.publicId = publicId;
-  }
-
-  public String getEmail() {
-    return email;
-  }
-
-  public void setEmail(String email) {
-    this.email = email;
-  }
-
-  public String getPasswordHash() {
-    return passwordHash;
-  }
-
-  public void setPasswordHash(String passwordHash) {
-    this.passwordHash = passwordHash;
-  }
-
-  public Rol getRol() {
-    return rol;
-  }
-
   /** Devuelve el nombre del rol para uso en DTOs y JWT. */
   public String getRolNombre() {
     return rol != null ? rol.getNombre() : null;
   }
 
-  public void setRol(Rol rol) {
-    this.rol = rol;
-  }
-
-  public boolean isHabilitado() {
-    return habilitado;
-  }
-
-  public void setHabilitado(boolean habilitado) {
-    this.habilitado = habilitado;
-  }
-
-  public Instant getCreadoEn() {
-    return creadoEn;
-  }
-
-  public void setCreadoEn(Instant creadoEn) {
-    this.creadoEn = creadoEn;
-  }
-
-  public String getNombre() {
-    return nombre;
+  public void setEmail(String email) {
+    if (email == null || email.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El email no puede estar vacío");
+    }
+    this.email = email.trim().toLowerCase();
   }
 
   public void setNombre(String nombre) {
-    this.nombre = nombre;
-  }
-
-  public String getApellido() {
-    return apellido;
+    if (nombre == null || nombre.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El nombre no puede estar vacío");
+    }
+    this.nombre = nombre.trim();
   }
 
   public void setApellido(String apellido) {
-    this.apellido = apellido;
+    if (apellido == null || apellido.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El apellido no puede estar vacío");
+    }
+    this.apellido = apellido.trim();
+  }
+
+  public void validarDatosObligatorios() {
+    if (this.email == null || this.email.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El email es obligatorio");
+    }
+    if (this.nombre == null || this.nombre.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El nombre es obligatorio");
+    }
+    if (this.apellido == null || this.apellido.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El apellido es obligatorio");
+    }
+    if (this.passwordHash == null || this.passwordHash.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El hash del password es obligatorio");
+    }
+    if (this.rol == null) {
+      throw new UsuarioInvalidoException("El rol es obligatorio");
+    }
   }
 }
