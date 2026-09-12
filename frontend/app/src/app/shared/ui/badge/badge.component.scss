@@ -1,0 +1,45 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.badge-default {
+  background: var(--primitive-gray-100);
+  color: var(--color-text-secondary);
+}
+
+.badge-BORRADOR {
+  background: var(--primitive-gray-100);
+  color: var(--color-text-muted);
+}
+
+.badge-ENVIADA {
+  background: #e8edff;
+  color: var(--color-brand-primary);
+}
+
+.badge-APROBADA {
+  background: rgba(45, 211, 111, 0.12);
+  color: var(--color-status-success);
+}
+
+.badge-EN_DISPUTA {
+  background: rgba(255, 166, 0, 0.12);
+  color: var(--color-status-warning);
+}
+
+.badge-CORREGIDA {
+  background: #ede8ff;
+  color: #7b61ff;
+}
+
+.badge-ANULADA {
+  background: rgba(235, 68, 90, 0.12);
+  color: var(--color-status-danger);
+}
