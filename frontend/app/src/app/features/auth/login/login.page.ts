@@ -1,5 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
@@ -45,7 +49,8 @@ export class LoginPage {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: () => this.router.navigateByUrl('/dashboard'),
-        error: (err: HttpErrorResponse) => this.errorMessage.set(this.readError(err)),
+        error: (err: HttpErrorResponse) =>
+          this.errorMessage.set(this.readError(err)),
       });
   }
 

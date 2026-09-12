@@ -110,7 +110,11 @@ export class RegistrarActaPage implements OnInit {
   }
 
   get totalVotosComputados(): number {
-    return this.sumaVotosCandidatos + (this.votosBlancos || 0) + (this.votosNulos || 0);
+    return (
+      this.sumaVotosCandidatos +
+      (this.votosBlancos || 0) +
+      (this.votosNulos || 0)
+    );
   }
 
   get isChecksumValid(): boolean {
@@ -164,21 +168,24 @@ export class RegistrarActaPage implements OnInit {
     this.observerService.guardarBorrador(payload).subscribe({
       next: (res) => {
         if (this.selectedImageFile && res.id) {
-          this.observerService.subirImagenActa(res.id, this.selectedImageFile).subscribe({
-            next: () => {
-              this.finalizarEnvio();
-            },
-            error: () => {
-              this.finalizarEnvio();
-            },
-          });
+          this.observerService
+            .subirImagenActa(res.id, this.selectedImageFile)
+            .subscribe({
+              next: () => {
+                this.finalizarEnvio();
+              },
+              error: () => {
+                this.finalizarEnvio();
+              },
+            });
         } else {
           this.finalizarEnvio();
         }
       },
       error: (err) => {
         this.submitting = false;
-        this.error = 'Error al guardar el borrador. ' + (err.error?.message || '');
+        this.error =
+          'Error al guardar el borrador. ' + (err.error?.message || '');
       },
     });
   }
@@ -196,22 +203,29 @@ export class RegistrarActaPage implements OnInit {
     this.observerService.enviarActaDirecta(payload).subscribe({
       next: (res) => {
         if (this.selectedImageFile && res.id) {
-          this.observerService.subirImagenActa(res.id, this.selectedImageFile).subscribe({
-            next: () => {
-              this.finalizarEnvio();
-            },
-            error: (imgErr) => {
-              console.warn('Acta enviada pero falló la subida de evidencia fotográfica:', imgErr);
-              this.finalizarEnvio();
-            },
-          });
+          this.observerService
+            .subirImagenActa(res.id, this.selectedImageFile)
+            .subscribe({
+              next: () => {
+                this.finalizarEnvio();
+              },
+              error: (imgErr) => {
+                console.warn(
+                  'Acta enviada pero falló la subida de evidencia fotográfica:',
+                  imgErr,
+                );
+                this.finalizarEnvio();
+              },
+            });
         } else {
           this.finalizarEnvio();
         }
       },
       error: (err) => {
         this.submitting = false;
-        this.error = 'Error al enviar el acta: ' + (err.error?.message || 'Revisa la conexión.');
+        this.error =
+          'Error al enviar el acta: ' +
+          (err.error?.message || 'Revisa la conexión.');
       },
     });
   }

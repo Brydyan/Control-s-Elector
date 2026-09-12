@@ -32,7 +32,9 @@ describe('EmptyStateComponent', () => {
     fixture.detectChanges();
 
     const titleEl = fixture.nativeElement.querySelector('.empty-state__title');
-    const descEl = fixture.nativeElement.querySelector('.empty-state__description');
+    const descEl = fixture.nativeElement.querySelector(
+      '.empty-state__description',
+    );
 
     expect(titleEl.textContent).toContain('Sin registros');
     expect(descEl.textContent).toContain('No se encontraron actas pendientes');

@@ -26,7 +26,11 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       <h3 class="error-state__title">{{ title }}</h3>
       <p class="error-state__message" *ngIf="message">{{ message }}</p>
       <div class="error-state__actions" *ngIf="showRetry">
-        <button type="button" class="error-state__retry-btn" (click)="retry.emit()">
+        <button
+          type="button"
+          class="error-state__retry-btn"
+          (click)="retry.emit()"
+        >
           {{ retryLabel }}
         </button>
       </div>

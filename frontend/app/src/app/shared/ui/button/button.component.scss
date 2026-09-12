@@ -1,6 +1,6 @@
 :host {
   display: inline-block;
-  
+
   &[block] {
     display: block;
     width: 100%;
@@ -55,7 +55,11 @@
 
 /* Variants */
 .btn-primary {
-  background: linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-primary-strong));
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-primary),
+    var(--color-brand-primary-strong)
+  );
   color: var(--color-text-on-brand);
 
   &:hover:not(:disabled) {

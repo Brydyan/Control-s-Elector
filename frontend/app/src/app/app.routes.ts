@@ -20,7 +20,9 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./features/dashboard/dashboard.page').then((m) => m.DashboardPage),
+          import('./features/dashboard/dashboard.page').then(
+            (m) => m.DashboardPage,
+          ),
         data: {
           title: 'Resumen General',
           subtitle: 'Elecciones Seccionales 2027 · Provincia Santa Elena',
@@ -31,9 +33,11 @@ export const routes: Routes = [
         path: 'observer/mis-jrvs',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/observer/pages/mis-jrvs/mis-jrvs.page').then((m) => m.MisJrvsPage),
+          import('./features/observer/pages/mis-jrvs/mis-jrvs.page').then(
+            (m) => m.MisJrvsPage,
+          ),
         data: {
-          roles: ['OBSERVER', 'ADMIN', 'MASTER'],
+          roles: ['OBSERVER', 'MASTER'],
           title: 'Mis JRVs Asignadas',
         },
       },
@@ -41,9 +45,11 @@ export const routes: Routes = [
         path: 'observer/jrv/:jrvId/cargos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/observer/pages/jrv-cargos/jrv-cargos.page').then((m) => m.JrvCargosPage),
+          import('./features/observer/pages/jrv-cargos/jrv-cargos.page').then(
+            (m) => m.JrvCargosPage,
+          ),
         data: {
-          roles: ['OBSERVER', 'ADMIN', 'MASTER'],
+          roles: ['OBSERVER', 'MASTER'],
           title: 'Dignidades de JRV',
         },
       },
@@ -55,8 +61,147 @@ export const routes: Routes = [
             (m) => m.RegistrarActaPage,
           ),
         data: {
-          roles: ['OBSERVER', 'ADMIN', 'MASTER'],
+          roles: ['OBSERVER', 'MASTER'],
           title: 'Registrar Acta',
+        },
+      },
+      // Actas & Evidencias modules
+      {
+        path: 'actas',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['COORDINATOR', 'MASTER', 'ADMIN'],
+          title: 'Gestión de Actas',
+          description: 'Módulo de consulta y supervisión de actas electorales.',
+          icon: 'document-text-outline',
+        },
+      },
+      {
+        path: 'coordinator/actas',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['COORDINATOR', 'MASTER'],
+          title: 'Aprobación de Actas',
+          description:
+            'Bandeja de revisión, aprobación y resolución de disputas de actas.',
+          icon: 'checkmark-circle-outline',
+        },
+      },
+      {
+        path: 'evidencias',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['OBSERVER', 'COORDINATOR', 'MASTER', 'ADMIN'],
+          title: 'Evidencias Fotográficas',
+          description: 'Visor y repositorio de capturas de actas y evidencias.',
+          icon: 'images-outline',
+        },
+      },
+      {
+        path: 'evidencias/subir',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['OBSERVER', 'MASTER'],
+          title: 'Subir Evidencia',
+          description: 'Carga de respaldos fotográficos de actas electorales.',
+          icon: 'cloud-upload-outline',
+        },
+      },
+      // Administración & Configuración del Sistema (MASTER)
+      {
+        path: 'admin',
+        redirectTo: 'admin/usuarios',
+        pathMatch: 'full',
+      },
+      {
+        path: 'admin/usuarios',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['MASTER'],
+          title: 'Gestión de Usuarios',
+          description:
+            'Administración de cuentas de observadores, coordinadores y administradores.',
+          icon: 'people-outline',
+        },
+      },
+      {
+        path: 'admin/sesiones',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['MASTER', 'COORDINATOR', 'ADMIN'],
+          title: 'Sesiones Activas',
+          description:
+            'Supervisión y revocación de sesiones concurrentes del sistema.',
+          icon: 'pulse-outline',
+        },
+      },
+      {
+        path: 'master/cargos',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['MASTER'],
+          title: 'Cargos Electorales',
+          description:
+            'Configuración de dignidades y tipos de cargos electorales.',
+          icon: 'ribbon-outline',
+        },
+      },
+      {
+        path: 'master/partidos',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['MASTER'],
+          title: 'Partidos Políticos',
+          description:
+            'Registro y administración de organizaciones y movimientos políticos.',
+          icon: 'flag-outline',
+        },
+      },
+      {
+        path: 'master/candidatos',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['MASTER'],
+          title: 'Candidatos',
+          description:
+            'Padrón de candidatos postulados por dignidad y lista política.',
+          icon: 'person-outline',
         },
       },
       {

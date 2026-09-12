@@ -1,6 +1,11 @@
 <div class="registrar-acta-container">
   <div class="page-topbar">
-    <app-button variant="ghost" size="sm" (clicked)="cancelar()" [disabled]="submitting">
+    <app-button
+      variant="ghost"
+      size="sm"
+      (clicked)="cancelar()"
+      [disabled]="submitting"
+    >
       ← Cancelar y volver
     </app-button>
   </div>
@@ -13,17 +18,26 @@
 
     <!-- Stepper visual -->
     <div class="stepper">
-      <div class="step-item" [class.step-item--active]="currentStep === 'VOTOS'">
+      <div
+        class="step-item"
+        [class.step-item--active]="currentStep === 'VOTOS'"
+      >
         <span class="step-number">1</span>
         <span class="step-label">Votos</span>
       </div>
       <div class="step-divider"></div>
-      <div class="step-item" [class.step-item--active]="currentStep === 'IMAGEN'">
+      <div
+        class="step-item"
+        [class.step-item--active]="currentStep === 'IMAGEN'"
+      >
         <span class="step-number">2</span>
         <span class="step-label">Evidencia</span>
       </div>
       <div class="step-divider"></div>
-      <div class="step-item" [class.step-item--active]="currentStep === 'REVISION'">
+      <div
+        class="step-item"
+        [class.step-item--active]="currentStep === 'REVISION'"
+      >
         <span class="step-number">3</span>
         <span class="step-label">Revisión</span>
       </div>
@@ -49,11 +63,16 @@
   ></app-error-state>
 
   <!-- ==================== PASO 1: VOTOS ==================== -->
-  <div class="step-content" *ngIf="!loading && !submitSuccess && currentStep === 'VOTOS'">
+  <div
+    class="step-content"
+    *ngIf="!loading && !submitSuccess && currentStep === 'VOTOS'"
+  >
     <app-card [elevated]="true" headerTitle="Totales de Mesa">
       <div class="form-grid">
         <div class="form-group">
-          <label class="form-label" for="totalSufragantes">Total de Sufragantes en Padrón:</label>
+          <label class="form-label" for="totalSufragantes"
+            >Total de Sufragantes en Padrón:</label
+          >
           <input
             id="totalSufragantes"
             type="number"
@@ -71,7 +90,10 @@
         <div class="candidate-row" *ngFor="let c of candidatos">
           <div class="candidate-info">
             <span class="candidate-name">{{ c.nombre }}</span>
-            <span class="candidate-party">{{ c.partidoSiglas || c.partidoNombre || 'Independiente' }} (Lista {{ c.partidoNumeroLista || 'N/A' }})</span>
+            <span class="candidate-party"
+              >{{ c.partidoSiglas || c.partidoNombre || 'Independiente' }}
+              (Lista {{ c.partidoNumeroLista || 'N/A' }})</span
+            >
           </div>
           <div class="candidate-input">
             <input
@@ -125,7 +147,8 @@
         <span>Total Sufragantes: {{ totalSufragantes }}</span>
       </div>
       <div class="checksum-status">
-        {{ isChecksumValid ? '✓ Balance electoral exacto' : '✗ La suma no coincide con el total' }}
+        {{ isChecksumValid ? '✓ Balance electoral exacto' : '✗ La suma no
+        coincide con el total' }}
       </div>
     </div>
 
@@ -142,11 +165,18 @@
   </div>
 
   <!-- ==================== PASO 2: EVIDENCIA DE IMAGEN ==================== -->
-  <div class="step-content" *ngIf="!loading && !submitSuccess && currentStep === 'IMAGEN'">
+  <div
+    class="step-content"
+    *ngIf="!loading && !submitSuccess && currentStep === 'IMAGEN'"
+  >
     <app-card [elevated]="true" headerTitle="Captura de Acta Física">
       <div class="image-upload-zone">
         <div class="image-preview" *ngIf="imagePreviewUrl">
-          <img [src]="imagePreviewUrl" alt="Previsualización de acta física" class="preview-img" />
+          <img
+            [src]="imagePreviewUrl"
+            alt="Previsualización de acta física"
+            class="preview-img"
+          />
         </div>
 
         <div class="upload-controls">
@@ -163,7 +193,8 @@
             size="md"
             (clicked)="fileInput.click()"
           >
-            📷 {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o subir archivo' }}
+            📷 {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o
+            subir archivo' }}
           </app-button>
           <p class="upload-tip">
             Asegúrate de que los números y firmas sean claramente legibles.
@@ -176,18 +207,17 @@
       <app-button variant="ghost" size="md" (clicked)="volverAVotos()">
         ← Volver a Votos
       </app-button>
-      <app-button
-        variant="primary"
-        size="lg"
-        (clicked)="irARevision()"
-      >
+      <app-button variant="primary" size="lg" (clicked)="irARevision()">
         Ir a Revisión Final →
       </app-button>
     </div>
   </div>
 
   <!-- ==================== PASO 3: REVISIÓN Y ENVÍO ==================== -->
-  <div class="step-content" *ngIf="!loading && !submitSuccess && currentStep === 'REVISION'">
+  <div
+    class="step-content"
+    *ngIf="!loading && !submitSuccess && currentStep === 'REVISION'"
+  >
     <app-card [elevated]="true" headerTitle="Resumen de Escrutinio">
       <div class="review-table">
         <div class="review-row">
@@ -203,12 +233,17 @@
           <strong>{{ votosNulos }}</strong>
         </div>
         <div class="review-row" *ngFor="let c of candidatos">
-          <span>{{ c.nombre }} ({{ c.partidoSiglas || 'Independiente' }}):</span>
+          <span
+            >{{ c.nombre }} ({{ c.partidoSiglas || 'Independiente' }}):</span
+          >
           <strong>{{ getVoto(c.id) }}</strong>
         </div>
         <div class="review-row review-row--highlight">
           <span>Evidencia adjunta:</span>
-          <strong>{{ selectedImageFile ? selectedImageFile.name : 'Sin fotografía adjunta' }}</strong>
+          <strong
+            >{{ selectedImageFile ? selectedImageFile.name : 'Sin fotografía
+            adjunta' }}</strong
+          >
         </div>
       </div>
     </app-card>

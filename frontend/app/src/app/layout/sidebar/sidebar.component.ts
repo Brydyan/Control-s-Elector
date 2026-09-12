@@ -1,70 +1,157 @@
-import { Component, computed, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
-import { Role } from '../../core/auth/domain/user.model';
+import { MenuNode } from '../../core/menu/menu.model';
+import { MenuService } from '../../core/menu/menu.service';
 
-interface NavItem {
+export interface DynamicNavSection {
   label: string;
-  icon: string;
-  route?: string;
-  /** Roles allowed to use this item. Empty = everyone. */
-  roles?: Role[];
-  /** Rendered but not yet implemented — shown disabled. */
-  disabled?: boolean;
-  /** Small tag on the right (e.g. "Solo MASTER"). */
-  tag?: string;
+  items: DynamicNavItem[];
 }
 
-interface NavSection {
+export interface DynamicNavItem {
   label: string;
-  items: NavItem[];
+  icon: string;
+  route: string;
+  disabled?: boolean;
+  tag?: string;
 }
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss',
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   private readonly store = inject(AuthStore);
   private readonly auth = inject(AuthService);
+  private readonly menuService = inject(MenuService);
   private readonly router = inject(Router);
 
-  readonly sections: NavSection[] = [
-    {
-      label: 'Dashboard',
-      items: [
-        { label: 'Resumen General', icon: '📊', route: '/dashboard' },
-        { label: 'Resultados por Cargo', icon: '📈', disabled: true },
-        { label: 'Progreso por Cantón', icon: '🗺️', disabled: true },
-        { label: 'Lista de Actas', icon: '📋', disabled: true },
-      ],
-    },
-    {
-      label: 'Operación Electoral',
-      items: [
-        {
-          label: 'Mis JRVs',
-          icon: '🗳️',
-          route: '/observer/mis-jrvs',
-          roles: ['OBSERVER', 'ADMIN', 'MASTER'],
-        },
-      ],
-    },
-    {
-      label: 'Sistema',
-      items: [
-        { label: 'Configuración', icon: '⚙️', roles: ['MASTER'], disabled: true, tag: 'Solo MASTER' },
-        { label: 'Usuarios', icon: '👥', roles: ['MASTER'], disabled: true, tag: 'Solo MASTER' },
-      ],
-    },
-  ];
+  private readonly _sections = signal<DynamicNavSection[]>([]);
+  readonly sections = this._sections.asReadonly();
 
   readonly user = this.store.user;
+
+  ngOnInit(): void {
+    this.cargarMenus();
+  }
+
+  cargarMenus(): void {
+    this.menuService.getMyMenus().subscribe({
+      next: (nodes) => {
+        const sections = this.mapNodesToSections(nodes);
+        this._sections.set(sections);
+      },
+      error: (err) => {
+        console.warn(
+          'No se pudieron cargar los menús dinámicos, usando fallback',
+          err,
+        );
+        this._sections.set(this.getFallbackSections());
+      },
+    });
+  }
+
+  private mapNodesToSections(nodes: MenuNode[]): DynamicNavSection[] {
+    if (!nodes || nodes.length === 0) {
+      return this.getFallbackSections();
+    }
+
+    const sections: DynamicNavSection[] = [];
+
+    nodes.forEach((node) => {
+      // Si el nodo padre tiene hijos, el padre es la sección
+      if (node.children && node.children.length > 0) {
+        sections.push({
+          label: node.label,
+          items: node.children.map((child) => ({
+            label: child.label,
+            icon: this.mapIcon(child.icono),
+            route: this.mapRoute(child.ruta),
+            disabled: !child.activo,
+          })),
+        });
+      } else {
+        // Nodo raíz sin hijos (ej: Dashboard)
+        let mainSection = sections.find((s) => s.label === 'Principal');
+        if (!mainSection) {
+          mainSection = { label: 'Principal', items: [] };
+          sections.unshift(mainSection);
+        }
+        mainSection.items.push({
+          label: node.label,
+          icon: this.mapIcon(node.icono),
+          route: this.mapRoute(node.ruta),
+          disabled: !node.activo,
+        });
+      }
+    });
+
+    // Agregar sección de operación electoral si el usuario tiene rol autorizado
+    const role = this.user()?.role;
+    if (role === 'OBSERVER' || role === 'ADMIN' || role === 'MASTER') {
+      sections.push({
+        label: 'Operación Electoral',
+        items: [
+          {
+            label: 'Mis JRVs',
+            icon: '🗳️',
+            route: '/observer/mis-jrvs',
+          },
+        ],
+      });
+    }
+
+    return sections;
+  }
+
+  private mapRoute(ruta: string): string {
+    if (ruta === '/home') return '/dashboard';
+    if (ruta === '/actas/nueva') return '/observer/mis-jrvs';
+    return ruta;
+  }
+
+  private mapIcon(icono?: string): string {
+    switch (icono) {
+      case 'home':
+        return '📊';
+      case 'document':
+      case 'add-circle':
+        return '📋';
+      case 'checkmark':
+        return '✅';
+      case 'image':
+      case 'cloud-upload':
+        return '📸';
+      case 'settings':
+        return '⚙️';
+      case 'people':
+        return '👥';
+      case 'pulse':
+        return '📈';
+      default:
+        return '🔹';
+    }
+  }
+
+  private getFallbackSections(): DynamicNavSection[] {
+    return [
+      {
+        label: 'Dashboard',
+        items: [{ label: 'Resumen General', icon: '📊', route: '/dashboard' }],
+      },
+      {
+        label: 'Operación Electoral',
+        items: [{ label: 'Mis JRVs', icon: '🗳️', route: '/observer/mis-jrvs' }],
+      },
+    ];
+  }
 
   /** "ana.delgado@cne.gob.ec" -> "Ana Delgado". Falls back to the email. */
   readonly displayName = computed(() => {
@@ -81,7 +168,8 @@ export class SidebarComponent {
   readonly initials = computed(() => {
     const name = this.displayName();
     const parts = name.split(' ').filter(Boolean);
-    const chars = parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2);
+    const chars =
+      parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2);
     return chars.toUpperCase();
   });
 
@@ -90,7 +178,6 @@ export class SidebarComponent {
   logout(): void {
     this.auth.logout().subscribe({
       next: () => this.router.navigateByUrl('/login'),
-      // Even if the server call fails, the local session is already cleared.
       error: () => this.router.navigateByUrl('/login'),
     });
   }

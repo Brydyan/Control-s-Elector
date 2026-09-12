@@ -1,4 +1,7 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import {
+  HttpClientTestingModule,
+  HttpTestingController,
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '../../../../environments/environment';
 import { ObserverService } from './observer.service';
@@ -26,28 +29,41 @@ describe('ObserverService', () => {
 
   it('should get mis jrvs', () => {
     const mockJrvs = [
-      { jrvId: 1, numero: '101', parroquia: 'Colonche', cargosPendientes: 2, cargosRegistrados: 1 },
+      {
+        jrvId: 1,
+        numero: '101',
+        parroquia: 'Colonche',
+        cargosPendientes: 2,
+        cargosRegistrados: 1,
+      },
     ];
 
     service.getMisJrvs().subscribe((data) => {
       expect(data).toEqual(mockJrvs);
     });
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/v1/observer/jrvs`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/observer/jrvs`);
     expect(req.request.method).toBe('GET');
     req.flush(mockJrvs);
   });
 
   it('should get cargos de jrv', () => {
     const mockCargos = [
-      { cargoId: 1, nombre: 'Prefecto', nivel: 'PROVINCIAL', registrado: false },
+      {
+        cargoId: 1,
+        nombre: 'Prefecto',
+        nivel: 'PROVINCIAL',
+        registrado: false,
+      },
     ];
 
     service.getCargosDeJrv(10).subscribe((data) => {
       expect(data).toEqual(mockCargos);
     });
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/v1/observer/jrv/10/cargos`);
+    const req = httpMock.expectOne(
+      `${environment.apiUrl}/observer/jrv/10/cargos`,
+    );
     expect(req.request.method).toBe('GET');
     req.flush(mockCargos);
   });
@@ -66,7 +82,7 @@ describe('ObserverService', () => {
       expect(res.id).toBe(123);
     });
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/v1/observer/actas`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/observer/actas`);
     expect(req.request.method).toBe('POST');
     req.flush({ id: 123, ...payload, estado: 'ENVIADA' });
   });

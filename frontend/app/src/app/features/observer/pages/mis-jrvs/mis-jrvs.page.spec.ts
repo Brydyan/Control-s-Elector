@@ -11,13 +11,27 @@ describe('MisJrvsPage', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    observerServiceSpy = jasmine.createSpyObj('ObserverService', ['getMisJrvs']);
+    observerServiceSpy = jasmine.createSpyObj('ObserverService', [
+      'getMisJrvs',
+    ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     observerServiceSpy.getMisJrvs.and.returnValue(
       of([
-        { jrvId: 1, numero: '101', parroquia: 'Colonche', cargosPendientes: 2, cargosRegistrados: 0 },
-        { jrvId: 2, numero: '102', parroquia: 'Manglaralto', cargosPendientes: 0, cargosRegistrados: 2 },
+        {
+          jrvId: 1,
+          numero: '101',
+          parroquia: 'Colonche',
+          cargosPendientes: 2,
+          cargosRegistrados: 0,
+        },
+        {
+          jrvId: 2,
+          numero: '102',
+          parroquia: 'Manglaralto',
+          cargosPendientes: 0,
+          cargosRegistrados: 2,
+        },
       ]),
     );
 
@@ -53,6 +67,10 @@ describe('MisJrvsPage', () => {
 
   it('should navigate to jrv cargos on selection', () => {
     component.seleccionarJrv(component.jrvs[0]);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/observer/jrv', 1, 'cargos']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith([
+      '/observer/jrv',
+      1,
+      'cargos',
+    ]);
   });
 });
