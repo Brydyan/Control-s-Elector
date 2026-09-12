@@ -1,8 +1,8 @@
-package ec.twintailcs.electoral.evidencia.web;
+package ec.twintailcs.electoral.evidencia.domain;
 
 import java.util.UUID;
 
-/** 404. La evidencia no existe en la DB. */
+/** Excepción de dominio cuando no se encuentra la evidencia. */
 public class EvidenciaNotFoundException extends RuntimeException {
   public EvidenciaNotFoundException(Long id) {
     super("Evidencia " + id + " not found");

@@ -17,24 +17,15 @@ import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.util.UUID;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.UuidGenerator;
 
 /**
  * Evidencia fotográfica subida por un OBSERVER al digitalizar un acta.
  *
- * <p>Desde PR δ cada evidencia está vinculada a un {@link Acta} específico (FK NOT NULL + ON DELETE
- * CASCADE en 013-t-be-14-16.sql). El binario vive en S3 ({@code s3_key}); en DB guardamos solo
- * metadata.
- *
- * <p>Decisiones de diseño:
- *
- * <ul>
- *   <li>{@code @Version} previene actualizaciones concurrentes.
- *   <li>{@code acta}: la asociación al acta; se valida en {@link
- *       ec.twintailcs.electoral.evidencia.application.EvidenciaService} que el usuario sea el
- *       registrador o COORDINATOR/MASTER.
- *   <li>{@code sha256} queda sin UNIQUE por ahora; sirve para auditoría y futura deduplicación.
- * </ul>
+ * <p>El binario vive en S3 ({@code s3_key}); en DB guardamos solo metadata.
  */
 @Entity
 @Table(
@@ -45,6 +36,9 @@ import org.hibernate.annotations.UuidGenerator;
       @Index(name = "ix_evidencia_usuario", columnList = "usuario_id"),
       @Index(name = "ix_evidencia_estado", columnList = "estado")
     })
+@Getter
+@Setter
+@NoArgsConstructor
 public class Evidencia {
 
   @Id
@@ -95,107 +89,48 @@ public class Evidencia {
   @Column(name = "actualizado_en", nullable = false)
   private Instant actualizadoEn = Instant.now();
 
-  public Long getId() {
-    return id;
-  }
-
-  public UUID getPublicId() {
-    return publicId;
-  }
-
-  public void setPublicId(UUID publicId) {
-    this.publicId = publicId;
-  }
-
-  public Acta getActa() {
-    return acta;
-  }
-
-  public void setActa(Acta acta) {
-    this.acta = acta;
-  }
-
-  public Long getJrvId() {
-    return jrvId;
-  }
-
-  public void setJrvId(Long jrvId) {
-    this.jrvId = jrvId;
-  }
-
-  public Long getCargoId() {
-    return cargoId;
-  }
-
-  public void setCargoId(Long cargoId) {
-    this.cargoId = cargoId;
-  }
-
-  public Long getUsuarioId() {
-    return usuarioId;
-  }
-
-  public void setUsuarioId(Long usuarioId) {
-    this.usuarioId = usuarioId;
-  }
-
-  public String getS3Key() {
-    return s3Key;
-  }
-
-  public void setS3Key(String s3Key) {
-    this.s3Key = s3Key;
-  }
-
-  public long getSizeBytes() {
-    return sizeBytes;
-  }
-
   public void setSizeBytes(long sizeBytes) {
+    if (sizeBytes <= 0) {
+      throw new EvidenciaInvalidaException("El tamaño del archivo debe ser mayor a 0 bytes");
+    }
     this.sizeBytes = sizeBytes;
   }
 
-  public String getContentType() {
-    return contentType;
+  public void setS3Key(String s3Key) {
+    if (s3Key == null || s3Key.trim().isEmpty()) {
+      throw new EvidenciaInvalidaException("La clave S3 no puede estar vacía");
+    }
+    this.s3Key = s3Key;
   }
 
   public void setContentType(String contentType) {
+    if (contentType == null || contentType.trim().isEmpty()) {
+      throw new EvidenciaInvalidaException("El tipo de contenido no puede estar vacío");
+    }
     this.contentType = contentType;
   }
 
-  public String getSha256() {
-    return sha256;
-  }
-
-  public void setSha256(String sha256) {
-    this.sha256 = sha256;
-  }
-
-  public EstadoEvidencia getEstado() {
-    return estado;
-  }
-
-  public void setEstado(EstadoEvidencia estado) {
-    this.estado = estado;
-  }
-
-  public long getVersion() {
-    return version;
-  }
-
-  public Instant getCreadoEn() {
-    return creadoEn;
-  }
-
-  public void setCreadoEn(Instant creadoEn) {
-    this.creadoEn = creadoEn;
-  }
-
-  public Instant getActualizadoEn() {
-    return actualizadoEn;
-  }
-
-  public void setActualizadoEn(Instant actualizadoEn) {
-    this.actualizadoEn = actualizadoEn;
+  public void validarDatosObligatorios() {
+    if (this.acta == null) {
+      throw new EvidenciaInvalidaException("El acta es obligatoria");
+    }
+    if (this.jrvId == null) {
+      throw new EvidenciaInvalidaException("El ID de JRV es obligatorio");
+    }
+    if (this.cargoId == null) {
+      throw new EvidenciaInvalidaException("El ID de cargo es obligatorio");
+    }
+    if (this.usuarioId == null) {
+      throw new EvidenciaInvalidaException("El ID de usuario es obligatorio");
+    }
+    if (this.s3Key == null || this.s3Key.trim().isEmpty()) {
+      throw new EvidenciaInvalidaException("La clave S3 es obligatoria");
+    }
+    if (this.contentType == null || this.contentType.trim().isEmpty()) {
+      throw new EvidenciaInvalidaException("El tipo de contenido es obligatorio");
+    }
+    if (this.sizeBytes <= 0) {
+      throw new EvidenciaInvalidaException("El tamaño del archivo debe ser mayor a 0 bytes");
+    }
   }
 }

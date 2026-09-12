@@ -68,9 +68,7 @@ public class MenuService {
         usuarios
             .findByPublicId(userPublicId)
             .orElseThrow(
-                () ->
-                    new ec.twintailcs.electoral.auth.application.AuthService.AuthException(
-                        "Usuario no existe"));
+                () -> new ec.twintailcs.electoral.auth.domain.AuthException("Usuario no existe"));
     Long usuarioId = u.getId();
 
     // 1. Permisos efectivos del usuario como authority strings (recurso:accion).
