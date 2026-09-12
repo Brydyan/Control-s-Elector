@@ -1,0 +1,72 @@
+// ─────────────────────────────────────────────────────────────
+// DESIGN SYSTEM: TOKENS PRIMITIVOS Y SEMÁNTICOS
+// ─────────────────────────────────────────────────────────────
+
+:root {
+  // 1. Tokens Primitivos
+  --primitive-blue-500: #3880ff;
+  --primitive-blue-600: #5260ff;
+  --primitive-navy-900: #1a1a2e;
+
+  --primitive-green-500: #2dd36f;
+  --primitive-orange-500: #ffa600;
+  --primitive-red-500: #eb445a;
+
+  --primitive-gray-100: #f4f5f8;
+  --primitive-gray-300: #d9dce5;
+  --primitive-gray-500: #888888;
+  --primitive-gray-700: #333333;
+  --primitive-white: #ffffff;
+
+  // 2. Tokens Semánticos
+  --color-brand-primary: var(--primitive-blue-500);
+  --color-brand-primary-strong: var(--primitive-blue-600);
+
+  --color-surface-page: #f7f8fc;
+  --color-surface-card: var(--primitive-white);
+  --color-surface-sidebar: var(--primitive-navy-900);
+
+  --color-text-primary: var(--primitive-navy-900);
+  --color-text-secondary: var(--primitive-gray-700);
+  --color-text-muted: var(--primitive-gray-500);
+  --color-text-on-brand: var(--primitive-white);
+
+  --color-border-subtle: var(--primitive-gray-100);
+  --color-border-medium: var(--primitive-gray-300);
+
+  --color-status-success: var(--primitive-green-500);
+  --color-status-warning: var(--primitive-orange-500);
+  --color-status-danger: var(--primitive-red-500);
+
+  // 3. Espaciado Global (escala base 4px)
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  // 4. Tipografía
+  --font-size-display: 56px;
+  --font-size-title: 24px;
+  --font-size-body: 14px;
+  --font-size-meta: 12px;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 600;
+  --font-weight-bold: 800;
+
+  // 5. Bordes, Radios y Sombras
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.05);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.1);
+}

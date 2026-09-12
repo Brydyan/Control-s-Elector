@@ -1,2 +1,8 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+// ─────────────────────────────────────────────────────────────
+// IONIC VARIABLES & THEME AGGREGATION
+// ─────────────────────────────────────────────────────────────
+
+@use './tokens';
+@use './ionic-theme';
+@use './typography';
+@use './utilities';
