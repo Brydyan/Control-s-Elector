@@ -42,7 +42,7 @@ describe('ObserverService', () => {
       expect(data).toEqual(mockJrvs);
     });
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/v1/observer/jrvs`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/observer/jrvs`);
     expect(req.request.method).toBe('GET');
     req.flush(mockJrvs);
   });
@@ -62,7 +62,7 @@ describe('ObserverService', () => {
     });
 
     const req = httpMock.expectOne(
-      `${environment.apiUrl}/v1/observer/jrv/10/cargos`,
+      `${environment.apiUrl}/observer/jrv/10/cargos`,
     );
     expect(req.request.method).toBe('GET');
     req.flush(mockCargos);
@@ -82,7 +82,7 @@ describe('ObserverService', () => {
       expect(res.id).toBe(123);
     });
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/v1/observer/actas`);
+    const req = httpMock.expectOne(`${environment.apiUrl}/observer/actas`);
     expect(req.request.method).toBe('POST');
     req.flush({ id: 123, ...payload, estado: 'ENVIADA' });
   });

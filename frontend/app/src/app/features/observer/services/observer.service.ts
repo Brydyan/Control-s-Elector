@@ -30,8 +30,8 @@ interface CandidatoDto {
 })
 export class ObserverService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/v1/observer`;
-  private readonly configUrl = `${environment.apiUrl}/v1/configuracion`;
+  private readonly baseUrl = `${environment.apiUrl}/observer`;
+  private readonly configUrl = `${environment.apiUrl}/configuracion`;
 
   getMisJrvs(): Observable<JrvConEstado[]> {
     return this.http.get<JrvConEstado[]>(`${this.baseUrl}/jrvs`);

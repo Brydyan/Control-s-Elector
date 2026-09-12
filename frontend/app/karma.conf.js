@@ -1,5 +1,19 @@
-// Karma configuration file, see link for more information
-// https://karma-runner.github.io/1.0/config/configuration-file.html
+const fs = require('fs');
+
+if (!process.env.CHROME_BIN) {
+  const possiblePaths = [
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome-stable',
+    '/usr/bin/google-chrome',
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      process.env.CHROME_BIN = p;
+      break;
+    }
+  }
+}
 
 module.exports = function (config) {
   config.set({
@@ -38,6 +52,12 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
     autoWatch: true,
     browsers: ['Chrome'],
+    customLaunchers: {
+      ChromeHeadlessCI: {
+        base: 'ChromeHeadless',
+        flags: ['--no-sandbox', '--disable-gpu'],
+      },
+    },
     singleRun: false,
     restartOnFileChange: true
   });

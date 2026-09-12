@@ -8,50 +8,58 @@ import {
 import { inject } from '@angular/core';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 
-import { AuthRepository } from './data/auth.repository';
+import { environment } from '../../../environments/environment';
+import { AuthService } from './auth.service';
 import { AuthStore } from './auth.store';
 
 /**
- * Attaches the in-memory access token as `Authorization: Bearer` and, on
- * a 401, transparently tries a single /auth/refresh (the refresh token
- * lives in the httpOnly cookie) and replays the original request.
+ * Attaches the in-memory access token as `Authorization: Bearer` ONLY for
+ * requests destined to our backend API (environment.apiUrl), preventing
+ * token leakage to third-party endpoints (S3, CDN, external APIs).
  *
- * The /auth/login and /auth/refresh calls are skipped for the retry so
- * we never recurse.
+ * On a 401, transparently delegates to AuthService.refresh() (which provides
+ * single-flight deduplication across concurrent 401s) and replays the request.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const store = inject(AuthStore);
-  const repo = inject(AuthRepository);
+  const auth = inject(AuthService);
+
+  const isApiRequest =
+    req.url.startsWith(environment.apiUrl) ||
+    req.url.startsWith('/api/') ||
+    (environment.apiUrl.startsWith('http') &&
+      req.url.startsWith(new URL(environment.apiUrl).origin));
 
   const isAuthEndpoint =
     req.url.includes('/auth/login') || req.url.includes('/auth/refresh');
+
   const token = store.accessToken();
 
-  const authorized = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
+  const authorized =
+    isApiRequest && token
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+      : req;
 
   return next(authorized).pipe(
     catchError((err: HttpErrorResponse) => {
-      if (err.status !== 401 || isAuthEndpoint) {
+      if (err.status !== 401 || isAuthEndpoint || !isApiRequest) {
         return throwError(() => err);
       }
-      return refreshAndRetry(req, next, repo, store, err);
+      return refreshAndRetry(req, next, auth, store, err);
     }),
   );
 };
 
-/** Single attempt: refresh, then replay the original request with the new token. */
+/** Single-flight refresh attempt: delegating to AuthService, then replaying original request. */
 function refreshAndRetry(
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
-  repo: AuthRepository,
+  auth: AuthService,
   store: AuthStore,
   originalError: HttpErrorResponse,
 ): Observable<HttpEvent<unknown>> {
-  return repo.refresh().pipe(
+  return auth.refresh().pipe(
     switchMap((session) => {
-      store.setAccessToken(session.accessToken);
       const retried = req.clone({
         setHeaders: { Authorization: `Bearer ${session.accessToken}` },
       });

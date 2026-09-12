@@ -1,5 +1,13 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, map, of, tap } from 'rxjs';
+import {
+  Observable,
+  catchError,
+  finalize,
+  map,
+  of,
+  shareReplay,
+  tap,
+} from 'rxjs';
 
 import { AuthRepository, Session } from './data/auth.repository';
 import { LoginRequestDto } from './data/auth.dto';
@@ -15,12 +23,31 @@ export class AuthService {
   private readonly repo = inject(AuthRepository);
   private readonly store = inject(AuthStore);
 
+  private refreshInFlight$: Observable<Session> | null = null;
+
   login(credentials: LoginRequestDto): Observable<Session> {
     return this.repo.login(credentials).pipe(tap((s) => this.persist(s)));
   }
 
+  /**
+   * Single-flight refresh: if a refresh request is already in progress,
+   * any concurrent callers share the same Observable instead of firing
+   * multiple requests to /auth/refresh (which would fail token rotation).
+   */
   refresh(): Observable<Session> {
-    return this.repo.refresh().pipe(tap((s) => this.persist(s)));
+    if (this.refreshInFlight$) {
+      return this.refreshInFlight$;
+    }
+
+    this.refreshInFlight$ = this.repo.refresh().pipe(
+      tap((s) => this.persist(s)),
+      shareReplay({ bufferSize: 1, refCount: false }),
+      finalize(() => {
+        this.refreshInFlight$ = null;
+      }),
+    );
+
+    return this.refreshInFlight$;
   }
 
   logout(): Observable<void> {
@@ -33,8 +60,7 @@ export class AuthService {
    * `false` otherwise (no valid cookie). Never throws.
    */
   restoreSession(): Observable<boolean> {
-    return this.repo.refresh().pipe(
-      tap((s) => this.persist(s)),
+    return this.refresh().pipe(
       map(() => true),
       catchError(() => {
         this.store.clear();
