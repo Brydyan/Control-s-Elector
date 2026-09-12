@@ -11,13 +11,21 @@ describe('JrvCargosPage', () => {
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    observerServiceSpy = jasmine.createSpyObj('ObserverService', ['getCargosDeJrv']);
+    observerServiceSpy = jasmine.createSpyObj('ObserverService', [
+      'getCargosDeJrv',
+    ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     observerServiceSpy.getCargosDeJrv.and.returnValue(
       of([
         { cargoId: 1, nombre: 'Alcalde', nivel: 'CANTONAL', registrado: false },
-        { cargoId: 2, nombre: 'Prefecto', nivel: 'PROVINCIAL', registrado: true, estadoActa: 'ENVIADA' },
+        {
+          cargoId: 2,
+          nombre: 'Prefecto',
+          nivel: 'PROVINCIAL',
+          registrado: true,
+          estadoActa: 'ENVIADA',
+        },
       ]),
     );
 

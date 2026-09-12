@@ -12,7 +12,9 @@ import { CUSTOM_ELEMENTS_SCHEMA, Component, Input } from '@angular/core';
         <ion-icon [name]="icon" class="empty-state__icon"></ion-icon>
       </div>
       <h3 class="empty-state__title" *ngIf="title">{{ title }}</h3>
-      <p class="empty-state__description" *ngIf="description">{{ description }}</p>
+      <p class="empty-state__description" *ngIf="description">
+        {{ description }}
+      </p>
       <div class="empty-state__actions">
         <ng-content select="[empty-actions]"></ng-content>
         <ng-content></ng-content>

@@ -12,7 +12,6 @@ import {
 import { CargoConEstado } from '../../models/observer.model';
 import { ObserverService } from '../../services/observer.service';
 
-
 @Component({
   selector: 'app-jrv-cargos',
   standalone: true,
@@ -66,7 +65,13 @@ export class JrvCargosPage implements OnInit {
   }
 
   registrarActa(cargo: CargoConEstado): void {
-    this.router.navigate(['/observer/jrv', this.jrvId, 'cargo', cargo.cargoId, 'registrar']);
+    this.router.navigate([
+      '/observer/jrv',
+      this.jrvId,
+      'cargo',
+      cargo.cargoId,
+      'registrar',
+    ]);
   }
 
   volver(): void {

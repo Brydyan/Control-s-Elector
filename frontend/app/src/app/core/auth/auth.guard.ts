@@ -20,9 +20,11 @@ export const authGuard: CanActivateFn = () => {
     return of(true);
   }
 
-  return auth.restoreSession().pipe(
-    map((restored) => (restored ? true : router.createUrlTree(['/login']))),
-  );
+  return auth
+    .restoreSession()
+    .pipe(
+      map((restored) => (restored ? true : router.createUrlTree(['/login']))),
+    );
 };
 
 /** Keeps authenticated users away from /login (bounce to /home). */
@@ -45,7 +47,10 @@ export const roleGuard: CanActivateFn = (route) => {
 
   const checkRole = () => {
     const userRole = store.user()?.role;
-    if (userRole && (allowedRoles.length === 0 || allowedRoles.includes(userRole))) {
+    if (
+      userRole &&
+      (allowedRoles.length === 0 || allowedRoles.includes(userRole))
+    ) {
       return true;
     }
     return router.createUrlTree(['/dashboard']);
@@ -55,7 +60,11 @@ export const roleGuard: CanActivateFn = (route) => {
     return checkRole();
   }
 
-  return auth.restoreSession().pipe(
-    map((restored) => (restored ? checkRole() : router.createUrlTree(['/login']))),
-  );
+  return auth
+    .restoreSession()
+    .pipe(
+      map((restored) =>
+        restored ? checkRole() : router.createUrlTree(['/login']),
+      ),
+    );
 };

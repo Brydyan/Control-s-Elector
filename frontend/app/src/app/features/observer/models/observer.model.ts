@@ -1,10 +1,5 @@
 export type EstadoActa =
-  | 'BORRADOR'
-  | 'ENVIADA'
-  | 'APROBADA'
-  | 'EN_DISPUTA'
-  | 'CORREGIDA'
-  | 'ANULADA';
+  'BORRADOR' | 'ENVIADA' | 'APROBADA' | 'EN_DISPUTA' | 'CORREGIDA' | 'ANULADA';
 
 export interface JrvConEstado {
   jrvId: number;

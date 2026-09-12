@@ -29,7 +29,9 @@ describe('ErrorStateComponent', () => {
     component.showRetry = true;
     fixture.detectChanges();
 
-    const button = fixture.nativeElement.querySelector('.error-state__retry-btn');
+    const button = fixture.nativeElement.querySelector(
+      '.error-state__retry-btn',
+    );
     button.click();
 
     expect(component.retry.emit).toHaveBeenCalled();

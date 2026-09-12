@@ -42,8 +42,11 @@
         <div class="cargo-meta">
           <div class="cargo-title-badge">
             <h3 class="cargo-name">{{ cargo.nombre }}</h3>
-            <app-badge [variant]="cargo.registrado && cargo.estadoActa ? cargo.estadoActa : 'BORRADOR'">
-              {{ cargo.registrado ? (cargo.estadoActa || 'REGISTRADA') : 'PENDIENTE' }}
+            <app-badge
+              [variant]="cargo.registrado && cargo.estadoActa ? cargo.estadoActa : 'BORRADOR'"
+            >
+              {{ cargo.registrado ? (cargo.estadoActa || 'REGISTRADA') :
+              'PENDIENTE' }}
             </app-badge>
           </div>
           <span class="cargo-nivel">Nivel: {{ cargo.nivel }}</span>

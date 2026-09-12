@@ -21,8 +21,22 @@ describe('RegistrarActaPage', () => {
 
     observerServiceSpy.getCandidatosPorCargo.and.returnValue(
       of([
-        { id: 1, nombre: 'Candidato A', orden: 1, cargoId: 2, partidoId: 10, partidoSiglas: 'PA' },
-        { id: 2, nombre: 'Candidato B', orden: 2, cargoId: 2, partidoId: 20, partidoSiglas: 'PB' },
+        {
+          id: 1,
+          nombre: 'Candidato A',
+          orden: 1,
+          cargoId: 2,
+          partidoId: 10,
+          partidoSiglas: 'PA',
+        },
+        {
+          id: 2,
+          nombre: 'Candidato B',
+          orden: 2,
+          cargoId: 2,
+          partidoId: 20,
+          partidoSiglas: 'PB',
+        },
       ]),
     );
 
@@ -66,11 +80,11 @@ describe('RegistrarActaPage', () => {
     component.totalSufragantes = 100;
     component.votosBlancos = 10;
     component.votosNulos = 10;
-    expect(component.isChecksumValid).toBeFalse();
+    expect(component.isChecksumValid).toBe(false);
 
     component.votosPorCandidato.set(1, 40);
     component.votosPorCandidato.set(2, 40);
-    expect(component.isChecksumValid).toBeTrue();
+    expect(component.isChecksumValid).toBe(true);
   });
 
   it('should proceed to image step only when checksum is valid', () => {
