@@ -8,9 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,7 +53,7 @@ class EliminarPartidoUseCaseTest {
 
     verify(partidoRepository).delete(partido);
     verify(auditLogService)
-        .registrar(
+        .registrarConIp(
             eq(99L),
             eq("ELIMINAR_PARTIDO"),
             eq("partido"),

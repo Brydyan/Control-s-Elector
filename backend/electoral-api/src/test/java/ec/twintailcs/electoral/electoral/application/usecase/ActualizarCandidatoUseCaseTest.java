@@ -13,10 +13,10 @@ import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.NivelCargo;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.web.dto.CandidatoRequest;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -120,7 +120,7 @@ class ActualizarCandidatoUseCaseTest {
 
     verify(candidatoRepository).save(candidato);
     verify(auditLogService)
-        .registrar(
+        .registrarConIp(
             eq(99L),
             eq("ACTUALIZAR_CANDIDATO"),
             eq("candidato"),

@@ -1,12 +1,11 @@
 package ec.twintailcs.electoral.electoral.application.usecase;
 
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionConflictException;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.web.dto.PartidoRequest;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +22,7 @@ public class ActualizarPartidoUseCase {
   }
 
   @Transactional
-  public Partido execute(Long id, PartidoRequest dto, Long masterId, HttpServletRequest request) {
+  public Partido execute(Long id, PartidoRequest dto, Long masterId, String ipAddress) {
     Partido partido =
         partidoRepository
             .findById(id)
@@ -43,13 +42,13 @@ public class ActualizarPartidoUseCase {
     partido.setNumeroLista(dto.numeroLista());
     Partido actualizado = partidoRepository.save(partido);
 
-    auditLogService.registrar(
+    auditLogService.registrarConIp(
         masterId,
         "ACTUALIZAR_PARTIDO",
         "partido",
         id,
         "Partido actualizado: " + dto.siglas(),
-        request);
+        ipAddress);
     return actualizado;
   }
 }

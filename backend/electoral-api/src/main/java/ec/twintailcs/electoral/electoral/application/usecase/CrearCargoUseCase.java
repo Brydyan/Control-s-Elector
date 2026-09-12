@@ -4,7 +4,6 @@ import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
 import ec.twintailcs.electoral.electoral.web.dto.CargoRequest;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +19,17 @@ public class CrearCargoUseCase {
   }
 
   @Transactional
-  public Cargo execute(CargoRequest dto, Long masterId, HttpServletRequest request) {
+  public Cargo execute(CargoRequest dto, Long masterId, String ipAddress) {
     Cargo cargo = new Cargo(dto.nombre(), dto.nivel(), dto.puestos());
     Cargo guardado = cargoRepository.save(cargo);
 
-    auditLogService.registrar(
+    auditLogService.registrarConIp(
         masterId,
         "CREAR_CARGO",
         "cargo",
         guardado.getId(),
         "Cargo creado: " + dto.nombre(),
-        request);
+        ipAddress);
     return guardado;
   }
 }

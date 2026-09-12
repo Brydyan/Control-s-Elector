@@ -5,11 +5,10 @@ import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.web.dto.CandidatoRequest;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +32,7 @@ public class CrearCandidatoUseCase {
   }
 
   @Transactional
-  public Candidato execute(CandidatoRequest dto, Long masterId, HttpServletRequest request) {
+  public Candidato execute(CandidatoRequest dto, Long masterId, String ipAddress) {
     Cargo cargo =
         cargoRepository
             .findById(dto.cargoId())
@@ -51,13 +50,13 @@ public class CrearCandidatoUseCase {
     Candidato candidato = new Candidato(dto.nombre(), dto.orden(), cargo, partido);
     Candidato guardado = candidatoRepository.save(candidato);
 
-    auditLogService.registrar(
+    auditLogService.registrarConIp(
         masterId,
         "CREAR_CANDIDATO",
         "candidato",
         guardado.getId(),
         "Candidato: " + dto.nombre() + " para cargo " + cargo.getNombre(),
-        request);
+        ipAddress);
     return guardado;
   }
 }

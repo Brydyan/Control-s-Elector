@@ -25,11 +25,11 @@ import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.CargoRepository;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
+import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.NivelCargo;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.domain.PartidoRepository;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionConflictException;
-import ec.twintailcs.electoral.electoral.web.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.web.dto.CandidatoRequest;
 import ec.twintailcs.electoral.electoral.web.dto.CargoRequest;
 import ec.twintailcs.electoral.electoral.web.dto.PartidoRequest;
@@ -101,11 +101,11 @@ class ConfiguracionServiceTest {
     guardado.setId(1L);
     when(cargoRepository.save(any(Cargo.class))).thenReturn(guardado);
 
-    Cargo resultado = service.createCargo(dto, 99L, null);
+    Cargo resultado = service.createCargo(dto, 99L, (String) null);
 
     assertThat(resultado.getId()).isEqualTo(1L);
     verify(auditLogService)
-        .registrar(eq(99L), eq("CREAR_CARGO"), eq("cargo"), eq(1L), any(), any());
+        .registrarConIp(eq(99L), eq("CREAR_CARGO"), eq("cargo"), eq(1L), any(), any());
   }
 
   @Test
@@ -113,7 +113,7 @@ class ConfiguracionServiceTest {
     when(cargoRepository.findById(1L)).thenReturn(Optional.empty());
     CargoRequest dto = new CargoRequest("Alcalde/sa", NivelCargo.CANTON, 1);
 
-    assertThatThrownBy(() -> service.updateCargo(1L, dto, 99L, null))
+    assertThatThrownBy(() -> service.updateCargo(1L, dto, 99L, (String) null))
         .isInstanceOf(ConfiguracionNotFoundException.class);
   }
 
@@ -124,7 +124,7 @@ class ConfiguracionServiceTest {
     when(partidoRepository.findByNumeroLista(35)).thenReturn(Optional.of(existente));
     PartidoRequest dto = new PartidoRequest("Otro Partido", "OP", 35);
 
-    assertThatThrownBy(() -> service.createPartido(dto, 99L, null))
+    assertThatThrownBy(() -> service.createPartido(dto, 99L, (String) null))
         .isInstanceOf(ConfiguracionConflictException.class);
 
     verify(partidoRepository, never()).save(any());
@@ -138,11 +138,11 @@ class ConfiguracionServiceTest {
     guardado.setId(3L);
     when(partidoRepository.save(any(Partido.class))).thenReturn(guardado);
 
-    Partido resultado = service.createPartido(dto, 99L, null);
+    Partido resultado = service.createPartido(dto, 99L, (String) null);
 
     assertThat(resultado.getId()).isEqualTo(3L);
     verify(auditLogService)
-        .registrar(eq(99L), eq("CREAR_PARTIDO"), eq("partido"), eq(3L), any(), any());
+        .registrarConIp(eq(99L), eq("CREAR_PARTIDO"), eq("partido"), eq(3L), any(), any());
   }
 
   @Test
@@ -150,7 +150,7 @@ class ConfiguracionServiceTest {
     when(cargoRepository.findById(10L)).thenReturn(Optional.empty());
     CandidatoRequest dto = new CandidatoRequest("Juan Perez", 1, 10L, 20L);
 
-    assertThatThrownBy(() -> service.createCandidato(dto, 99L, null))
+    assertThatThrownBy(() -> service.createCandidato(dto, 99L, (String) null))
         .isInstanceOf(ConfiguracionNotFoundException.class);
   }
 
@@ -162,7 +162,7 @@ class ConfiguracionServiceTest {
     when(partidoRepository.findById(20L)).thenReturn(Optional.empty());
     CandidatoRequest dto = new CandidatoRequest("Juan Perez", 1, 10L, 20L);
 
-    assertThatThrownBy(() -> service.createCandidato(dto, 99L, null))
+    assertThatThrownBy(() -> service.createCandidato(dto, 99L, (String) null))
         .isInstanceOf(ConfiguracionNotFoundException.class);
   }
 
@@ -180,10 +180,10 @@ class ConfiguracionServiceTest {
     guardado.setId(1L);
     when(candidatoRepository.save(any(Candidato.class))).thenReturn(guardado);
 
-    Candidato resultado = service.createCandidato(dto, 99L, null);
+    Candidato resultado = service.createCandidato(dto, 99L, (String) null);
 
     assertThat(resultado.getId()).isEqualTo(1L);
     verify(auditLogService)
-        .registrar(eq(99L), eq("CREAR_CANDIDATO"), eq("candidato"), eq(1L), any(), any());
+        .registrarConIp(eq(99L), eq("CREAR_CANDIDATO"), eq("candidato"), eq(1L), any(), any());
   }
 }

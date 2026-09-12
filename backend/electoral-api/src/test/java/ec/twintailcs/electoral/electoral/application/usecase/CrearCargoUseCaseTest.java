@@ -47,7 +47,7 @@ class CrearCargoUseCaseTest {
 
     verify(cargoRepository).save(any(Cargo.class));
     verify(auditLogService)
-        .registrar(
+        .registrarConIp(
             eq(99L),
             eq("CREAR_CARGO"),
             eq("cargo"),
