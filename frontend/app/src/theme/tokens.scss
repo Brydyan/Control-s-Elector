@@ -60,8 +60,17 @@
   --color-surface-card: var(--primitive-white);
   --color-surface-sidebar: var(--primitive-slate-900);
   --color-surface-sidebar-hover: var(--primitive-slate-800);
+  --color-surface-sidebar-active: var(--primitive-slate-700);
   --surface-card: var(--color-surface-card);
   --surface-page: var(--color-surface-page);
+
+  // Elementos de Sidebar Semánticos
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text: var(--primitive-slate-200);
+  --sidebar-text-muted: var(--primitive-slate-400);
+  --sidebar-text-subtle: rgba(255, 255, 255, 0.55);
+  --sidebar-item-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-card-bg: rgba(255, 255, 255, 0.05);
 
   // Tipografía & Colores de Texto
   --color-text-primary: var(--primitive-slate-900);

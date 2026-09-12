@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { MenuNode } from '../../core/menu/menu.model';
 import { MenuService } from '../../core/menu/menu.service';
+import { LayoutService } from '../layout.service';
 
 export interface DynamicNavSection {
   label: string;
@@ -32,6 +33,7 @@ export class SidebarComponent implements OnInit {
   private readonly auth = inject(AuthService);
   private readonly menuService = inject(MenuService);
   private readonly router = inject(Router);
+  readonly layout = inject(LayoutService);
 
   private readonly _sections = signal<DynamicNavSection[]>([]);
   readonly sections = this._sections.asReadonly();
@@ -93,9 +95,9 @@ export class SidebarComponent implements OnInit {
       }
     });
 
-    // Agregar sección de operación electoral si el usuario tiene rol autorizado
+    // Agregar sección de operación electoral solo a roles con acceso al flujo (OBSERVER y MASTER)
     const role = this.user()?.role;
-    if (role === 'OBSERVER' || role === 'ADMIN' || role === 'MASTER') {
+    if (role === 'OBSERVER' || role === 'MASTER') {
       sections.push({
         label: 'Operación Electoral',
         items: [
@@ -141,16 +143,22 @@ export class SidebarComponent implements OnInit {
   }
 
   private getFallbackSections(): DynamicNavSection[] {
-    return [
+    const sections: DynamicNavSection[] = [
       {
         label: 'Dashboard',
         items: [{ label: 'Resumen General', icon: '📊', route: '/dashboard' }],
       },
-      {
+    ];
+
+    const role = this.user()?.role;
+    if (role === 'OBSERVER' || role === 'MASTER') {
+      sections.push({
         label: 'Operación Electoral',
         items: [{ label: 'Mis JRVs', icon: '🗳️', route: '/observer/mis-jrvs' }],
-      },
-    ];
+      });
+    }
+
+    return sections;
   }
 
   /** "ana.delgado@cne.gob.ec" -> "Ana Delgado". Falls back to the email. */

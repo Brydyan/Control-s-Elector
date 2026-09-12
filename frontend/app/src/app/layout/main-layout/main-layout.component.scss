@@ -3,6 +3,28 @@
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--color-surface-page);
+  position: relative;
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+
+  @media (max-width: 768px) {
+    display: block;
+
+    &.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
 }
 
 .main {
@@ -16,4 +38,8 @@
   padding: var(--space-6) var(--space-8);
   flex: 1;
   overflow-y: auto;
+
+  @media (max-width: 768px) {
+    padding: var(--space-4);
+  }
 }
