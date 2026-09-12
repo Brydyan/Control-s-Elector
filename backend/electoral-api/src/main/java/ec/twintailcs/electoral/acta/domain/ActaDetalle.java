@@ -11,6 +11,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * Línea del acta: una fila por candidato dentro del acta.
@@ -25,6 +28,9 @@ import jakarta.persistence.Version;
  */
 @Entity
 @Table(name = "acta_detalle")
+@Getter
+@Setter
+@NoArgsConstructor
 public class ActaDetalle {
 
   @Id
@@ -53,55 +59,25 @@ public class ActaDetalle {
   @Column(columnDefinition = "text")
   private String observaciones;
 
-  public ActaDetalle() {}
-
   public ActaDetalle(Acta acta, Candidato candidato, Integer votos) {
+    if (acta == null) {
+      throw new ActaInvalidaException("El acta es obligatoria para el detalle");
+    }
+    if (candidato == null) {
+      throw new ActaInvalidaException("El candidato es obligatorio para el detalle");
+    }
+    setVotos(votos);
     this.acta = acta;
     this.candidato = candidato;
-    this.votos = votos;
-  }
-
-  public Long getId() {
-    return id;
-  }
-
-  public void setId(Long id) {
-    this.id = id;
-  }
-
-  public Long getVersion() {
-    return version;
-  }
-
-  public Acta getActa() {
-    return acta;
-  }
-
-  public void setActa(Acta acta) {
-    this.acta = acta;
-  }
-
-  public Candidato getCandidato() {
-    return candidato;
-  }
-
-  public void setCandidato(Candidato candidato) {
-    this.candidato = candidato;
-  }
-
-  public Integer getVotos() {
-    return votos;
   }
 
   public void setVotos(Integer votos) {
+    if (votos == null) {
+      throw new ActaInvalidaException("Los votos del candidato son obligatorios");
+    }
+    if (votos < 0) {
+      throw new ActaInvalidaException("Los votos del candidato no pueden ser negativos");
+    }
     this.votos = votos;
-  }
-
-  public String getObservaciones() {
-    return observaciones;
-  }
-
-  public void setObservaciones(String observaciones) {
-    this.observaciones = observaciones;
   }
 }

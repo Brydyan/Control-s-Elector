@@ -32,6 +32,21 @@ public class ActaRequestDto {
 
   public ActaRequestDto() {}
 
+  public ActaRequestDto(
+      Long jrvId,
+      Long cargoId,
+      Integer totalSufragantes,
+      Integer votosBlancos,
+      Integer votosNulos,
+      List<ActaDetalleDto> detalles) {
+    this.jrvId = jrvId;
+    this.cargoId = cargoId;
+    this.totalSufragantes = totalSufragantes;
+    this.votosBlancos = votosBlancos;
+    this.votosNulos = votosNulos;
+    this.detalles = detalles;
+  }
+
   public Long getJrvId() {
     return jrvId;
   }
