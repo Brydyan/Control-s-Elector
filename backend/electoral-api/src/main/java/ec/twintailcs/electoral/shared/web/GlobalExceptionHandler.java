@@ -1,8 +1,9 @@
 package ec.twintailcs.electoral.shared.web;
 
-import ec.twintailcs.electoral.acta.web.ActaEstadoInvalidoException;
-import ec.twintailcs.electoral.acta.web.ActaInvalidaException;
-import ec.twintailcs.electoral.acta.web.JrvCargoYaRegistradoException;
+import ec.twintailcs.electoral.acta.domain.AccesoNoPermitidoException;
+import ec.twintailcs.electoral.acta.domain.ActaEstadoInvalidoException;
+import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
+import ec.twintailcs.electoral.acta.domain.JrvCargoYaRegistradoException;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.evidencia.web.EvidenciaNotFoundException;
@@ -24,9 +25,16 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 /**
  * Traduce excepciones a respuestas JSON consistentes.
  *
- * <p>Formato uniforme: { timestamp, status, error, message, fields? }
+ * <p>PR γ: maneja {@link EvidenciaNotFoundException} (404), {@link AccessDeniedException} (403),
+ * {@link ActaInvalidaException} (400), {@link ActaEstadoInvalidoException} (409) y {@link
+ * JrvCargoYaRegistradoException} (409).
  *
- * <p>Un solo lugar para revisar cuando algo falla. Los controllers no se enteran de los detalles
+ * <p>Se agrega para evitar que las excepciones de negocio caigan en el catch-all (500) y filtren
+ * stack traces al cliente, y para que los tests puedan asertar el contrato JSON estándar.
+ *
+ * <p>Mapeo de exceptions a HTTP status: ver doc/adr/0002-exception-mapping.md.
+ *
+ * <p>Las excepciones de negocio no llevan (y no deben llevar) {@code @ResponseStatus} acopladas a
  * HTTP: tiran RuntimeException y este handler las clasifica.
  */
 @RestControllerAdvice
@@ -54,6 +62,11 @@ public class GlobalExceptionHandler {
   /** AccessDeniedException de @PreAuthorize -> 403 FORBIDDEN. */
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<Map<String, Object>> accessDenied(AccessDeniedException ex) {
+    return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
+  }
+
+  @ExceptionHandler(AccesoNoPermitidoException.class)
+  public ResponseEntity<Map<String, Object>> accesoNoPermitido(AccesoNoPermitidoException ex) {
     return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
   }
 
