@@ -162,6 +162,38 @@ services:
         limits:
           memory: 256M
 
+  # ---------------------------------------------------------------------------
+  # Frontend — Angular + Ionic servido con Nginx y reverse proxy
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend/app
+      dockerfile: Dockerfile
+    container_name: electoral-frontend-${APP_ENV:-dev}
+    profiles: ["dev", "full"]
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      electoral-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: ${RESTART_POLICY:-no}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+
 # -----------------------------------------------------------------------------
 # Volúmenes persistentes
 # -----------------------------------------------------------------------------

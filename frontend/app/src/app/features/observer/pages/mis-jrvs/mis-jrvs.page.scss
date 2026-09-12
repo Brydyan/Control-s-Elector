@@ -1,0 +1,110 @@
+.mis-jrvs-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+}
+
+.mis-jrvs-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  .page-title {
+    margin: 0;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+  }
+
+  .page-subtitle {
+    margin: var(--space-1) 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+  }
+}
+
+.filter-tabs {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+
+  .filter-tab {
+    appearance: none;
+    border: 1px solid var(--border-default);
+    background: var(--surface-card);
+    color: var(--text-secondary);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+
+    &:hover {
+      background: var(--surface-subtle);
+    }
+
+    &--active {
+      background: var(--color-primary);
+      color: var(--color-primary-contrast);
+      border-color: var(--color-primary);
+    }
+  }
+}
+
+.jrv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+
+.jrv-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.jrv-main-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.jrv-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .jrv-badge-id {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+  }
+}
+
+.jrv-location {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.jrv-stats {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface-subtle);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+
+  strong {
+    color: var(--text-primary);
+  }
+}
+
+.jrv-action-row {
+  margin-top: auto;
+}

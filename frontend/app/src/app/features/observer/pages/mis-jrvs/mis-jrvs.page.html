@@ -1,0 +1,104 @@
+<div class="mis-jrvs-container">
+  <header class="mis-jrvs-header">
+    <div class="header-titles">
+      <h1 class="page-title">Mis JRVs Asignadas</h1>
+      <p class="page-subtitle">Mesas de votación bajo tu supervisión electoral</p>
+    </div>
+
+    <!-- Barra de filtros -->
+    <div class="filter-tabs" *ngIf="!loading && !error && jrvs.length > 0">
+      <button
+        type="button"
+        class="filter-tab"
+        [class.filter-tab--active]="activeFilter === 'TODAS'"
+        (click)="applyFilter('TODAS')"
+      >
+        Todas ({{ totalJrvs }})
+      </button>
+      <button
+        type="button"
+        class="filter-tab"
+        [class.filter-tab--active]="activeFilter === 'PENDIENTES'"
+        (click)="applyFilter('PENDIENTES')"
+      >
+        Pendientes ({{ totalPendientes }})
+      </button>
+      <button
+        type="button"
+        class="filter-tab"
+        [class.filter-tab--active]="activeFilter === 'COMPLETADAS'"
+        (click)="applyFilter('COMPLETADAS')"
+      >
+        Completadas ({{ totalCompletadas }})
+      </button>
+    </div>
+  </header>
+
+  <!-- Estado de carga -->
+  <app-loading-state
+    *ngIf="loading"
+    message="Cargando tus mesas asignadas..."
+  ></app-loading-state>
+
+  <!-- Estado de error -->
+  <app-error-state
+    *ngIf="!loading && error"
+    title="Error al consultar JRVs"
+    [message]="error"
+    [showRetry]="true"
+    retryLabel="Reintentar carga"
+    (retry)="cargarJrvs()"
+  ></app-error-state>
+
+  <!-- Estado vacío general -->
+  <app-empty-state
+    *ngIf="!loading && !error && jrvs.length === 0"
+    title="No tienes JRVs asignadas"
+    description="No se encontraron mesas de votación asignadas a tu cuenta. Comunícate con tu coordinador electoral."
+  ></app-empty-state>
+
+  <!-- Lista de JRVs -->
+  <div class="jrv-grid" *ngIf="!loading && !error && filteredJrvs.length > 0">
+    <app-card
+      *ngFor="let jrv of filteredJrvs"
+      [elevated]="true"
+      class="jrv-card"
+    >
+      <div class="jrv-card-content">
+        <div class="jrv-main-info">
+          <div class="jrv-badge-row">
+            <span class="jrv-badge-id">Mesa {{ jrv.numero }}</span>
+            <app-badge [variant]="jrv.cargosPendientes === 0 ? 'APROBADA' : 'BORRADOR'">
+              {{ jrv.cargosPendientes === 0 ? 'Completa' : jrv.cargosPendientes + ' pendientes' }}
+            </app-badge>
+          </div>
+          <p class="jrv-location">
+            📍 {{ jrv.parroquia || 'Parroquia no asignada' }}
+          </p>
+          <div class="jrv-stats">
+            <span>Cargos registrados: <strong>{{ jrv.cargosRegistrados }}</strong></span>
+            <span>Cargos pendientes: <strong>{{ jrv.cargosPendientes }}</strong></span>
+          </div>
+        </div>
+
+        <div class="jrv-action-row">
+          <app-button
+            [variant]="jrv.cargosPendientes > 0 ? 'primary' : 'secondary'"
+            size="sm"
+            [block]="true"
+            (clicked)="seleccionarJrv(jrv)"
+          >
+            {{ jrv.cargosPendientes > 0 ? 'Gestionar Actas' : 'Ver Detalle' }}
+          </app-button>
+        </div>
+      </div>
+    </app-card>
+  </div>
+
+  <!-- Estado vacío por filtro -->
+  <app-empty-state
+    *ngIf="!loading && !error && jrvs.length > 0 && filteredJrvs.length === 0"
+    title="No hay mesas en este filtro"
+    description="No hay JRVs que coincidan con el estado seleccionado."
+  ></app-empty-state>
+</div>

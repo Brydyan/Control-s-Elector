@@ -45,6 +45,17 @@ export class SidebarComponent {
       ],
     },
     {
+      label: 'Operación Electoral',
+      items: [
+        {
+          label: 'Mis JRVs',
+          icon: '🗳️',
+          route: '/observer/mis-jrvs',
+          roles: ['OBSERVER', 'ADMIN', 'MASTER'],
+        },
+      ],
+    },
+    {
       label: 'Sistema',
       items: [
         { label: 'Configuración', icon: '⚙️', roles: ['MASTER'], disabled: true, tag: 'Solo MASTER' },

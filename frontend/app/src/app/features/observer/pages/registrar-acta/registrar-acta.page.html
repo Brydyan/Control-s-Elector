@@ -1,0 +1,245 @@
+<div class="registrar-acta-container">
+  <div class="page-topbar">
+    <app-button variant="ghost" size="sm" (clicked)="cancelar()" [disabled]="submitting">
+      ← Cancelar y volver
+    </app-button>
+  </div>
+
+  <header class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Registro de Acta de Escrutinio</h1>
+      <p class="page-subtitle">JRV #{{ jrvId }} · Dignidad ID #{{ cargoId }}</p>
+    </div>
+
+    <!-- Stepper visual -->
+    <div class="stepper">
+      <div class="step-item" [class.step-item--active]="currentStep === 'VOTOS'">
+        <span class="step-number">1</span>
+        <span class="step-label">Votos</span>
+      </div>
+      <div class="step-divider"></div>
+      <div class="step-item" [class.step-item--active]="currentStep === 'IMAGEN'">
+        <span class="step-number">2</span>
+        <span class="step-label">Evidencia</span>
+      </div>
+      <div class="step-divider"></div>
+      <div class="step-item" [class.step-item--active]="currentStep === 'REVISION'">
+        <span class="step-number">3</span>
+        <span class="step-label">Revisión</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Estado de carga inicial -->
+  <app-loading-state
+    *ngIf="loading"
+    message="Cargando candidatos y papeleta..."
+  ></app-loading-state>
+
+  <!-- Notificaciones de éxito o error -->
+  <div class="success-banner" *ngIf="submitSuccess">
+    <h3>✅ ¡Acta procesada exitosamente!</h3>
+    <p>Redirigiendo a las dignidades de la mesa...</p>
+  </div>
+
+  <app-error-state
+    *ngIf="error && !loading"
+    title="Atención"
+    [message]="error"
+  ></app-error-state>
+
+  <!-- ==================== PASO 1: VOTOS ==================== -->
+  <div class="step-content" *ngIf="!loading && !submitSuccess && currentStep === 'VOTOS'">
+    <app-card [elevated]="true" headerTitle="Totales de Mesa">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="totalSufragantes">Total de Sufragantes en Padrón:</label>
+          <input
+            id="totalSufragantes"
+            type="number"
+            min="0"
+            class="form-input"
+            [(ngModel)]="totalSufragantes"
+            placeholder="0"
+          />
+        </div>
+      </div>
+    </app-card>
+
+    <app-card [elevated]="true" headerTitle="Votos por Candidato">
+      <div class="candidates-list">
+        <div class="candidate-row" *ngFor="let c of candidatos">
+          <div class="candidate-info">
+            <span class="candidate-name">{{ c.nombre }}</span>
+            <span class="candidate-party">{{ c.partidoSiglas || c.partidoNombre || 'Independiente' }} (Lista {{ c.partidoNumeroLista || 'N/A' }})</span>
+          </div>
+          <div class="candidate-input">
+            <input
+              type="number"
+              min="0"
+              class="form-input form-input--center"
+              [value]="getVoto(c.id)"
+              (input)="setVoto(c.id, $event)"
+              placeholder="0"
+            />
+          </div>
+        </div>
+      </div>
+    </app-card>
+
+    <app-card [elevated]="true" headerTitle="Votos Blancos y Nulos">
+      <div class="form-grid form-grid--2col">
+        <div class="form-group">
+          <label class="form-label" for="votosBlancos">Votos en Blanco:</label>
+          <input
+            id="votosBlancos"
+            type="number"
+            min="0"
+            class="form-input"
+            [(ngModel)]="votosBlancos"
+            placeholder="0"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="votosNulos">Votos Nulos:</label>
+          <input
+            id="votosNulos"
+            type="number"
+            min="0"
+            class="form-input"
+            [(ngModel)]="votosNulos"
+            placeholder="0"
+          />
+        </div>
+      </div>
+    </app-card>
+
+    <!-- Balance Checksum en vivo -->
+    <div
+      class="checksum-banner"
+      [class.checksum-banner--valid]="isChecksumValid"
+      [class.checksum-banner--invalid]="!isChecksumValid"
+    >
+      <div class="checksum-info">
+        <strong>Suma de Votos: {{ totalVotosComputados }}</strong> /
+        <span>Total Sufragantes: {{ totalSufragantes }}</span>
+      </div>
+      <div class="checksum-status">
+        {{ isChecksumValid ? '✓ Balance electoral exacto' : '✗ La suma no coincide con el total' }}
+      </div>
+    </div>
+
+    <div class="step-actions">
+      <app-button
+        variant="primary"
+        size="lg"
+        [disabled]="!isChecksumValid"
+        (clicked)="irAPasoImagen()"
+      >
+        Continuar a Evidencia Fotográfica →
+      </app-button>
+    </div>
+  </div>
+
+  <!-- ==================== PASO 2: EVIDENCIA DE IMAGEN ==================== -->
+  <div class="step-content" *ngIf="!loading && !submitSuccess && currentStep === 'IMAGEN'">
+    <app-card [elevated]="true" headerTitle="Captura de Acta Física">
+      <div class="image-upload-zone">
+        <div class="image-preview" *ngIf="imagePreviewUrl">
+          <img [src]="imagePreviewUrl" alt="Previsualización de acta física" class="preview-img" />
+        </div>
+
+        <div class="upload-controls">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            #fileInput
+            (change)="onFileSelected($event)"
+            style="display: none"
+          />
+          <app-button
+            variant="secondary"
+            size="md"
+            (clicked)="fileInput.click()"
+          >
+            📷 {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o subir archivo' }}
+          </app-button>
+          <p class="upload-tip">
+            Asegúrate de que los números y firmas sean claramente legibles.
+          </p>
+        </div>
+      </div>
+    </app-card>
+
+    <div class="step-actions step-actions--between">
+      <app-button variant="ghost" size="md" (clicked)="volverAVotos()">
+        ← Volver a Votos
+      </app-button>
+      <app-button
+        variant="primary"
+        size="lg"
+        (clicked)="irARevision()"
+      >
+        Ir a Revisión Final →
+      </app-button>
+    </div>
+  </div>
+
+  <!-- ==================== PASO 3: REVISIÓN Y ENVÍO ==================== -->
+  <div class="step-content" *ngIf="!loading && !submitSuccess && currentStep === 'REVISION'">
+    <app-card [elevated]="true" headerTitle="Resumen de Escrutinio">
+      <div class="review-table">
+        <div class="review-row">
+          <span>Total Sufragantes:</span>
+          <strong>{{ totalSufragantes }}</strong>
+        </div>
+        <div class="review-row">
+          <span>Votos Blancos:</span>
+          <strong>{{ votosBlancos }}</strong>
+        </div>
+        <div class="review-row">
+          <span>Votos Nulos:</span>
+          <strong>{{ votosNulos }}</strong>
+        </div>
+        <div class="review-row" *ngFor="let c of candidatos">
+          <span>{{ c.nombre }} ({{ c.partidoSiglas || 'Independiente' }}):</span>
+          <strong>{{ getVoto(c.id) }}</strong>
+        </div>
+        <div class="review-row review-row--highlight">
+          <span>Evidencia adjunta:</span>
+          <strong>{{ selectedImageFile ? selectedImageFile.name : 'Sin fotografía adjunta' }}</strong>
+        </div>
+      </div>
+    </app-card>
+
+    <app-loading-state
+      *ngIf="submitting"
+      message="Transmitiendo acta y evidencia al servidor..."
+    ></app-loading-state>
+
+    <div class="step-actions step-actions--between" *ngIf="!submitting">
+      <app-button variant="ghost" size="md" (clicked)="volverAImagen()">
+        ← Volver
+      </app-button>
+
+      <div class="submit-buttons">
+        <app-button
+          variant="secondary"
+          size="md"
+          (clicked)="guardarComoBorrador()"
+        >
+          💾 Guardar Borrador
+        </app-button>
+        <app-button
+          variant="primary"
+          size="lg"
+          [disabled]="!isChecksumValid"
+          (clicked)="enviarActaFinal()"
+        >
+          🚀 Transmitir Acta
+        </app-button>
+      </div>
+    </div>
+  </div>
+</div>

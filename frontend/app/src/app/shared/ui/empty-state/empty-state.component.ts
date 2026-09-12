@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, Component, Input } from '@angular/core';
 
 @Component({
   selector: 'app-empty-state',
   standalone: true,
   imports: [CommonModule],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
     <div class="empty-state">
       <div class="empty-state__icon-wrapper" *ngIf="icon">
