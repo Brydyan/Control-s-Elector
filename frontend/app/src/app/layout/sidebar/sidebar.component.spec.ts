@@ -104,4 +104,14 @@ describe('SidebarComponent', () => {
       .some((s) => s.label === 'Operación Electoral');
     expect(hasOperacion).toBe(false);
   });
+
+  it('should reflect desktop collapsed state on sidebar element', () => {
+    const aside = fixture.nativeElement.querySelector('aside.sidebar');
+    expect(aside).toBeTruthy();
+    expect(aside.classList.contains('collapsed')).toBe(false);
+
+    component.layout.toggleDesktopCollapse();
+    fixture.detectChanges();
+    expect(aside.classList.contains('collapsed')).toBe(true);
+  });
 });

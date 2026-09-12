@@ -4,7 +4,16 @@
       class="menu-btn"
       type="button"
       (click)="layout.toggleSidebar()"
-      aria-label="Abrir menú de navegación"
+      [attr.aria-label]="
+        layout.desktopCollapsed()
+          ? 'Expandir menú lateral'
+          : 'Contraer menú lateral'
+      "
+      [attr.title]="
+        layout.desktopCollapsed()
+          ? 'Expandir menú lateral'
+          : 'Contraer menú lateral'
+      "
     >
       <span class="menu-icon">☰</span>
     </button>

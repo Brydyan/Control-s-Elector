@@ -22,7 +22,7 @@
 }
 
 .menu-btn {
-  display: none;
+  display: flex;
   background: transparent;
   border: none;
   color: var(--color-text-primary);
@@ -34,13 +34,18 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
-
-  @media (max-width: 768px) {
-    display: flex;
-  }
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 
   &:hover {
     background: var(--color-surface-page);
+    color: var(--color-brand-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
   }
 }
 
