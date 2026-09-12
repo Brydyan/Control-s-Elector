@@ -1,11 +1,11 @@
 .topbar {
-  background: #fff;
-  padding: 0 32px;
-  height: 64px;
+  background: var(--color-surface-card);
+  padding: 0 var(--space-8);
+  height: var(--space-16);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid var(--color-border-subtle);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
   flex-shrink: 0;
 }
@@ -13,13 +13,13 @@
 .topbar-title {
   h1 {
     font-size: 18px;
-    font-weight: 800;
-    color: #1a1a2e;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
   }
 
   p {
-    font-size: 12px;
-    color: #888;
+    font-size: var(--font-size-meta);
+    color: var(--color-text-muted);
     margin-top: 1px;
   }
 }
@@ -27,26 +27,26 @@
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .realtime-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: #e8f5e9;
-  color: #2dd36f;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
+  gap: var(--space-1);
+  background: rgba(45, 211, 111, 0.12);
+  color: var(--color-status-success);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-medium);
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
-  background: #2dd36f;
-  border-radius: 50%;
+  width: var(--space-2);
+  height: var(--space-2);
+  background: var(--color-status-success);
+  border-radius: var(--radius-pill);
   animation: pulse 2s infinite;
 }
 
@@ -66,9 +66,9 @@
   position: relative;
   width: 38px;
   height: 38px;
-  background: #f4f5f8;
+  background: var(--primitive-gray-100);
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,21 +80,21 @@
   position: absolute;
   top: -4px;
   right: -4px;
-  background: #eb445a;
-  color: #fff;
+  background: var(--color-status-danger);
+  color: var(--color-text-on-brand);
   font-size: 10px;
-  font-weight: 700;
+  font-weight: var(--font-weight-bold);
   padding: 2px 5px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   min-width: 18px;
   text-align: center;
 }
 
 .readonly-badge {
-  background: #fff3e0;
-  color: #e65100;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
+  background: rgba(255, 166, 0, 0.15);
+  color: var(--color-status-warning);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-medium);
 }
