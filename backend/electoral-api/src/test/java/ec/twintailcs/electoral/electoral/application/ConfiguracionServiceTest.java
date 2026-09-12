@@ -10,9 +10,17 @@ import static org.mockito.Mockito.when;
 
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.electoral.application.usecase.ActualizarCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.ActualizarCargoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.ActualizarPartidoUseCase;
 import ec.twintailcs.electoral.electoral.application.usecase.CrearCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.CrearCargoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.CrearPartidoUseCase;
 import ec.twintailcs.electoral.electoral.application.usecase.EliminarCandidatoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.EliminarCargoUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.EliminarPartidoUseCase;
 import ec.twintailcs.electoral.electoral.application.usecase.ListarCandidatosUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.ListarCargosUseCase;
+import ec.twintailcs.electoral.electoral.application.usecase.ListarPartidosUseCase;
 import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
@@ -44,6 +52,21 @@ class ConfiguracionServiceTest {
 
   @BeforeEach
   void setUp() {
+    CrearCargoUseCase crearCargoUseCase = new CrearCargoUseCase(cargoRepository, auditLogService);
+    ActualizarCargoUseCase actualizarCargoUseCase =
+        new ActualizarCargoUseCase(cargoRepository, auditLogService);
+    EliminarCargoUseCase eliminarCargoUseCase =
+        new EliminarCargoUseCase(cargoRepository, auditLogService);
+    ListarCargosUseCase listarCargosUseCase = new ListarCargosUseCase(cargoRepository);
+
+    CrearPartidoUseCase crearPartidoUseCase =
+        new CrearPartidoUseCase(partidoRepository, auditLogService);
+    ActualizarPartidoUseCase actualizarPartidoUseCase =
+        new ActualizarPartidoUseCase(partidoRepository, auditLogService);
+    EliminarPartidoUseCase eliminarPartidoUseCase =
+        new EliminarPartidoUseCase(partidoRepository, auditLogService);
+    ListarPartidosUseCase listarPartidosUseCase = new ListarPartidosUseCase(partidoRepository);
+
     CrearCandidatoUseCase crearCandidatoUseCase =
         new CrearCandidatoUseCase(
             candidatoRepository, cargoRepository, partidoRepository, auditLogService);
@@ -57,9 +80,14 @@ class ConfiguracionServiceTest {
 
     service =
         new ConfiguracionService(
-            cargoRepository,
-            partidoRepository,
-            auditLogService,
+            crearCargoUseCase,
+            actualizarCargoUseCase,
+            eliminarCargoUseCase,
+            listarCargosUseCase,
+            crearPartidoUseCase,
+            actualizarPartidoUseCase,
+            eliminarPartidoUseCase,
+            listarPartidosUseCase,
             crearCandidatoUseCase,
             actualizarCandidatoUseCase,
             eliminarCandidatoUseCase,
