@@ -1,4 +1,8 @@
-<aside class="sidebar" [class.open]="layout.sidebarOpen()">
+<aside
+  class="sidebar"
+  [class.open]="layout.sidebarOpen()"
+  [class.collapsed]="layout.desktopCollapsed()"
+>
   <div class="sidebar-brand">
     <div class="sidebar-brand-row">
       <div class="sidebar-logo">🗳️</div>
@@ -12,7 +16,7 @@
         (click)="layout.closeSidebar()"
         aria-label="Cerrar menú lateral"
       >
-        ✕
+        <ion-icon name="close-outline" aria-hidden="true"></ion-icon>
       </button>
     </div>
   </div>
@@ -23,8 +27,16 @@
 
       @for (item of section.items; track item.label) {
         @if (item.disabled || !item.route) {
-          <div class="nav-item disabled" aria-disabled="true">
-            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+          <div
+            class="nav-item disabled"
+            aria-disabled="true"
+            [attr.title]="item.label"
+          >
+            <ion-icon
+              class="nav-icon"
+              [name]="item.icon"
+              aria-hidden="true"
+            ></ion-icon>
             <span class="nav-label">{{ item.label }}</span>
             @if (item.tag) {
               <span class="nav-tag">{{ item.tag }}</span>
@@ -37,8 +49,13 @@
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
             (click)="layout.closeSidebar()"
+            [attr.title]="item.label"
           >
-            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
+            <ion-icon
+              class="nav-icon"
+              [name]="item.icon"
+              aria-hidden="true"
+            ></ion-icon>
             <span class="nav-label">{{ item.label }}</span>
           </a>
         }
@@ -47,7 +64,10 @@
   </nav>
 
   <div class="sidebar-footer">
-    <div class="user-card">
+    <div
+      class="user-card"
+      [attr.title]="displayName() + ' (' + roleLabel() + ')'"
+    >
       <div class="user-avatar">{{ initials() }}</div>
       <div class="user-info">
         <div class="user-name">{{ displayName() }}</div>
@@ -58,8 +78,9 @@
         type="button"
         (click)="logout()"
         aria-label="Cerrar sesión"
+        title="Cerrar sesión"
       >
-        ↩
+        <ion-icon name="log-out-outline" aria-hidden="true"></ion-icon>
       </button>
     </div>
   </div>
