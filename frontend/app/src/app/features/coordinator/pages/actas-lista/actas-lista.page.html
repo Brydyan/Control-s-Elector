@@ -1,0 +1,189 @@
+<div class="actas-lista-container">
+  <!-- Top header / searchbar -->
+  <div class="page-topbar">
+    <div class="page-title-area">
+      <h1 class="page-title">Bandeja de Actas</h1>
+      <span class="total-indicator">{{ actasFiltradas.length }} total</span>
+    </div>
+
+    <div class="search-and-filters">
+      <div class="search-input-wrapper">
+        <ion-icon
+          name="search-outline"
+          class="search-icon"
+          aria-hidden="true"
+        ></ion-icon>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por JRV, ID o estado…"
+          [(ngModel)]="terminoBusqueda"
+          aria-label="Buscar por JRV, ID o estado"
+        />
+        <button
+          *ngIf="terminoBusqueda"
+          class="clear-search-btn"
+          (click)="terminoBusqueda = ''"
+          aria-label="Limpiar búsqueda"
+        >
+          <ion-icon name="close-circle" aria-hidden="true"></ion-icon>
+        </button>
+      </div>
+
+      <div class="cargo-select-wrapper" *ngIf="cargos.length > 0">
+        <select
+          class="cargo-select"
+          (change)="cambiarCargo($event)"
+          aria-label="Filtrar por dignidad"
+        >
+          <option value="">Todas las Dignidades</option>
+          <option *ngFor="let c of cargos" [value]="c.id">
+            {{ c.nombre }} ({{ c.nivel }})
+          </option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs de estado -->
+  <div
+    class="status-tabs-nav"
+    role="tablist"
+    aria-label="Filtro por estado de acta"
+  >
+    <button
+      *ngFor="let tab of tabsEstado"
+      role="tab"
+      class="status-tab-btn"
+      [class.status-tab-btn--active]="estadoSeleccionado === tab.estado"
+      [attr.aria-selected]="estadoSeleccionado === tab.estado"
+      (click)="cambiarEstado(tab.estado)"
+    >
+      {{ tab.label }}
+      <span class="tab-badge" *ngIf="tab.estado !== 'TODAS'">
+        {{ contarPorEstado(tab.estado) }}
+      </span>
+      <span class="tab-badge" *ngIf="tab.estado === 'TODAS'">
+        {{ actas.length }}
+      </span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <app-loading-state
+    *ngIf="loading"
+    message="Cargando actas de la circunscripción..."
+  ></app-loading-state>
+
+  <!-- Error State -->
+  <app-error-state
+    *ngIf="error && !loading"
+    title="Error al cargar actas"
+    [message]="error"
+  >
+    <app-button variant="primary" (clicked)="cargarActas()">
+      Reintentar
+    </app-button>
+  </app-error-state>
+
+  <!-- Empty State -->
+  <app-empty-state
+    *ngIf="!loading && !error && actasFiltradas.length === 0"
+    icon="document-text-outline"
+    title="No se encontraron actas"
+    description="No hay actas registradas que coincidan con los filtros seleccionados."
+  ></app-empty-state>
+
+  <!-- Content List (Mobile Cards + Desktop Table) -->
+  <div
+    class="actas-content"
+    *ngIf="!loading && !error && actasFiltradas.length > 0"
+  >
+    <!-- Desktop Table View -->
+    <div class="table-container desktop-only">
+      <table class="actas-table">
+        <thead>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">JRV</th>
+            <th scope="col">Dignidad</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Sufragantes</th>
+            <th scope="col">Blancos / Nulos</th>
+            <th scope="col">Fecha Registro</th>
+            <th scope="col" class="th-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let acta of actasFiltradas"
+            [ngClass]="'row-estado-' + acta.estado.toLowerCase()"
+          >
+            <td class="td-id">#{{ acta.id }}</td>
+            <td class="td-jrv font-bold">JRV-{{ acta.jrvId }}</td>
+            <td>{{ obtenerNombreCargo(acta.cargoId) }}</td>
+            <td>
+              <app-badge [variant]="mapBadgeVariant(acta.estado)">
+                {{ acta.estado }}
+              </app-badge>
+            </td>
+            <td>{{ acta.totalSufragantes }}</td>
+            <td class="td-muted">
+              {{ acta.votosBlancos }} / {{ acta.votosNulos }}
+            </td>
+            <td class="td-muted">
+              {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td class="td-actions">
+              <app-button
+                variant="primary"
+                size="sm"
+                (clicked)="verDetalle(acta.id)"
+              >
+                Revisar
+              </app-button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="cards-list mobile-only">
+      <div
+        *ngFor="let acta of actasFiltradas"
+        class="acta-card"
+        [ngClass]="'card-estado-' + acta.estado.toLowerCase()"
+        (click)="verDetalle(acta.id)"
+      >
+        <div class="card-header">
+          <div class="header-left">
+            <span class="jrv-number">JRV-{{ acta.jrvId }}</span>
+            <span class="acta-id">#{{ acta.id }}</span>
+          </div>
+          <app-badge [variant]="mapBadgeVariant(acta.estado)">
+            {{ acta.estado }}
+          </app-badge>
+        </div>
+
+        <div class="card-body">
+          <div class="cargo-name">{{ obtenerNombreCargo(acta.cargoId) }}</div>
+          <div class="card-meta">
+            <span
+              >Sufragantes: <strong>{{ acta.totalSufragantes }}</strong></span
+            >
+            <span>Blancos: {{ acta.votosBlancos }}</span>
+            <span>Nulos: {{ acta.votosNulos }}</span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <span class="fecha-text">
+            {{ acta.fechaRegistro | date: 'short' }}
+          </span>
+          <span class="review-link"> Revisar acta → </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

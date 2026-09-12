@@ -12,10 +12,15 @@ import {
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
+  alertCircleOutline,
   analyticsOutline,
+  arrowBackOutline,
   cameraOutline,
   checkmarkCircleOutline,
+  checkmarkDoneOutline,
+  closeCircle,
   closeOutline,
+  createOutline,
   documentTextOutline,
   gridOutline,
   homeOutline,
@@ -23,6 +28,7 @@ import {
   menuOutline,
   notificationsOutline,
   peopleOutline,
+  searchOutline,
   settingsOutline,
 } from 'ionicons/icons';
 
@@ -37,12 +43,18 @@ addIcons({
   'document-text-outline': documentTextOutline,
   'grid-outline': gridOutline,
   'checkmark-circle-outline': checkmarkCircleOutline,
+  'checkmark-done-outline': checkmarkDoneOutline,
+  'alert-circle-outline': alertCircleOutline,
   'camera-outline': cameraOutline,
   'settings-outline': settingsOutline,
   'people-outline': peopleOutline,
   'analytics-outline': analyticsOutline,
   'log-out-outline': logOutOutline,
   'notifications-outline': notificationsOutline,
+  'search-outline': searchOutline,
+  'close-circle': closeCircle,
+  'create-outline': createOutline,
+  'arrow-back-outline': arrowBackOutline,
 });
 
 bootstrapApplication(AppComponent, {

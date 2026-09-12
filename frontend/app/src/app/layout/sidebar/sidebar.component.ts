@@ -118,6 +118,7 @@ export class SidebarComponent implements OnInit {
   private mapRoute(ruta: string): string {
     if (ruta === '/home') return '/dashboard';
     if (ruta === '/actas/nueva') return '/observer/mis-jrvs';
+    if (ruta === '/actas/aprobar') return '/coordinator/actas';
     return ruta;
   }
 
@@ -167,6 +168,19 @@ export class SidebarComponent implements OnInit {
             label: 'Mis JRVs',
             icon: 'grid-outline',
             route: '/observer/mis-jrvs',
+          },
+        ],
+      });
+    }
+
+    if (role === 'COORDINATOR' || role === 'MASTER') {
+      sections.push({
+        label: 'Supervisión',
+        items: [
+          {
+            label: 'Aprobar Actas',
+            icon: 'checkmark-circle-outline',
+            route: '/coordinator/actas',
           },
         ],
       });
