@@ -1,11 +1,19 @@
-<aside class="sidebar">
+<aside class="sidebar" [class.open]="layout.sidebarOpen()">
   <div class="sidebar-brand">
     <div class="sidebar-brand-row">
       <div class="sidebar-logo">🗳️</div>
-      <div>
+      <div class="sidebar-brand-text">
         <div class="sidebar-brand-name">Control Electoral</div>
         <div class="sidebar-brand-sub">Santa Elena 2027</div>
       </div>
+      <button
+        class="sidebar-close-btn"
+        type="button"
+        (click)="layout.closeSidebar()"
+        aria-label="Cerrar menú lateral"
+      >
+        ✕
+      </button>
     </div>
   </div>
 
@@ -15,8 +23,8 @@
 
       @for (item of section.items; track item.label) {
         @if (item.disabled || !item.route) {
-          <div class="nav-item disabled">
-            <span class="nav-icon">{{ item.icon }}</span>
+          <div class="nav-item disabled" aria-disabled="true">
+            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
             <span class="nav-label">{{ item.label }}</span>
             @if (item.tag) {
               <span class="nav-tag">{{ item.tag }}</span>
@@ -27,8 +35,10 @@
             class="nav-item"
             [routerLink]="item.route"
             routerLinkActive="active"
+            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+            (click)="layout.closeSidebar()"
           >
-            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-icon" aria-hidden="true">{{ item.icon }}</span>
             <span class="nav-label">{{ item.label }}</span>
           </a>
         }

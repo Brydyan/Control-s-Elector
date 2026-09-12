@@ -89,4 +89,19 @@ describe('SidebarComponent', () => {
     expect(component.initials()).toBe('JP');
     expect(component.roleLabel()).toBe('OBSERVER');
   });
+
+  it('should not display Operacion Electoral for ADMIN role', () => {
+    store.setSession('token-admin', {
+      id: 'uuid-admin',
+      email: 'admin@cne.gob.ec',
+      role: 'ADMIN',
+      permissions: ['dashboard:read'],
+    });
+
+    component.cargarMenus();
+    const hasOperacion = component
+      .sections()
+      .some((s) => s.label === 'Operación Electoral');
+    expect(hasOperacion).toBe(false);
+  });
 });

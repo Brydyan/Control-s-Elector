@@ -5,6 +5,7 @@ import { filter } from 'rxjs';
 
 import { SidebarComponent } from '../sidebar/sidebar.component';
 import { TopbarComponent } from '../topbar/topbar.component';
+import { LayoutService } from '../layout.service';
 
 interface RouteMeta {
   title: string;
@@ -25,6 +26,7 @@ interface RouteMeta {
 })
 export class MainLayoutComponent {
   private readonly router = inject(Router);
+  readonly layout = inject(LayoutService);
 
   readonly meta = signal<RouteMeta>({
     title: '',

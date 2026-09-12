@@ -1,4 +1,11 @@
 <div class="layout">
+  <div
+    class="sidebar-backdrop"
+    [class.visible]="layout.sidebarOpen()"
+    (click)="layout.closeSidebar()"
+    aria-hidden="true"
+  ></div>
+
   <app-sidebar></app-sidebar>
 
   <div class="main">

@@ -2,9 +2,10 @@ import { Component, computed, inject, input } from '@angular/core';
 
 import { AuthStore } from '../../core/auth/auth.store';
 import { Role } from '../../core/auth/domain/user.model';
+import { LayoutService } from '../layout.service';
 
 /** Roles that can only observe — never write. Drives the "Solo lectura" badge. */
-const READ_ONLY_ROLES: Role[] = ['ADMIN', 'OBSERVER'];
+const READ_ONLY_ROLES: Role[] = ['ADMIN'];
 
 @Component({
   selector: 'app-topbar',
@@ -14,6 +15,7 @@ const READ_ONLY_ROLES: Role[] = ['ADMIN', 'OBSERVER'];
 })
 export class TopbarComponent {
   private readonly store = inject(AuthStore);
+  readonly layout = inject(LayoutService);
 
   readonly title = input('');
   readonly subtitle = input('');
