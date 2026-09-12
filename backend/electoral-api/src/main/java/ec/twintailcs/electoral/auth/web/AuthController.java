@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.JwtService.InvalidJwtException;
 import ec.twintailcs.electoral.auth.application.RegisterService;
 import ec.twintailcs.electoral.auth.config.CurrentUser;
+import ec.twintailcs.electoral.auth.domain.AuthException;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
@@ -141,7 +142,7 @@ public class AuthController {
   public AuthResponse.UsuarioActual me() {
     String email = currentUser.email();
     if (email == null) {
-      throw new AuthService.AuthException("No autenticado");
+      throw new AuthException("No autenticado");
     }
     Usuario u = usuarios.findByEmail(email).orElseThrow();
     return usuarioMapper.toDto(u);
@@ -175,7 +176,7 @@ public class AuthController {
     if (body != null && body.refreshToken() != null) {
       return body.refreshToken();
     }
-    throw new AuthService.AuthException("No se encontro refresh token");
+    throw new AuthException("No se encontro refresh token");
   }
 
   /** Cookie httpOnly + Secure + SameSite=Strict. Max-Age configura el TTL del refresh. */
@@ -190,8 +191,8 @@ public class AuthController {
 
   // ─── Mapeo excepciones → JSON 401 ─────────────────────────────────────────
 
-  @ExceptionHandler(AuthService.AuthException.class)
-  public ResponseEntity<Map<String, Object>> authError(AuthService.AuthException ex) {
+  @ExceptionHandler(AuthException.class)
+  public ResponseEntity<Map<String, Object>> authError(AuthException ex) {
     return errorBody(HttpStatus.UNAUTHORIZED, ex.getMessage());
   }
 

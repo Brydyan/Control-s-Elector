@@ -4,9 +4,12 @@ import ec.twintailcs.electoral.acta.domain.AccesoNoPermitidoException;
 import ec.twintailcs.electoral.acta.domain.ActaEstadoInvalidoException;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
 import ec.twintailcs.electoral.acta.domain.JrvCargoYaRegistradoException;
+import ec.twintailcs.electoral.auth.domain.AuthException;
+import ec.twintailcs.electoral.auth.domain.UsuarioInvalidoException;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
-import ec.twintailcs.electoral.evidencia.web.EvidenciaNotFoundException;
+import ec.twintailcs.electoral.evidencia.domain.EvidenciaInvalidaException;
+import ec.twintailcs.electoral.evidencia.domain.EvidenciaNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import java.util.HashMap;
@@ -45,6 +48,21 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(EvidenciaNotFoundException.class)
   public ResponseEntity<Map<String, Object>> notFound(EvidenciaNotFoundException ex) {
     return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
+  }
+
+  @ExceptionHandler(EvidenciaInvalidaException.class)
+  public ResponseEntity<Map<String, Object>> evidenciaInvalida(EvidenciaInvalidaException ex) {
+    return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+  }
+
+  @ExceptionHandler(AuthException.class)
+  public ResponseEntity<Map<String, Object>> authException(AuthException ex) {
+    return body(HttpStatus.UNAUTHORIZED, ex.getMessage(), null);
+  }
+
+  @ExceptionHandler(UsuarioInvalidoException.class)
+  public ResponseEntity<Map<String, Object>> usuarioInvalido(UsuarioInvalidoException ex) {
+    return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
   }
 
   @ExceptionHandler(ConfiguracionNotFoundException.class)
