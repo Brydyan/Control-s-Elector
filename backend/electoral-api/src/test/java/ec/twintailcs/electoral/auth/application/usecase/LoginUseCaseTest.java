@@ -43,7 +43,16 @@ class LoginUseCaseTest {
 
   @BeforeEach
   void setUp() {
-    useCase = new LoginUseCase(usuarios, sesiones, rolPermisos, jwt, hasher, tokenHasher, auditLog);
+    useCase =
+        new LoginUseCase(
+            usuarios,
+            sesiones,
+            rolPermisos,
+            jwt,
+            hasher,
+            tokenHasher,
+            auditLog,
+            Duration.ofDays(7));
   }
 
   @Test

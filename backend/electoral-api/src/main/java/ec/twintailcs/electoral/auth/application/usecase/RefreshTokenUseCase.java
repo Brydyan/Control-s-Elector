@@ -8,9 +8,11 @@ import ec.twintailcs.electoral.auth.domain.Sesion;
 import ec.twintailcs.electoral.auth.domain.SesionRepository;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +25,7 @@ public class RefreshTokenUseCase {
   private final JwtService jwt;
   private final TokenHasher tokenHasher;
   private final AuditLogService auditLog;
+  private final Duration refreshTtl;
 
   public RefreshTokenUseCase(
       UsuarioRepository usuarios,
@@ -30,13 +33,15 @@ public class RefreshTokenUseCase {
       RolPermisoRepository rolPermisos,
       JwtService jwt,
       TokenHasher tokenHasher,
-      AuditLogService auditLog) {
+      AuditLogService auditLog,
+      @Value("${app.jwt.refresh-ttl:7d}") Duration refreshTtl) {
     this.usuarios = usuarios;
     this.sesiones = sesiones;
     this.rolPermisos = rolPermisos;
     this.jwt = jwt;
     this.tokenHasher = tokenHasher;
     this.auditLog = auditLog;
+    this.refreshTtl = refreshTtl;
   }
 
   @Transactional
@@ -78,6 +83,7 @@ public class RefreshTokenUseCase {
         jwt.issue(u.getPublicId(), u.getEmail(), u.getRolNombre(), permisos, sesion.getSesionId());
     sesion.setRefreshHash(tokenHasher.hashOf(pair.refresh()));
     sesion.setUltimoUsoEn(Instant.now());
+    sesion.setExpiraEn(Instant.now().plus(refreshTtl));
     sesiones.save(sesion);
 
     auditLog.recordRefresh(u.getId());

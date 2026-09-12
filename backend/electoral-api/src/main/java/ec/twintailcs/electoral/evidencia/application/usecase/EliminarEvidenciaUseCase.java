@@ -1,5 +1,8 @@
 package ec.twintailcs.electoral.evidencia.application.usecase;
 
+import ec.twintailcs.electoral.auditlog.application.AuditLogService;
+import ec.twintailcs.electoral.auth.domain.Usuario;
+import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaNotFoundException;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaRepository;
@@ -17,10 +20,18 @@ public class EliminarEvidenciaUseCase {
 
   private final EvidenciaRepository repository;
   private final S3StorageService s3;
+  private final UsuarioRepository usuarioRepository;
+  private final AuditLogService auditLogService;
 
-  public EliminarEvidenciaUseCase(EvidenciaRepository repository, S3StorageService s3) {
+  public EliminarEvidenciaUseCase(
+      EvidenciaRepository repository,
+      S3StorageService s3,
+      UsuarioRepository usuarioRepository,
+      AuditLogService auditLogService) {
     this.repository = repository;
     this.s3 = s3;
+    this.usuarioRepository = usuarioRepository;
+    this.auditLogService = auditLogService;
   }
 
   @Transactional
@@ -29,6 +40,11 @@ public class EliminarEvidenciaUseCase {
         repository
             .findByPublicId(publicId)
             .orElseThrow(() -> new EvidenciaNotFoundException(publicId));
+
+    Long callerId = null;
+    if (callerPublicId != null) {
+      callerId = usuarioRepository.findByPublicId(callerPublicId).map(Usuario::getId).orElse(null);
+    }
 
     repository.delete(e);
     try {
@@ -40,5 +56,12 @@ public class EliminarEvidenciaUseCase {
           e.getS3Key(),
           s3Err);
     }
+
+    auditLogService.registrar(
+        callerId,
+        "EVIDENCIA_ELIMINADA",
+        "evidencia",
+        e.getId(),
+        "Evidencia eliminada publicId=" + publicId);
   }
 }

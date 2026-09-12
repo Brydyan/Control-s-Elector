@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class LoginUseCase {
   private final PasswordHasher hasher;
   private final TokenHasher tokenHasher;
   private final AuditLogService auditLog;
+  private final Duration refreshTtl;
 
   public LoginUseCase(
       UsuarioRepository usuarios,
@@ -38,7 +40,8 @@ public class LoginUseCase {
       JwtService jwt,
       PasswordHasher hasher,
       TokenHasher tokenHasher,
-      AuditLogService auditLog) {
+      AuditLogService auditLog,
+      @Value("${app.jwt.refresh-ttl:7d}") Duration refreshTtl) {
     this.usuarios = usuarios;
     this.sesiones = sesiones;
     this.rolPermisos = rolPermisos;
@@ -46,6 +49,7 @@ public class LoginUseCase {
     this.hasher = hasher;
     this.tokenHasher = tokenHasher;
     this.auditLog = auditLog;
+    this.refreshTtl = refreshTtl;
   }
 
   @Transactional
@@ -58,23 +62,22 @@ public class LoginUseCase {
     }
 
     String sesionId = UUID.randomUUID().toString();
-    Sesion sesion = new Sesion();
-    sesion.setUsuarioId(u.getId());
-    sesion.setSesionId(sesionId);
-    sesion.setRefreshHash("placeholder-set-after-token-issued");
-    sesion.setIpCliente(ipCliente);
-    sesion.setUserAgent(userAgent);
-    sesion.setCreadoEn(Instant.now());
-    sesion.setUltimoUsoEn(Instant.now());
-    sesion.setExpiraEn(Instant.now().plus(Duration.ofDays(7)));
-    sesiones.save(sesion);
-
     List<String> permisos = rolPermisos.findAuthorityStringsByUsuarioId(u.getId());
     JwtService.TokenPair pair =
         jwt.issue(u.getPublicId(), u.getEmail(), u.getRolNombre(), permisos, sesionId);
 
     String refreshHash = tokenHasher.hashOf(pair.refresh());
+
+    Sesion sesion = new Sesion();
+    sesion.setUsuarioId(u.getId());
+    sesion.setSesionId(sesionId);
     sesion.setRefreshHash(refreshHash);
+    sesion.setIpCliente(ipCliente);
+    sesion.setUserAgent(userAgent);
+    sesion.setCreadoEn(Instant.now());
+    sesion.setUltimoUsoEn(Instant.now());
+    sesion.setExpiraEn(Instant.now().plus(refreshTtl));
+    sesion.validarDatosObligatorios();
     sesiones.save(sesion);
 
     auditLog.recordLogin(u.getId(), ipCliente);

@@ -41,7 +41,9 @@ class RefreshTokenUseCaseTest {
 
   @BeforeEach
   void setUp() {
-    useCase = new RefreshTokenUseCase(usuarios, sesiones, rolPermisos, jwt, tokenHasher, auditLog);
+    useCase =
+        new RefreshTokenUseCase(
+            usuarios, sesiones, rolPermisos, jwt, tokenHasher, auditLog, Duration.ofDays(7));
   }
 
   @Test
