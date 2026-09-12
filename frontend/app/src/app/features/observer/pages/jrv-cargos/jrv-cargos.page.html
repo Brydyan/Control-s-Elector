@@ -1,0 +1,64 @@
+<div class="jrv-cargos-container">
+  <div class="page-topbar">
+    <app-button variant="ghost" size="sm" (clicked)="volver()">
+      ← Volver a Mis JRVs
+    </app-button>
+  </div>
+
+  <header class="page-header">
+    <h1 class="page-title">Mesa #{{ jrvId }} · Dignidades a Elegir</h1>
+    <p class="page-subtitle">
+      Selecciona el cargo para registrar o verificar el acta de escrutinio
+    </p>
+  </header>
+
+  <app-loading-state
+    *ngIf="loading"
+    message="Cargando cargos electorales de la mesa..."
+  ></app-loading-state>
+
+  <app-error-state
+    *ngIf="!loading && error"
+    title="Error al cargar cargos"
+    [message]="error"
+    [showRetry]="true"
+    retryLabel="Reintentar"
+    (retry)="cargarCargos()"
+  ></app-error-state>
+
+  <app-empty-state
+    *ngIf="!loading && !error && cargos.length === 0"
+    title="No hay cargos configurados"
+    description="Esta JRV no tiene dignidades electorales activas registradas."
+  ></app-empty-state>
+
+  <div class="cargos-list" *ngIf="!loading && !error && cargos.length > 0">
+    <app-card
+      *ngFor="let cargo of cargos"
+      [elevated]="true"
+      class="cargo-item-card"
+    >
+      <div class="cargo-row">
+        <div class="cargo-meta">
+          <div class="cargo-title-badge">
+            <h3 class="cargo-name">{{ cargo.nombre }}</h3>
+            <app-badge [variant]="cargo.registrado && cargo.estadoActa ? cargo.estadoActa : 'BORRADOR'">
+              {{ cargo.registrado ? (cargo.estadoActa || 'REGISTRADA') : 'PENDIENTE' }}
+            </app-badge>
+          </div>
+          <span class="cargo-nivel">Nivel: {{ cargo.nivel }}</span>
+        </div>
+
+        <div class="cargo-actions">
+          <app-button
+            [variant]="cargo.registrado ? 'secondary' : 'primary'"
+            size="sm"
+            (clicked)="registrarActa(cargo)"
+          >
+            {{ cargo.registrado ? 'Ver / Modificar' : 'Registrar Acta' }}
+          </app-button>
+        </div>
+      </div>
+    </app-card>
+  </div>
+</div>

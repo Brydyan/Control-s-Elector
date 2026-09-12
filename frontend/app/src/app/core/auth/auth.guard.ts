@@ -31,3 +31,31 @@ export const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
   return store.isAuthenticated() ? router.createUrlTree(['/dashboard']) : true;
 };
+
+/**
+ * Protects routes by requiring one of the specified roles.
+ * Example in route data: { roles: ['OBSERVER', 'ADMIN'] }
+ */
+export const roleGuard: CanActivateFn = (route) => {
+  const store = inject(AuthStore);
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  const allowedRoles = (route.data?.['roles'] as string[]) || [];
+
+  const checkRole = () => {
+    const userRole = store.user()?.role;
+    if (userRole && (allowedRoles.length === 0 || allowedRoles.includes(userRole))) {
+      return true;
+    }
+    return router.createUrlTree(['/dashboard']);
+  };
+
+  if (store.isAuthenticated()) {
+    return checkRole();
+  }
+
+  return auth.restoreSession().pipe(
+    map((restored) => (restored ? checkRole() : router.createUrlTree(['/login']))),
+  );
+};
