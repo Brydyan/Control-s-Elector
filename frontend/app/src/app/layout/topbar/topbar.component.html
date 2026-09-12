@@ -18,9 +18,16 @@
   </div>
 
   <div class="topbar-right">
-    <div class="realtime-pill">
-      <span class="dot"></span>
-      En vivo · Tiempo real
+    <div
+      class="realtime-pill"
+      [class.status-online]="network.status() === 'ONLINE'"
+      [class.status-reconnecting]="network.status() === 'RECONNECTING'"
+      [class.status-offline]="network.status() === 'OFFLINE'"
+      [attr.aria-label]="network.statusLabel()"
+      role="status"
+    >
+      <span class="dot" aria-hidden="true"></span>
+      {{ network.statusLabel() }}
     </div>
 
     <button class="bell-btn" type="button" aria-label="Notificaciones">

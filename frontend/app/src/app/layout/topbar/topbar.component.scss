@@ -76,21 +76,50 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--color-status-success-bg);
-  border: 1px solid var(--color-status-success-border);
-  color: var(--color-status-success);
   padding: 4px 12px;
   border-radius: var(--radius-pill);
   font-size: var(--font-size-meta);
   font-weight: var(--font-weight-semibold);
+  transition: all var(--transition-base);
+
+  &.status-online {
+    background: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    color: var(--color-status-success);
+
+    .dot {
+      background: var(--color-status-success);
+      animation: pulse 2s infinite;
+    }
+  }
+
+  &.status-reconnecting {
+    background: var(--color-status-warning-bg);
+    border: 1px solid var(--color-status-warning-border);
+    color: var(--color-status-warning);
+
+    .dot {
+      background: var(--color-status-warning);
+      animation: pulse 1s infinite;
+    }
+  }
+
+  &.status-offline {
+    background: var(--color-status-danger-bg);
+    border: 1px solid var(--color-status-danger-border);
+    color: var(--color-status-danger);
+
+    .dot {
+      background: var(--color-status-danger);
+      animation: none;
+    }
+  }
 }
 
 .dot {
   width: 8px;
   height: 8px;
-  background: var(--color-status-success);
   border-radius: var(--radius-pill);
-  animation: pulse 2s infinite;
 }
 
 @keyframes pulse {

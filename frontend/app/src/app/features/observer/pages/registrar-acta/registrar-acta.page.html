@@ -50,6 +50,16 @@
     message="Cargando candidatos y papeleta..."
   ></app-loading-state>
 
+  <!-- Notificación de guardado automático / borrador -->
+  <div
+    class="draft-pill-notification"
+    *ngIf="draftSavedMessage"
+    role="status"
+    aria-live="polite"
+  >
+    <span>💾 {{ draftSavedMessage }}</span>
+  </div>
+
   <!-- Notificaciones de éxito o error -->
   <div class="success-banner" *ngIf="submitSuccess">
     <h3>✅ ¡Acta procesada exitosamente!</h3>
@@ -76,9 +86,11 @@
           <input
             id="totalSufragantes"
             type="number"
+            inputmode="numeric"
             min="0"
             class="form-input"
             [(ngModel)]="totalSufragantes"
+            (ngModelChange)="onSufragantesChange()"
             placeholder="0"
           />
         </div>
@@ -98,11 +110,13 @@
           <div class="candidate-input">
             <input
               type="number"
+              inputmode="numeric"
               min="0"
               class="form-input form-input--center"
               [value]="getVoto(c.id)"
               (input)="setVoto(c.id, $event)"
               placeholder="0"
+              [attr.aria-label]="'Votos para ' + c.nombre"
             />
           </div>
         </div>
@@ -116,9 +130,11 @@
           <input
             id="votosBlancos"
             type="number"
+            inputmode="numeric"
             min="0"
             class="form-input"
             [(ngModel)]="votosBlancos"
+            (ngModelChange)="onSufragantesChange()"
             placeholder="0"
           />
         </div>
@@ -127,9 +143,11 @@
           <input
             id="votosNulos"
             type="number"
+            inputmode="numeric"
             min="0"
             class="form-input"
             [(ngModel)]="votosNulos"
+            (ngModelChange)="onSufragantesChange()"
             placeholder="0"
           />
         </div>
@@ -145,6 +163,13 @@
       <div class="checksum-info">
         <strong>Suma de Votos: {{ totalVotosComputados }}</strong> /
         <span>Total Sufragantes: {{ totalSufragantes }}</span>
+        <span
+          class="checksum-delta"
+          *ngIf="totalSufragantes > 0 && !isChecksumValid"
+        >
+          (Diferencia: {{ diferenciaChecksum > 0 ? '+' : '' }}{{
+          diferenciaChecksum }})
+        </span>
       </div>
       <div class="checksum-status">
         {{ isChecksumValid ? '✓ Balance electoral exacto' : '✗ La suma no
@@ -153,6 +178,14 @@
     </div>
 
     <div class="step-actions">
+      <app-button
+        *ngIf="!isChecksumValid && totalVotosComputados > 0"
+        variant="secondary"
+        size="lg"
+        (clicked)="irAPasoImagen()"
+      >
+        ⚠️ Continuar con Inconsistencia (Foto Requerida) →
+      </app-button>
       <app-button
         variant="primary"
         size="lg"

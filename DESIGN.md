@@ -2,21 +2,21 @@
 name: Control Electoral
 description: Sistema de control, registro y validación de actas electorales en tiempo real para Santa Elena
 colors:
-  primary: "#3880ff"
-  primary-strong: "#5260ff"
-  navy-900: "#1a1a2e"
-  surface-page: "#f7f8fc"
+  primary: "#2563eb"
+  primary-strong: "#1d4ed8"
+  navy-900: "#0f172a"
+  surface-page: "#f8fafc"
   surface-card: "#ffffff"
-  surface-sidebar: "#1a1a2e"
-  text-primary: "#1a1a2e"
-  text-secondary: "#333333"
-  text-muted: "#888888"
+  surface-sidebar: "#0f172a"
+  text-primary: "#0f172a"
+  text-secondary: "#334155"
+  text-muted: "#475569"
   text-on-brand: "#ffffff"
-  status-success: "#2dd36f"
-  status-warning: "#ffa600"
-  status-danger: "#eb445a"
-  border-subtle: "#f4f5f8"
-  border-medium: "#d9dce5"
+  status-success: "#065f46"
+  status-warning: "#92400e"
+  status-danger: "#991b1b"
+  border-subtle: "#f1f5f9"
+  border-medium: "#e2e8f0"
 typography:
   display:
     fontSize: "56px"
@@ -58,12 +58,12 @@ Sistema de alta confiabilidad y misión crítica para veedores, coordinadores y 
 
 ## Colors
 
-- **Primary Brand:** `#3880ff` (azul institucional) con énfasis en `#5260ff`.
-- **Surfaces:** `#f7f8fc` para fondo general de la aplicación, `#ffffff` para tarjetas elevadas, `#1a1a2e` (navy profundo) para sidebar y paneles de alto contraste.
-- **Status Roles:**
-  - Success: `#2dd36f` (actas completadas, aprobadas).
-  - Warning: `#ffa600` (actas en disputa, pendientes).
-  - Danger: `#eb445a` (errores matemáticos, actas anuladas).
+- **Primary Brand:** `#2563eb` (azul institucional Tailwind/Blue-500) con énfasis en `#1d4ed8` (Blue-600).
+- **Surfaces:** `#f8fafc` (Slate-50) para fondo general de la aplicación, `#ffffff` para tarjetas elevadas, `#0f172a` (Slate-900 profundo) para sidebar y paneles de alto contraste.
+- **Status Roles (WCAG AA Compliant):**
+  - Success: `#065f46` con fondo `#ecfdf5` y borde `#a7f3d0` (actas completadas, aprobadas).
+  - Warning: `#92400e` con fondo `#fffbeb` y borde `#fde68a` (actas en disputa, pendientes).
+  - Danger: `#991b1b` con fondo `#fef2f2` y borde `#fecaca` (errores matemáticos, actas anuladas).
 
 ## Typography
 

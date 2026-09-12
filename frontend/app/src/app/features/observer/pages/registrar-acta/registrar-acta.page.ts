@@ -14,6 +14,7 @@ import {
   ActaRequest,
   CandidatoInfo,
 } from '../../models/observer.model';
+import { ActaStorageService } from '../../services/acta-storage.service';
 import { ObserverService } from '../../services/observer.service';
 
 type Step = 'VOTOS' | 'IMAGEN' | 'REVISION';
@@ -36,6 +37,7 @@ export class RegistrarActaPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly observerService = inject(ObserverService);
+  private readonly storageService = inject(ActaStorageService);
 
   jrvId!: number;
   cargoId!: number;
@@ -45,6 +47,7 @@ export class RegistrarActaPage implements OnInit {
   submitting = false;
   error: string | null = null;
   submitSuccess = false;
+  draftSavedMessage: string | null = null;
 
   totalSufragantes = 0;
   votosBlancos = 0;
@@ -81,6 +84,9 @@ export class RegistrarActaPage implements OnInit {
             this.votosPorCandidato.set(c.id, 0);
           }
         });
+
+        // Restaurar borrador local si existe
+        this.restaurarBorradorLocal();
         this.loading = false;
       },
       error: (err) => {
@@ -91,6 +97,55 @@ export class RegistrarActaPage implements OnInit {
     });
   }
 
+  private restaurarBorradorLocal(): void {
+    const draft = this.storageService.recuperarBorrador(
+      this.jrvId,
+      this.cargoId,
+    );
+    if (!draft) return;
+
+    this.totalSufragantes = draft.totalSufragantes || 0;
+    this.votosBlancos = draft.votosBlancos || 0;
+    this.votosNulos = draft.votosNulos || 0;
+
+    if (draft.votosPorCandidato) {
+      Object.entries(draft.votosPorCandidato).forEach(([id, votos]) => {
+        this.votosPorCandidato.set(Number(id), Number(votos));
+      });
+    }
+    this.mostrarMensajeBorrador(
+      'Borrador recuperado del almacenamiento local.',
+    );
+  }
+
+  guardarBorradorLocal(): void {
+    const votosObj: Record<number, number> = {};
+    this.votosPorCandidato.forEach((v, k) => {
+      votosObj[k] = v;
+    });
+
+    this.storageService.guardarBorrador({
+      jrvId: this.jrvId,
+      cargoId: this.cargoId,
+      totalSufragantes: this.totalSufragantes,
+      votosBlancos: this.votosBlancos,
+      votosNulos: this.votosNulos,
+      votosPorCandidato: votosObj,
+      updatedAt: new Date().toISOString(),
+    });
+
+    this.mostrarMensajeBorrador('Guardado localmente en este dispositivo.');
+  }
+
+  private mostrarMensajeBorrador(msg: string): void {
+    this.draftSavedMessage = msg;
+    setTimeout(() => {
+      if (this.draftSavedMessage === msg) {
+        this.draftSavedMessage = null;
+      }
+    }, 3000);
+  }
+
   getVoto(candidatoId: number): number {
     return this.votosPorCandidato.get(candidatoId) || 0;
   }
@@ -99,6 +154,11 @@ export class RegistrarActaPage implements OnInit {
     const input = event.target as HTMLInputElement;
     const value = Math.max(0, parseInt(input.value, 10) || 0);
     this.votosPorCandidato.set(candidatoId, value);
+    this.guardarBorradorLocal();
+  }
+
+  onSufragantesChange(): void {
+    this.guardarBorradorLocal();
   }
 
   get sumaVotosCandidatos(): number {
@@ -117,6 +177,10 @@ export class RegistrarActaPage implements OnInit {
     );
   }
 
+  get diferenciaChecksum(): number {
+    return this.totalVotosComputados - this.totalSufragantes;
+  }
+
   get isChecksumValid(): boolean {
     return (
       this.totalSufragantes > 0 &&
@@ -125,10 +189,6 @@ export class RegistrarActaPage implements OnInit {
   }
 
   irAPasoImagen(): void {
-    if (!this.isChecksumValid) {
-      this.error = 'La suma de votos no coincide con el total de sufragantes.';
-      return;
-    }
     this.error = null;
     this.currentStep = 'IMAGEN';
   }
