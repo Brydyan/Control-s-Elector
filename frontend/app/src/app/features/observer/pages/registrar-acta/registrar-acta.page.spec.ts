@@ -80,11 +80,11 @@ describe('RegistrarActaPage', () => {
     component.totalSufragantes = 100;
     component.votosBlancos = 10;
     component.votosNulos = 10;
-    expect(component.isChecksumValid).toBeFalse();
+    expect(component.isChecksumValid).toBe(false);
 
     component.votosPorCandidato.set(1, 40);
     component.votosPorCandidato.set(2, 40);
-    expect(component.isChecksumValid).toBeTrue();
+    expect(component.isChecksumValid).toBe(true);
   });
 
   it('should proceed to image step only when checksum is valid', () => {
