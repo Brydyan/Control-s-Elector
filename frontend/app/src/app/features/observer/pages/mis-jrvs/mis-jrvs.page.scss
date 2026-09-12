@@ -28,7 +28,7 @@
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
-  padding-bottom: var(--space-1);
+  padding-bottom: var(--space-2);
 
   .filter-tab {
     appearance: none;
@@ -36,21 +36,32 @@
     background: var(--surface-card);
     color: var(--text-secondary);
     padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-full);
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     white-space: nowrap;
-    transition: all var(--transition-fast);
+    transition: all var(--transition-base);
+
+    @media (max-width: 768px) {
+      min-height: 44px;
+      padding: var(--space-3) var(--space-4);
+    }
 
     &:hover {
-      background: var(--surface-subtle);
+      background: var(--color-surface-page);
     }
 
     &--active {
       background: var(--color-primary);
       color: var(--color-primary-contrast);
       border-color: var(--color-primary);
+      font-weight: var(--font-weight-semibold);
+      box-shadow: var(--shadow-sm);
     }
   }
 }
