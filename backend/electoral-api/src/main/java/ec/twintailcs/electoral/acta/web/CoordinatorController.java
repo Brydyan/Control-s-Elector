@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.acta.web;
 
 import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.domain.Acta;
+import ec.twintailcs.electoral.acta.domain.ActaDetalleRepository;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
 import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
@@ -60,6 +61,7 @@ public class CoordinatorController {
 
   private final ActaService actaService;
   private final ActaRepository actaRepository;
+  private final ActaDetalleRepository actaDetalleRepository;
   private final UsuarioRepository usuarioRepository;
   private final CurrentUser currentUser;
   private final ActaMapper actaMapper;
@@ -67,11 +69,13 @@ public class CoordinatorController {
   public CoordinatorController(
       ActaService actaService,
       ActaRepository actaRepository,
+      ActaDetalleRepository actaDetalleRepository,
       UsuarioRepository usuarioRepository,
       CurrentUser currentUser,
       ActaMapper actaMapper) {
     this.actaService = actaService;
     this.actaRepository = actaRepository;
+    this.actaDetalleRepository = actaDetalleRepository;
     this.usuarioRepository = usuarioRepository;
     this.currentUser = currentUser;
     this.actaMapper = actaMapper;
@@ -118,7 +122,8 @@ public class CoordinatorController {
     Long cargoFiltro = cargoId != null ? cargoId : dignidadId;
     String searchNorm = (search == null || search.isBlank()) ? null : search.trim();
 
-    Page<Acta> result =
+    // DTO projection: denominatives + candidate-votes subtotal in one statement, no N+1.
+    Page<ActaResponseDto> result =
         actaRepository.findPageWithFilters(
             estado,
             jrvId,
@@ -128,7 +133,7 @@ public class CoordinatorController {
             parseEstadoSearch(searchNorm),
             pageable);
 
-    return ResponseEntity.ok(PagedResponse.of(result.map(actaMapper::toDto)));
+    return ResponseEntity.ok(PagedResponse.of(result));
   }
 
   /**
@@ -181,14 +186,14 @@ public class CoordinatorController {
         actaRepository
             .findById(actaId)
             .orElseThrow(() -> new IllegalArgumentException("Acta no encontrada: " + actaId));
-    return ResponseEntity.ok(actaMapper.toDto(acta));
+    return ResponseEntity.ok(toDto(acta));
   }
 
   @PutMapping("/actas/{actaId}/disputar")
   public ResponseEntity<ActaResponseDto> disputar(
       @PathVariable Long actaId, @Valid @RequestBody DisputaDto dto, HttpServletRequest request) {
     Acta acta = actaService.marcarEnDisputa(actaId, coordinatorId(), dto.getMotivo(), request);
-    return ResponseEntity.ok(actaMapper.toDto(acta));
+    return ResponseEntity.ok(toDto(acta));
   }
 
   @PutMapping("/actas/{actaId}/corregir")
@@ -197,14 +202,14 @@ public class CoordinatorController {
       @Valid @RequestBody ActaRequestDto dto,
       HttpServletRequest request) {
     Acta acta = actaService.corregir(actaId, dto, coordinatorId(), true, request);
-    return ResponseEntity.ok(actaMapper.toDto(acta));
+    return ResponseEntity.ok(toDto(acta));
   }
 
   @PutMapping("/actas/{actaId}/aprobar")
   public ResponseEntity<ActaResponseDto> aprobar(
       @PathVariable Long actaId, HttpServletRequest request) {
     Acta acta = actaService.aprobar(actaId, coordinatorId(), request);
-    return ResponseEntity.ok(actaMapper.toDto(acta));
+    return ResponseEntity.ok(toDto(acta));
   }
 
   @DeleteMapping("/actas/{actaId}")
@@ -213,5 +218,29 @@ public class CoordinatorController {
       @PathVariable Long actaId, @Valid @RequestBody AnulacionDto dto, HttpServletRequest request) {
     actaService.anular(actaId, coordinatorId(), dto.getMotivo(), request);
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Maps a single acta to its response DTO, patching the candidate-votes subtotal the mapper cannot
+   * load (single extra aggregated query — no N+1 on single-item paths).
+   */
+  private ActaResponseDto toDto(Acta acta) {
+    ActaResponseDto base = actaMapper.toDto(acta);
+    Long subtotal = actaDetalleRepository.sumarVotosPorActaId(acta.getId());
+    return new ActaResponseDto(
+        base.id(),
+        base.jrvId(),
+        base.cargoId(),
+        base.registradaPorId(),
+        base.estado(),
+        base.storageUrl(),
+        base.totalSufragantes(),
+        base.votosBlancos(),
+        base.votosNulos(),
+        base.fechaRegistro(),
+        base.motivoAnulacion(),
+        base.nombreCargo(),
+        base.numeroJrv(),
+        subtotal);
   }
 }

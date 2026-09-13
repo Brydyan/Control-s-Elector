@@ -101,6 +101,12 @@ public class MapperConfig {
         if (entity == null) {
           return null;
         }
+        // nombreCargo / numeroJrv come from already-mapped associations (single-item
+        // paths: 2 lazy loads, no N+1). totalVotosCandidatos stays null here: the
+        // paged query fills it via projection and single-item coordinator endpoints
+        // patch it explicitly (see CoordinatorController#toDto).
+        String nombreCargo = entity.getCargo() != null ? entity.getCargo().getNombre() : null;
+        String numeroJrv = entity.getJrv() != null ? entity.getJrv().getNumero() : null;
         return new ActaResponseDto(
             entity.getId(),
             entity.getJrv().getId(),
@@ -112,7 +118,10 @@ public class MapperConfig {
             entity.getVotosBlancos(),
             entity.getVotosNulos(),
             entity.getFechaRegistro(),
-            entity.getMotivoAnulacion());
+            entity.getMotivoAnulacion(),
+            nombreCargo,
+            numeroJrv,
+            null);
       }
     };
   }

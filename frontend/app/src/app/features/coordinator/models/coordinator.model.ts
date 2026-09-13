@@ -15,6 +15,9 @@ export interface ActaItem {
   votosNulos: number;
   fechaRegistro: string;
   motivoAnulacion?: string | null;
+  nombreCargo?: string | null;
+  numeroJrv?: string | null;
+  totalVotosCandidatos?: number | null;
 }
 
 export interface CandidatoResumen {

@@ -106,6 +106,7 @@
             <th scope="col">Estado</th>
             <th scope="col">Sufragantes</th>
             <th scope="col">Blancos / Nulos</th>
+            <th scope="col">Checksum</th>
             <th scope="col">Fecha Registro</th>
             <th scope="col" class="th-actions">Acciones</th>
           </tr>
@@ -116,8 +117,8 @@
             [ngClass]="'row-estado-' + acta.estado.toLowerCase()"
           >
             <td class="td-id">#{{ acta.id }}</td>
-            <td class="td-jrv font-bold">JRV-{{ acta.jrvId }}</td>
-            <td>{{ obtenerNombreCargo(acta.cargoId) }}</td>
+            <td class="td-jrv font-bold">{{ obtenerNumeroJrv(acta) }}</td>
+            <td>{{ obtenerNombreCargo(acta) }}</td>
             <td>
               <app-badge [variant]="mapBadgeVariant(acta.estado)">
                 {{ acta.estado }}
@@ -126,6 +127,22 @@
             <td>{{ acta.totalSufragantes }}</td>
             <td class="td-muted">
               {{ acta.votosBlancos }} / {{ acta.votosNulos }}
+            </td>
+            <td class="td-muted">
+              <span *ngIf="checksumTexto(acta) as checksum; else sinChecksum">
+                {{ checksum }}
+                <span
+                  *ngIf="checksumValido(acta) === true"
+                  aria-label="Checksum válido"
+                  >✓</span
+                >
+                <span
+                  *ngIf="checksumValido(acta) === false"
+                  aria-label="Checksum inválido"
+                  >⚠</span
+                >
+              </span>
+              <ng-template #sinChecksum>—</ng-template>
             </td>
             <td class="td-muted">
               {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
@@ -154,7 +171,7 @@
       >
         <div class="card-header">
           <div class="header-left">
-            <span class="jrv-number">JRV-{{ acta.jrvId }}</span>
+            <span class="jrv-number">{{ obtenerNumeroJrv(acta) }}</span>
             <span class="acta-id">#{{ acta.id }}</span>
           </div>
           <app-badge [variant]="mapBadgeVariant(acta.estado)">
@@ -163,13 +180,16 @@
         </div>
 
         <div class="card-body">
-          <div class="cargo-name">{{ obtenerNombreCargo(acta.cargoId) }}</div>
+          <div class="cargo-name">{{ obtenerNombreCargo(acta) }}</div>
           <div class="card-meta">
             <span
               >Sufragantes: <strong>{{ acta.totalSufragantes }}</strong></span
             >
             <span>Blancos: {{ acta.votosBlancos }}</span>
             <span>Nulos: {{ acta.votosNulos }}</span>
+            <span *ngIf="checksumTexto(acta) as checksum"
+              >Checksum: {{ checksum }}</span
+            >
           </div>
         </div>
 

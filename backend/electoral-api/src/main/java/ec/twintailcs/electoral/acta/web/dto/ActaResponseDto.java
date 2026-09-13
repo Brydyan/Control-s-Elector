@@ -15,4 +15,7 @@ public record ActaResponseDto(
     Integer votosBlancos,
     Integer votosNulos,
     Instant fechaRegistro,
-    String motivoAnulacion) {}
+    String motivoAnulacion,
+    String nombreCargo,
+    String numeroJrv,
+    Long totalVotosCandidatos) {}
