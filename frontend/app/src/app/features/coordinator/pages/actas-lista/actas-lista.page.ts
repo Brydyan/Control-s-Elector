@@ -10,7 +10,6 @@ import {
   ButtonComponent,
   EmptyStateComponent,
   ErrorStateComponent,
-  LoadingStateComponent,
   SkeletonComponent,
 } from '../../../../shared/ui';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
@@ -34,7 +33,6 @@ import { CoordinatorService } from '../../services/coordinator.service';
     ButtonComponent,
     EmptyStateComponent,
     ErrorStateComponent,
-    LoadingStateComponent,
     PaginatorComponent,
     SkeletonComponent,
   ],

@@ -1,6 +1,20 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, expect, it, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { SkeletonComponent } from './skeleton.component';
+
+@Component({
+  standalone: true,
+  imports: [SkeletonComponent],
+  template: `
+    <app-skeleton [loading]="loading" [loadingBoundary]="true">
+      <span class="projected-loading">Loading records</span>
+    </app-skeleton>
+  `,
+})
+class LoadingBoundaryHostComponent {
+  loading = true;
+}
 
 describe('SkeletonComponent', () => {
   let fixture: ComponentFixture<SkeletonComponent>;
@@ -8,7 +22,7 @@ describe('SkeletonComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SkeletonComponent],
+      imports: [SkeletonComponent, LoadingBoundaryHostComponent],
     }).compileComponents();
     fixture = TestBed.createComponent(SkeletonComponent);
     component = fixture.componentInstance;
@@ -18,10 +32,7 @@ describe('SkeletonComponent', () => {
   it('renders a single rect skeleton by default', () => {
     expect(component.variant).toBe('rect');
     expect(component.lines).toBe(1);
-    const rect = fixture.nativeElement.querySelector(
-      '.skeleton--rect',
-    ) as HTMLElement;
-    expect(rect).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.skeleton--rect')).toBeTruthy();
   });
 
   it('renders a circle when variant=circle', () => {
@@ -29,9 +40,7 @@ describe('SkeletonComponent', () => {
     component.width = '48px';
     component.height = '48px';
     fixture.detectChanges();
-    const circle = fixture.nativeElement.querySelector(
-      '.skeleton--circle',
-    ) as HTMLElement;
+    const circle = fixture.nativeElement.querySelector('.skeleton--circle');
     expect(circle).toBeTruthy();
     expect(circle.style.width).toBe('48px');
   });
@@ -43,14 +52,7 @@ describe('SkeletonComponent', () => {
     fixture.detectChanges();
     const lines = fixture.nativeElement.querySelectorAll('.skeleton--text');
     expect(lines.length).toBe(4);
-    // La última línea tiene width 60% para parecer texto natural.
-    const last = lines[lines.length - 1] as HTMLElement;
-    expect(last.style.width).toBe('60%');
-  });
-
-  it('exposes lineArray of the requested length', () => {
-    component.lines = 7;
-    expect(component.lineArray.length).toBe(7);
+    expect(lines[lines.length - 1].style.width).toBe('60%');
   });
 
   it('clamps lines to at least 1', () => {
@@ -58,5 +60,32 @@ describe('SkeletonComponent', () => {
     expect(component.lineArray.length).toBe(1);
     component.lines = -5;
     expect(component.lineArray.length).toBe(1);
+  });
+
+  it('disables shimmer when animate is none', () => {
+    component.animate = 'none';
+    fixture.detectChanges();
+    const skeleton = fixture.nativeElement.querySelector('.skeleton');
+    expect(skeleton.classList).toContain('skeleton--no-animation');
+  });
+
+  it('gates projected loading content on loading', async () => {
+    const hostFixture = TestBed.createComponent(LoadingBoundaryHostComponent);
+    hostFixture.detectChanges();
+    expect(
+      hostFixture.nativeElement.querySelector('.projected-loading'),
+    ).toBeTruthy();
+
+    hostFixture.componentInstance.loading = false;
+    hostFixture.detectChanges();
+    expect(
+      hostFixture.nativeElement.querySelector('.projected-loading'),
+    ).toBeNull();
+  });
+
+  it('does not render loading content when loading is false', () => {
+    component.loading = false;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.skeleton')).toBeNull();
   });
 });
