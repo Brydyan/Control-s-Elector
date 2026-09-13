@@ -22,6 +22,7 @@ describe('ActaDetallePage', () => {
       votosBlancos: 2,
       votosNulos: 3,
       fechaRegistro: '2026-09-12T10:00:00Z',
+      totalVotosCandidatos: 95,
     },
     jrv: {
       id: 201,
@@ -58,6 +59,7 @@ describe('ActaDetallePage', () => {
     totalVotosCalculado: 100,
     diferenciaChecksum: 0,
     checksumValido: true,
+    historial: [],
   };
 
   beforeEach(async () => {
@@ -159,5 +161,23 @@ describe('ActaDetallePage', () => {
 
     expect(coordinatorServiceMock.aprobarActa).toHaveBeenCalledWith(42);
     expect(component.data?.acta.estado).toBe('APROBADA');
+  });
+
+  it('should expose chequeos with ok items for a healthy acta', () => {
+    const checks = component.chequeos();
+    const okCount = checks.filter((c) => c.ok).length;
+    expect(okCount).toBeGreaterThan(0);
+    expect(checks.some((c) => c.texto.includes('Evidencia'))).toBe(true);
+    expect(checks.some((c) => c.texto.includes('Cuadre'))).toBe(true);
+  });
+
+  it('should flag inconsistent checksum when diferenciaChecksum is not zero', () => {
+    if (component.data) {
+      component.data.diferenciaChecksum = 5;
+      component.data.checksumValido = false;
+    }
+    const checks = component.chequeos();
+    const cuadreCheck = checks.find((c) => c.texto.includes('Cuadre'));
+    expect(cuadreCheck?.ok).toBe(false);
   });
 });

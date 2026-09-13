@@ -778,4 +778,41 @@ class CoordinatorControllerTest {
             get("/api/v1/coordinator/actas").header("Authorization", "Bearer " + observerToken))
         .andExpect(status().isForbidden());
   }
+
+  @Test
+  void historial_devuelveAccionesEnOrdenDescendente() throws Exception {
+    Acta acta = crearActaEnviada();
+
+    // Disputar (deja el acta en EN_DISPUTA) y luego corregir (CORREGIDA) generan
+    // entradas en audit_log. No aprobamos porque la transición EN_DISPUTA -> APROBADA
+    // no es válida: ActaService.aprobar sólo permite ENVIADA o CORREGIDA.
+    mockMvc
+        .perform(
+            put("/api/v1/coordinator/actas/" + acta.getId() + "/disputar")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"motivo\":\"Conteo inconsistente\"}")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk());
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas/" + acta.getId() + "/historial")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray())
+        .andExpect(jsonPath("$[0].accion").exists())
+        .andExpect(jsonPath("$[0].timestamp").exists())
+        .andExpect(jsonPath("$[0].registradoPorRol").exists());
+  }
+
+  @Test
+  void historial_actaInexistente_retornaListaVacia() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas/999999/historial")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$").isArray())
+        .andExpect(jsonPath("$.length()").value(0));
+  }
 }

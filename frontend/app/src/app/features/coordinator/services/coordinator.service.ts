@@ -12,6 +12,7 @@ import {
   CargoResumen,
   CorregirActaPayload,
   DisputarActaPayload,
+  HistorialEntry,
   JrvResumen,
 } from '../models/coordinator.model';
 
@@ -177,8 +178,9 @@ export class CoordinatorService {
           cargos: this.getCargos(),
           jrvs: this.getJrvs(),
           candidatos: this.getCandidatosPorCargo(acta.cargoId),
+          historial: this.getHistorial(actaId),
         }).pipe(
-          map(({ cargos, jrvs, candidatos }) => {
+          map(({ cargos, jrvs, candidatos, historial }) => {
             const cargo = cargos.find((c) => c.id === acta.cargoId);
             const jrv = jrvs.find((j) => j.id === acta.jrvId);
 
@@ -203,6 +205,7 @@ export class CoordinatorService {
               cargo,
               jrv,
               candidatos,
+              historial: historial ?? [],
               totalVotosCalculado,
               diferenciaChecksum,
               checksumValido,
@@ -211,6 +214,12 @@ export class CoordinatorService {
         ),
       ),
     );
+  }
+
+  getHistorial(actaId: number): Observable<HistorialEntry[]> {
+    return this.http
+      .get<HistorialEntry[]>(`${this.baseUrl}/actas/${actaId}/historial`)
+      .pipe(map((h) => h ?? []));
   }
 
   aprobarActa(actaId: number): Observable<ActaItem> {

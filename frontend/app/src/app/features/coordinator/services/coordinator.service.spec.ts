@@ -184,6 +184,9 @@ describe('CoordinatorService', () => {
     httpTesting
       .expectOne(`${environment.apiUrl}/configuracion/partidos`)
       .flush([]);
+    httpTesting
+      .expectOne(`${environment.apiUrl}/coordinator/actas/7/historial`)
+      .flush([]);
   });
 
   it('should throw on a bare array response instead of wrapping it', () => {

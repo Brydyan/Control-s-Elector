@@ -254,6 +254,64 @@ export class ActaDetallePage implements OnInit {
     });
   }
 
+  /**
+   * Lista de chequeos de integridad del acta. Cada item dice si el acta está OK o si
+   * tiene una inconsistencia visible para el coordinator.
+   */
+  chequeos(): Array<{ ok: boolean; texto: string }> {
+    if (!this.data) return [];
+    const acta = this.data.acta;
+    const checks: Array<{ ok: boolean; texto: string }> = [];
+
+    checks.push({
+      ok: acta.totalSufragantes > 0,
+      texto:
+        acta.totalSufragantes > 0
+          ? `Total sufragantes registrado (${acta.totalSufragantes}).`
+          : 'Falta el total de sufragantes (acta sin sufragantes registrados).',
+    });
+
+    checks.push({
+      ok: !!acta.storageUrl,
+      texto: acta.storageUrl
+        ? 'Evidencia fotográfica adjunta.'
+        : 'Sin evidencia fotográfica. Solicitá al OBSERVER subir el respaldo.',
+    });
+
+    if (acta.totalVotosCandidatos == null) {
+      checks.push({
+        ok: false,
+        texto:
+          'El backend no devuelve el subtotal de votos a candidatos. El checksum sólo puede verificar blancos + nulos.',
+      });
+    } else {
+      checks.push({
+        ok: this.data.checksumValido,
+        texto: this.data.checksumValido
+          ? 'Cuadre verificado: candidatos + blancos + nulos = total sufragantes.'
+          : `Cuadre inconsistente: diferencia ${this.data.diferenciaChecksum}.`,
+      });
+    }
+
+    if (acta.estado === 'EN_DISPUTA') {
+      checks.push({
+        ok: false,
+        texto: 'Acta en disputa. Esperando corrección o anulación.',
+      });
+    }
+
+    if (acta.estado === 'ANULADA') {
+      checks.push({
+        ok: false,
+        texto: acta.motivoAnulacion
+          ? `Acta ANULADA. Motivo: ${acta.motivoAnulacion}.`
+          : 'Acta ANULADA. Falta registrar motivo.',
+      });
+    }
+
+    return checks;
+  }
+
   mapBadgeVariant(estado: EstadoActa): BadgeVariant {
     return estado;
   }
