@@ -8,6 +8,7 @@ import {
   ActaFiltros,
   ActaItem,
   CandidatoResumen,
+  CantonResumen,
   CargoResumen,
   CorregirActaPayload,
   DisputarActaPayload,
@@ -65,6 +66,9 @@ export class CoordinatorService {
     if (cargoId) {
       params = params.set('cargoId', cargoId.toString());
     }
+    if (filtros?.cantonId) {
+      params = params.set('cantonId', filtros.cantonId.toString());
+    }
     const search = filtros?.search ?? filtros?.busqueda;
     if (search?.trim()) {
       params = params.set('search', search.trim());
@@ -119,6 +123,12 @@ export class CoordinatorService {
         })),
       ),
     );
+  }
+
+  getCantones(): Observable<CantonResumen[]> {
+    return this.http
+      .get<CantonResumen[]>(`${this.configUrl}/cantones`)
+      .pipe(map((cantones) => cantones ?? []));
   }
 
   getJrvs(): Observable<JrvResumen[]> {
@@ -228,5 +238,16 @@ export class CoordinatorService {
       `${this.baseUrl}/actas/${actaId}/corregir`,
       payload,
     );
+  }
+
+  anularActa(actaId: number): Observable<void> {
+    // Backend returns 204 No Content; HttpClient errors on 2xx without a body
+    // unless we ask for { responseType: 'text' } + observe: 'response'.
+    return this.http
+      .delete(`${this.baseUrl}/actas/${actaId}`, {
+        observe: 'response',
+        responseType: 'text',
+      })
+      .pipe(map(() => undefined));
   }
 }

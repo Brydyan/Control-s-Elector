@@ -46,6 +46,12 @@ export interface CargoResumen {
   nivel: string;
 }
 
+export interface CantonResumen {
+  id: number;
+  nombre: string;
+  codigo: string;
+}
+
 export interface ActaDetalleCompleto {
   acta: ActaItem;
   jrv?: JrvResumen;
@@ -86,6 +92,7 @@ export interface ActaFiltros {
   jrvId?: number;
   cargoId?: number;
   dignidad?: number;
+  cantonId?: number;
   busqueda?: string;
   search?: string;
   page?: number;
