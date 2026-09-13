@@ -1,3 +1,4 @@
+import type { SortDir } from '../../../shared/models/page.model';
 import { EstadoActa } from '../../observer/models/observer.model';
 
 export type { EstadoActa };
@@ -68,9 +69,24 @@ export interface CorregirActaPayload {
   }>;
 }
 
+export const ACTA_SORT_FIELD = {
+  FECHA_REGISTRO: 'fechaRegistro',
+  ID: 'id',
+  ESTADO: 'estado',
+} as const;
+
+export type ActaSortField =
+  (typeof ACTA_SORT_FIELD)[keyof typeof ACTA_SORT_FIELD];
+
 export interface ActaFiltros {
   estado?: EstadoActa | 'TODAS';
   jrvId?: number;
   cargoId?: number;
+  dignidad?: number;
   busqueda?: string;
+  search?: string;
+  page?: number;
+  size?: number;
+  sort?: ActaSortField;
+  dir?: SortDir;
 }

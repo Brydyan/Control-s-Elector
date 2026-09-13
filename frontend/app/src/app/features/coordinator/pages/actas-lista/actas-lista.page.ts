@@ -1,17 +1,18 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
   BadgeComponent,
   BadgeVariant,
   ButtonComponent,
-  CardComponent,
   EmptyStateComponent,
   ErrorStateComponent,
   LoadingStateComponent,
 } from '../../../../shared/ui';
+import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import {
   ActaFiltros,
   ActaItem,
@@ -32,13 +33,16 @@ import { CoordinatorService } from '../../services/coordinator.service';
     EmptyStateComponent,
     ErrorStateComponent,
     LoadingStateComponent,
+    PaginatorComponent,
   ],
   templateUrl: './actas-lista.page.html',
   styleUrls: ['./actas-lista.page.scss'],
 })
-export class ActasListaPage implements OnInit {
+export class ActasListaPage implements OnInit, OnDestroy {
   private readonly coordinatorService = inject(CoordinatorService);
   private readonly router = inject(Router);
+  private readonly busqueda$ = new Subject<string>();
+  private readonly destroy$ = new Subject<void>();
 
   actas: ActaItem[] = [];
   cargos: CargoResumen[] = [];
@@ -48,6 +52,11 @@ export class ActasListaPage implements OnInit {
   estadoSeleccionado: EstadoActa | 'TODAS' = 'TODAS';
   cargoSeleccionado: number | null = null;
   terminoBusqueda = '';
+
+  page = 0;
+  size = 20;
+  totalElements = 0;
+  totalPages = 0;
 
   readonly tabsEstado: Array<{
     estado: EstadoActa | 'TODAS';
@@ -62,7 +71,18 @@ export class ActasListaPage implements OnInit {
 
   ngOnInit(): void {
     this.cargarCargos();
+    this.busqueda$
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.page = 0;
+        this.cargarActas();
+      });
     this.cargarActas();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   cargarCargos(): void {
@@ -83,11 +103,16 @@ export class ActasListaPage implements OnInit {
     const filtros: ActaFiltros = {
       estado: this.estadoSeleccionado,
       cargoId: this.cargoSeleccionado ?? undefined,
+      search: this.terminoBusqueda.trim() || undefined,
+      page: this.page,
+      size: this.size,
     };
 
     this.coordinatorService.getActas(filtros).subscribe({
-      next: (actas) => {
-        this.actas = actas;
+      next: (paged) => {
+        this.actas = paged.data;
+        this.totalElements = paged.meta.totalElements;
+        this.totalPages = paged.meta.totalPages;
         this.loading = false;
       },
       error: (err) => {
@@ -102,30 +127,55 @@ export class ActasListaPage implements OnInit {
   cambiarEstado(estado: EstadoActa | 'TODAS'): void {
     if (this.estadoSeleccionado === estado) return;
     this.estadoSeleccionado = estado;
+    this.page = 0;
     this.cargarActas();
   }
 
   cambiarCargo(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.cargoSeleccionado = select.value ? Number(select.value) : null;
+    this.page = 0;
+    this.cargarActas();
+  }
+
+  onBusquedaChange(): void {
+    this.busqueda$.next(this.terminoBusqueda);
+  }
+
+  limpiarBusqueda(): void {
+    this.terminoBusqueda = '';
+    this.page = 0;
+    this.cargarActas();
+  }
+
+  onPageChange(next: number): void {
+    this.page = next;
+    this.cargarActas();
+  }
+
+  onSizeChange(next: number): void {
+    this.size = next;
+    this.page = 0;
     this.cargarActas();
   }
 
   get actasFiltradas(): ActaItem[] {
-    if (!this.terminoBusqueda.trim()) {
-      return this.actas;
-    }
-    const query = this.terminoBusqueda.toLowerCase().trim();
-    return this.actas.filter((a) => {
-      const jrvMatch = a.jrvId.toString().includes(query);
-      const idMatch = a.id.toString().includes(query);
-      const estadoMatch = a.estado.toLowerCase().includes(query);
-      return jrvMatch || idMatch || estadoMatch;
-    });
+    // Server-side filtering: the backend already applied estado/cargo/search.
+    return this.actas;
   }
 
   contarPorEstado(estado: EstadoActa): number {
+    // Page-local count only. Exact global per-tab counts need a counts
+    // endpoint (follow-up); see conteoTab for the active-tab total.
     return this.actas.filter((a) => a.estado === estado).length;
+  }
+
+  conteoTab(tab: EstadoActa | 'TODAS'): number {
+    // The active filter's badge is exact (meta.totalElements of the current
+    // query). Inactive tabs fall back to the page-local count.
+    if (tab === this.estadoSeleccionado) return this.totalElements;
+    if (tab === 'TODAS') return this.actas.length;
+    return this.contarPorEstado(tab);
   }
 
   mapBadgeVariant(estado: EstadoActa): BadgeVariant {

@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, switchMap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import type { PagedResponse } from '../../../shared/models/page.model';
 import {
   ActaDetalleCompleto,
   ActaFiltros,
@@ -51,7 +52,7 @@ export class CoordinatorService {
   private readonly configUrl = `${environment.apiUrl}/configuracion`;
   private readonly observerUrl = `${environment.apiUrl}/observer`;
 
-  getActas(filtros?: ActaFiltros): Observable<ActaItem[]> {
+  getActas(filtros?: ActaFiltros): Observable<PagedResponse<ActaItem>> {
     let params = new HttpParams();
     if (filtros?.estado && filtros.estado !== 'TODAS') {
       params = params.set('estado', filtros.estado);
@@ -59,11 +60,52 @@ export class CoordinatorService {
     if (filtros?.jrvId) {
       params = params.set('jrvId', filtros.jrvId.toString());
     }
-    if (filtros?.cargoId) {
-      params = params.set('cargoId', filtros.cargoId.toString());
+    // dignidad ≡ cargo: the UI speaks of "dignidades", the API of cargoId.
+    const cargoId = filtros?.cargoId ?? filtros?.dignidad;
+    if (cargoId) {
+      params = params.set('cargoId', cargoId.toString());
+    }
+    const search = filtros?.search ?? filtros?.busqueda;
+    if (search?.trim()) {
+      params = params.set('search', search.trim());
+    }
+    if (filtros?.page !== undefined) {
+      params = params.set('page', filtros.page.toString());
+    }
+    if (filtros?.size !== undefined) {
+      params = params.set('size', filtros.size.toString());
+    }
+    if (filtros?.sort) {
+      params = params.set('sort', filtros.sort);
+    }
+    if (filtros?.dir) {
+      params = params.set('dir', filtros.dir);
     }
 
-    return this.http.get<ActaItem[]>(`${this.baseUrl}/actas`, { params });
+    return this.http
+      .get<PagedResponse<ActaItem> | ActaItem[]>(`${this.baseUrl}/actas`, {
+        params,
+      })
+      .pipe(map((res) => this.toPagedActas(res)));
+  }
+
+  private toPagedActas(
+    res: PagedResponse<ActaItem> | ActaItem[],
+  ): PagedResponse<ActaItem> {
+    // Temporary compat: if the backend ever returns a bare array, wrap it
+    // instead of breaking. The main path is the { data, meta } envelope.
+    if (Array.isArray(res)) {
+      return {
+        data: res,
+        meta: {
+          page: 0,
+          size: res.length,
+          totalElements: res.length,
+          totalPages: 1,
+        },
+      };
+    }
+    return res;
   }
 
   getActaById(id: number): Observable<ActaItem> {

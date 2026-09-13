@@ -32,12 +32,14 @@ describe('CoordinatorService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should fetch actas with filters', () => {
+  it('should fetch actas with filters as paged envelope', () => {
     service
       .getActas({ estado: 'ENVIADA', cargoId: 1, jrvId: 10 })
-      .subscribe((actas) => {
-        expect(actas.length).toBe(1);
-        expect(actas[0].estado).toBe('ENVIADA');
+      .subscribe((paged) => {
+        expect(paged.data.length).toBe(1);
+        expect(paged.data[0].estado).toBe('ENVIADA');
+        expect(paged.meta.totalElements).toBe(1);
+        expect(paged.meta.totalPages).toBe(1);
       });
 
     const req = httpTesting.expectOne(
@@ -48,6 +50,74 @@ describe('CoordinatorService', () => {
         r.params.get('jrvId') === '10',
     );
     expect(req.request.method).toBe('GET');
+    req.flush({
+      data: [
+        {
+          id: 1,
+          jrvId: 10,
+          cargoId: 1,
+          estado: 'ENVIADA',
+          totalSufragantes: 100,
+          votosBlancos: 2,
+          votosNulos: 3,
+          fechaRegistro: '2026-09-12T12:00:00Z',
+        },
+      ],
+      meta: { page: 0, size: 20, totalElements: 1, totalPages: 1 },
+    });
+  });
+
+  it('should map dignidad alias to cargoId param', () => {
+    service.getActas({ dignidad: 5 }).subscribe();
+
+    const req = httpTesting.expectOne(
+      (r) =>
+        r.url === `${environment.apiUrl}/coordinator/actas` &&
+        r.params.get('cargoId') === '5',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      data: [],
+      meta: { page: 0, size: 20, totalElements: 0, totalPages: 0 },
+    });
+  });
+
+  it('should send pagination, search and sort params', () => {
+    service
+      .getActas({
+        search: 'JRV-12',
+        page: 2,
+        size: 10,
+        sort: 'id',
+        dir: 'asc',
+      })
+      .subscribe();
+
+    const req = httpTesting.expectOne(
+      (r) =>
+        r.url === `${environment.apiUrl}/coordinator/actas` &&
+        r.params.get('search') === 'JRV-12' &&
+        r.params.get('page') === '2' &&
+        r.params.get('size') === '10' &&
+        r.params.get('sort') === 'id' &&
+        r.params.get('dir') === 'asc',
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      data: [],
+      meta: { page: 2, size: 10, totalElements: 0, totalPages: 0 },
+    });
+  });
+
+  it('should wrap a bare array response for backwards compat', () => {
+    service.getActas().subscribe((paged) => {
+      expect(paged.data.length).toBe(1);
+      expect(paged.meta.totalElements).toBe(1);
+    });
+
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/coordinator/actas`,
+    );
     req.flush([
       {
         id: 1,

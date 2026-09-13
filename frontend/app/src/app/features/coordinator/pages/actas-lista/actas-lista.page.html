@@ -3,7 +3,7 @@
   <div class="page-topbar">
     <div class="page-title-area">
       <h1 class="page-title">Bandeja de Actas</h1>
-      <span class="total-indicator">{{ actasFiltradas.length }} total</span>
+      <span class="total-indicator">{{ totalElements }} total</span>
     </div>
 
     <div class="search-and-filters">
@@ -18,12 +18,13 @@
           class="search-input"
           placeholder="Buscar por JRV, ID o estado…"
           [(ngModel)]="terminoBusqueda"
+          (ngModelChange)="onBusquedaChange()"
           aria-label="Buscar por JRV, ID o estado"
         />
         <button
           *ngIf="terminoBusqueda"
           class="clear-search-btn"
-          (click)="terminoBusqueda = ''"
+          (click)="limpiarBusqueda()"
           aria-label="Limpiar búsqueda"
         >
           <ion-icon name="close-circle" aria-hidden="true"></ion-icon>
@@ -60,12 +61,7 @@
       (click)="cambiarEstado(tab.estado)"
     >
       {{ tab.label }}
-      <span class="tab-badge" *ngIf="tab.estado !== 'TODAS'">
-        {{ contarPorEstado(tab.estado) }}
-      </span>
-      <span class="tab-badge" *ngIf="tab.estado === 'TODAS'">
-        {{ actas.length }}
-      </span>
+      <span class="tab-badge"> {{ conteoTab(tab.estado) }} </span>
     </button>
   </div>
 
@@ -185,5 +181,14 @@
         </div>
       </div>
     </div>
+
+    <!-- Server-side paginator -->
+    <app-paginator
+      [page]="page"
+      [size]="size"
+      [totalElements]="totalElements"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-paginator>
   </div>
 </div>
