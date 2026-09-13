@@ -213,9 +213,13 @@ class CoordinatorControllerTest {
   }
 
   private Acta crearActaEnviada() {
+    return crearActaEnviada(cargo);
+  }
+
+  private Acta crearActaEnviada(Cargo cargoParaActa) {
     Acta acta = new Acta();
     acta.setJrv(jrv);
-    acta.setCargo(cargo);
+    acta.setCargo(cargoParaActa);
     acta.setRegistradaPor(observer);
     acta.setEstado(EstadoActa.ENVIADA);
     acta.setTotalSufragantes(50);
@@ -249,8 +253,12 @@ class CoordinatorControllerTest {
                 .param("estado", "ENVIADA")
                 .header("Authorization", "Bearer " + coordinatorToken))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].jrvId").value(jrv.getId()))
-        .andExpect(jsonPath("$[0].estado").value("ENVIADA"));
+        .andExpect(jsonPath("$.data[0].jrvId").value(jrv.getId()))
+        .andExpect(jsonPath("$.data[0].estado").value("ENVIADA"))
+        .andExpect(jsonPath("$.meta.page").value(0))
+        .andExpect(jsonPath("$.meta.size").value(20))
+        .andExpect(jsonPath("$.meta.totalElements").value(1))
+        .andExpect(jsonPath("$.meta.totalPages").value(1));
   }
 
   @Test
@@ -263,7 +271,160 @@ class CoordinatorControllerTest {
                 .param("cargoId", String.valueOf(cargo.getId()))
                 .header("Authorization", "Bearer " + coordinatorToken))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$[0].cargoId").value(cargo.getId()));
+        .andExpect(jsonPath("$.data[0].cargoId").value(cargo.getId()));
+  }
+
+  @Test
+  void listarActas_conAliasDignidadId_filtraPorCargo() throws Exception {
+    crearActaEnviada();
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("dignidadId", String.valueOf(cargo.getId()))
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].cargoId").value(cargo.getId()))
+        .andExpect(jsonPath("$.meta.totalElements").value(1));
+  }
+
+  @Test
+  void listarActas_paginacion_segundaPaginaVacia() throws Exception {
+    crearActaEnviada();
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("page", "1")
+                .param("size", "10")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").isEmpty())
+        .andExpect(jsonPath("$.meta.page").value(1))
+        .andExpect(jsonPath("$.meta.size").value(10))
+        .andExpect(jsonPath("$.meta.totalElements").value(1))
+        .andExpect(jsonPath("$.meta.totalPages").value(1));
+  }
+
+  @Test
+  void listarActas_conSearchPorNumeroJrv_encuentraActa() throws Exception {
+    crearActaEnviada();
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("search", jrv.getNumero().substring(0, 6))
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].jrvId").value(jrv.getId()))
+        .andExpect(jsonPath("$.meta.totalElements").value(1));
+  }
+
+  @Test
+  void listarActas_conSearchPorId_encuentraActa() throws Exception {
+    Acta acta = crearActaEnviada();
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("search", String.valueOf(acta.getId()))
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].id").value(acta.getId()));
+  }
+
+  @Test
+  void listarActas_conSearchPorEstado_encuentraActa() throws Exception {
+    crearActaEnviada();
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("search", "enviada")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].estado").value("ENVIADA"))
+        .andExpect(jsonPath("$.meta.totalElements").value(1));
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("search", "EN_DISPUTA")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").isEmpty())
+        .andExpect(jsonPath("$.meta.totalElements").value(0));
+  }
+
+  @Test
+  void listarActas_conSearchSinCoincidencia_retornaVacio() throws Exception {
+    crearActaEnviada();
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("search", "ZZZ-SIN-COINCIDENCIA")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").isEmpty())
+        .andExpect(jsonPath("$.meta.totalElements").value(0))
+        .andExpect(jsonPath("$.meta.totalPages").value(0));
+  }
+
+  @Test
+  void listarActas_ordenPorIdAsc_respetaSort() throws Exception {
+    Acta primera = crearActaEnviada();
+    Cargo otroCargo = cargoRepo.saveAndFlush(new Cargo("Prefecto/a", NivelCargo.PROVINCIA, 1));
+    Acta segunda = crearActaEnviada(otroCargo);
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("sort", "id")
+                .param("dir", "asc")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.meta.totalElements").value(2))
+        .andExpect(jsonPath("$.data[0].id").value(primera.getId()))
+        .andExpect(jsonPath("$.data[1].id").value(segunda.getId()));
+  }
+
+  @Test
+  void listarActas_conParametrosInvalidos_returns400() throws Exception {
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("page", "-1")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("size", "0")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("size", "101")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("sort", "passwordHash")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isBadRequest());
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("dir", "sideways")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isBadRequest());
   }
 
   @Test

@@ -84,15 +84,28 @@ export const routes: Routes = [
         path: 'coordinator/actas',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/coordinator/pages/actas-lista/actas-lista.page').then(
+            (m) => m.ActasListaPage,
           ),
         data: {
           roles: ['COORDINATOR', 'MASTER'],
           title: 'Aprobación de Actas',
-          description:
-            'Bandeja de revisión, aprobación y resolución de disputas de actas.',
+          subtitle: 'Supervisión, resolución de inconsistencias y aprobación',
           icon: 'checkmark-circle-outline',
+        },
+      },
+      {
+        path: 'coordinator/actas/:id',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/coordinator/pages/acta-detalle/acta-detalle.page').then(
+            (m) => m.ActaDetallePage,
+          ),
+        data: {
+          roles: ['COORDINATOR', 'MASTER'],
+          title: 'Detalle de Acta',
+          subtitle: 'Auditoría de escrutinio, balance y evidencia fotográfica',
+          icon: 'document-text-outline',
         },
       },
       {
