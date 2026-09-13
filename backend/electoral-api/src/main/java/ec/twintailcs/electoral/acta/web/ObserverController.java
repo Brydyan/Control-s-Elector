@@ -26,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -95,6 +96,7 @@ public class ObserverController {
 
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/mis-actas")
+  @Transactional(readOnly = true)
   public List<ActaResponseDto> misActas(@RequestParam(required = false) EstadoActa estado) {
     Long observerId = observerId();
     return actaRepository.findWithFilters(estado, null, null, null, observerId).stream()
@@ -104,6 +106,7 @@ public class ObserverController {
 
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/correcciones-pendientes")
+  @Transactional(readOnly = true)
   public List<ActaResponseDto> correccionesPendientes() {
     Long observerId = observerId();
     return actaRepository
@@ -115,6 +118,7 @@ public class ObserverController {
 
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/jrvs")
+  @Transactional(readOnly = true)
   public List<JrvConEstadoDto> jrvs() {
     return jrvRepository.findAll().stream().map(this::toJrvConEstadoDto).toList();
   }
@@ -135,6 +139,7 @@ public class ObserverController {
 
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/jrv/{jrvId}/cargos")
+  @Transactional(readOnly = true)
   public List<CargoConEstadoDto> cargosDeJrv(@PathVariable Long jrvId) {
     List<JrvCargo> jrvCargos = jrvCargoRepository.findByJrvIdAndActivo(jrvId, true);
 

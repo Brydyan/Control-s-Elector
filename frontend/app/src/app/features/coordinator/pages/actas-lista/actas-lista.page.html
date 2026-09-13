@@ -91,37 +91,62 @@
 
   <!-- Loading State -->
   <!-- Skeleton: tabla desktop + cards mobile, con el mismo breakpoint CSS -->
-  <ng-container *ngIf="loading">
-    <!-- Desktop: tabla skeleton con 5 filas fantasma -->
-    <div
-      class="actas-skeleton-table desktop-only"
-      aria-busy="true"
-      aria-live="polite"
-    >
-      <div class="actas-skeleton-table__header">
-        <app-skeleton variant="rect" height="20px" width="80%"></app-skeleton>
-      </div>
-      <div
-        class="actas-skeleton-table__row"
-        *ngFor="let _ of [].constructor(5); let i = index"
-      >
-        <app-skeleton variant="rect" height="16px" width="92%"></app-skeleton>
-      </div>
-    </div>
+  <app-skeleton
+    name="coordinator-actas-lista"
+    [loading]="loading"
+    animate="shimmer"
+    [transition]="true"
+    [loadingBoundary]="true"
+  >
+    <div>
+      <ng-container *ngIf="loading">
+        <!-- Desktop: tabla skeleton con 5 filas fantasma -->
+        <div
+          class="actas-skeleton-table desktop-only"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <div class="actas-skeleton-table__header">
+            <span
+              class="skeleton-block skeleton-block--header"
+              aria-hidden="true"
+            ></span>
+          </div>
+          <div
+            class="actas-skeleton-table__row"
+            *ngFor="let _ of [].constructor(5); let i = index"
+          >
+            <span
+              class="skeleton-block skeleton-block--row"
+              aria-hidden="true"
+            ></span>
+          </div>
+        </div>
 
-    <!-- Mobile: cards skeleton (3 cards fantasma) -->
-    <div
-      class="actas-skeleton-cards mobile-only"
-      aria-busy="true"
-      aria-live="polite"
-    >
-      <div class="actas-skeleton-card" *ngFor="let _ of [].constructor(3)">
-        <app-skeleton variant="rect" height="20px" width="70%"></app-skeleton>
-        <app-skeleton variant="text" [lines]="2"></app-skeleton>
-        <app-skeleton variant="rect" height="14px" width="40%"></app-skeleton>
-      </div>
+        <!-- Mobile: cards skeleton (3 cards fantasma) -->
+        <div
+          class="actas-skeleton-cards mobile-only"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <div class="actas-skeleton-card" *ngFor="let _ of [].constructor(3)">
+            <span
+              class="skeleton-block skeleton-block--card-title"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="skeleton-block skeleton-block--text"
+              aria-hidden="true"
+            ></span>
+            <span
+              class="skeleton-block skeleton-block--card-meta"
+              aria-hidden="true"
+            ></span>
+          </div>
+        </div>
+      </ng-container>
     </div>
-  </ng-container>
+  </app-skeleton>
 
   <!-- Error State -->
   <app-error-state

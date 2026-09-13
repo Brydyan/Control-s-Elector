@@ -1,0 +1,199 @@
+<div class="admin-page">
+  <header class="page-header">
+    <div>
+      <h1>Gestión de Usuarios</h1>
+      <span>{{ totalElements }} usuarios</span>
+    </div>
+    <button *ngIf="esMaster" class="primary" (click)="abrirCrear()">
+      Crear usuario
+    </button>
+  </header>
+  <div class="filters">
+    <input
+      [(ngModel)]="terminoBusqueda"
+      (ngModelChange)="page=0; cargarUsuarios()"
+      placeholder="Buscar por nombre, email o ID"
+      aria-label="Buscar usuarios"
+    /><select
+      [(ngModel)]="rolSeleccionado"
+      (ngModelChange)="page=0; cargarUsuarios()"
+      aria-label="Filtrar por rol"
+    >
+      <option value="">Todos los roles</option>
+      <option *ngFor="let item of roles" [value]="item">
+        {{ item }}
+      </option></select
+    ><select
+      [(ngModel)]="habilitadoSeleccionado"
+      (ngModelChange)="page=0; cargarUsuarios()"
+      aria-label="Filtrar por estado"
+    >
+      <option value="TODOS">Todos</option>
+      <option value="HABILITADOS">Habilitados</option>
+      <option value="DESHABILITADOS">Deshabilitados</option></select
+    ><button
+      *ngIf="tieneFiltrosActivos()"
+      class="link"
+      (click)="limpiarFiltros()"
+    >
+      Limpiar todos los filtros
+    </button>
+  </div>
+  <app-skeleton
+    name="admin-usuarios"
+    [loading]="loading"
+    animate="shimmer"
+    [transition]="true"
+    [loadingBoundary]="true"
+  >
+    <div>
+      <ng-container *ngIf="loading"
+        ><div class="skeleton-list">
+          <span
+            *ngFor="let _ of [1,2,3,4,5]"
+            class="skeleton-block"
+            aria-hidden="true"
+          ></span></div
+      ></ng-container>
+    </div>
+  </app-skeleton>
+  <app-error-state
+    *ngIf="error && !loading"
+    title="Error al cargar usuarios"
+    [message]="error"
+    ><app-button variant="primary" (clicked)="cargarUsuarios()"
+      >Reintentar</app-button
+    ></app-error-state
+  >
+  <app-empty-state
+    *ngIf="!loading && !error && !usuarios.length"
+    icon="people-outline"
+    title="No se encontraron usuarios"
+    description="No hay usuarios que coincidan con los filtros."
+  ></app-empty-state>
+  <ng-container *ngIf="!loading && !error && usuarios.length">
+    <div class="table-wrap desktop-only">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Creado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let usuario of usuarios">
+            <td>
+              <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong
+              ><small>{{ usuario.email }} · {{ usuario.publicId }}</small>
+            </td>
+            <td>{{ usuario.rolNombre }}</td>
+            <td>{{ usuario.habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
+            <td>{{ usuario.creadoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="actions">
+              <button (click)="verDetalles(usuario)">Ver detalles</button
+              ><button *ngIf="esMaster" (click)="abrirEditar(usuario)">
+                Editar</button
+              ><button
+                *ngIf="puedeAnular(usuario)"
+                class="danger"
+                (click)="deshabilitar(usuario)"
+              >
+                Deshabilitar</button
+              ><button
+                *ngIf="esMaster && !usuario.habilitado"
+                (click)="rehabilitar(usuario)"
+              >
+                Re-habilitar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cards mobile-only">
+      <article *ngFor="let usuario of usuarios">
+        <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong
+        ><span>{{ usuario.email }}</span
+        ><span
+          >{{ usuario.rolNombre }} · {{ usuario.habilitado ? 'Habilitado' :
+          'Deshabilitado' }}</span
+        >
+        <div class="actions">
+          <button (click)="verDetalles(usuario)">Ver detalles</button
+          ><button *ngIf="esMaster" (click)="abrirEditar(usuario)">
+            Editar</button
+          ><button
+            *ngIf="puedeAnular(usuario)"
+            class="danger"
+            (click)="deshabilitar(usuario)"
+          >
+            Deshabilitar
+          </button>
+        </div>
+      </article>
+    </div>
+    <app-paginator
+      [page]="page"
+      [size]="size"
+      [totalElements]="totalElements"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-paginator>
+  </ng-container>
+</div>
+<div *ngIf="modalAbierto" class="modal-backdrop">
+  <section
+    class="modal"
+    [appFocusTrap]="modalAbierto"
+    [escapeCallback]="cerrarModal"
+  >
+    <h2>{{ modoEdicion ? 'Editar usuario' : 'Crear usuario' }}</h2>
+    <label>Nombre<input [(ngModel)]="nombre" /></label
+    ><label>Apellido<input [(ngModel)]="apellido" /></label
+    ><label
+      >Rol<select [(ngModel)]="rol">
+        <option *ngFor="let item of roles" [value]="item">{{ item }}</option>
+      </select></label
+    >
+    <p class="error" *ngIf="error">{{ error }}</p>
+    <div *ngIf="passwordTemporal" class="password-alert">
+      <strong>Contraseña temporal</strong><code>{{ passwordTemporal }}</code
+      ><span>Copiala ahora: solo se muestra una vez.</span>
+    </div>
+    <footer>
+      <button (click)="cerrarModal()" [disabled]="submitting">Cancelar</button
+      ><button class="primary" (click)="guardar()" [disabled]="submitting">
+        {{ submitting ? 'Guardando…' : 'Guardar' }}
+      </button>
+    </footer>
+  </section>
+</div>
+<div *ngIf="modalDetalles" class="modal-backdrop">
+  <section
+    class="modal"
+    [appFocusTrap]="modalDetalles"
+    [escapeCallback]="cerrarDetalles"
+  >
+    <h2>Detalle de usuario</h2>
+    <dl *ngIf="usuarioSeleccionado">
+      <dt>Nombre</dt>
+      <dd>
+        {{ usuarioSeleccionado.nombre }} {{ usuarioSeleccionado.apellido }}
+      </dd>
+      <dt>Email</dt>
+      <dd>{{ usuarioSeleccionado.email }}</dd>
+      <dt>Rol</dt>
+      <dd>{{ usuarioSeleccionado.rolNombre }}</dd>
+      <dt>Estado</dt>
+      <dd>
+        {{ usuarioSeleccionado.habilitado ? 'Habilitado' : 'Deshabilitado' }}
+      </dd>
+      <dt>Creado</dt>
+      <dd>{{ usuarioSeleccionado.creadoEn | date:'medium' }}</dd>
+    </dl>
+    <button class="primary" (click)="cerrarDetalles()">Cerrar</button>
+  </section>
+</div>

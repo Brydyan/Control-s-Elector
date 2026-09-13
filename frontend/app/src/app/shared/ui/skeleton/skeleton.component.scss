@@ -7,6 +7,10 @@
   }
 }
 
+:host(.skeleton--no-animation) ::ng-deep .skeleton-block {
+  animation: none;
+}
+
 .skeleton {
   display: inline-block;
   background-color: var(--color-neutral-200, #e5e7eb);
@@ -20,6 +24,14 @@
   background-repeat: no-repeat;
   animation: shimmer 1.4s ease-in-out infinite;
   vertical-align: middle;
+
+  &--no-animation {
+    animation: none;
+  }
+
+  &--transition {
+    transition: opacity 160ms ease;
+  }
 
   &--text {
     display: block;
@@ -36,14 +48,12 @@
   }
 }
 
-/* Accesibilidad: respetar reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;
   }
 }
 
-/* Modo oscuro: ajusta el color base para que no sea invisible */
 @media (prefers-color-scheme: dark) {
   .skeleton {
     background-color: var(--color-neutral-700, #374151);
