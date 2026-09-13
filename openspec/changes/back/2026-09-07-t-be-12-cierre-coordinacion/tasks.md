@@ -13,9 +13,9 @@ Orden obligatorio: **A antes que B antes que C.**
 
 ## A · Confirmar que hay algo que verificar
 
-- [ ] **A.1** — `git status --short` limpio.
+- [x] **A.1** — `git status --short` limpio.
 
-- [ ] **A.2** — Correr sólo esta suite, **sin pipe**:
+- [x] **A.2** — Correr sólo esta suite, **sin pipe**:
 
   ```bash
   cd backend/electoral-api
@@ -26,7 +26,7 @@ Orden obligatorio: **A antes que B antes que C.**
   `target/surefire-reports/`. **Esperado tras el change bloqueante: 11 tests, 0 error.**
   Si siguen en ERROR, parar: el bloqueante no cerró.
 
-- [ ] **A.3** — Contar los endpoints reales de `CoordinatorController` y compararlos con los
+- [x] **A.3** — Contar los endpoints reales de `CoordinatorController` y compararlos con los
   del spec. Son 6. Si no son 6, el spec está desactualizado y hay que arreglarlo **antes** de
   seguir, no después.
 
@@ -38,7 +38,7 @@ Cada una: `cp` del archivo, mutar, correr, **anotar el nombre del test que cayó
 con `cp`, `rm` del `.bak`, `git status --short` limpio.
 **Nunca `git checkout --`.**
 
-- [ ] **B.1** — RF-COORD-02 (sólo MASTER anula). Quitá
+- [x] **B.1** — RF-COORD-02 (sólo MASTER anula). Quitá
   `@PreAuthorize("hasRole('MASTER')")` del método `anular` en `CoordinatorController`.
   Debe caer el test de COORDINATOR → 403.
 
@@ -46,21 +46,21 @@ con `cp`, `rm` del `.bak`, `git status --short` limpio.
   de clase lo autoriza y el 403 desaparece **sin error de compilación**. Es el fallo que
   esta mutación existe para detectar.
 
-- [ ] **B.2** — RF-COORD-03 (sólo APROBADAS se anulan). Quitá el guard
+- [x] **B.2** — RF-COORD-03 (sólo APROBADAS se anulan). Quitá el guard
   `if (acta.getEstado() != EstadoActa.APROBADA)` de `ActaService.anular`.
   Debe caer el test de anular un acta ENVIADA.
 
-- [ ] **B.3** — RF-COORD-04 (máquina de estados). En `ActaService.aprobar`, ampliá el guard
+- [x] **B.3** — RF-COORD-04 (máquina de estados). En `ActaService.aprobar`, ampliá el guard
   para aceptar también `EN_DISPUTA`.
   Debe caer el test de aprobar un acta en disputa.
 
-- [ ] **B.4** — RF-COORD-05 (motivo obligatorio). Quitá `@NotBlank` de `DisputaDto.motivo`.
+- [x] **B.4** — RF-COORD-05 (motivo obligatorio). Quitá `@NotBlank` de `DisputaDto.motivo`.
   Debe caer el test de motivo vacío → 400.
 
-- [ ] **B.5** — RF-COORD-01 (RBAC de módulo). Quitá el `@PreAuthorize` de clase.
+- [x] **B.5** — RF-COORD-01 (RBAC de módulo). Quitá el `@PreAuthorize` de clase.
   Debe caer el test de ADMIN → 403.
 
-- [ ] **B.6** — **Si alguna de B.1…B.5 no hace caer ningún test**, esa garantía no está
+- [x] **B.6** — **Si alguna de B.1…B.5 no hace caer ningún test**, esa garantía no está
   probada. Anotalo en `apply-progress.md` como hueco, con el número de la garantía, y
   escribí el test que falta. No lo dejes pasar: es exactamente lo que estas casillas existen
   para encontrar.
@@ -69,7 +69,7 @@ con `cp`, `rm` del `.bak`, `git status --short` limpio.
 
 ## C · Los dos huecos conocidos
 
-- [ ] **C.1** — RF-COORD-06 (auditoría). Comprobá si existe **algún** test que verifique que
+- [x] **C.1** — RF-COORD-06 (auditoría). Comprobá si existe **algún** test que verifique que
   disputar/aprobar/anular escriben en `audit_log`.
 
   Si no existe: escribilo (contar filas de `audit_log` antes y después), y después mutá
@@ -78,7 +78,7 @@ con `cp`, `rm` del `.bak`, `git status --short` limpio.
   **Es probable que no exista.** La auditoría es una regla dura de `CLAUDE.md` y hoy nada
   la protege.
 
-- [ ] **C.2** — RF-COORD-07 (filtro por cantón). `backend.md:192` lo promete;
+- [x] **C.2** — RF-COORD-07 (filtro por cantón). `backend.md:192` lo promete;
   `ActaRepository.findWithFilters` no lo tiene.
 
   Decidí **una** de las dos y hacela completa:
@@ -92,17 +92,17 @@ con `cp`, `rm` del `.bak`, `git status --short` limpio.
 
 ## D · Alinear las tres fuentes
 
-- [ ] **D.1** — Renombrar `documents/task-control/backendtask/T-BE-12.md` a
+- [x] **D.1** — Renombrar `documents/task-control/backendtask/T-BE-12.md` a
   `COMPLETADO-T-BE-12.md` (convención del repo).
 
-- [ ] **D.2** — Corregir la cabecera del doc: hoy dice «❌ NO IMPLEMENTADO — Falta
+- [x] **D.2** — Corregir la cabecera del doc: hoy dice «❌ NO IMPLEMENTADO — Falta
   CoordinatorController» y el controlador existe desde el PR #66.
 
   Poné el estado **con la medición al lado**: «✅ COMPLETADO — 11 tests en verde, 5 garantías
   verificadas por mutación (ver `openspec/changes/archive/…`)». Una casilla sin medición no
   es evidencia — es lo que pasó con T-IN-11.
 
-- [ ] **D.3** — Anotar en el doc las divergencias reales de rutas, para que quien lo lea como
+- [x] **D.3** — Anotar en el doc las divergencias reales de rutas, para que quien lo lea como
   tutorial no escriba código contra la API equivocada:
   `/api/v1/coordinator` (no `/api/coordinator`), `anular` devuelve `204`,
   `findWithFilters` tiene 4 parámetros.

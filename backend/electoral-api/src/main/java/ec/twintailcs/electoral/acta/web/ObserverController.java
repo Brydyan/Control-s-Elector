@@ -97,7 +97,7 @@ public class ObserverController {
   @GetMapping("/mis-actas")
   public List<ActaResponseDto> misActas(@RequestParam(required = false) EstadoActa estado) {
     Long observerId = observerId();
-    return actaRepository.findWithFilters(estado, null, null, observerId).stream()
+    return actaRepository.findWithFilters(estado, null, null, null, observerId).stream()
         .map(actaMapper::toDto)
         .toList();
   }
@@ -106,7 +106,9 @@ public class ObserverController {
   @GetMapping("/correcciones-pendientes")
   public List<ActaResponseDto> correccionesPendientes() {
     Long observerId = observerId();
-    return actaRepository.findWithFilters(EstadoActa.EN_DISPUTA, null, null, observerId).stream()
+    return actaRepository
+        .findWithFilters(EstadoActa.EN_DISPUTA, null, null, null, observerId)
+        .stream()
         .map(actaMapper::toDto)
         .toList();
   }

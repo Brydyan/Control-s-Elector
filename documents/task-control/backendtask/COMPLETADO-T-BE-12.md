@@ -1,6 +1,6 @@
 # T-BE-12 — Endpoints de Coordinación (COORDINATOR + MASTER)
 
-**Estado:** ❌ **NO IMPLEMENTADO** — ActaService lifecycle completo. Falta CoordinatorController.
+**Estado:** ✅ **COMPLETADO** — 28 tests en verde, 7 garantías verificadas por mutación (ver `openspec/changes/archive/2026-09-07-t-be-12-cierre-coordinacion/apply-progress.md`).
 
 **Dificultad:** Intermedio
 **Tiempo estimado:** 2 horas
@@ -9,6 +9,8 @@
 ---
 
 ## ⚠️ Nota de alineación con código actual
+
+**Divergencias verificadas:** la API usa `/api/v1/coordinator` (no `/api/coordinator`); `anular` devuelve `204 No Content`; y `findWithFilters` recibe cuatro parámetros: `estado`, `jrvId`, `cargoId` y `registradaPorId`.
 
 **Ya existe:**
 - `ActaService.marcarEnDisputa()`, `corregir()`, `aprobar()`, `anular()` con notificaciones automáticas vía NotificacionService
