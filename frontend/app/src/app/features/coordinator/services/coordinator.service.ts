@@ -94,7 +94,10 @@ export class CoordinatorService {
     // other shape) means the contract regressed — fail loudly instead of
     // silently wrapping it, so the regression surfaces in tests and logs.
     if (!res || Array.isArray(res) || !Array.isArray(res.data) || !res.meta) {
-      console.error('[CoordinatorService] Unexpected actas response shape', res);
+      console.error(
+        '[CoordinatorService] Unexpected actas response shape',
+        res,
+      );
       throw new Error(
         'Unexpected actas response: expected { data, meta } envelope',
       );
