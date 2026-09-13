@@ -1,0 +1,118 @@
+<div class="admin-page">
+  <header class="page-header">
+    <div>
+      <h1>Sesiones Activas</h1>
+      <span>{{ totalElements }} sesiones</span>
+    </div>
+  </header>
+  <div class="filters">
+    <input
+      [(ngModel)]="terminoBusqueda"
+      (ngModelChange)="page=0; cargarSesiones()"
+      placeholder="Buscar por email de usuario"
+      aria-label="Buscar sesiones"
+    />
+  </div>
+  <ng-container *ngIf="loading"
+    ><div class="skeleton-list">
+      <app-skeleton
+        *ngFor="let _ of [1,2,3,4,5]"
+        variant="rect"
+        height="48px"
+      ></app-skeleton></div></ng-container
+  ><app-error-state
+    *ngIf="error && !loading"
+    title="Error al cargar sesiones"
+    [message]="error"
+    ><app-button variant="primary" (clicked)="cargarSesiones()"
+      >Reintentar</app-button
+    ></app-error-state
+  ><app-empty-state
+    *ngIf="!loading && !error && !sesiones.length"
+    icon="pulse-outline"
+    title="No hay sesiones activas"
+    description="No se encontraron sesiones que coincidan con la búsqueda."
+  ></app-empty-state
+  ><ng-container *ngIf="!loading && !error && sesiones.length"
+    ><div class="table-wrap desktop-only">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>IP</th>
+            <th>Último uso</th>
+            <th>Expira</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let sesion of sesiones">
+            <td>
+              <strong>{{ sesion.usuarioEmail }}</strong
+              ><small>#{{ sesion.id }} · {{ sesion.publicId }}</small>
+            </td>
+            <td>{{ sesion.ipCliente || '—' }}</td>
+            <td>{{ sesion.ultimoUsoEn | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ sesion.expiraEn | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="actions">
+              <button (click)="verDetalles(sesion)">Ver detalles</button
+              ><button
+                *ngIf="puedeRevocar()"
+                class="danger"
+                (click)="revocar(sesion)"
+              >
+                Revocar
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="cards mobile-only">
+      <article *ngFor="let sesion of sesiones">
+        <strong>{{ sesion.usuarioEmail }}</strong
+        ><span>IP: {{ sesion.ipCliente || '—' }}</span
+        ><span>Último uso: {{ sesion.ultimoUsoEn | date:'short' }}</span>
+        <div class="actions">
+          <button (click)="verDetalles(sesion)">Ver detalles</button
+          ><button
+            *ngIf="puedeRevocar()"
+            class="danger"
+            (click)="revocar(sesion)"
+          >
+            Revocar
+          </button>
+        </div>
+      </article>
+    </div>
+    <app-paginator
+      [page]="page"
+      [size]="size"
+      [totalElements]="totalElements"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-paginator
+  ></ng-container>
+</div>
+<div *ngIf="modalAbierto" class="modal-backdrop">
+  <section
+    class="modal"
+    [appFocusTrap]="modalAbierto"
+    [escapeCallback]="cerrarModal"
+  >
+    <h2>Detalle de sesión</h2>
+    <dl *ngIf="sesionSeleccionada">
+      <dt>Usuario</dt>
+      <dd>{{ sesionSeleccionada.usuarioEmail }}</dd>
+      <dt>IP</dt>
+      <dd>{{ sesionSeleccionada.ipCliente || '—' }}</dd>
+      <dt>User agent</dt>
+      <dd>{{ sesionSeleccionada.userAgent || '—' }}</dd>
+      <dt>Último uso</dt>
+      <dd>{{ sesionSeleccionada.ultimoUsoEn | date:'medium' }}</dd>
+      <dt>Expira</dt>
+      <dd>{{ sesionSeleccionada.expiraEn | date:'medium' }}</dd>
+    </dl>
+    <button class="primary" (click)="cerrarModal()">Cerrar</button>
+  </section>
+</div>

@@ -13,3 +13,6 @@ databaseChangeLog:
   - include: { file: database/changelog/012-acta-anular-permiso.sql }
   - include: { file: database/changelog/013-t-be-14-16.sql }
   - include: { file: database/changelog/014-menus-seed-aligned.sql }
+  - include: { file: database/changelog/016-drop-refresh-token.sql }
+  - include: { file: database/changelog/017-complete-data-seed.sql }
+  - include: { file: database/changelog/018-notification-seed.sql }

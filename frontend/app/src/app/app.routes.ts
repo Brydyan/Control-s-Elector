@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-
 import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guard';
 
 export const routes: Routes = [
@@ -36,10 +35,7 @@ export const routes: Routes = [
           import('./features/observer/pages/mis-jrvs/mis-jrvs.page').then(
             (m) => m.MisJrvsPage,
           ),
-        data: {
-          roles: ['OBSERVER', 'MASTER'],
-          title: 'Mis JRVs Asignadas',
-        },
+        data: { roles: ['OBSERVER', 'MASTER'], title: 'Mis JRVs Asignadas' },
       },
       {
         path: 'observer/jrv/:jrvId/cargos',
@@ -48,10 +44,7 @@ export const routes: Routes = [
           import('./features/observer/pages/jrv-cargos/jrv-cargos.page').then(
             (m) => m.JrvCargosPage,
           ),
-        data: {
-          roles: ['OBSERVER', 'MASTER'],
-          title: 'Dignidades de JRV',
-        },
+        data: { roles: ['OBSERVER', 'MASTER'], title: 'Dignidades de JRV' },
       },
       {
         path: 'observer/jrv/:jrvId/cargo/:cargoId/registrar',
@@ -60,12 +53,8 @@ export const routes: Routes = [
           import('./features/observer/pages/registrar-acta/registrar-acta.page').then(
             (m) => m.RegistrarActaPage,
           ),
-        data: {
-          roles: ['OBSERVER', 'MASTER'],
-          title: 'Registrar Acta',
-        },
+        data: { roles: ['OBSERVER', 'MASTER'], title: 'Registrar Acta' },
       },
-      // Actas & Evidencias modules
       {
         path: 'actas',
         canActivate: [roleGuard],
@@ -136,21 +125,16 @@ export const routes: Routes = [
           icon: 'cloud-upload-outline',
         },
       },
-      // Administración & Configuración del Sistema (MASTER)
-      {
-        path: 'admin',
-        redirectTo: 'admin/usuarios',
-        pathMatch: 'full',
-      },
+      { path: 'admin', redirectTo: 'admin/usuarios', pathMatch: 'full' },
       {
         path: 'admin/usuarios',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/admin/usuarios/admin-usuarios.page').then(
+            (m) => m.AdminUsuariosPage,
           ),
         data: {
-          roles: ['MASTER'],
+          roles: ['MASTER', 'COORDINATOR', 'ADMIN'],
           title: 'Gestión de Usuarios',
           description:
             'Administración de cuentas de observadores, coordinadores y administradores.',
@@ -161,8 +145,8 @@ export const routes: Routes = [
         path: 'admin/sesiones',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/admin/sesiones/admin-sesiones.page').then(
+            (m) => m.AdminSesionesPage,
           ),
         data: {
           roles: ['MASTER', 'COORDINATOR', 'ADMIN'],
@@ -217,15 +201,8 @@ export const routes: Routes = [
           icon: 'person-outline',
         },
       },
-      {
-        path: '',
-        redirectTo: 'dashboard',
-        pathMatch: 'full',
-      },
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
   },
-  {
-    path: '**',
-    redirectTo: '',
-  },
+  { path: '**', redirectTo: '' },
 ];
