@@ -52,6 +52,16 @@ export interface CantonResumen {
   codigo: string;
 }
 
+export interface HistorialEntry {
+  id: number;
+  accion: string;
+  timestamp: string;
+  registradoPorNombre?: string | null;
+  registradoPorRol?: string | null;
+  ipAddress?: string | null;
+  detalle?: string | null;
+}
+
 export interface ActaDetalleCompleto {
   acta: ActaItem;
   jrv?: JrvResumen;
@@ -60,6 +70,7 @@ export interface ActaDetalleCompleto {
   totalVotosCalculado: number;
   diferenciaChecksum: number;
   checksumValido: boolean;
+  historial: HistorialEntry[];
 }
 
 export interface DisputarActaPayload {

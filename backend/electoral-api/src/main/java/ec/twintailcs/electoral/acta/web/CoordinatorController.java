@@ -8,13 +8,17 @@ import ec.twintailcs.electoral.acta.domain.EstadoActa;
 import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.AnulacionDto;
 import ec.twintailcs.electoral.acta.web.dto.DisputaDto;
+import ec.twintailcs.electoral.acta.web.dto.HistorialActaDto;
 import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
+import ec.twintailcs.electoral.auditlog.domain.AuditLog;
+import ec.twintailcs.electoral.auditlog.domain.AuditLogRepository;
 import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.shared.web.pagination.PageRequestFactory;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -63,6 +67,7 @@ public class CoordinatorController {
   private final ActaRepository actaRepository;
   private final ActaDetalleRepository actaDetalleRepository;
   private final UsuarioRepository usuarioRepository;
+  private final AuditLogRepository auditLogRepository;
   private final CurrentUser currentUser;
   private final ActaMapper actaMapper;
 
@@ -71,12 +76,14 @@ public class CoordinatorController {
       ActaRepository actaRepository,
       ActaDetalleRepository actaDetalleRepository,
       UsuarioRepository usuarioRepository,
+      AuditLogRepository auditLogRepository,
       CurrentUser currentUser,
       ActaMapper actaMapper) {
     this.actaService = actaService;
     this.actaRepository = actaRepository;
     this.actaDetalleRepository = actaDetalleRepository;
     this.usuarioRepository = usuarioRepository;
+    this.auditLogRepository = auditLogRepository;
     this.currentUser = currentUser;
     this.actaMapper = actaMapper;
   }
@@ -189,6 +196,41 @@ public class CoordinatorController {
             .findById(actaId)
             .orElseThrow(() -> new IllegalArgumentException("Acta no encontrada: " + actaId));
     return ResponseEntity.ok(toDto(acta));
+  }
+
+  /**
+   * Devuelve el historial de transiciones del acta (cada acción crítica queda registrada en {@code
+   * audit_log}). Solo expone entradas de la propia entidad y nunca el log global del sistema.
+   * Ordenado de más reciente a más antiguo.
+   */
+  @GetMapping("/actas/{actaId}/historial")
+  public ResponseEntity<List<HistorialActaDto>> historialActa(@PathVariable Long actaId) {
+    List<AuditLog> entries =
+        auditLogRepository.findByEntidadAndEntidadIdOrderByTimestampDesc("acta", actaId);
+    List<HistorialActaDto> dto =
+        entries.stream()
+            .map(
+                e -> {
+                  String nombre = null;
+                  String rol = null;
+                  if (e.getRegistradoPor() != null) {
+                    var usuario = usuarioRepository.findById(e.getRegistradoPor()).orElse(null);
+                    if (usuario != null) {
+                      nombre = usuario.getNombre() + " " + usuario.getApellido();
+                      rol = usuario.getRol() != null ? usuario.getRol().getNombre() : null;
+                    }
+                  }
+                  return new HistorialActaDto(
+                      e.getId(),
+                      e.getAccion(),
+                      e.getTimestamp(),
+                      nombre,
+                      rol,
+                      e.getIpAddress(),
+                      e.getDetalle() == null ? null : e.getDetalle().toString());
+                })
+            .toList();
+    return ResponseEntity.ok(dto);
   }
 
   @PutMapping("/actas/{actaId}/disputar")

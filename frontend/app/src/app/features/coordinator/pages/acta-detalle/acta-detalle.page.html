@@ -255,6 +255,62 @@
     </app-card>
   </div>
 
+  <!-- Historial de transiciones -->
+  <app-card [elevated]="true" headerTitle="Historial de Transiciones">
+    <ng-container *ngIf="(data?.historial ?? []).length > 0; else historialVacio">
+      <ol
+        class="historial-list"
+        aria-label="Línea de tiempo de transiciones del acta"
+      >
+        <li *ngFor="let h of data?.historial ?? []" class="historial-item">
+          <div class="historial-row">
+            <span class="historial-accion">{{ h.accion }}</span>
+            <span class="historial-timestamp"
+              >{{ h.timestamp | date: 'dd/MM/yyyy HH:mm:ss' }}</span
+            >
+          </div>
+          <div class="historial-meta">
+            <span *ngIf="h.registradoPorNombre as nombre">
+              {{ nombre }}<span *ngIf="h.registradoPorRol">
+                ({{ h.registradoPorRol }})</span
+              >
+            </span>
+            <span *ngIf="h.ipAddress" class="historial-ip">
+              IP: {{ h.ipAddress }}</span
+            >
+            <span *ngIf="h.detalle" class="historial-detalle"
+              >{{ h.detalle }}</span
+            >
+          </div>
+        </li>
+      </ol>
+    </ng-container>
+    <ng-template #historialVacio>
+      <p class="historial-empty">
+        Sin transiciones registradas todavía para este acta.
+      </p>
+    </ng-template>
+  </app-card>
+
+  <!-- Datos faltantes o inconsistencias -->
+  <app-card [elevated]="true" headerTitle="Datos faltantes o inconsistencias">
+    <ul
+      class="faltantes-list"
+      aria-label="Lista de chequeos de integridad del acta"
+    >
+      <li
+        *ngFor="let check of chequeos()"
+        class="faltante-item"
+        [class.faltante-ok]="check.ok"
+      >
+        <span class="faltante-icono" aria-hidden="true"
+          >{{ check.ok ? '✓' : '⚠' }}</span
+        >
+        <span class="faltante-texto">{{ check.texto }}</span>
+      </li>
+    </ul>
+  </app-card>
+
   <!-- ==================== MODAL DISPUTAR ==================== -->
   <div class="modal-backdrop" *ngIf="modalDisputarAbierto">
     <div
