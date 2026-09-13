@@ -12,6 +12,7 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { mapError } from '../../../../shared/errors/error-handler';
+import { FocusTrapDirective } from '../../../../shared/a11y/focus-trap.directive';
 import {
   ActaDetalleCompleto,
   ActaItem,
@@ -36,6 +37,7 @@ type ErrorTarget = 'main' | 'disputa' | 'corregir';
     CardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
+    FocusTrapDirective,
   ],
   templateUrl: './acta-detalle.page.html',
   styleUrls: ['./acta-detalle.page.scss'],
