@@ -5,6 +5,8 @@ import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse.UsuarioActual;
+import ec.twintailcs.electoral.auth.web.dto.SesionResponseDto;
+import ec.twintailcs.electoral.auth.web.dto.UsuarioResponseDto;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
 import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
@@ -38,6 +40,39 @@ public class MapperConfig {
         }
         String rolNombre = entity.getRol() != null ? entity.getRol().getNombre() : null;
         return new UsuarioActual(entity.getPublicId(), entity.getEmail(), rolNombre);
+      }
+
+      @Override
+      public UsuarioResponseDto toAdminDto(Usuario entity) {
+        if (entity == null) {
+          return null;
+        }
+        return new UsuarioResponseDto(
+            entity.getPublicId(),
+            entity.getEmail(),
+            entity.getNombre(),
+            entity.getApellido(),
+            entity.getRolNombre(),
+            entity.isHabilitado(),
+            entity.getCreadoEn());
+      }
+
+      @Override
+      public SesionResponseDto toSesionDto(
+          ec.twintailcs.electoral.auth.domain.Sesion entity, String usuarioEmail) {
+        if (entity == null) {
+          return null;
+        }
+        return new SesionResponseDto(
+            entity.getId(),
+            entity.getSesionId(),
+            entity.getUsuarioId(),
+            usuarioEmail,
+            entity.getIpCliente(),
+            entity.getUserAgent(),
+            entity.getCreadoEn(),
+            entity.getUltimoUsoEn(),
+            entity.getExpiraEn());
       }
     };
   }
