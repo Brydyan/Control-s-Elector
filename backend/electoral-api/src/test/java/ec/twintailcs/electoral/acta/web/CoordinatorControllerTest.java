@@ -103,6 +103,7 @@ class CoordinatorControllerTest {
   private String coordinatorToken;
   private String masterToken;
   private String observerToken;
+  private String adminToken;
   private Usuario observer;
   private Usuario coordinator;
   private Usuario master;
@@ -121,6 +122,7 @@ class CoordinatorControllerTest {
         rolRepo
             .findByNombre("COORDINATOR")
             .orElseThrow(() -> new RuntimeException("Rol COORDINATOR no encontrado"));
+    Rol rolAdmin = rolRepo.findByNombre("ADMIN").orElseThrow();
     Rol rolMaster =
         rolRepo
             .findByNombre("MASTER")
@@ -143,6 +145,15 @@ class CoordinatorControllerTest {
     coordinator.setRol(rolCoordinator);
     coordinator.setHabilitado(true);
     coordinator = usuarioRepo.saveAndFlush(coordinator);
+
+    Usuario admin = new Usuario();
+    admin.setEmail("admin-" + UUID.randomUUID() + "@test.local");
+    admin.setNombre("Admin");
+    admin.setApellido("Test");
+    admin.setPasswordHash("hash");
+    admin.setRol(rolAdmin);
+    admin.setHabilitado(true);
+    admin = usuarioRepo.saveAndFlush(admin);
 
     master = new Usuario();
     master.setEmail("master-" + UUID.randomUUID() + "@test.local");
@@ -185,6 +196,15 @@ class CoordinatorControllerTest {
                 "MASTER",
                 List.of("acta:read", "acta:aprobar", "acta:rechazar", "acta:anular"),
                 "session-master")
+            .access();
+    adminToken =
+        jwtService
+            .issue(
+                admin.getPublicId(),
+                admin.getEmail(),
+                "ADMIN",
+                List.of("acta:upload"),
+                "session-admin")
             .access();
 
     Provincia provincia = provinciaRepo.saveAndFlush(new Provincia("Santa Elena", "24"));
@@ -268,6 +288,62 @@ class CoordinatorControllerTest {
         .andExpect(jsonPath("$.meta.size").value(20))
         .andExpect(jsonPath("$.meta.totalElements").value(1))
         .andExpect(jsonPath("$.meta.totalPages").value(1));
+  }
+
+  @Test
+  void listarActas_conFiltroCantonId() throws Exception {
+    Long cantonObjetivoId = jrv.getParroquia().getCanton().getId();
+    Acta actaDelCantonObjetivo = crearActaEnviada();
+
+    // Acta control en OTRO cantón — si el filtro no excluye, totalElements sube a 2
+    // y el data[0] deja de ser el actaObjetivo.
+    Provincia otraProvincia = provinciaRepo.saveAndFlush(new Provincia("Guayas", "09"));
+    Canton otroCanton = new Canton();
+    otroCanton.setNombre("Guayaquil");
+    otroCanton.setCodigo("0901");
+    otroCanton.setProvincia(otraProvincia);
+    otroCanton = cantonRepo.saveAndFlush(otroCanton);
+
+    Parroquia otraParroquia = new Parroquia();
+    otraParroquia.setNombre("Tarqui");
+    otraParroquia.setEsUrbana(true);
+    otraParroquia.setCanton(otroCanton);
+    otraParroquia = parroquiaRepo.saveAndFlush(otraParroquia);
+
+    Jrv otraJrv = new Jrv();
+    otraJrv.setNumero("JRV-" + UUID.randomUUID().toString().substring(0, 8));
+    otraJrv.setRecinto("Escuela Control");
+    otraJrv.setTotalElectores(200);
+    otraJrv.setParroquia(otraParroquia);
+    otraJrv = jrvRepo.saveAndFlush(otraJrv);
+
+    Acta actaControl = new Acta();
+    actaControl.setJrv(otraJrv);
+    actaControl.setCargo(cargo);
+    actaControl.setRegistradaPor(observer);
+    actaControl.setEstado(EstadoActa.ENVIADA);
+    actaControl.setTotalSufragantes(40);
+    actaControl.setVotosBlancos(1);
+    actaControl.setVotosNulos(2);
+    actaRepo.saveAndFlush(actaControl);
+
+    // Sanity: sin filtro deben aparecer las dos.
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas").header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.meta.totalElements").value(2));
+
+    // Con cantonId del cantón objetivo debe aparecer SÓLO esa acta.
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("cantonId", String.valueOf(cantonObjetivoId))
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.meta.totalElements").value(1))
+        .andExpect(jsonPath("$.data[0].id").value(actaDelCantonObjetivo.getId()))
+        .andExpect(jsonPath("$.data[0].jrvId").value(jrv.getId()));
   }
 
   @Test
@@ -647,6 +723,39 @@ class CoordinatorControllerTest {
     assertThat(anulada.getEstado()).isEqualTo(EstadoActa.ANULADA);
     assertThat(anulada.getMotivoAnulacion()).isEqualTo("Error oficial de recuento");
     assertThat(auditLogRepo.findByAccion("ACTA_ANULADA")).isNotEmpty();
+  }
+
+  @Test
+  void anular_asMaster_actaEnviada_retorna409() throws Exception {
+    Acta acta = crearActaEnviada();
+
+    mockMvc
+        .perform(
+            delete("/api/v1/coordinator/actas/{actaId}", acta.getId())
+                .header("Authorization", "Bearer " + masterToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"motivo\": \"Estado invalido\"}"))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
+  void aprobar_actaEnDisputa_retorna409() throws Exception {
+    Acta acta = crearActaEnviada();
+    acta.setEstado(EstadoActa.EN_DISPUTA);
+    actaRepo.saveAndFlush(acta);
+
+    mockMvc
+        .perform(
+            put("/api/v1/coordinator/actas/{actaId}/aprobar", acta.getId())
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isConflict());
+  }
+
+  @Test
+  void endpoints_asAdmin_returns403() throws Exception {
+    mockMvc
+        .perform(get("/api/v1/coordinator/actas").header("Authorization", "Bearer " + adminToken))
+        .andExpect(status().isForbidden());
   }
 
   @Test
