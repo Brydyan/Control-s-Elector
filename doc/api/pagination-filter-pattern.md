@@ -1,132 +1,188 @@
-# Paginación y Filtros — Estándar del proyecto
+# Paginación y Filtros — Contrato vigente
 
-## Stack elegido
+Estándar aprobado tras el merge de #85 (coordinator flow) y #87 (DTO enriquecido).
+Reemplaza la versión anterior que proponía `Page<T>` nativo de Spring; el contrato
+vigente usa un envelope estricto `{data, meta}` con orden estable y búsqueda por estado.
 
-- **Spring Data `Pageable`** para paginación + ordenamiento
-- **`JpaSpecificationExecutor`** (Specifications) para filtros dinámicos componibles
-- **Sin dependencias extra** — ya viene en `spring-boot-starter-data-jpa`
+## Stack
 
-## Por qué Specifications
+| Capa | Tecnología | Ubicación |
+|---|---|---|
+| Backend — repositorio | Spring Data `JpaRepository` + `JpaSpecificationExecutor` | `backend/electoral-api/.../domain/<Entity>Repository.java` |
+| Backend — paginación | `PageRequestFactory` + `PagedResponse<T>` + `PageMeta` | `backend/electoral-api/.../shared/web/pagination/` |
+| Backend — specs | `JpaSpecificationExecutor` con `Specification.where(...).and(...)` | por módulo (`acta`, `evidencia`) |
+| Frontend — modelo | `Page<T>` en `shared/models` con `data: T[]` y `meta: PageMeta` | `frontend/app/src/app/shared/models/page.model.ts` |
+| Frontend — UI | `<app-paginator>` reutilizable | `frontend/app/src/app/shared/components/paginator/` |
+| Frontend — enforcement | servicio lanza si el backend devuelve un array pelado | `coordinator.service.ts` (mismo patrón en otros módulos) |
 
-| Opción | Veredicto |
-|--------|-----------|
-| `Pageable` directo en query methods | Sirve para consultas fijas, explota si hay combinaciones de filtros |
-| QueryDSL | Poderoso pero abandonado (fork OpenFeign), dependency weight innecesario |
-| **Specifications** ✅ | **Sin deps extra, componible, type-safe vía Metamodel, estándar Spring** |
+## Contrato HTTP
 
-## Patrón
+### Request (query params)
 
-### 1. Repository extiende `JpaSpecificationExecutor`
+| Param | Tipo | Default | Notas |
+|---|---|---|---|
+| `page` | int (0-based) | `0` | `-D` |
+| `size` | int | `20` | máximo configurable por endpoint |
+| `sort` | string | depende del endpoint | debe pertenecer a `allowedSorts`; el resto devuelve `400` |
+| `q` | string (opcional) | — | búsqueda libre específica del endpoint (ej. estado) |
 
-```java
-public interface EvidenciaRepository extends JpaRepository<Evidencia, Long>,
-                                             JpaSpecificationExecutor<Evidencia> {
-}
-```
-
-### 2. Clase de Specifications por entidad
-
-```java
-public class EvidenciaSpecs {
-
-    public static Specification<Evidencia> jrvIdEq(Long jrvId) {
-        return (root, query, cb) -> 
-            jrvId == null ? null : cb.equal(root.get("jrvId"), jrvId);
-    }
-
-    public static Specification<Evidencia> cargoIdEq(Long cargoId) {
-        return (root, query, cb) -> 
-            cargoId == null ? null : cb.equal(root.get("cargoId"), cargoId);
-    }
-
-    public static Specification<Evidencia> estadoEq(String estado) {
-        return (root, query, cb) -> 
-            estado == null || estado.isBlank() ? null : cb.equal(root.get("estado"), estado);
-    }
-
-    public static Specification<Evidencia> creadoEntre(Instant desde, Instant hasta) {
-        return (root, query, cb) -> {
-            if (desde == null && hasta == null) return null;
-            if (desde != null && hasta != null) return cb.between(root.get("creadoEn"), desde, hasta);
-            if (desde != null) return cb.greaterThanOrEqualTo(root.get("creadoEn"), desde);
-            return cb.lessThanOrEqualTo(root.get("creadoEn"), hasta);
-        };
-    }
-}
-```
-
-### 3. Controller recibe `Pageable` y filtros como `@RequestParam`
-
-```java
-@GetMapping
-public Page<EvidenciaResponse> listar(
-        @RequestParam(required = false) Long jrvId,
-        @RequestParam(required = false) String estado,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "20") int size,
-        @RequestParam(defaultValue = "creadoEn") String sort,
-        @RequestParam(defaultValue = "desc") String dir) {
-
-    Pageable pageable = PageRequest.of(page, size, 
-        Sort.by(Sort.Direction.fromString(dir), sort));
-
-    Specification<Evidencia> spec = Specification
-        .where(EvidenciaSpecs.jrvIdEq(jrvId))
-        .and(EvidenciaSpecs.estadoEq(estado));
-
-    return repo.findAll(spec, pageable)
-        .map(evidenciaMapper::toDto);
-}
-```
-
-### 4. Service layer (opcional, para lógica extra)
-
-Si hay lógica de negocio antes de paginar, el service recibe `Pageable` y delega al repo:
-
-```java
-public Page<EvidenciaResponse> listar(Long jrvId, String estado, Pageable pageable) {
-    Specification<Evidencia> spec = SpecsBuilder.forEvidencia(jrvId, estado);
-    return repo.findAll(spec, pageable).map(mapper::toDto);
-}
-```
-
-## Response format
-
-Spring `Page` serializa automáticamente a JSON:
+### Response (envelope estricto)
 
 ```json
 {
-  "content": [...],
-  "totalElements": 142,
-  "totalPages": 8,
-  "number": 0,
-  "size": 20,
-  "sort": { "sorted": true, "unsorted": false, "empty": false },
-  "first": true,
-  "last": false,
-  "empty": false
+  "data": [ /* T[] */ ],
+  "meta": {
+    "page": 0,
+    "size": 20,
+    "totalElements": 142,
+    "totalPages": 8
+  }
 }
 ```
 
-## Conventions del proyecto
+**No se devuelve `Page<T>` de Spring** (con `content`, `sort`, `numberOfElements`, etc.).
+El envelope `{data, meta}` es deliberadamente minimalista para no acoplar el frontend al modelo interno de Spring.
 
-- `page` = 0-based (default: 0)
-- `size` = items por página (default: 20, max: 100)
-- `sort` = nombre del campo (default: `creadoEn`)
-- `dir` = `asc` | `desc` (default: `desc`)
-- Filtros nulos se ignoran (null-safe en cada Spec)
-- Para joins/relaciones: `root.join("usuario").get("nombre")`
+### Errores
 
-## JPA Metamodel (opcional)
+- `400 Bad Request` si `page`, `size` o `sort` son inválidos (mensaje específico por campo).
+- `401/403` según RBAC del endpoint.
+- `500` solo para fallos no controlados.
 
-Para type-safety sin strings mágicos, agregar dependency:
+## Backend — piezas compartidas
 
-```xml
-<dependency>
-    <groupId>org.hibernate.orm</groupId>
-    <artifactId>hibernate-jpamodelgen</artifactId>
-    <scope>provided</scope>
-</dependency>
+### `PageRequestFactory`
+
+Centraliza la creación de `Pageable` con **tiebreaker obligatorio** sobre `id ASC`
+para garantizar orden estable cuando hay timestamps iguales.
+
+```java
+Pageable pageable = PageRequestFactory.of(
+    page, size, sort, dir, allowedSorts, defaultSort, defaultDir);
 ```
 
-Genera `Evidencia_.java` con constantes tipadas para los field names.
+- `allowedSorts`: `Set<String>` de campos ordenables (rechaza cualquier otro con `400`).
+- `defaultSort`/`defaultDir`: aplicados cuando los params vienen vacíos o null.
+- El tiebreaker `id ASC` se agrega automáticamente.
+
+### `PagedResponse<T>` y `PageMeta`
+
+```java
+public record PagedResponse<T>(List<T> data, PageMeta meta) {}
+
+public record PageMeta(
+    int page, int size, long totalElements, int totalPages) {}
+```
+
+El controller hace:
+
+```java
+Specification<Acta> spec = Specification
+    .where(ActaSpecs.estadoEq(estado))
+    .and(ActaSpecs.search(q));
+
+Page<Acta> page = actaRepo.findAll(spec, pageable);
+return PagedResponse.of(page.map(actaMapper::toDto));
+```
+
+### Specifications
+
+Una clase por agregado, con métodos null-safe componibles. Ejemplo vigente:
+
+```java
+public final class ActaSpecs {
+    private ActaSpecs() {}
+
+    public static Specification<Acta> estadoEq(EstadoActa estado) {
+        return (root, query, cb) ->
+            estado == null ? null : cb.equal(root.get("estado"), estado);
+    }
+
+    public static Specification<Acta> search(String q) {
+        if (q == null || q.isBlank()) return null;
+        String pattern = "%" + q.toLowerCase() + "%";
+        return (root, query, cb) -> cb.like(cb.lower(root.get("estado")), pattern);
+    }
+}
+```
+
+**Importante**: el patrón LIKE se precomputa en Java. **Nunca** envolver `:search` con
+`LOWER(CONCAT(...))` en JPQL — Postgres infiere `bytea` para el parámetro NULL y rompe
+las queries sin filtro.
+
+## Frontend — piezas compartidas
+
+### `Page<T>` model
+
+```ts
+export interface PageMeta {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+export interface Page<T> {
+  data: T[];
+  meta: PageMeta;
+}
+```
+
+### Servicio enforcement
+
+Cada servicio de listado valida explícitamente el shape:
+
+```ts
+if (!body || !Array.isArray(body.data) || !body.meta) {
+  console.error('[<Feature>Service] Unexpected response shape', body);
+  throw new Error('Expected { data, meta } envelope');
+}
+return body;
+```
+
+Si el backend devuelve un array pelado, el servicio lanza — el caller recibe el
+error y muestra el estado de error correspondiente. **Nunca** envolver arrays
+// pelados en `{data: array, meta: empty}` automáticamente: oculta bugs de contrato.
+
+### `<app-paginator>`
+
+Componente standalone que recibe `meta`, `loading` y emits `pageChange`.
+Recibe inputs tipados (`meta = input.required<PageMeta>()`) y emite `pageChange`
+con el nuevo índice. Lo usan las páginas que paginan (`actas-lista` y futuras).
+
+## Convenciones del proyecto
+
+- `page` 0-based. `size` default 20. `sort` default por endpoint.
+- Filtros nulos o vacíos se ignoran (cada Spec devuelve `null`).
+- El orden es estable SIEMPRE (tiebreaker `id ASC` agregado en `PageRequestFactory`).
+- Búsqueda libre (`q`) precomputada en Java como patrón LIKE; sin `LOWER()` ni
+  `CONCAT()` alrededor de los bind params JPQL.
+- `PagedResponse<T>` se serializa con Jackson estándar (no requiere config extra).
+- Frontend **nunca** asume `Page<T>` de Spring — siempre el envelope `{data, meta}`.
+- Service frontend **valida** el envelope antes de devolver; lanza si no calza.
+
+## Lista de endpoints que aplican el contrato
+
+| Endpoint | Controller | Notas |
+|---|---|---|
+| `GET /api/v1/coordinator/actas` | `CoordinatorController` | contrato vigente (paginación + filtros + estado search) |
+
+Endpoints pendientes de migrar al contrato: ver `openspec/ROADMAP.md` y Fase 1
+del plan vertical COORDINATOR (T-BE-13).
+
+## Anti-patrones prohibidos
+
+- Devolver `Page<T>` nativo de Spring desde un endpoint público (acopla el contrato).
+- Usar `LOWER(CONCAT('%', :q, '%'))` en JPQL (Postgres infiere `bytea` para NULL).
+- Aplicar `ORDER BY` sin tiebreaker estable.
+- Ordenar por defecto por un campo no presente en `allowedSorts`.
+- Permitir `sort` arbitrario sin validar.
+- En el frontend, aceptar arrays pelados y envolverlos en `{data, meta}` "por las dudas".
+- En el frontend, leer `body.content` (Spring) en lugar de `body.data` (envelope).
+
+## Referencias
+
+- Implementación vigente en `backend/electoral-api/.../shared/web/pagination/`.
+- Frontend mirror en `frontend/app/src/app/shared/{models,components/paginator}`.
+- Tests de contrato: `PageRequestFactoryTest`, `PagedResponseTest`,
+  `paginator.component.spec.ts`, `coordinator.service.spec.ts`.
