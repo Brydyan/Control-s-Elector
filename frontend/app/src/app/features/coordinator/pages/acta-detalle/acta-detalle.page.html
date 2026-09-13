@@ -1,0 +1,475 @@
+<div class="acta-detalle-container">
+  <!-- Top Navigation & Action Bar -->
+  <div class="page-topbar">
+    <app-button
+      variant="ghost"
+      size="sm"
+      (clicked)="volver()"
+      [disabled]="submitting"
+    >
+      <ion-icon name="arrow-back-outline" aria-hidden="true"></ion-icon>
+      Volver a la bandeja
+    </app-button>
+
+    <div class="topbar-actions" *ngIf="data && !loading">
+      <app-button
+        *ngIf="data.acta.estado === 'EN_DISPUTA'"
+        variant="secondary"
+        size="sm"
+        (clicked)="abrirModalCorregir()"
+        [disabled]="submitting"
+      >
+        <ion-icon name="create-outline" aria-hidden="true"></ion-icon>
+        Corregir Acta
+      </app-button>
+
+      <app-button
+        *ngIf="data.acta.estado === 'ENVIADA' || data.acta.estado === 'CORREGIDA'"
+        variant="ghost"
+        size="sm"
+        (clicked)="abrirModalDisputar()"
+        [disabled]="submitting"
+      >
+        <ion-icon name="alert-circle-outline" aria-hidden="true"></ion-icon>
+        Disputar
+      </app-button>
+
+      <app-button
+        *ngIf="data.acta.estado === 'ENVIADA' || data.acta.estado === 'CORREGIDA'"
+        variant="primary"
+        size="sm"
+        (clicked)="abrirAprobar()"
+        [disabled]="submitting"
+      >
+        <ion-icon name="checkmark-done-outline" aria-hidden="true"></ion-icon>
+        Aprobar Acta
+      </app-button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <app-loading-state
+    *ngIf="loading"
+    message="Cargando detalles de escrutinio y evidencia..."
+  ></app-loading-state>
+
+  <!-- Error State -->
+  <app-error-state *ngIf="error && !loading" title="Atención" [message]="error">
+    <app-button variant="primary" (clicked)="cargarDetalle()">
+      Reintentar
+    </app-button>
+  </app-error-state>
+
+  <!-- Success Notification -->
+  <div
+    class="success-banner"
+    *ngIf="actionSuccessMessage"
+    role="status"
+    aria-live="polite"
+  >
+    <span>✅ {{ actionSuccessMessage }}</span>
+    <button
+      class="close-banner-btn"
+      (click)="actionSuccessMessage = null"
+      aria-label="Cerrar notificación"
+    >
+      ✕
+    </button>
+  </div>
+
+  <!-- Content Section -->
+  <div class="acta-detail-content" *ngIf="data && !loading">
+    <!-- Status Banner -->
+    <div
+      class="status-banner"
+      [ngClass]="'status-banner--' + data.acta.estado.toLowerCase()"
+    >
+      <div class="banner-info">
+        <span class="banner-title">
+          Acta {{ data.acta.estado === 'APROBADA' ? 'Aprobada' :
+          data.acta.estado === 'EN_DISPUTA' ? 'En Disputa' : data.acta.estado
+          === 'CORREGIDA' ? 'Corregida' : 'Enviada — Pendiente Revisión' }}
+        </span>
+        <span class="banner-sub">
+          ID de control: #{{ data.acta.id }} · JRV-{{ data.acta.jrvId }}
+        </span>
+      </div>
+      <app-badge [variant]="mapBadgeVariant(data.acta.estado)">
+        {{ data.acta.estado }}
+      </app-badge>
+    </div>
+
+    <!-- Reason of Annulment if any -->
+    <div class="disputa-motivo-card" *ngIf="data.acta.motivoAnulacion">
+      <div class="motivo-label">Motivo registrado:</div>
+      <div class="motivo-content">{{ data.acta.motivoAnulacion }}</div>
+    </div>
+
+    <!-- Two-column grid: Metadata + Evidence -->
+    <div class="two-col-grid">
+      <!-- General Metadata -->
+      <app-card [elevated]="true" headerTitle="Datos de la Mesa">
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-label">JRV:</span>
+            <span class="info-value font-bold"
+              >#{{ data.acta.jrvId }} ({{ data.jrv?.numero || 'Mesa Oficial'
+              }})</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="info-label">Dignidad:</span>
+            <span class="info-value font-bold"
+              >{{ data.cargo?.nombre || 'Cargo #' + data.acta.cargoId }}</span
+            >
+          </div>
+          <div class="info-item" *ngIf="data.cargo?.nivel">
+            <span class="info-label">Nivel:</span>
+            <span class="info-value">{{ data.cargo?.nivel }}</span>
+          </div>
+          <div class="info-item" *ngIf="data.jrv?.parroquia">
+            <span class="info-label">Parroquia:</span>
+            <span class="info-value">{{ data.jrv?.parroquia }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Fecha Envío:</span>
+            <span class="info-value"
+              >{{ data.acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm:ss' }}</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="info-label">Total Sufragantes:</span>
+            <span class="info-value font-bold highlight"
+              >{{ data.acta.totalSufragantes }}</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="info-label">Votos Blancos:</span>
+            <span class="info-value">{{ data.acta.votosBlancos }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Votos Nulos:</span>
+            <span class="info-value">{{ data.acta.votosNulos }}</span>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Physical Evidence Image Card -->
+      <app-card [elevated]="true" headerTitle="Evidencia Fotográfica">
+        <div class="evidence-container">
+          <div
+            class="evidence-preview-wrapper"
+            *ngIf="data.acta.storageUrl; else placeholderImage"
+            (click)="imagenZoomAbierto = true"
+          >
+            <img
+              [src]="data.acta.storageUrl"
+              alt="Evidencia fotográfica de acta de escrutinio"
+              class="evidence-image"
+            />
+            <div class="zoom-overlay">
+              <ion-icon name="search-outline" aria-hidden="true"></ion-icon>
+              <span>Click para ampliar</span>
+            </div>
+          </div>
+
+          <ng-template #placeholderImage>
+            <div class="image-placeholder">
+              <ion-icon
+                name="camera-outline"
+                class="placeholder-icon"
+                aria-hidden="true"
+              ></ion-icon>
+              <p class="placeholder-text">
+                Evidencia fotográfica de respaldo en proceso de sincronización
+              </p>
+              <span class="placeholder-sub"
+                >Acta #{{ data.acta.id }} · Almacenamiento Seguro</span
+              >
+            </div>
+          </ng-template>
+        </div>
+      </app-card>
+    </div>
+
+    <!-- Votes Table Breakdown -->
+    <app-card [elevated]="true" headerTitle="Escrutinio por Candidato y Cuadre">
+      <div class="votes-table-wrapper">
+        <table class="votes-table">
+          <thead>
+            <tr>
+              <th scope="col" class="th-candidato">Candidato / Lista</th>
+              <th scope="col" class="th-partido">Organización</th>
+              <th scope="col" class="th-votos">Votos</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of data.candidatos">
+              <td class="td-candidato font-bold">{{ c.nombre }}</td>
+              <td class="td-partido td-muted">
+                {{ c.partidoSiglas ? c.partidoSiglas + ' - ' : '' }}{{
+                c.partidoNombre || 'Independiente' }}
+              </td>
+              <td class="td-votos font-bold">{{ c.votos }}</td>
+            </tr>
+            <tr class="row-subtotal">
+              <td colspan="2">Votos en Blanco</td>
+              <td class="td-votos font-bold">{{ data.acta.votosBlancos }}</td>
+            </tr>
+            <tr class="row-subtotal">
+              <td colspan="2">Votos Nulos</td>
+              <td class="td-votos font-bold">{{ data.acta.votosNulos }}</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="row-total">
+              <th scope="row" colspan="2">Total Sufragantes Registrados</th>
+              <td class="td-votos font-bold total-count">
+                {{ data.acta.totalSufragantes }}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Checksum Status Badge -->
+      <div
+        class="checksum-banner"
+        [class.checksum-banner--valid]="data.checksumValido"
+        [class.checksum-banner--invalid]="!data.checksumValido"
+      >
+        <ion-icon
+          [name]="data.checksumValido ? 'checkmark-circle-outline' : 'alert-circle-outline'"
+          aria-hidden="true"
+        ></ion-icon>
+        <div class="checksum-text">
+          <span class="checksum-title">
+            {{ data.checksumValido ? 'Balance Electoral Consistente' :
+            'Inconsistencia Aritmética Detectada' }}
+          </span>
+          <span class="checksum-detail">
+            Total en acta: {{ data.acta.totalSufragantes }} sufragantes
+          </span>
+        </div>
+      </div>
+    </app-card>
+  </div>
+
+  <!-- ==================== MODAL DISPUTAR ==================== -->
+  <div class="modal-backdrop" *ngIf="modalDisputarAbierto">
+    <div
+      class="modal-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="disputarModalTitle"
+    >
+      <div class="modal-header">
+        <h2 id="disputarModalTitle" class="modal-title">
+          Disputar Acta de Escrutinio
+        </h2>
+        <button
+          class="modal-close-btn"
+          (click)="cerrarModalDisputar()"
+          aria-label="Cerrar modal"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-desc">
+          Indica el motivo por el cual esta acta entra en disputa. El observador
+          o equipo de campo recibirá la notificación para su revisión o
+          recuento.
+        </p>
+
+        <div class="form-group">
+          <label for="motivoDisputa" class="form-label font-bold">
+            Motivo de la Disputa:
+          </label>
+          <textarea
+            id="motivoDisputa"
+            class="form-textarea"
+            rows="4"
+            [(ngModel)]="motivoDisputa"
+            placeholder="Ej: Inconsistencia numérica en votos de candidatos con respecto al acta física escaneada..."
+          ></textarea>
+        </div>
+
+        <div class="form-error" *ngIf="errorDisputa">⚠️ {{ errorDisputa }}</div>
+      </div>
+
+      <div class="modal-footer">
+        <app-button
+          variant="ghost"
+          size="md"
+          (clicked)="cerrarModalDisputar()"
+          [disabled]="submitting"
+        >
+          Cancelar
+        </app-button>
+        <app-button
+          variant="secondary"
+          size="md"
+          (clicked)="confirmarDisputa()"
+          [disabled]="submitting || !motivoDisputa.trim()"
+          [loading]="submitting"
+        >
+          Confirmar Disputa
+        </app-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL CORREGIR ==================== -->
+  <div class="modal-backdrop" *ngIf="modalCorregirAbierto">
+    <div
+      class="modal-dialog modal-dialog--large"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="corregirModalTitle"
+    >
+      <div class="modal-header">
+        <h2 id="corregirModalTitle" class="modal-title">
+          Corregir Acta de Escrutinio
+        </h2>
+        <button
+          class="modal-close-btn"
+          (click)="cerrarModalCorregir()"
+          aria-label="Cerrar modal"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="correction-grid">
+          <div class="form-group">
+            <label for="corrSufragantes" class="form-label font-bold">
+              Total Sufragantes:
+            </label>
+            <input
+              id="corrSufragantes"
+              type="number"
+              min="0"
+              class="form-input"
+              [(ngModel)]="correcionSufragantes"
+            />
+          </div>
+          <div class="form-group">
+            <label for="corrBlancos" class="form-label font-bold">
+              Votos Blancos:
+            </label>
+            <input
+              id="corrBlancos"
+              type="number"
+              min="0"
+              class="form-input"
+              [(ngModel)]="correcionBlancos"
+            />
+          </div>
+          <div class="form-group">
+            <label for="corrNulos" class="form-label font-bold">
+              Votos Nulos:
+            </label>
+            <input
+              id="corrNulos"
+              type="number"
+              min="0"
+              class="form-input"
+              [(ngModel)]="correcionNulos"
+            />
+          </div>
+        </div>
+
+        <h3 class="correction-subtitle">Votos por Candidato</h3>
+        <div class="candidates-correction-list" *ngIf="data">
+          <div
+            class="candidate-correction-row"
+            *ngFor="let c of data.candidatos"
+          >
+            <div class="cand-info">
+              <span class="cand-name font-bold">{{ c.nombre }}</span>
+              <span class="cand-sub td-muted"
+                >{{ c.partidoSiglas || 'Lista' }}</span
+              >
+            </div>
+            <div class="cand-input-wrap">
+              <input
+                type="number"
+                min="0"
+                class="form-input cand-input"
+                [value]="votosCorregidosMap.get(c.id) || 0"
+                (input)="setVotoCorregido(c.id, $event)"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Checksum banner in correction modal -->
+        <div
+          class="modal-checksum"
+          [class.modal-checksum--valid]="isChecksumCorregidoValido"
+          [class.modal-checksum--invalid]="!isChecksumCorregidoValido"
+        >
+          <span>
+            Suma calculada: <strong>{{ sumaVotosCorregidos }}</strong> / Total
+            requerido: <strong>{{ correcionSufragantes }}</strong>
+            (Diferencia: {{ diferenciaChecksumCorregida > 0 ? '+' : '' }}{{
+            diferenciaChecksumCorregida }})
+          </span>
+          <span class="checksum-msg">
+            {{ isChecksumCorregidoValido ? '✓ Total verificado' : '✗ La suma no
+            coincide con el total de sufragantes' }}
+          </span>
+        </div>
+
+        <div class="form-error" *ngIf="errorCorregir">
+          ⚠️ {{ errorCorregir }}
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <app-button
+          variant="ghost"
+          size="md"
+          (clicked)="cerrarModalCorregir()"
+          [disabled]="submitting"
+        >
+          Cancelar
+        </app-button>
+        <app-button
+          variant="primary"
+          size="md"
+          (clicked)="confirmarCorrecion()"
+          [disabled]="submitting || !isChecksumCorregidoValido"
+          [loading]="submitting"
+        >
+          Guardar Corrección
+        </app-button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fullscreen Image Zoom Modal -->
+  <div
+    class="modal-backdrop"
+    *ngIf="imagenZoomAbierto && data?.acta?.storageUrl"
+    (click)="imagenZoomAbierto = false"
+  >
+    <div class="image-zoom-dialog" (click)="$event.stopPropagation()">
+      <button
+        class="zoom-close-btn"
+        (click)="imagenZoomAbierto = false"
+        aria-label="Cerrar vista ampliada"
+      >
+        ✕
+      </button>
+      <img
+        [src]="data!.acta.storageUrl"
+        alt="Acta de escrutinio ampliada"
+        class="full-evidence-img"
+      />
+    </div>
+  </div>
+</div>
