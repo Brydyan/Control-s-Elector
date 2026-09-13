@@ -172,13 +172,21 @@ export class CoordinatorService {
             const cargo = cargos.find((c) => c.id === acta.cargoId);
             const jrv = jrvs.find((j) => j.id === acta.jrvId);
 
+            // When the backend provides the candidate-votes subtotal, the
+            // checksum is exact: SUM(candidatos) + blancos + nulos == total.
+            // Otherwise fall back to the legacy partial check (blancos + nulos).
+            const tieneSubtotal = acta.totalVotosCandidatos != null;
             const totalVotosCalculado =
-              (acta.votosBlancos || 0) + (acta.votosNulos || 0);
+              (tieneSubtotal ? (acta.totalVotosCandidatos as number) : 0) +
+              (acta.votosBlancos || 0) +
+              (acta.votosNulos || 0);
             const diferenciaChecksum =
               totalVotosCalculado - (acta.totalSufragantes || 0);
             const checksumValido =
-              acta.totalSufragantes > 0 &&
-              totalVotosCalculado <= acta.totalSufragantes;
+              (acta.totalSufragantes || 0) > 0 &&
+              (tieneSubtotal
+                ? diferenciaChecksum === 0
+                : totalVotosCalculado <= (acta.totalSufragantes || 0));
 
             return {
               acta,

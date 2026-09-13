@@ -66,6 +66,11 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
   /**
    * Paginated variant of {@link #findWithFilters} for high-volume listings (coordinator inbox).
    *
+   * <p>Returns {@link ec.twintailcs.electoral.acta.web.dto.ActaResponseDto} directly via a JPQL
+   * constructor projection: cargo name and JRV number come from inner joins (both FKs are NOT NULL)
+   * and the candidate-votes subtotal from a correlated subquery over {@code ActaDetalle}. Single
+   * statement, no N+1.
+   *
    * <p>Sorting comes from the {@link Pageable}; do not add a hardcoded ORDER BY here.
    *
    * <p>{@code pattern} is a precomputed LIKE pattern (already lowercased, wildcards escaped,
@@ -79,7 +84,12 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
   @Query(
       value =
           """
-        SELECT a FROM Acta a LEFT JOIN a.jrv j
+        SELECT new ec.twintailcs.electoral.acta.web.dto.ActaResponseDto(
+          a.id, a.jrv.id, a.cargo.id, a.registradaPor.id, a.estado, a.storageUrl,
+          a.totalSufragantes, a.votosBlancos, a.votosNulos, a.fechaRegistro, a.motivoAnulacion,
+          c.nombre, j.numero,
+          (SELECT COALESCE(SUM(d.votos), 0) FROM ActaDetalle d WHERE d.acta = a))
+        FROM Acta a JOIN a.jrv j JOIN a.cargo c
         WHERE (:estado IS NULL OR a.estado = :estado)
           AND (:jrvId IS NULL OR a.jrv.id = :jrvId)
           AND (:cargoId IS NULL OR a.cargo.id = :cargoId)
@@ -101,7 +111,7 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
             OR (:searchId IS NOT NULL AND a.id = :searchId)
             OR (:estadoSearch IS NOT NULL AND a.estado = :estadoSearch))
         """)
-  Page<Acta> findPageWithFilters(
+  Page<ec.twintailcs.electoral.acta.web.dto.ActaResponseDto> findPageWithFilters(
       @Param("estado") EstadoActa estado,
       @Param("jrvId") Long jrvId,
       @Param("cargoId") Long cargoId,

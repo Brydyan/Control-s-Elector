@@ -22,6 +22,9 @@ describe('ActasListaPage', () => {
       votosBlancos: 5,
       votosNulos: 3,
       fechaRegistro: '2026-09-12T10:00:00Z',
+      nombreCargo: 'Prefecto/a',
+      numeroJrv: 'JRV-101-A',
+      totalVotosCandidatos: 192,
     },
     {
       id: 2,
@@ -107,5 +110,23 @@ describe('ActasListaPage', () => {
   it('should navigate to detail view on verDetalle', () => {
     component.verDetalle(1);
     expect(routerMock.navigate).toHaveBeenCalledWith(['/coordinator/actas', 1]);
+  });
+
+  it('should prefer backend denominatives over the cargos lookup', () => {
+    expect(component.obtenerNombreCargo(mockActas[0])).toBe('Prefecto/a');
+    expect(component.obtenerNumeroJrv(mockActas[0])).toBe('JRV-101-A');
+  });
+
+  it('should fall back to cargos lookup when denominatives are absent', () => {
+    expect(component.obtenerNombreCargo(mockActas[1])).toBe('Alcalde/sa');
+    expect(component.obtenerNumeroJrv(mockActas[1])).toBe('JRV-102');
+  });
+
+  it('should compute full checksum only when the subtotal is present', () => {
+    // 192 + 5 + 3 == 200 → exact.
+    expect(component.checksumTexto(mockActas[0])).toBe('200/200');
+    expect(component.checksumValido(mockActas[0])).toBe(true);
+    expect(component.checksumTexto(mockActas[1])).toBeNull();
+    expect(component.checksumValido(mockActas[1])).toBeNull();
   });
 });

@@ -16,4 +16,11 @@ public interface ActaDetalleRepository extends JpaRepository<ActaDetalle, Long> 
 
   @Query("SELECT COALESCE(SUM(d.votos), 0) FROM ActaDetalle d WHERE d.acta = :acta")
   Integer sumarVotosByActa(@Param("acta") Acta acta);
+
+  /**
+   * Candidate-votes subtotal for a single acta, typed as {@link Long} (JPQL SUM over integers).
+   * Used to enrich single-item coordinator responses without N+1.
+   */
+  @Query("SELECT COALESCE(SUM(d.votos), 0) FROM ActaDetalle d WHERE d.acta.id = :actaId")
+  Long sumarVotosPorActaId(@Param("actaId") Long actaId);
 }
