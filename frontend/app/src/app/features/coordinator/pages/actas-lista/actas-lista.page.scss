@@ -361,3 +361,39 @@
     }
   }
 }
+
+/* === Skeletons de carga (tabla desktop + cards mobile) === */
+.actas-skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  padding: var(--space-4, 16px);
+  background: var(--color-surface, #ffffff);
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e7eb);
+
+  &__header {
+    padding-bottom: var(--space-3, 12px);
+    border-bottom: 1px solid var(--color-border, #e5e7eb);
+  }
+
+  &__row {
+    padding: var(--space-2, 8px) 0;
+  }
+}
+
+.actas-skeleton-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+}
+
+.actas-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  padding: var(--space-4, 16px);
+  background: var(--color-surface, #ffffff);
+  border-radius: 8px;
+  border: 1px solid var(--color-border, #e5e7eb);
+}

@@ -11,6 +11,7 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
   LoadingStateComponent,
+  SkeletonComponent,
 } from '../../../../shared/ui';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import {
@@ -35,6 +36,7 @@ import { CoordinatorService } from '../../services/coordinator.service';
     ErrorStateComponent,
     LoadingStateComponent,
     PaginatorComponent,
+    SkeletonComponent,
   ],
   templateUrl: './actas-lista.page.html',
   styleUrls: ['./actas-lista.page.scss'],

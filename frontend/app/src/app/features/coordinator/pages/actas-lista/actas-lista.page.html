@@ -90,10 +90,38 @@
   </div>
 
   <!-- Loading State -->
-  <app-loading-state
-    *ngIf="loading"
-    message="Cargando actas de la circunscripción..."
-  ></app-loading-state>
+  <!-- Skeleton: tabla desktop + cards mobile, con el mismo breakpoint CSS -->
+  <ng-container *ngIf="loading">
+    <!-- Desktop: tabla skeleton con 5 filas fantasma -->
+    <div
+      class="actas-skeleton-table desktop-only"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <div class="actas-skeleton-table__header">
+        <app-skeleton variant="rect" height="20px" width="80%"></app-skeleton>
+      </div>
+      <div
+        class="actas-skeleton-table__row"
+        *ngFor="let _ of [].constructor(5); let i = index"
+      >
+        <app-skeleton variant="rect" height="16px" width="92%"></app-skeleton>
+      </div>
+    </div>
+
+    <!-- Mobile: cards skeleton (3 cards fantasma) -->
+    <div
+      class="actas-skeleton-cards mobile-only"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <div class="actas-skeleton-card" *ngFor="let _ of [].constructor(3)">
+        <app-skeleton variant="rect" height="20px" width="70%"></app-skeleton>
+        <app-skeleton variant="text" [lines]="2"></app-skeleton>
+        <app-skeleton variant="rect" height="14px" width="40%"></app-skeleton>
+      </div>
+    </div>
+  </ng-container>
 
   <!-- Error State -->
   <app-error-state
