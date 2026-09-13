@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
@@ -11,6 +11,7 @@ import {
   ErrorStateComponent,
   LoadingStateComponent,
 } from '../../../../shared/ui';
+import { mapError } from '../../../../shared/errors/error-handler';
 import {
   ActaDetalleCompleto,
   ActaItem,
@@ -20,6 +21,8 @@ import {
   EstadoActa,
 } from '../../models/coordinator.model';
 import { CoordinatorService } from '../../services/coordinator.service';
+
+type ErrorTarget = 'main' | 'disputa' | 'corregir';
 
 @Component({
   selector: 'app-acta-detalle',
@@ -37,10 +40,13 @@ import { CoordinatorService } from '../../services/coordinator.service';
   templateUrl: './acta-detalle.page.html',
   styleUrls: ['./acta-detalle.page.scss'],
 })
-export class ActaDetallePage implements OnInit {
+export class ActaDetallePage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly coordinatorService = inject(CoordinatorService);
+
+  /** Cuánto tiempo permanece visible el mensaje de éxito antes de auto-limpiarse. */
+  private static readonly SUCCESS_VISIBLE_MS = 4000;
 
   actaId!: number;
   data: ActaDetalleCompleto | null = null;
@@ -48,6 +54,9 @@ export class ActaDetallePage implements OnInit {
   submitting = false;
   error: string | null = null;
   actionSuccessMessage: string | null = null;
+  /** True cuando el último error vino de un 409 y debemos recargar al reintentar. */
+  errorEsConflicto = false;
+  private successTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Modal / Action states
   modalDisputarAbierto = false;
@@ -64,6 +73,13 @@ export class ActaDetallePage implements OnInit {
   // Image modal preview
   imagenZoomAbierto = false;
 
+  ngOnDestroy(): void {
+    if (this.successTimer != null) {
+      clearTimeout(this.successTimer);
+      this.successTimer = null;
+    }
+  }
+
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
@@ -78,6 +94,7 @@ export class ActaDetallePage implements OnInit {
   cargarDetalle(): void {
     this.loading = true;
     this.error = null;
+    this.errorEsConflicto = false;
 
     this.coordinatorService.getActaDetalleCompleto(this.actaId).subscribe({
       next: (detalle) => {
@@ -85,12 +102,62 @@ export class ActaDetallePage implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error =
-          err?.error?.message ||
-          'No se pudo cargar el detalle del acta electoral.';
-        this.loading = false;
+        this.submitting = false;
+        this.handleActionError(err, 'main', /* reloadOnConflict */ false);
       },
     });
+  }
+
+  /**
+   * Wrapper unificado para errores de acciones. Setea el mensaje en el slot
+   * correspondiente (main / modal) y, si la app es `conflict`, dispara recarga
+   * automática del detalle para reflejar el estado real en el backend.
+   */
+  private handleActionError(
+    err: unknown,
+    target: ErrorTarget,
+    reloadOnConflict: boolean,
+  ): void {
+    const mapped = mapError(err);
+    if (target === 'disputa') {
+      this.errorDisputa = mapped.message;
+    } else if (target === 'corregir') {
+      this.errorCorregir = mapped.message;
+    } else {
+      this.error = mapped.message;
+    }
+    this.submitting = false;
+
+    if (mapped.type === 'conflict') {
+      this.errorEsConflicto = true;
+      if (reloadOnConflict) {
+        this.cargarDetalle();
+      }
+    }
+  }
+
+  /**
+   * Wrapper unificado para éxito de acciones. Recarga el detalle (fuente de
+   * verdad) en lugar de hacer update optimista del DTO, y agenda auto-clear
+   * del banner de éxito.
+   */
+  private handleActionSuccess(message: string): void {
+    this.actionSuccessMessage = message;
+    this.submitting = false;
+    this.cargarDetalle();
+
+    if (this.successTimer != null) {
+      clearTimeout(this.successTimer);
+    }
+    this.successTimer = setTimeout(() => {
+      this.actionSuccessMessage = null;
+      this.successTimer = null;
+    }, ActaDetallePage.SUCCESS_VISIBLE_MS);
+  }
+
+  /** Botón visible en la sección de error cuando el último fallo fue transitorio. */
+  reintentarCargar(): void {
+    this.cargarDetalle();
   }
 
   volver(): void {
@@ -104,20 +171,11 @@ export class ActaDetallePage implements OnInit {
     }
     this.submitting = true;
     this.error = null;
+    this.errorEsConflicto = false;
 
     this.coordinatorService.aprobarActa(this.actaId).subscribe({
-      next: (actaActualizada) => {
-        if (this.data) {
-          this.data.acta = actaActualizada;
-        }
-        this.submitting = false;
-        this.actionSuccessMessage = '¡Acta APROBADA exitosamente!';
-      },
-      error: (err) => {
-        this.submitting = false;
-        this.error =
-          err?.error?.message || 'Error al intentar aprobar el acta.';
-      },
+      next: () => this.handleActionSuccess('¡Acta APROBADA exitosamente!'),
+      error: (err) => this.handleActionError(err, 'main', true),
     });
   }
 
@@ -146,19 +204,11 @@ export class ActaDetallePage implements OnInit {
     };
 
     this.coordinatorService.disputarActa(this.actaId, payload).subscribe({
-      next: (actaActualizada) => {
-        if (this.data) {
-          this.data.acta = actaActualizada;
-        }
-        this.submitting = false;
+      next: () => {
         this.modalDisputarAbierto = false;
-        this.actionSuccessMessage = 'El acta ha sido puesta EN DISPUTA.';
+        this.handleActionSuccess('El acta ha sido puesta EN DISPUTA.');
       },
-      error: (err) => {
-        this.submitting = false;
-        this.errorDisputa =
-          err?.error?.message || 'Error al intentar disputar el acta.';
-      },
+      error: (err) => this.handleActionError(err, 'disputa', true),
     });
   }
 
@@ -236,21 +286,13 @@ export class ActaDetallePage implements OnInit {
     this.errorCorregir = null;
 
     this.coordinatorService.corregirActa(this.actaId, payload).subscribe({
-      next: (actaActualizada) => {
-        if (this.data) {
-          this.data.acta = actaActualizada;
-        }
-        this.submitting = false;
+      next: () => {
         this.modalCorregirAbierto = false;
-        this.actionSuccessMessage =
-          'El acta ha sido CORREGIDA y quedó lista para aprobación.';
-        this.cargarDetalle();
+        this.handleActionSuccess(
+          'El acta ha sido CORREGIDA y quedó lista para aprobación.',
+        );
       },
-      error: (err) => {
-        this.submitting = false;
-        this.errorCorregir =
-          err?.error?.message || 'Error al guardar la corrección del acta.';
-      },
+      error: (err) => this.handleActionError(err, 'corregir', true),
     });
   }
 
