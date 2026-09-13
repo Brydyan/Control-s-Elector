@@ -39,14 +39,23 @@
       Limpiar todos los filtros
     </button>
   </div>
-  <ng-container *ngIf="loading"
-    ><div class="skeleton-list">
-      <app-skeleton
-        *ngFor="let _ of [1,2,3,4,5]"
-        variant="rect"
-        height="48px"
-      ></app-skeleton></div
-  ></ng-container>
+  <boneyard-skeleton
+    name="admin-usuarios"
+    [loading]="loading"
+    animate="shimmer"
+    [transition]="true"
+  >
+    <div fixture fallback>
+      <ng-container *ngIf="loading"
+        ><div class="skeleton-list">
+          <span
+            *ngFor="let _ of [1,2,3,4,5]"
+            class="skeleton-block"
+            aria-hidden="true"
+          ></span></div
+      ></ng-container>
+    </div>
+  </boneyard-skeleton>
   <app-error-state
     *ngIf="error && !loading"
     title="Error al cargar usuarios"

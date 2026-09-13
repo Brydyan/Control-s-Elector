@@ -24,6 +24,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -190,6 +191,7 @@ public class CoordinatorController {
   }
 
   @GetMapping("/actas/{actaId}")
+  @Transactional(readOnly = true)
   public ResponseEntity<ActaResponseDto> verActa(@PathVariable Long actaId) {
     Acta acta =
         actaRepository
@@ -204,6 +206,7 @@ public class CoordinatorController {
    * Ordenado de más reciente a más antiguo.
    */
   @GetMapping("/actas/{actaId}/historial")
+  @Transactional(readOnly = true)
   public ResponseEntity<List<HistorialActaDto>> historialActa(@PathVariable Long actaId) {
     List<AuditLog> entries =
         auditLogRepository.findByEntidadAndEntidadIdOrderByTimestampDesc("acta", actaId);

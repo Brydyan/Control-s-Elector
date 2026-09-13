@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { SkeletonComponent as BoneyardSkeletonComponent } from 'boneyard-js/angular';
 import { IonIcon } from '@ionic/angular/standalone';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
@@ -10,8 +11,6 @@ import {
   ButtonComponent,
   EmptyStateComponent,
   ErrorStateComponent,
-  LoadingStateComponent,
-  SkeletonComponent,
 } from '../../../../shared/ui';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import {
@@ -34,9 +33,8 @@ import { CoordinatorService } from '../../services/coordinator.service';
     ButtonComponent,
     EmptyStateComponent,
     ErrorStateComponent,
-    LoadingStateComponent,
     PaginatorComponent,
-    SkeletonComponent,
+    BoneyardSkeletonComponent,
   ],
   templateUrl: './actas-lista.page.html',
   styleUrls: ['./actas-lista.page.scss'],

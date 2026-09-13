@@ -1,12 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonIcon } from '@ionic/angular/standalone';
+import { SkeletonComponent as BoneyardSkeletonComponent } from 'boneyard-js/angular';
 import {
   ButtonComponent,
   EmptyStateComponent,
   ErrorStateComponent,
-  SkeletonComponent,
 } from '../../../shared/ui';
 import { PaginatorComponent } from '../../../shared/components/paginator/paginator.component';
 import { FocusTrapDirective } from '../../../shared/a11y/focus-trap.directive';
@@ -24,11 +23,10 @@ import {
   imports: [
     CommonModule,
     FormsModule,
-    IonIcon,
     ButtonComponent,
     EmptyStateComponent,
     ErrorStateComponent,
-    SkeletonComponent,
+    BoneyardSkeletonComponent,
     PaginatorComponent,
     FocusTrapDirective,
   ],

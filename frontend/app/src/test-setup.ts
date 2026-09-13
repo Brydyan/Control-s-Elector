@@ -7,6 +7,28 @@ import {
 } from '@angular/platform-browser-dynamic/testing';
 import { vi } from 'vitest';
 
+if (!globalThis.ResizeObserver) {
+  class ResizeObserverStub {
+    observe(): void {}
+    unobserve(): void {}
+    disconnect(): void {}
+  }
+  globalThis.ResizeObserver = ResizeObserverStub as typeof ResizeObserver;
+}
+
+if (!window.matchMedia) {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as typeof window.matchMedia;
+}
+
 import { addIcons } from 'ionicons';
 import {
   alertCircleOutline,
