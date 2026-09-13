@@ -25,6 +25,47 @@ class PageRequestFactoryTest {
   }
 
   @Test
+  void from_nonIdSort_appendsIdAscTiebreaker() {
+    Pageable pageable =
+        PageRequestFactory.from(0, 20, "fechaRegistro", "desc", ALLOWED_SORTS, DEFAULT_SORT);
+
+    assertThat(pageable.getSort().getOrderFor("fechaRegistro")).isNotNull();
+    assertThat(pageable.getSort().getOrderFor("fechaRegistro").getDirection())
+        .isEqualTo(Sort.Direction.DESC);
+    assertThat(pageable.getSort().getOrderFor("id")).isNotNull();
+    assertThat(pageable.getSort().getOrderFor("id").getDirection()).isEqualTo(Sort.Direction.ASC);
+    // Primary sort must stay first so the tiebreaker never overrides it.
+    assertThat(pageable.getSort().stream().toList().get(0).getProperty())
+        .isEqualTo("fechaRegistro");
+  }
+
+  @Test
+  void from_estadoSort_appendsIdAscTiebreaker() {
+    Pageable pageable =
+        PageRequestFactory.from(0, 20, "estado", "asc", ALLOWED_SORTS, DEFAULT_SORT);
+
+    assertThat(pageable.getSort().getOrderFor("estado")).isNotNull();
+    assertThat(pageable.getSort().getOrderFor("id")).isNotNull();
+    assertThat(pageable.getSort().getOrderFor("id").getDirection()).isEqualTo(Sort.Direction.ASC);
+  }
+
+  @Test
+  void from_idSort_doesNotDuplicateIdOrder() {
+    Pageable pageable = PageRequestFactory.from(0, 20, "id", "desc", ALLOWED_SORTS, DEFAULT_SORT);
+
+    assertThat(pageable.getSort().stream().toList()).hasSize(1);
+    assertThat(pageable.getSort().getOrderFor("id").getDirection()).isEqualTo(Sort.Direction.DESC);
+  }
+
+  @Test
+  void from_defaultSortNotAllowed_throws400mapped() {
+    assertThatThrownBy(
+            () -> PageRequestFactory.from(0, 20, null, null, ALLOWED_SORTS, "passwordHash"))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("invalid defaultSort: passwordHash");
+  }
+
+  @Test
   void from_blankSortAndDir_fallsBackToDefaults() {
     Pageable pageable = PageRequestFactory.from(0, 20, null, null, ALLOWED_SORTS, DEFAULT_SORT);
 

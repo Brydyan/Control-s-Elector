@@ -83,27 +83,21 @@ export class CoordinatorService {
     }
 
     return this.http
-      .get<PagedResponse<ActaItem> | ActaItem[]>(`${this.baseUrl}/actas`, {
+      .get<PagedResponse<ActaItem>>(`${this.baseUrl}/actas`, {
         params,
       })
       .pipe(map((res) => this.toPagedActas(res)));
   }
 
-  private toPagedActas(
-    res: PagedResponse<ActaItem> | ActaItem[],
-  ): PagedResponse<ActaItem> {
-    // Temporary compat: if the backend ever returns a bare array, wrap it
-    // instead of breaking. The main path is the { data, meta } envelope.
-    if (Array.isArray(res)) {
-      return {
-        data: res,
-        meta: {
-          page: 0,
-          size: res.length,
-          totalElements: res.length,
-          totalPages: 1,
-        },
-      };
+  private toPagedActas(res: PagedResponse<ActaItem>): PagedResponse<ActaItem> {
+    // The API contract is the { data, meta } envelope. A bare array (or any
+    // other shape) means the contract regressed — fail loudly instead of
+    // silently wrapping it, so the regression surfaces in tests and logs.
+    if (!res || Array.isArray(res) || !Array.isArray(res.data) || !res.meta) {
+      console.error('[CoordinatorService] Unexpected actas response shape', res);
+      throw new Error(
+        'Unexpected actas response: expected { data, meta } envelope',
+      );
     }
     return res;
   }

@@ -334,6 +334,29 @@ class CoordinatorControllerTest {
   }
 
   @Test
+  void listarActas_conSearchPorEstado_encuentraActa() throws Exception {
+    crearActaEnviada();
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("search", "enviada")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].estado").value("ENVIADA"))
+        .andExpect(jsonPath("$.meta.totalElements").value(1));
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("search", "EN_DISPUTA")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data").isEmpty())
+        .andExpect(jsonPath("$.meta.totalElements").value(0));
+  }
+
+  @Test
   void listarActas_conSearchSinCoincidencia_retornaVacio() throws Exception {
     crearActaEnviada();
 

@@ -109,10 +109,11 @@ describe('CoordinatorService', () => {
     });
   });
 
-  it('should wrap a bare array response for backwards compat', () => {
-    service.getActas().subscribe((paged) => {
-      expect(paged.data.length).toBe(1);
-      expect(paged.meta.totalElements).toBe(1);
+  it('should throw on a bare array response instead of wrapping it', () => {
+    let caught: Error | null = null;
+    service.getActas().subscribe({
+      next: () => fail('expected an error for bare array response'),
+      error: (err: Error) => (caught = err),
     });
 
     const req = httpTesting.expectOne(
@@ -130,6 +131,9 @@ describe('CoordinatorService', () => {
         fechaRegistro: '2026-09-12T12:00:00Z',
       },
     ]);
+
+    expect(caught).toBeTruthy();
+    expect((caught as unknown as Error).message).toContain('{ data, meta }');
   });
 
   it('should approve an acta', () => {

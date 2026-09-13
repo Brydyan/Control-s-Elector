@@ -94,9 +94,11 @@ public class CoordinatorController {
    * <p>Semantics: {@code dignidad} ≡ {@code cargo} — {@code dignidadId} is accepted as an alias of
    * {@code cargoId} (explicit {@code cargoId} wins when both are present) so UI code that already
    * speaks of "dignidades" keeps working. {@code search} matches case-insensitively against the JRV
-   * number and the acta id as string, plus an exact id match when numeric. Default order is {@code
-   * fechaRegistro DESC}. Invalid paging params fail with 400 via {@code GlobalExceptionHandler}
-   * (existing error format) — validation lives in the shared {@code PageRequestFactory}.
+   * number and the acta id as string, plus an exact id match when numeric, plus an exact {@code
+   * EstadoActa} match when the term names a state (e.g. "enviada", "EN_DISPUTA"). Default order is
+   * {@code fechaRegistro DESC}. Invalid paging params fail with 400 via {@code
+   * GlobalExceptionHandler} (existing error format) — validation lives in the shared {@code
+   * PageRequestFactory}.
    */
   @GetMapping("/actas")
   public ResponseEntity<PagedResponse<ActaResponseDto>> listarActas(
@@ -123,6 +125,7 @@ public class CoordinatorController {
             cargoFiltro,
             toLikePattern(searchNorm),
             parseSearchId(searchNorm),
+            parseEstadoSearch(searchNorm),
             pageable);
 
     return ResponseEntity.ok(PagedResponse.of(result.map(actaMapper::toDto)));
@@ -151,6 +154,23 @@ public class CoordinatorController {
     try {
       return Long.valueOf(search);
     } catch (NumberFormatException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Resolves a free-text search term to an {@link EstadoActa} when it names a state
+   * (case-insensitive; {@code -} and spaces normalized to {@code _}). Returns {@code null} when the
+   * term names no state, leaving current JRV/id matching untouched.
+   */
+  static EstadoActa parseEstadoSearch(String search) {
+    if (search == null || search.isBlank()) {
+      return null;
+    }
+    String normalized = search.trim().toUpperCase().replace('-', '_').replace(' ', '_');
+    try {
+      return EstadoActa.valueOf(normalized);
+    } catch (IllegalArgumentException e) {
       return null;
     }
   }

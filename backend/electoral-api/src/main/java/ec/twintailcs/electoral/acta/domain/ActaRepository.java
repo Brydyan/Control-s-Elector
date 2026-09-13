@@ -86,7 +86,8 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
           AND (:pattern IS NULL
             OR LOWER(j.numero) LIKE :pattern ESCAPE '\\'
             OR CAST(a.id AS string) LIKE :pattern ESCAPE '\\'
-            OR (:searchId IS NOT NULL AND a.id = :searchId))
+            OR (:searchId IS NOT NULL AND a.id = :searchId)
+            OR (:estadoSearch IS NOT NULL AND a.estado = :estadoSearch))
         """,
       countQuery =
           """
@@ -97,7 +98,8 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
           AND (:pattern IS NULL
             OR LOWER(j.numero) LIKE :pattern ESCAPE '\\'
             OR CAST(a.id AS string) LIKE :pattern ESCAPE '\\'
-            OR (:searchId IS NOT NULL AND a.id = :searchId))
+            OR (:searchId IS NOT NULL AND a.id = :searchId)
+            OR (:estadoSearch IS NOT NULL AND a.estado = :estadoSearch))
         """)
   Page<Acta> findPageWithFilters(
       @Param("estado") EstadoActa estado,
@@ -105,6 +107,7 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
       @Param("cargoId") Long cargoId,
       @Param("pattern") String pattern,
       @Param("searchId") Long searchId,
+      @Param("estadoSearch") EstadoActa estadoSearch,
       Pageable pageable);
 
   long countByEstado(EstadoActa estado);
