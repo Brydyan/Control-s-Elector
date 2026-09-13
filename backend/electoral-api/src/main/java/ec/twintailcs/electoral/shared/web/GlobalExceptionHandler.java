@@ -24,6 +24,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Traduce excepciones a respuestas JSON consistentes.
@@ -153,6 +154,20 @@ public class GlobalExceptionHandler {
   public ResponseEntity<Map<String, Object>> generic(Exception ex) {
     log.error("Unhandled exception", ex);
     return body(HttpStatus.INTERNAL_SERVER_ERROR, "internal error", null);
+  }
+
+  /**
+   * Respeta el status code de las ResponseStatusException explícitas (ej. 404 de "Sesion no
+   * encontrada"). Sin este handler, el genérico las convierte a 500.
+   */
+  @ExceptionHandler(ResponseStatusException.class)
+  public ResponseEntity<Map<String, Object>> responseStatus(ResponseStatusException ex) {
+    HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+    if (status == null) {
+      status = HttpStatus.INTERNAL_SERVER_ERROR;
+    }
+    String message = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+    return body(status, message, null);
   }
 
   private ResponseEntity<Map<String, Object>> body(
