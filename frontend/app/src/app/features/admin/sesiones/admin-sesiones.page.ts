@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SkeletonComponent as BoneyardSkeletonComponent } from 'boneyard-js/angular';
 import {
   ButtonComponent,
   EmptyStateComponent,
   ErrorStateComponent,
+  SkeletonComponent,
 } from '../../../shared/ui';
 import { PaginatorComponent } from '../../../shared/components/paginator/paginator.component';
 import { FocusTrapDirective } from '../../../shared/a11y/focus-trap.directive';
@@ -21,7 +21,7 @@ import { SesionFiltros, SesionResponseDto } from '../models/admin.model';
     ButtonComponent,
     EmptyStateComponent,
     ErrorStateComponent,
-    BoneyardSkeletonComponent,
+    SkeletonComponent,
     PaginatorComponent,
     FocusTrapDirective,
   ],

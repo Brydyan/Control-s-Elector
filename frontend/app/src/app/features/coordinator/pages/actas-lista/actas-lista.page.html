@@ -91,13 +91,14 @@
 
   <!-- Loading State -->
   <!-- Skeleton: tabla desktop + cards mobile, con el mismo breakpoint CSS -->
-  <boneyard-skeleton
+  <app-skeleton
     name="coordinator-actas-lista"
     [loading]="loading"
     animate="shimmer"
     [transition]="true"
+    [loadingBoundary]="true"
   >
-    <div fixture fallback>
+    <div>
       <ng-container *ngIf="loading">
         <!-- Desktop: tabla skeleton con 5 filas fantasma -->
         <div
@@ -145,7 +146,7 @@
         </div>
       </ng-container>
     </div>
-  </boneyard-skeleton>
+  </app-skeleton>
 
   <!-- Error State -->
   <app-error-state

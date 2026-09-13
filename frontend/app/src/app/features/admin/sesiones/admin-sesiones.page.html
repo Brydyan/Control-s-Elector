@@ -13,13 +13,14 @@
       aria-label="Buscar sesiones"
     />
   </div>
-  <boneyard-skeleton
+  <app-skeleton
     name="admin-sesiones"
     [loading]="loading"
     animate="shimmer"
     [transition]="true"
+    [loadingBoundary]="true"
   >
-    <div fixture fallback>
+    <div>
       <ng-container *ngIf="loading"
         ><div class="skeleton-list">
           <span
@@ -29,7 +30,7 @@
           ></span></div
       ></ng-container>
     </div>
-  </boneyard-skeleton>
+  </app-skeleton>
   ><app-error-state
     *ngIf="error && !loading"
     title="Error al cargar sesiones"
