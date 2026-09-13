@@ -5,10 +5,14 @@ on:
     branches:
       - develop
 
+# Skip con label 'skip-cd' en el commit o el PR. Útil cuando querés mergear
+# a develop para que CI corra pero no deployar (ej. cambios de docs, tests,
+# o cualquier cosa que no quieras en staging todavía).
 jobs:
   deploy:
     name: Desplegar en Servidor Staging
     runs-on: [self-hosted, Linux]
+    if: "!contains(github.event.head_commit.message, '[skip-cd]') && !contains(github.event.pull_request.labels.*.name, 'skip-cd')"
 
     steps:
       - name: Descargar código del repositorio
