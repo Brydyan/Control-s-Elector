@@ -1,0 +1,51 @@
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  display: inline-block;
+  background-color: var(--color-neutral-200, #e5e7eb);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.4s ease-in-out infinite;
+  vertical-align: middle;
+
+  &--text {
+    display: block;
+    margin-bottom: 0.4em;
+    border-radius: 4px;
+  }
+
+  &--rect {
+    border-radius: 6px;
+  }
+
+  &--circle {
+    border-radius: 50%;
+  }
+}
+
+/* Accesibilidad: respetar reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+/* Modo oscuro: ajusta el color base para que no sea invisible */
+@media (prefers-color-scheme: dark) {
+  .skeleton {
+    background-color: var(--color-neutral-700, #374151);
+  }
+}
