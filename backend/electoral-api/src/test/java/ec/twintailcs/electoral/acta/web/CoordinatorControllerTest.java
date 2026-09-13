@@ -292,15 +292,58 @@ class CoordinatorControllerTest {
 
   @Test
   void listarActas_conFiltroCantonId() throws Exception {
-    crearActaEnviada();
+    Long cantonObjetivoId = jrv.getParroquia().getCanton().getId();
+    Acta actaDelCantonObjetivo = crearActaEnviada();
 
+    // Acta control en OTRO cantón — si el filtro no excluye, totalElements sube a 2
+    // y el data[0] deja de ser el actaObjetivo.
+    Provincia otraProvincia = provinciaRepo.saveAndFlush(new Provincia("Guayas", "09"));
+    Canton otroCanton = new Canton();
+    otroCanton.setNombre("Guayaquil");
+    otroCanton.setCodigo("0901");
+    otroCanton.setProvincia(otraProvincia);
+    otroCanton = cantonRepo.saveAndFlush(otroCanton);
+
+    Parroquia otraParroquia = new Parroquia();
+    otraParroquia.setNombre("Tarqui");
+    otraParroquia.setEsUrbana(true);
+    otraParroquia.setCanton(otroCanton);
+    otraParroquia = parroquiaRepo.saveAndFlush(otraParroquia);
+
+    Jrv otraJrv = new Jrv();
+    otraJrv.setNumero("JRV-" + UUID.randomUUID().toString().substring(0, 8));
+    otraJrv.setRecinto("Escuela Control");
+    otraJrv.setTotalElectores(200);
+    otraJrv.setParroquia(otraParroquia);
+    otraJrv = jrvRepo.saveAndFlush(otraJrv);
+
+    Acta actaControl = new Acta();
+    actaControl.setJrv(otraJrv);
+    actaControl.setCargo(cargo);
+    actaControl.setRegistradaPor(observer);
+    actaControl.setEstado(EstadoActa.ENVIADA);
+    actaControl.setTotalSufragantes(40);
+    actaControl.setVotosBlancos(1);
+    actaControl.setVotosNulos(2);
+    actaRepo.saveAndFlush(actaControl);
+
+    // Sanity: sin filtro deben aparecer las dos.
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas").header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.meta.totalElements").value(2));
+
+    // Con cantonId del cantón objetivo debe aparecer SÓLO esa acta.
     mockMvc
         .perform(
             get("/api/v1/coordinator/actas")
-                .param("cantonId", String.valueOf(jrv.getParroquia().getCanton().getId()))
+                .param("cantonId", String.valueOf(cantonObjetivoId))
                 .header("Authorization", "Bearer " + coordinatorToken))
         .andExpect(status().isOk())
-        .andExpect(jsonPath("$.meta.totalElements").value(1));
+        .andExpect(jsonPath("$.meta.totalElements").value(1))
+        .andExpect(jsonPath("$.data[0].id").value(actaDelCantonObjetivo.getId()))
+        .andExpect(jsonPath("$.data[0].jrvId").value(jrv.getId()));
   }
 
   @Test
