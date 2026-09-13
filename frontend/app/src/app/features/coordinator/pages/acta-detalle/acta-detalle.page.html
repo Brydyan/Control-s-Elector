@@ -257,7 +257,9 @@
 
   <!-- Historial de transiciones -->
   <app-card [elevated]="true" headerTitle="Historial de Transiciones">
-    <ng-container *ngIf="(data?.historial ?? []).length > 0; else historialVacio">
+    <ng-container
+      *ngIf="(data?.historial ?? []).length > 0; else historialVacio"
+    >
       <ol
         class="historial-list"
         aria-label="Línea de tiempo de transiciones del acta"
