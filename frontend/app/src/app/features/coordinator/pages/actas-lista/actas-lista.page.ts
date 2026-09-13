@@ -16,6 +16,7 @@ import { PaginatorComponent } from '../../../../shared/components/paginator/pagi
 import {
   ActaFiltros,
   ActaItem,
+  CantonResumen,
   CargoResumen,
   EstadoActa,
 } from '../../models/coordinator.model';
@@ -46,11 +47,14 @@ export class ActasListaPage implements OnInit, OnDestroy {
 
   actas: ActaItem[] = [];
   cargos: CargoResumen[] = [];
+  cantones: CantonResumen[] = [];
   loading = true;
   error: string | null = null;
 
+  esMaster = false;
   estadoSeleccionado: EstadoActa | 'TODAS' = 'TODAS';
   cargoSeleccionado: number | null = null;
+  cantonSeleccionado: number | null = null;
   terminoBusqueda = '';
 
   page = 0;
@@ -70,7 +74,9 @@ export class ActasListaPage implements OnInit, OnDestroy {
   ];
 
   ngOnInit(): void {
+    this.esMaster = this.detectarRolMaster();
     this.cargarCargos();
+    this.cargarCantones();
     this.busqueda$
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe(() => {
@@ -96,15 +102,51 @@ export class ActasListaPage implements OnInit, OnDestroy {
     });
   }
 
+  cargarCantones(): void {
+    this.coordinatorService.getCantones().subscribe({
+      next: (cantones) => {
+        this.cantones = cantones;
+      },
+      error: (err) => {
+        console.error('Error cargando cantones:', err);
+      },
+    });
+  }
+
+  /**
+   * Determina si el usuario actual tiene rol MASTER para mostrar la acción
+   * "Anular" en la bandeja. La autoridad real la aplica el backend con
+   * @PreAuthorize("hasAuthority('acta:anular')"); este método sólo controla
+   * la visibilidad en la UI y nunca es un control de seguridad.
+   */
+  private detectarRolMaster(): boolean {
+    try {
+      const sources = [
+        sessionStorage.getItem('app.user.roles'),
+        localStorage.getItem('app.user.roles'),
+      ];
+      const joined = sources.filter(Boolean).join(',').toUpperCase();
+      return joined.includes('MASTER');
+    } catch {
+      return false;
+    }
+  }
+
   cargarActas(): void {
     this.loading = true;
     this.error = null;
 
     const filtros: ActaFiltros = {
       estado: this.estadoSeleccionado,
+
       cargoId: this.cargoSeleccionado ?? undefined,
+
+      cantonId: this.cantonSeleccionado ?? undefined,
+
       search: this.terminoBusqueda.trim() || undefined,
+
       page: this.page,
+
       size: this.size,
     };
 
@@ -138,6 +180,13 @@ export class ActasListaPage implements OnInit, OnDestroy {
     this.cargarActas();
   }
 
+  cambiarCanton(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    this.cantonSeleccionado = select.value ? Number(select.value) : null;
+    this.page = 0;
+    this.cargarActas();
+  }
+
   onBusquedaChange(): void {
     this.busqueda$.next(this.terminoBusqueda);
   }
@@ -146,6 +195,47 @@ export class ActasListaPage implements OnInit, OnDestroy {
     this.terminoBusqueda = '';
     this.page = 0;
     this.cargarActas();
+  }
+
+  limpiarFiltros(): void {
+    this.terminoBusqueda = '';
+    this.cargoSeleccionado = null;
+    this.cantonSeleccionado = null;
+    this.estadoSeleccionado = 'TODAS';
+    this.page = 0;
+    this.cargarActas();
+  }
+
+  tieneFiltrosActivos(): boolean {
+    return (
+      this.terminoBusqueda.trim().length > 0 ||
+      this.cargoSeleccionado !== null ||
+      this.cantonSeleccionado !== null ||
+      this.estadoSeleccionado !== 'TODAS'
+    );
+  }
+
+  puedeAnular(acta: ActaItem): boolean {
+    return this.esMaster && acta.estado === 'APROBADA';
+  }
+
+  anular(actaId: number): void {
+    if (
+      !confirm(
+        '¿Anular el acta aprobada? Esta acción es irreversible y queda auditada.',
+      )
+    ) {
+      return;
+    }
+    this.loading = true;
+    this.coordinatorService.anularActa(actaId).subscribe({
+      next: () => this.cargarActas(),
+      error: (err) => {
+        this.error =
+          err?.error?.message || 'No se pudo anular el acta seleccionada.';
+        this.loading = false;
+      },
+    });
   }
 
   onPageChange(next: number): void {
