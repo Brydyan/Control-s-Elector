@@ -52,6 +52,8 @@ describe('ActasListaPage', () => {
     coordinatorServiceMock = {
       getActas: vi.fn().mockReturnValue(of(mockPaged)),
       getCargos: vi.fn().mockReturnValue(of(mockCargos)),
+      getCantones: vi.fn().mockReturnValue(of([])),
+      anularActa: vi.fn().mockReturnValue(of(undefined)),
     };
 
     routerMock = {
@@ -128,5 +130,40 @@ describe('ActasListaPage', () => {
     expect(component.checksumValido(mockActas[0])).toBe(true);
     expect(component.checksumTexto(mockActas[1])).toBeNull();
     expect(component.checksumValido(mockActas[1])).toBeNull();
+  });
+
+  it('should start with no active filters and not show the clear button', () => {
+    expect(component.tieneFiltrosActivos()).toBe(false);
+  });
+
+  it('should expose the clear button after any filter is touched', () => {
+    component.estadoSeleccionado = 'ENVIADA';
+    expect(component.tieneFiltrosActivos()).toBe(true);
+  });
+
+  it('should reset every filter when limpiarFiltros is called', () => {
+    component.terminoBusqueda = 'foo';
+    component.estadoSeleccionado = 'EN_DISPUTA';
+    component.cargoSeleccionado = 7;
+    component.cantonSeleccionado = 3;
+
+    component.limpiarFiltros();
+
+    expect(component.terminoBusqueda).toBe('');
+    expect(component.estadoSeleccionado).toBe('TODAS');
+    expect(component.cargoSeleccionado).toBeNull();
+    expect(component.cantonSeleccionado).toBeNull();
+  });
+
+  it('should only allow MASTER to see the Anular action on APROBADA', () => {
+    component.esMaster = false;
+    expect(component.puedeAnular(mockActas[0])).toBe(false); // ENVIADA
+
+    const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
+    expect(component.puedeAnular(aprobada)).toBe(false); // not MASTER yet
+
+    component.esMaster = true;
+    expect(component.puedeAnular(aprobada)).toBe(true);
+    expect(component.puedeAnular(mockActas[0])).toBe(false); // not APROBADA
   });
 });
