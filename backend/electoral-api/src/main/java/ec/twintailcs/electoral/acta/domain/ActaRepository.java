@@ -54,6 +54,7 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
         WHERE (:estado IS NULL OR a.estado = :estado)
           AND (:jrvId IS NULL OR a.jrv.id = :jrvId)
           AND (:cargoId IS NULL OR a.cargo.id = :cargoId)
+          AND (:cantonId IS NULL OR a.jrv.parroquia.canton.id = :cantonId)
           AND (:registradaPorId IS NULL OR a.registradaPor.id = :registradaPorId)
         ORDER BY a.fechaRegistro DESC
         """)
@@ -61,6 +62,7 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
       @Param("estado") EstadoActa estado,
       @Param("jrvId") Long jrvId,
       @Param("cargoId") Long cargoId,
+      @Param("cantonId") Long cantonId,
       @Param("registradaPorId") Long registradaPorId);
 
   /**
@@ -93,6 +95,7 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
         WHERE (:estado IS NULL OR a.estado = :estado)
           AND (:jrvId IS NULL OR a.jrv.id = :jrvId)
           AND (:cargoId IS NULL OR a.cargo.id = :cargoId)
+          AND (:cantonId IS NULL OR a.jrv.parroquia.canton.id = :cantonId)
           AND (:pattern IS NULL
             OR LOWER(j.numero) LIKE :pattern ESCAPE '\\'
             OR CAST(a.id AS string) LIKE :pattern ESCAPE '\\'
@@ -105,6 +108,7 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
         WHERE (:estado IS NULL OR a.estado = :estado)
           AND (:jrvId IS NULL OR a.jrv.id = :jrvId)
           AND (:cargoId IS NULL OR a.cargo.id = :cargoId)
+          AND (:cantonId IS NULL OR a.jrv.parroquia.canton.id = :cantonId)
           AND (:pattern IS NULL
             OR LOWER(j.numero) LIKE :pattern ESCAPE '\\'
             OR CAST(a.id AS string) LIKE :pattern ESCAPE '\\'
@@ -115,6 +119,7 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
       @Param("estado") EstadoActa estado,
       @Param("jrvId") Long jrvId,
       @Param("cargoId") Long cargoId,
+      @Param("cantonId") Long cantonId,
       @Param("pattern") String pattern,
       @Param("searchId") Long searchId,
       @Param("estadoSearch") EstadoActa estadoSearch,
