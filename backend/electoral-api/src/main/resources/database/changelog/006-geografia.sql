@@ -60,16 +60,7 @@ CREATE INDEX ix_jrv_parroquia ON jrv (parroquia_id);
 -- rollback DROP TABLE jrv;
 
 
--- changeset electoral:006-05-create-refresh-token
-CREATE TABLE refresh_token (
-    id        BIGSERIAL     PRIMARY KEY,
-    token     VARCHAR(255)  NOT NULL,
-    usuario_id BIGINT       NOT NULL,
-    expires_at TIMESTAMP    NOT NULL,
-    revocado  BOOLEAN       NOT NULL DEFAULT FALSE,
-    creado_en TIMESTAMP     NOT NULL,
-    CONSTRAINT fk_refresh_token_usuario FOREIGN KEY (usuario_id) REFERENCES usuario (id)
-);
-CREATE UNIQUE INDEX ix_refresh_token_token ON refresh_token (token);
-CREATE INDEX ix_refresh_token_usuario ON refresh_token (usuario_id);
--- rollback DROP TABLE refresh_token;
+-- changeset electoral:006-05-create-refresh-token REMOVED 2026-09-13 (PR #94)
+-- RefreshToken quedó como código muerto: guardaba el token plano (inseguro) y
+-- nunca fue referenciado por la lógica de negocio. El reemplazo correcto es
+-- Sesion (BCrypt hash + IP + userAgent + ultimoUsoEn).

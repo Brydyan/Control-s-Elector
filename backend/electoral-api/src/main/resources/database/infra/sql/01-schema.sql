@@ -67,15 +67,6 @@ CREATE TABLE IF NOT EXISTS usuario (
     actualizado_en TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
--- Refresh Token (para sesiones, revocación)
-CREATE TABLE IF NOT EXISTS refresh_token (
-    id BIGSERIAL PRIMARY KEY,
-    token VARCHAR(255) NOT NULL UNIQUE,
-    usuario_id BIGINT NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
-    expires_at TIMESTAMPTZ NOT NULL,
-    revocado BOOLEAN NOT NULL DEFAULT FALSE,
-    creado_en TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
 
 -- Asignación: qué JRVs supervisa cada OBSERVER
 CREATE TABLE IF NOT EXISTS observer_jrv_asignacion (
@@ -222,7 +213,6 @@ CREATE INDEX IF NOT EXISTS idx_jrv_parroquia ON jrv(parroquia_id);
 -- Usuarios y sesiones
 CREATE INDEX IF NOT EXISTS idx_usuario_email ON usuario(email);
 CREATE INDEX IF NOT EXISTS idx_usuario_rol ON usuario(rol_id);
-CREATE INDEX IF NOT EXISTS idx_refresh_token_usuario ON refresh_token(usuario_id);
 CREATE INDEX IF NOT EXISTS idx_observer_jrv_observer ON observer_jrv_asignacion(observer_id);
 CREATE INDEX IF NOT EXISTS idx_observer_jrv_jrv ON observer_jrv_asignacion(jrv_id);
 
