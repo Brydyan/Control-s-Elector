@@ -314,7 +314,12 @@
   </app-card>
 
   <!-- ==================== MODAL DISPUTAR ==================== -->
-  <div class="modal-backdrop" *ngIf="modalDisputarAbierto">
+  <div
+    class="modal-backdrop"
+    *ngIf="modalDisputarAbierto"
+    [appFocusTrap]="modalDisputarAbierto"
+    [escapeCallback]="cerrarModalDisputar.bind(this)"
+  >
     <div
       class="modal-dialog"
       role="dialog"
@@ -380,7 +385,12 @@
   </div>
 
   <!-- ==================== MODAL CORREGIR ==================== -->
-  <div class="modal-backdrop" *ngIf="modalCorregirAbierto">
+  <div
+    class="modal-backdrop"
+    *ngIf="modalCorregirAbierto"
+    [appFocusTrap]="modalCorregirAbierto"
+    [escapeCallback]="cerrarModalCorregir.bind(this)"
+  >
     <div
       class="modal-dialog modal-dialog--large"
       role="dialog"
