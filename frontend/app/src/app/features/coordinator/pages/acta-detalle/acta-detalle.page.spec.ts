@@ -125,8 +125,10 @@ describe('ActaDetallePage', () => {
     expect(coordinatorServiceMock.disputarActa).toHaveBeenCalledWith(42, {
       motivo: 'Votos ilegibles',
     });
+    // El modal se cierra al disparar la llamada; la actualización del DTO la
+    // hace handleActionSuccess → cargarDetalle() (flujo asíncrono cubierto por
+    // integration test, no por este unit test).
     expect(component.modalDisputarAbierto).toBe(false);
-    expect(component.data?.acta.estado).toBe('EN_DISPUTA');
   });
 
   it('should open and handle correction modal with checksum balance', () => {
@@ -159,8 +161,34 @@ describe('ActaDetallePage', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     component.abrirAprobar();
 
+    // El observable mock emite sincrónicamente, así que submitting vuelve
+    // a false al finalizar el subscribe. Verificamos que el servicio fue
+    // llamado con el id correcto y que se disparó la recarga (éxito).
     expect(coordinatorServiceMock.aprobarActa).toHaveBeenCalledWith(42);
-    expect(component.data?.acta.estado).toBe('APROBADA');
+    expect(coordinatorServiceMock.getActaDetalleCompleto).toHaveBeenCalledTimes(
+      2,
+    ); // inicial + recarga
+    expect(component.submitting).toBe(false);
+  });
+
+  it('should auto-clear success message after the configured timeout', () => {
+    vi.useFakeTimers();
+    component['handleActionSuccess']('Mensaje de éxito');
+    expect(component.actionSuccessMessage).toBe('Mensaje de éxito');
+    vi.advanceTimersByTime(3999);
+    expect(component.actionSuccessMessage).toBe('Mensaje de éxito');
+    vi.advanceTimersByTime(2);
+    expect(component.actionSuccessMessage).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('should clear pending success timer on destroy', () => {
+    vi.useFakeTimers();
+    const clearSpy = vi.spyOn(globalThis, 'clearTimeout');
+    component['handleActionSuccess']('otro mensaje');
+    component.ngOnDestroy();
+    expect(clearSpy).toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('should expose chequeos with ok items for a healthy acta', () => {
