@@ -39,12 +39,18 @@ con `cp`, `rm` del `.bak`, `git status --short` limpio.
 **Nunca `git checkout --`.**
 
 - [x] **B.1** — RF-COORD-02 (sólo MASTER anula). Quitá
-  `@PreAuthorize("hasRole('MASTER')")` del método `anular` en `CoordinatorController`.
-  Debe caer el test de COORDINATOR → 403.
+  `@PreAuthorize("hasAuthority('acta:anular')")` del método `anular` en
+  `CoordinatorController` (línea 218). El permiso `acta:anular` está asignado únicamente al
+  rol MASTER; sin esta anotación, el `@PreAuthorize` de clase permite COORDINATOR y el 403
+  desaparece. Debe caer `anular_asCoordinator_returns403`.
 
   **Trampa**: el `@PreAuthorize` de clase permite COORDINATOR. Si el de método no está, el
   de clase lo autoriza y el 403 desaparece **sin error de compilación**. Es el fallo que
   esta mutación existe para detectar.
+
+  **Nota**: la versión original de esta task proponía `@PreAuthorize("hasRole('MASTER')")`,
+  pero el stack de hardening #68-#71 migró el módulo a permisos por string. La garantía
+  (que COORDINATOR no pueda anular) sigue siendo la misma; cambió el mecanismo.
 
 - [x] **B.2** — RF-COORD-03 (sólo APROBADAS se anulan). Quitá el guard
   `if (acta.getEstado() != EstadoActa.APROBADA)` de `ActaService.anular`.

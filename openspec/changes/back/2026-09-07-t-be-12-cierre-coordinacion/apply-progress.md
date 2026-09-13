@@ -19,7 +19,7 @@
 
 | ID | Mutación | Test que cayó exactamente | Decisión |
 |---|---|---|---|
-| B.1 | Se quitó la autorización específica de anulación. | `CoordinatorControllerTest.anular_asCoordinator_returns403` | Pasó; se restauró con `.bak`. |
+| B.1 | Se quitó `@PreAuthorize("hasAuthority('acta:anular')")` del método `anular` (línea 218 de `CoordinatorController.java`). | `CoordinatorControllerTest.anular_asCoordinator_returns403` | Pasó; se restauró con `.bak`. **Nota**: el contrato de mutación original proponía `@PreAuthorize("hasRole('MASTER')")`, pero el stack de hardening #68-#71 migró a permisos por string. La mutación se ajustó para reflejar el código vigente, preservando la garantía RF-COORD-02 (COORDINATOR no puede anular). |
 | B.2 | Se eliminó el guard APROBADA en `AnularActaUseCase`. | `CoordinatorControllerTest.anular_asMaster_actaEnviada_retorna409` | Se añadió el test faltante; pasó; se restauró con `.bak`. |
 | B.3 | Se permitió EN_DISPUTA en `AprobarActaUseCase`. | `CoordinatorControllerTest.aprobar_actaEnDisputa_retorna409` | Se añadió el test faltante; pasó; se restauró con `.bak`. |
 | B.4 | Se quitó `@NotBlank` de `DisputaDto.motivo`. | `CoordinatorControllerTest.disputar_sinMotivo_returns400` | Pasó; se restauró con `.bak`. |
