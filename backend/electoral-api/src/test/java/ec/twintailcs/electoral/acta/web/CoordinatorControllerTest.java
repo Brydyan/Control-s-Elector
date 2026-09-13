@@ -8,6 +8,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import ec.twintailcs.electoral.acta.domain.Acta;
+import ec.twintailcs.electoral.acta.domain.ActaDetalle;
+import ec.twintailcs.electoral.acta.domain.ActaDetalleRepository;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
 import ec.twintailcs.electoral.auditlog.domain.AuditLogRepository;
@@ -73,6 +75,8 @@ class CoordinatorControllerTest {
   @Autowired private MockMvc mockMvc;
 
   @Autowired private ActaRepository actaRepo;
+
+  @Autowired private ActaDetalleRepository actaDetalleRepo;
 
   @Autowired private UsuarioRepository usuarioRepo;
 
@@ -226,6 +230,11 @@ class CoordinatorControllerTest {
     acta.setVotosBlancos(2);
     acta.setVotosNulos(1);
     return actaRepo.saveAndFlush(acta);
+  }
+
+  private void crearDetalle(Acta acta, Candidato candidato, int votos) {
+    ActaDetalle detalle = new ActaDetalle(acta, candidato, votos);
+    actaDetalleRepo.saveAndFlush(detalle);
   }
 
   private String actaCorreccionBody() {
@@ -387,6 +396,94 @@ class CoordinatorControllerTest {
         .andExpect(jsonPath("$.meta.totalElements").value(2))
         .andExpect(jsonPath("$.data[0].id").value(primera.getId()))
         .andExpect(jsonPath("$.data[1].id").value(segunda.getId()));
+  }
+
+  @Test
+  void listarActas_incluyeDenominativosYSubtotal() throws Exception {
+    Acta acta = crearActaEnviada();
+    crearDetalle(acta, candidatoA, 30);
+    crearDetalle(acta, candidatoB, 17);
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("estado", "ENVIADA")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].id").value(acta.getId()))
+        .andExpect(jsonPath("$.data[0].nombreCargo").value("Alcalde/sa"))
+        .andExpect(jsonPath("$.data[0].numeroJrv").value(jrv.getNumero()))
+        .andExpect(jsonPath("$.data[0].totalVotosCandidatos").value(47))
+        .andExpect(jsonPath("$.meta.totalElements").value(1));
+  }
+
+  @Test
+  void listarActas_checksumCompleto_conSubtotalMasBlancosMasNulos() throws Exception {
+    Acta acta = crearActaEnviada();
+    crearDetalle(acta, candidatoA, 30);
+    crearDetalle(acta, candidatoB, 17);
+
+    // Full checksum invariant: SUM(detalles) + blancos + nulos == totalSufragantes.
+    // 30 + 17 + 2 + 1 == 50.
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("estado", "ENVIADA")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].totalVotosCandidatos").value(47))
+        .andExpect(jsonPath("$.data[0].votosBlancos").value(2))
+        .andExpect(jsonPath("$.data[0].votosNulos").value(1))
+        .andExpect(jsonPath("$.data[0].totalSufragantes").value(50));
+  }
+
+  @Test
+  void listarActas_sinDetalles_subtotalCero() throws Exception {
+    Acta acta = crearActaEnviada();
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas").header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.data[0].id").value(acta.getId()))
+        .andExpect(jsonPath("$.data[0].totalVotosCandidatos").value(0));
+  }
+
+  @Test
+  void listarActas_paginacionYOrden_conDenominativos() throws Exception {
+    Acta primera = crearActaEnviada();
+    Cargo otroCargo = cargoRepo.saveAndFlush(new Cargo("Prefecto/a", NivelCargo.PROVINCIA, 1));
+    Acta segunda = crearActaEnviada(otroCargo);
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas")
+                .param("sort", "id")
+                .param("dir", "asc")
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.meta.totalElements").value(2))
+        .andExpect(jsonPath("$.data[0].id").value(primera.getId()))
+        .andExpect(jsonPath("$.data[0].nombreCargo").value("Alcalde/sa"))
+        .andExpect(jsonPath("$.data[1].id").value(segunda.getId()))
+        .andExpect(jsonPath("$.data[1].nombreCargo").value("Prefecto/a"));
+  }
+
+  @Test
+  void verActa_incluyeDenominativosYSubtotal() throws Exception {
+    Acta acta = crearActaEnviada();
+    crearDetalle(acta, candidatoA, 30);
+    crearDetalle(acta, candidatoB, 17);
+
+    mockMvc
+        .perform(
+            get("/api/v1/coordinator/actas/{actaId}", acta.getId())
+                .header("Authorization", "Bearer " + coordinatorToken))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.id").value(acta.getId()))
+        .andExpect(jsonPath("$.nombreCargo").value("Alcalde/sa"))
+        .andExpect(jsonPath("$.numeroJrv").value(jrv.getNumero()))
+        .andExpect(jsonPath("$.totalVotosCandidatos").value(47));
   }
 
   @Test

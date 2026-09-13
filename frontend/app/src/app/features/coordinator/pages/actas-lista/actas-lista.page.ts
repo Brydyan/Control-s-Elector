@@ -182,9 +182,47 @@ export class ActasListaPage implements OnInit, OnDestroy {
     return estado;
   }
 
-  obtenerNombreCargo(cargoId: number): string {
-    const cargo = this.cargos.find((c) => c.id === cargoId);
-    return cargo ? cargo.nombre : `Cargo #${cargoId}`;
+  obtenerNombreCargo(acta: ActaItem): string {
+    // Prefer the backend-provided denominative (no per-row lookup needed).
+    if (acta.nombreCargo) return acta.nombreCargo;
+    const cargo = this.cargos.find((c) => c.id === acta.cargoId);
+    return cargo ? cargo.nombre : `Cargo #${acta.cargoId}`;
+  }
+
+  obtenerNumeroJrv(acta: ActaItem): string {
+    // Prefer the backend-provided JRV number; fall back to the raw id.
+    if (acta.numeroJrv) return acta.numeroJrv;
+    return `JRV-${acta.jrvId}`;
+  }
+
+  checksumTexto(acta: ActaItem): string | null {
+    // Full checksum needs the candidate-votes subtotal from the backend.
+    if (
+      acta.totalVotosCandidatos === undefined ||
+      acta.totalVotosCandidatos === null
+    ) {
+      return null;
+    }
+    const suma =
+      acta.totalVotosCandidatos +
+      (acta.votosBlancos || 0) +
+      (acta.votosNulos || 0);
+    const total = acta.totalSufragantes || 0;
+    return `${suma}/${total}`;
+  }
+
+  checksumValido(acta: ActaItem): boolean | null {
+    if (
+      acta.totalVotosCandidatos === undefined ||
+      acta.totalVotosCandidatos === null
+    ) {
+      return null;
+    }
+    const suma =
+      acta.totalVotosCandidatos +
+      (acta.votosBlancos || 0) +
+      (acta.votosNulos || 0);
+    return suma === (acta.totalSufragantes || 0);
   }
 
   verDetalle(actaId: number): void {
