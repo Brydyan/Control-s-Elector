@@ -13,6 +13,10 @@ spec:
       labels:
         app: electoral-api
     spec:
+      initContainers:
+      - name: wait-for-db
+        image: busybox:1.35
+        command: ['sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done']
       containers:
       - name: electoral-api
         image: brydyan12/control-electoral-backend:latest
