@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: electoral-frontend
-        image: brydyan/control-electoral-frontend:latest
+        image: brydyan12/control-electoral-frontend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80
