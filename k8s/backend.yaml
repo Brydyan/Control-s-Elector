@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: electoral-api
+  namespace: control-electoral
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: electoral-api
+  template:
+    metadata:
+      labels:
+        app: electoral-api
+    spec:
+      containers:
+      - name: electoral-api
+        image: brydyan/control-electoral-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8081
+        envFrom:
+        - configMapRef:
+            name: electoral-api-config
+        - secretRef:
+            name: electoral-api-secret
+        livenessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v1/health
+            port: 8081
+          initialDelaySeconds: 20
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: electoral-api
+  namespace: control-electoral
+spec:
+  selector:
+    app: electoral-api
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 8081
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: electoral-api-ingress
+  namespace: control-electoral
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - api.twintailcs.xyz
+    secretName: electoral-api-tls
+  rules:
+  - host: api.twintailcs.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: electoral-api
+            port:
+              number: 80
