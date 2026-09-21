@@ -59,7 +59,7 @@ metadata:
   name: electoral-frontend-ingress
   namespace: control-electoral
   annotations:
-    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    cert-manager.io/cluster-issuer: "selfsigned-issuer"
 spec:
   ingressClassName: nginx
   tls:
