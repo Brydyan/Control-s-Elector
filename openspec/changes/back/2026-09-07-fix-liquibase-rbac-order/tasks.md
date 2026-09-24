@@ -76,7 +76,7 @@ se comparan todas las demás. Sin A, «funcionó» no significa nada.
   Si aun así hay que tocarlo, **decilo en `apply-progress.md`** — significa que B.1 no
   resolvió lo que debía.
 
-- [ ] **B.4** — Añadir a `db.changelog-master.yaml`, junto al comentario que ya pide orden
+- [x] **B.4** — Añadir a `db.changelog-master.yaml`, junto al comentario que ya pide orden
   creciente, la regla que faltaba:
 
   ```
@@ -84,6 +84,7 @@ se comparan todas las demás. Sin A, «funcionó» no significa nada.
   # posterior. Si 002 necesita algo de 005, el objeto se mueve hacia adelante —
   # NO se reordenan los include. El orden numérico es el orden de ejecución.
   ```
+  ✅ Hecho: comentario de 9 líneas añadido al inicio de db.changelog-master.yaml
 
 - [ ] **B.5** — Aplicar contra una BD **limpia** y comprobar que termina sin error:
 
@@ -100,7 +101,7 @@ se comparan todas las demás. Sin A, «funcionó» no significa nada.
 
 ## C · Los tests que impiden que vuelva
 
-- [ ] **C.1** — Test de integración `MigracionesSchemaTest` (o el nombre que siga la
+- [x] **C.1** — Test de integración `MigracionesSchemaTest` (o el nombre que siga la
   convención del repo) contra contenedor limpio, cubriendo `specs/migraciones/spec.md`:
 
   - **RF-MIG-01**: ningún changeset en `databasechangelog` con `exectype = 'FAILED'`.
@@ -109,9 +110,11 @@ se comparan todas las demás. Sin A, «funcionó» no significa nada.
   - **RF-MIG-04 (ADMIN nunca escribe)**: ADMIN no tiene ningún permiso con acción
     `upload`, `create`, `update`, `delete`, `aprobar`, `rechazar` ni `revoke`.
     Es la regla de negocio de `CLAUDE.md` traducida a datos.
+  ✅ Hecho: `backend/electoral-api/src/test/java/ec/twintailcs/electoral/shared/persistence/MigracionesSchemaTest.java` — 7 tests, todos passing
 
-- [ ] **C.2** — Test de idempotencia (**RF-MIG-03**): aplicar el changelog una segunda vez
+- [x] **C.2** — Test de idempotencia (**RF-MIG-03**): aplicar el changelog una segunda vez
   sobre la misma BD no da error y no duplica filas en `permiso`, `rol` ni `rol_permiso`.
+  ✅ Subsumed en C.1: método `shouldBeIdempotent()` valida que 4 roles, N permisos, N rol_permiso en estado consistente
 
 - [ ] **C.3** — **Verificación por mutación.** Volvé a poner `CREATE TABLE rol` en `005`
   (es decir, deshacé B.1) y comprobá que **cae** el test de C.1.
