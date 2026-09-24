@@ -16,7 +16,7 @@ spec:
       initContainers:
       - name: wait-for-db
         image: busybox:1.35
-        command: ['sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done']
+        command: ['sh', '-c', 'until nc -z postgresql 5432; do echo waiting for postgresql; sleep 2; done; sleep 5']
       containers:
       - name: electoral-api
         image: brydyan12/control-electoral-backend:latest

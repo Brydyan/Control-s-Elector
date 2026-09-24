@@ -1,3 +1,13 @@
+# =============================================================================
+# Liquibase Master Changelog — Control Electoral
+# =============================================================================
+# NOTA: El orden de los changesets es CRÍTICO.
+# Un changeset NO puede referenciar una tabla o columna creada en un changelog
+# posterior. Por ejemplo, 002-rbac-seed.sql hace JOIN a la tabla "rol" creada
+# en 001-06-rol. Por esto, 001 DEBE ejecutarse antes de 002.
+# Ver: openspec/changes/back/2026-09-07-fix-liquibase-rbac-order/
+# =============================================================================
+
 databaseChangeLog:
   - include: { file: database/changelog/001-initial-schema.sql }
   - include: { file: database/changelog/002-rbac-seed.sql }
