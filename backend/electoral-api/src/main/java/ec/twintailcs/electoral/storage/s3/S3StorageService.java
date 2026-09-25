@@ -31,7 +31,6 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 public class S3StorageService {
 
   private static final Logger log = LoggerFactory.getLogger(S3StorageService.class);
-  private static final Duration PRESIGN_EXPIRY = Duration.ofMinutes(15);
 
   private final S3Client s3;
   private final S3Presigner presigner;
@@ -93,15 +92,16 @@ public class S3StorageService {
   }
 
   /**
-   * URL prefirmada para descargar el objeto (expira en 15 min).
+   * URL prefirmada para descargar el objeto. La expiración sale de {@link S3Properties#getPresignExpiry()}
+   * (default 15 min, configurable por entorno vía {@code aws.s3.presign-expiry}).
    *
-   * <p>El FE la usa para mostrar imagenes sin proxyar por el backend. En prod Railway se cambia la
-   * expiration a algo mas corto (5 min).
+   * <p>El FE la usa para mostrar imagenes sin proxyar por el backend. En prod Railway se baja
+   * la expiración a 5 min vía properties sin tocar código (RF-STO-07).
    */
   public String presignDownloadUrl(String key) {
     GetObjectPresignRequest req =
         GetObjectPresignRequest.builder()
-            .signatureDuration(PRESIGN_EXPIRY)
+            .signatureDuration(props.getPresignExpiry())
             .getObjectRequest(GetObjectRequest.builder().bucket(props.getBucket()).key(key).build())
             .build();
     return presigner.presignGetObject(req).url().toString();

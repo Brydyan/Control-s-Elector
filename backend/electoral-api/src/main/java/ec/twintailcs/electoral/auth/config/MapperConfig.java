@@ -148,7 +148,6 @@ public class MapperConfig {
             entity.getCargo().getId(),
             entity.getRegistradaPor().getId(),
             entity.getEstado(),
-            entity.getStorageUrl(),
             entity.getTotalSufragantes(),
             entity.getVotosBlancos(),
             entity.getVotosNulos(),

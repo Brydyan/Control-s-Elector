@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.evidencia.application.usecase;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
+import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
@@ -20,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -33,16 +36,19 @@ public class SubirEvidenciaUseCase {
   private final S3StorageService s3;
   private final UsuarioRepository usuarios;
   private final ActaRepository actaRepository;
+  private final AuditLogService auditLogService;
 
   public SubirEvidenciaUseCase(
       EvidenciaRepository repository,
       S3StorageService s3,
       UsuarioRepository usuarios,
-      ActaRepository actaRepository) {
+      ActaRepository actaRepository,
+      AuditLogService auditLogService) {
     this.repository = repository;
     this.s3 = s3;
     this.usuarios = usuarios;
     this.actaRepository = actaRepository;
+    this.auditLogService = auditLogService;
   }
 
   @Transactional
@@ -97,17 +103,60 @@ public class SubirEvidenciaUseCase {
     evidencia.setActualizadoEn(Instant.now());
     evidencia.validarDatosObligatorios();
 
-    try {
-      return repository.save(evidencia);
-    } catch (RuntimeException dbError) {
-      log.error("DB insert failed after S3 upload, cleaning up S3 object {}", s3Key, dbError);
-      try {
-        s3.delete(s3Key);
-      } catch (Exception s3Cleanup) {
-        log.error("S3 cleanup failed after DB failure for {}", s3Key, s3Cleanup);
-      }
-      throw dbError;
+    // B.3 — La compensación S3 se engancha al final de la transacción, no al save().
+    //
+    // El catch alrededor de save() no cubría fallos de COMMIT (design.md D2): con JPA, save()
+    // solo ENCOLA el INSERT; el flush/commit ocurre cuando execute() retorna y Spring cierra
+    // la transacción. Una violación de constraint explotaba fuera del catch y dejaba el objeto
+    // huérfano. Además, Hibernate puede flushear eagerly (save() con constraint deferida o no),
+    // así que la única solución robusta es registrar un TransactionSynchronization que se
+    // ejecuta DESPUÉS del commit/rollback.
+    //
+    // Si la transacción ROLLBACKea (commit fallido o excepción temprana), limpiamos S3. Si
+    // COMMITea con éxito, dejamos el objeto: la fila en evidencia lo referencia.
+    //
+    // El guard isSynchronizationActive() permite invocar este método fuera de un contexto
+    // transaccional (tests unitarios con Mockito). En producción @Transactional está siempre
+    // activo, así que el cleanup se registra normalmente.
+    if (TransactionSynchronizationManager.isSynchronizationActive()) {
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+              if (status == STATUS_ROLLED_BACK) {
+                try {
+                  s3.delete(s3Key);
+                  log.info(
+                      "S3 cleanup after rollback for key {} (evidencia NOT persisted)", s3Key);
+                } catch (Exception s3Cleanup) {
+                  // No podemos hacer mucho aquí: el log es la única señal. El batch de huérfanos
+                  // (out of scope de este change) sería el último recurso.
+                  log.error(
+                      "S3 cleanup FAILED after rollback for key {}; orphan remains",
+                      s3Key,
+                      s3Cleanup);
+                }
+              }
+            }
+          });
+    } else {
+      log.debug(
+          "Skipping TransactionSynchronization registration (no active tx) for key {}", s3Key);
     }
+
+    Evidencia saved = repository.save(evidencia);
+
+    // B.5 — Auditar la subida DENTRO de la transacción, después de save(). AuditLogService
+    // usa @Transactional (REQUIRED) que se une a esta misma tx: si algo falla después, el
+    // audit hace rollback junto con la evidencia. Solo persiste si todo commitea.
+    auditLogService.registrar(
+        u.getId(),
+        "EVIDENCIA_SUBIDA",
+        "evidencia",
+        saved.getId() == null ? 0L : saved.getId(),
+        "Evidencia subida s3Key=" + s3Key);
+
+    return saved;
   }
 
   private void validate(MultipartFile file) {
