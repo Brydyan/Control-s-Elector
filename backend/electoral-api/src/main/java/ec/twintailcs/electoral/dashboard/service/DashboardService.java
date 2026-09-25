@@ -5,8 +5,8 @@ import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
 import ec.twintailcs.electoral.dashboard.web.dto.NovedadDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ProgresoCantonDto;
-import ec.twintailcs.electoral.dashboard.web.dto.ResultadoCargoDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ResultadoCandidatoDto;
+import ec.twintailcs.electoral.dashboard.web.dto.ResultadoCargoDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ResumenActasDto;
 import ec.twintailcs.electoral.geografia.domain.Canton;
 import ec.twintailcs.electoral.geografia.domain.CantonRepository;
@@ -78,8 +78,8 @@ public class DashboardService {
   /**
    * Resultados por candidato, agrupados por cargo, con actas ANULADAS excluidas en query.
    *
-   * <p>Reorganiza filas planas ({@code ActaDetalleRepository.votosTotalesPorCandidato()}) en bloques
-   * por cargo. La query ya ordena por cargo ascendente y votos descendente; el service sólo
+   * <p>Reorganiza filas planas ({@code ActaDetalleRepository.votosTotalesPorCandidato()}) en
+   * bloques por cargo. La query ya ordena por cargo ascendente y votos descendente; el service sólo
    * mantiene el agrupamiento y reordena los candidatos por votos desc (defensa en profundidad).
    */
   @Transactional(readOnly = true)
@@ -106,10 +106,7 @@ public class DashboardService {
         // row = [cargoId, cargoNombre, candidatoId, candidatoNombre, partidoNombre, votos]
         candidatos.add(
             new ResultadoCandidatoDto(
-                (Long) row[2],
-                (String) row[3],
-                (String) row[4],
-                ((Number) row[5]).longValue()));
+                (Long) row[2], (String) row[3], (String) row[4], ((Number) row[5]).longValue()));
       }
       candidatos.sort(Comparator.comparingLong(ResultadoCandidatoDto::votos).reversed());
       out.add(new ResultadoCargoDto((Long) cs.get(0)[0], (String) cs.get(0)[1], candidatos));
@@ -124,8 +121,8 @@ public class DashboardService {
   /**
    * Progreso por cantón: total de JRVs y JRVs con al menos un acta no anulada (DISTINCT).
    *
-   * <p>{@code porcentaje} se calcula con {@code 100.0} (no {@code 100}) para no perder la
-   * fracción. Si {@code totalJrvs == 0} devuelve {@code 0.0} — sin división por cero ni {@code NaN}.
+   * <p>{@code porcentaje} se calcula con {@code 100.0} (no {@code 100}) para no perder la fracción.
+   * Si {@code totalJrvs == 0} devuelve {@code 0.0} — sin división por cero ni {@code NaN}.
    *
    * <p>Una JRV con actas de tres cargos cuenta una sola vez ({@code COUNT(DISTINCT)} en la query).
    */
@@ -146,10 +143,11 @@ public class DashboardService {
       long totalJrvs = jrvsPorCanton.getOrDefault(c.getId(), 0L);
       long jrvsConActa = jrvsConActaPorCanton.getOrDefault(c.getId(), 0L);
       double porcentaje = totalJrvs == 0 ? 0.0 : (jrvsConActa * 100.0) / totalJrvs;
-      out.add(
-          new ProgresoCantonDto(c.getId(), c.getNombre(), totalJrvs, jrvsConActa, porcentaje));
+      out.add(new ProgresoCantonDto(c.getId(), c.getNombre(), totalJrvs, jrvsConActa, porcentaje));
     }
-    out.sort(Comparator.comparing(ProgresoCantonDto::cantonNombre, Comparator.nullsLast(Comparator.naturalOrder())));
+    out.sort(
+        Comparator.comparing(
+            ProgresoCantonDto::cantonNombre, Comparator.nullsLast(Comparator.naturalOrder())));
     return out;
   }
 
@@ -178,8 +176,9 @@ public class DashboardService {
       String observerNombre =
           (row[6] != null || row[7] != null)
               ? ((row[6] == null ? "" : (String) row[6])
-                  + " "
-                  + (row[7] == null ? "" : (String) row[7])).trim()
+                      + " "
+                      + (row[7] == null ? "" : (String) row[7]))
+                  .trim()
               : null;
       out.add(
           new NovedadDto(

@@ -19,7 +19,6 @@ import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.dashboard.web.dto.NovedadDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ProgresoCantonDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ResumenActasDto;
-import ec.twintailcs.electoral.dashboard.web.dto.ResultadoCargoDto;
 import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.domain.CandidatoRepository;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
@@ -40,7 +39,6 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -72,9 +70,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * <p>Cada test mapea 1-a-1 un requisito del {@code specs/dashboard/spec.md}. Mutaciones D.1-D.6
  * documentadas en {@code tasks.md}.
  *
- * <p>Helpers de setUp(): {@code canton}, {@code jrv}, {@code cargo}, {@code candidato}, {@code acta}
- * crean entidades persistidas con ids estables. Las relaciones JRV→Parroquia→Canton se construyen en
- * cada test según la combinación que se necesite (canton con/sin JRVs, JRV con 1 o N cargos, etc.).
+ * <p>Helpers de setUp(): {@code canton}, {@code jrv}, {@code cargo}, {@code candidato}, {@code
+ * acta} crean entidades persistidas con ids estables. Las relaciones JRV→Parroquia→Canton se
+ * construyen en cada test según la combinación que se necesite (canton con/sin JRVs, JRV con 1 o N
+ * cargos, etc.).
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
@@ -159,11 +158,7 @@ class DashboardControllerTest {
     adminToken =
         jwtService
             .issue(
-                admin.getPublicId(),
-                admin.getEmail(),
-                "ADMIN",
-                List.of("acta:read"),
-                "sess-admin")
+                admin.getPublicId(), admin.getEmail(), "ADMIN", List.of("acta:read"), "sess-admin")
             .access();
   }
 
@@ -258,24 +253,21 @@ class DashboardControllerTest {
   void RF_DASH_01_resumen_coordinator_retorna200() throws Exception {
     mockMvc
         .perform(
-            get("/api/v1/dashboard/resumen")
-                .header("Authorization", "Bearer " + coordinatorToken))
+            get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + coordinatorToken))
         .andExpect(status().isOk());
   }
 
   @Test
   void RF_DASH_01_resumen_master_retorna200() throws Exception {
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + masterToken))
+        .perform(get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + masterToken))
         .andExpect(status().isOk());
   }
 
   @Test
   void RF_DASH_01_resumen_admin_retorna200() throws Exception {
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + adminToken))
+        .perform(get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + adminToken))
         .andExpect(status().isOk());
   }
 
@@ -334,7 +326,9 @@ class DashboardControllerTest {
           .isFalse();
       if (m.isAnnotationPresent(GetMapping.class) && hasClassLevelRequestMapping) {
         assertThat(m.isAnnotationPresent(RequestMapping.class))
-            .as("Método '%s' lleva @GetMapping innecesario si ya hay @RequestMapping a nivel de clase y método", m.getName())
+            .as(
+                "Método '%s' lleva @GetMapping innecesario si ya hay @RequestMapping a nivel de clase y método",
+                m.getName())
             .isFalse();
       }
     }
@@ -396,8 +390,7 @@ class DashboardControllerTest {
     MvcResult result =
         mockMvc
             .perform(
-                get("/api/v1/dashboard/resumen")
-                    .header("Authorization", "Bearer " + adminToken))
+                get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -448,8 +441,7 @@ class DashboardControllerTest {
     actaRepo.saveAndFlush(a1);
 
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + adminToken))
+        .perform(get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + adminToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.enviadas").value(2))
         .andExpect(jsonPath("$.enDisputa").value(1))
@@ -544,19 +536,18 @@ class DashboardControllerTest {
     crearActa(jrv2, cargo, EstadoActa.ENVIADA, 50);
 
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/progreso").header("Authorization", "Bearer " + adminToken))
+        .perform(get("/api/v1/dashboard/progreso").header("Authorization", "Bearer " + adminToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[?(@.cantonId==" + canton.getId() + ")]").exists())
         .andExpect(
-            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].totalJrvs").value(
-                org.hamcrest.Matchers.contains(5)))
+            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].totalJrvs")
+                .value(org.hamcrest.Matchers.contains(5)))
         .andExpect(
-            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].jrvsConActa").value(
-                org.hamcrest.Matchers.contains(2)))
+            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].jrvsConActa")
+                .value(org.hamcrest.Matchers.contains(2)))
         .andExpect(
-            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].porcentaje").value(
-                org.hamcrest.Matchers.contains(40.0)));
+            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].porcentaje")
+                .value(org.hamcrest.Matchers.contains(40.0)));
   }
 
   @Test
@@ -570,16 +561,13 @@ class DashboardControllerTest {
     crearActa(jrv, cargo, EstadoActa.ANULADA, 50); // NO debe contar
 
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/progreso").header("Authorization", "Bearer " + adminToken))
+        .perform(get("/api/v1/dashboard/progreso").header("Authorization", "Bearer " + adminToken))
         .andExpect(status().isOk())
         .andExpect(
-            jsonPath(
-                    "$[?(@.cantonId==" + canton.getId() + ")].jrvsConActa")
+            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].jrvsConActa")
                 .value(org.hamcrest.Matchers.contains(0)))
         .andExpect(
-            jsonPath(
-                    "$[?(@.cantonId==" + canton.getId() + ")].porcentaje")
+            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].porcentaje")
                 .value(org.hamcrest.Matchers.contains(0.0)));
   }
 
@@ -599,16 +587,13 @@ class DashboardControllerTest {
     crearActa(jrv, cargo3, EstadoActa.APROBADA, 50);
 
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/progreso").header("Authorization", "Bearer " + adminToken))
+        .perform(get("/api/v1/dashboard/progreso").header("Authorization", "Bearer " + adminToken))
         .andExpect(status().isOk())
         .andExpect(
-            jsonPath(
-                    "$[?(@.cantonId==" + canton.getId() + ")].totalJrvs")
+            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].totalJrvs")
                 .value(org.hamcrest.Matchers.contains(1)))
         .andExpect(
-            jsonPath(
-                    "$[?(@.cantonId==" + canton.getId() + ")].jrvsConActa")
+            jsonPath("$[?(@.cantonId==" + canton.getId() + ")].jrvsConActa")
                 .value(org.hamcrest.Matchers.contains(1)));
   }
 
@@ -621,8 +606,7 @@ class DashboardControllerTest {
     MvcResult result =
         mockMvc
             .perform(
-                get("/api/v1/dashboard/progreso")
-                    .header("Authorization", "Bearer " + adminToken))
+                get("/api/v1/dashboard/progreso").header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -666,8 +650,7 @@ class DashboardControllerTest {
     crearActa(jrvN, cargo, EstadoActa.ANULADA, 50);
 
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/novedades").header("Authorization", "Bearer " + adminToken))
+        .perform(get("/api/v1/dashboard/novedades").header("Authorization", "Bearer " + adminToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$.length()").value(1))
@@ -678,16 +661,13 @@ class DashboardControllerTest {
         .andExpect(jsonPath("$[0].observerPublicId").value(observer.getPublicId().toString()))
         // aprobada NO aparece
         .andExpect(
-            jsonPath(
-                    "$[?(@.actaPublicId=='" + aprobada.getPublicId() + "')]")
-                .doesNotExist());
+            jsonPath("$[?(@.actaPublicId=='" + aprobada.getPublicId() + "')]").doesNotExist());
   }
 
   @Test
   void RF_DASH_06_novedades_baseVacia_retornaListaVacia() throws Exception {
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/novedades").header("Authorization", "Bearer " + adminToken))
+        .perform(get("/api/v1/dashboard/novedades").header("Authorization", "Bearer " + adminToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$.length()").value(0));
@@ -716,8 +696,7 @@ class DashboardControllerTest {
     Acta acta = crearActa(jrv, cargo, EstadoActa.EN_DISPUTA, 50);
 
     // fechaRegistro = ayer 23:00 UTC (= hoy 00:00 UTC - 1h). Bypassea @CreationTimestamp.
-    Instant fechaRegistro =
-        Instant.now().truncatedTo(ChronoUnit.DAYS).minus(Duration.ofHours(1));
+    Instant fechaRegistro = Instant.now().truncatedTo(ChronoUnit.DAYS).minus(Duration.ofHours(1));
     jdbcTemplate.update(
         "UPDATE acta SET fecha_registro = ? WHERE id = ?",
         Timestamp.from(fechaRegistro),
@@ -731,8 +710,7 @@ class DashboardControllerTest {
     MvcResult result =
         mockMvc
             .perform(
-                get("/api/v1/dashboard/novedades")
-                    .header("Authorization", "Bearer " + adminToken))
+                get("/api/v1/dashboard/novedades").header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -757,8 +735,7 @@ class DashboardControllerTest {
 
     // fechaRegistro = ayer 04:00 UTC (= hoy 00:00 UTC - 20h). En GYE equivale a ayer 23:00 local,
     // distinto offset respecto al caso anterior — la mutación exacerbada debe divergir.
-    Instant fechaRegistro =
-        Instant.now().truncatedTo(ChronoUnit.DAYS).minus(Duration.ofHours(20));
+    Instant fechaRegistro = Instant.now().truncatedTo(ChronoUnit.DAYS).minus(Duration.ofHours(20));
     jdbcTemplate.update(
         "UPDATE acta SET fecha_registro = ? WHERE id = ?",
         Timestamp.from(fechaRegistro),
@@ -769,8 +746,7 @@ class DashboardControllerTest {
     MvcResult result =
         mockMvc
             .perform(
-                get("/api/v1/dashboard/novedades")
-                    .header("Authorization", "Bearer " + adminToken))
+                get("/api/v1/dashboard/novedades").header("Authorization", "Bearer " + adminToken))
             .andExpect(status().isOk())
             .andReturn();
 
@@ -803,8 +779,7 @@ class DashboardControllerTest {
   @Test
   void RNF_DASH_01_baseVacia_resumenTodoCero() throws Exception {
     mockMvc
-        .perform(
-            get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + adminToken))
+        .perform(get("/api/v1/dashboard/resumen").header("Authorization", "Bearer " + adminToken))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.enviadas").value(0))
         .andExpect(jsonPath("$.enDisputa").value(0))
