@@ -35,21 +35,6 @@ jobs:
   backend-test:
     name: Backend Tests & Coverage
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: electoral_user
-          POSTGRES_PASSWORD: electoral_pass
-          POSTGRES_DB: electoral_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - uses: actions/checkout@v4
 
@@ -63,10 +48,6 @@ jobs:
       - name: Verify Backend
         working-directory: backend/electoral-api
         run: ./mvnw -B clean verify -Dspotless.check.skip=true
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/electoral_db
-          SPRING_DATASOURCE_USERNAME: electoral_user
-          SPRING_DATASOURCE_PASSWORD: electoral_pass
 
   # ===========================================================================
   # FRONTEND JOBS (Separados: format, lint, test, build)
