@@ -126,4 +126,37 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
       Pageable pageable);
 
   long countByEstado(EstadoActa estado);
+
+  /**
+   * Cuenta JRVs con al menos un acta NO anulada, agrupadas por cantón (rows: {@code [cantonId,
+   * count]}). Usa {@code COUNT(DISTINCT a.jrv.id)} porque una JRV con actas de varios cargos debe
+   * contar UNA vez. El filtro de estado excluye ANULADA directamente en la query — ver {@code
+   * design.md} D1: la regla «sin ANULADA» vive aquí, no en el service.
+   *
+   * <p>Sin JRVs con acta, la lista viene vacía: los cantones sin actas se materializan en el
+   * service con {@code jrvsConActa = 0}.
+   */
+  @Query(
+      "SELECT a.jrv.parroquia.canton.id, COUNT(DISTINCT a.jrv.id) FROM Acta a "
+          + "WHERE a.estado <> 'ANULADA' "
+          + "GROUP BY a.jrv.parroquia.canton.id")
+  List<Object[]> countDistinctJrvsWithActaByCanton();
+
+  /**
+   * Datos mínimos para alimentar {@code /novedades}. Una sola fila por acta EN_DISPUTA. Cada fila:
+   * {@code [actaPublicId, jrvId, jrvNumero, cargoId, cargoNombre, observerPublicId, observerNombre,
+   * observerApellido, fechaRegistro]}.
+   *
+   * <p>RF-DASH-06 sólo lista EN_DISPUTA — el filtro está en la query, no en el service. {@code
+   * observerNombre} y {@code observerApellido} se concatenan en el service (no hay forma natural de
+   * hacerlo en JPQL).
+   */
+  @Query(
+      "SELECT a.publicId, a.jrv.id, a.jrv.numero, a.cargo.id, a.cargo.nombre, "
+          + "a.registradaPor.publicId, a.registradaPor.nombre, a.registradaPor.apellido, "
+          + "a.fechaRegistro "
+          + "FROM Acta a "
+          + "WHERE a.estado = 'EN_DISPUTA' "
+          + "ORDER BY a.fechaRegistro ASC")
+  List<Object[]> findEnDisputaParaDashboard();
 }
