@@ -49,7 +49,7 @@ class MigracionesSchemaTest {
   void shouldSeedExactly4Roles() {
     Integer count =
         jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Integer.class);
-    assertThat(count).isEqualTo(99);  // D.3 INTENTIONAL FAILURE
+    assertThat(count).isEqualTo(4);
 
     List<String> roles =
         jdbcTemplate.queryForList(
