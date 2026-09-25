@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import java.util.List;
 import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
@@ -59,7 +60,8 @@ class EvidenciaControllerTest {
                   e.getContentType(),
                   e.getEstado(),
                   e.getCreadoEn(),
-                  e.getActualizadoEn());
+                  e.getActualizadoEn(),
+                  List.of());
             });
   }
 
