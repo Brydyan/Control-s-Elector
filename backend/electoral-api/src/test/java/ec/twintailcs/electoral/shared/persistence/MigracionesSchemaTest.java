@@ -18,13 +18,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Validación de migraciones Liquibase — RF-MIG-03, RF-MIG-04
  *
- * Pruebas regresión para el defecto: "Liquibase aborta en 002-02-rol-permiso
- * porque tabla rol no existe aún". Solución: reordenar changesets para que
- * 001-06-rol + 001-07-seed-rol se ejecuten antes de 002-02-rol-permiso.
+ * <p>Pruebas regresión para el defecto: "Liquibase aborta en 002-02-rol-permiso porque tabla rol no
+ * existe aún". Solución: reordenar changesets para que 001-06-rol + 001-07-seed-rol se ejecuten
+ * antes de 002-02-rol-permiso.
  *
- * Escenarios:
- * - RF-MIG-04: RBAC seed produce 4 roles, ADMIN sin permisos de escritura
- * - RF-MIG-03: Changelog idempotente (double-apply = mismo resultado)
+ * <p>Escenarios: - RF-MIG-04: RBAC seed produce 4 roles, ADMIN sin permisos de escritura -
+ * RF-MIG-03: Changelog idempotente (double-apply = mismo resultado)
  */
 @DataJpaTest
 @Testcontainers
@@ -44,26 +43,24 @@ class MigracionesSchemaTest {
   }
 
   @Autowired private JdbcTemplate jdbcTemplate;
-  @Autowired(required = false) private Liquibase liquibase;
+
+  @Autowired(required = false)
+  private Liquibase liquibase;
 
   // RF-MIG-04: RBAC seed produce 4 roles exactos
   @Test
   void shouldSeedExactly4Roles() {
-    Integer count =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Integer.class);
+    Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Integer.class);
     assertThat(count).isEqualTo(4);
 
     List<String> roles =
-        jdbcTemplate.queryForList(
-            "SELECT nombre FROM rol ORDER BY nombre", String.class);
-    assertThat(roles).containsExactlyInAnyOrder("ADMIN", "COORDINATOR", "MASTER",
-        "OBSERVER");
+        jdbcTemplate.queryForList("SELECT nombre FROM rol ORDER BY nombre", String.class);
+    assertThat(roles).containsExactlyInAnyOrder("ADMIN", "COORDINATOR", "MASTER", "OBSERVER");
   }
 
   @Test
   void shouldSeedPermisosNonZero() {
-    Integer count =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Integer.class);
+    Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Integer.class);
     // Base SQL: 13 core permisos en 002. Otros changesets (008,009,012) agregan más.
     assertThat(count).isGreaterThanOrEqualTo(13);
   }
@@ -101,8 +98,7 @@ class MigracionesSchemaTest {
     // Todas las FK rol_id en rol_permiso deben existir en rol.id
     Long orphaned =
         jdbcTemplate.queryForObject(
-            "SELECT COUNT(*) FROM rol_permiso rp WHERE rp.rol_id NOT IN"
-                + " (SELECT id FROM rol)",
+            "SELECT COUNT(*) FROM rol_permiso rp WHERE rp.rol_id NOT IN" + " (SELECT id FROM rol)",
             Long.class);
     assertThat(orphaned).isZero();
   }
@@ -111,10 +107,8 @@ class MigracionesSchemaTest {
   @Test
   void shouldBeIdempotent() {
     // Captura estado actual
-    Long rolesCount =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Long.class);
-    Long permisosCount =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
+    Long rolesCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Long.class);
+    Long permisosCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
     Long rolPermisoCount =
         jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol_permiso", Long.class);
 
@@ -145,8 +139,7 @@ class MigracionesSchemaTest {
   @Test
   void shouldSeedMasterWithAllPermisos() {
     // Contar total de permisos en la BD
-    Long totalPermisos =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
+    Long totalPermisos = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
 
     // Contar permisos asignados a MASTER
     Long masterCount =
@@ -191,22 +184,19 @@ class MigracionesSchemaTest {
     }
 
     // Capturar counts después de la primera corrida (ya aplicada por Spring)
-    Long rolesAfter1 =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Long.class);
-    Long permisosAfter1 =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
+    Long rolesAfter1 = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Long.class);
+    Long permisosAfter1 = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
     Long rolPermisoAfter1 =
         jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol_permiso", Long.class);
 
     // Aplicar Liquibase una segunda vez — debe ser idempotente
-    // Liquibase detecta que los changesets ya pasaron (en databasechangelog) y no los vuelve a aplicar
+    // Liquibase detecta que los changesets ya pasaron (en databasechangelog) y no los vuelve a
+    // aplicar
     liquibase.update();
 
     // Contar de nuevo — debe ser EXACTAMENTE IGUAL (sin duplicados, sin pérdidas)
-    Long rolesAfter2 =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Long.class);
-    Long permisosAfter2 =
-        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
+    Long rolesAfter2 = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Long.class);
+    Long permisosAfter2 = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
     Long rolPermisoAfter2 =
         jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol_permiso", Long.class);
 

@@ -20,8 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
  * <ul>
  *   <li>D2: este controlador expone <b>únicamente</b> {@code @GetMapping}. ADMIN nunca escribe — la
  *       regla se sostiene por <i>ausencia</i> de método, no por un guard que se pueda borrar. Si
- *       alguien añade un {@code @PostMapping}/{@code @PutMapping}/{@code @PatchMapping}/{@code
- *       @DeleteMapping} aquí, RF-DASH-02 lo cazará por reflexión.
+ *       alguien añade un
+ *       {@code @PostMapping}/{@code @PutMapping}/{@code @PatchMapping}/{@code @DeleteMapping} aquí,
+ *       RF-DASH-02 lo cazará por reflexión.
  *   <li>D3: el endpoint de novedades sólo lista actas EN_DISPUTA. La inclusión de evidencias se
  *       deja para T-BE-16 (enum sin definir).
  *   <li>D1: todos los agregados excluyen ANULADA en query, no en service.
