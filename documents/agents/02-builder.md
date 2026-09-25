@@ -116,6 +116,153 @@ lista éxitos no es un informe.
 
 ---
 
+## Estándares de Calidad Obligatorios
+
+**OBLIGATORIO para cada tarea cerrada:**
+
+### 1. Pruebas Unitarias e Integración
+
+Cada feature o módulo implementado DEBE acompañarse de tests que validen:
+- **Camino feliz** — escenario esperado sin errores
+- **Caminos de error** — excepciones, validaciones, edge cases
+- **Límites** — inputs vacíos, nulos, tamaños máximos, caracteres especiales
+- **Concurrencia** — simulación de acceso simultáneo (SELECT FOR UPDATE, transacciones)
+
+**Métrica mínima:**
+- Backend Java: **80% cobertura** en clases nuevas (reportado por Jacoco)
+- Frontend TypeScript: **70% cobertura** en componentes y servicios
+
+**Comando de medición:**
+```bash
+# Backend
+cd backend/electoral-api
+./mvnw clean verify -Djacoco.skip=false
+# Reporte: target/site/jacoco/index.html
+
+# Frontend
+cd frontend/app
+pnpm test:coverage
+# Reporte: coverage/
+```
+
+### 2. Métricas de Calidad de Código
+
+Antes de marcar una tarea como "done":
+
+- **Spotless formatting**: `./mvnw spotless:check` (Java)
+- **ESLint + Prettier**: `pnpm lint && pnpm format:check` (TypeScript/Angular)
+- **Code smells via SonarQube** (opcional): duplicados, complejidad ciclomática > 10, métodos > 30 líneas
+- **Security scanning**: `dependency-check` para librerías vulnerables (Maven plugin)
+
+Cualquier violación **bloquea merge**. Si encuentras deuda técnica fuera de scope, anótala en `apply-progress.md` bajo "Hallazgos".
+
+### 3. Procedimientos de QA — Carga y Volumen
+
+**A 500+ usuarios concurrentes + 2x volumen de datos:**
+
+#### 3.1. Load Testing (Backend)
+```bash
+# Simulación: 500 usuarios, 30 segundo ramp-up, prueba 2 minutos
+# Herramienta: Apache JMeter o Gatling
+# Escenarios:
+# - POST /api/v1/actas (registrar acta)
+# - GET /api/v1/resultados/consolidado (dashboard en tiempo real)
+# - PUT /api/v1/evidencia/{id} (subir foto + validar S3)
+# Aceptación: p95 latency < 1.5s, error rate < 0.5%
+```
+
+#### 3.2. Database Performance
+```bash
+# Índices: verificar que todas las queries críticas usan índices
+SELECT schemaname, tablename, indexname 
+FROM pg_indexes 
+WHERE tablename IN ('acta', 'evidencia', 'rol_permiso', 'audit_log');
+
+# Conexiones pool: verificar max_connections y pool size
+# Liquibase: todas las migraciones deben completarse < 5s en BD limpia
+
+# Prueba de carga en BD: 
+# INSERT 100k actas + 500k acta_detalle rows
+# → query dashboard consolidado debe responder en < 1s
+```
+
+#### 3.3. Storage (S3) Resilience
+```bash
+# Presigned URLs: expiry validación (15 min máximo)
+# Orphan cleanup: verificar que fallidas BD no dejan archivos huérfanos en S3
+# Bandwidth: a 2x volumen, validar que no se agota cuota mensual
+```
+
+### 4. Manejo de Errores y Recuperación
+
+**OBLIGATORIO en todo código:**
+
+```java
+// ✅ CORRECTO — try-catch + log + rethrow con contexto
+try {
+    supabaseClient.uploadFile("acta-123.webp", fileBytes);
+} catch (IOException e) {
+    logger.error("Storage upload failed for JRV {}: {}", jrvId, e.getMessage(), e);
+    throw new StorageException("Cannot upload evidence: " + e.getMessage(), e);
+}
+
+// ✅ CORRECTO — compensación transaccional
+TransactionSynchronization.afterCompletion((status) -> {
+    if (status == STATUS_ROLLED_BACK) {
+        supabaseClient.deleteFile(uploadedKey);
+    }
+});
+
+// ❌ INCORRECTO — silenciar excepciones
+try {
+    validateJwt(token);
+} catch (Exception e) {
+    // swallowing error — NUNCA
+}
+
+// ❌ INCORRECTO — logging sin contexto
+logger.error("Error"); // ¿Dónde? ¿Cuál usuario? ¿Qué JRV?
+```
+
+**Patrones obligatorios:**
+- `try-catch` alrededor de I/O (archivos, BD, API externa)
+- Loguear **antes** de relanzar: `logger.error(..., e)` con stack trace
+- Siempre incluir contexto: ID del usuario, JRV, acta, evidencia
+- **Nunca** silenciar excepciones — si no sabes qué hacer, relanza
+
+### 5. Prevención de Vulnerabilidades
+
+**OWASP Top 10 — checks obligatorios:**
+
+| Vuln | Check | Ejemplo |
+|------|-------|---------|
+| **SQL Injection** | Usar JPA + prepared statements, nunca String concat | `repository.findByJrvId(jrvId)` ✅ |
+| **CSRF** | GET idempotente, POST/PUT/DELETE con CSRF token | Angular `HttpClientXsrfModule` activado |
+| **XSS** | Angular data binding (no innerHtml), sanitizar inputs | `{{ acta.titulo }}` ✅, `[innerHTML]` ❌ |
+| **Auth bypass** | `@PreAuthorize` en TODOS los endpoints, testear RLS | Mutation: quitar `@PreAuthorize` → test cae |
+| **Sensitive data** | No loguear JWT, contraseña, refresh token | Grep: `logger.*token` debe estar vacío |
+| **Dependency vulns** | `mvn dependency-check:check` antes de merge | Maven Security Plugin scans transitives |
+
+**Antes de marcar done:**
+```bash
+# Backend
+./mvnw dependency-check:check -DskipProvidedScope=true
+
+# Frontend
+npm audit (prohibido high/critical sin fix)
+```
+
+### 6. Documentación Mínima
+
+Cada implementación debe incluir:
+- **Por qué** — en commits y PR description
+- **Tests** — comentarios si el test no es obvio
+- **Compensaciones** — en `design.md` si tuvo tradeoffs
+
+No sobrecompletar; sí explicar lo no obvio.
+
+---
+
 ## Los límites, sin ambigüedad
 
 | No hacer | Por qué |
