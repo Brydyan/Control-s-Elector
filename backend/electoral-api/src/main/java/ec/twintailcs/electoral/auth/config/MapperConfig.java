@@ -18,7 +18,9 @@ import ec.twintailcs.electoral.electoral.web.dto.mapper.CandidatoMapper;
 import ec.twintailcs.electoral.electoral.web.dto.mapper.CargoMapper;
 import ec.twintailcs.electoral.electoral.web.dto.mapper.PartidoMapper;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
+import ec.twintailcs.electoral.evidencia.domain.ObservacionEvidenciaRepository;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
+import ec.twintailcs.electoral.evidencia.web.dto.ObservacionDto;
 import ec.twintailcs.electoral.evidencia.web.dto.mapper.EvidenciaMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -78,13 +80,18 @@ public class MapperConfig {
   }
 
   @Bean
-  public EvidenciaMapper evidenciaMapper() {
+  public EvidenciaMapper evidenciaMapper(
+      ObservacionEvidenciaRepository observacionRepository) {
     return new EvidenciaMapper() {
       @Override
       public EvidenciaResponse toDto(Evidencia entity) {
         if (entity == null) {
           return null;
         }
+        var observaciones =
+            observacionRepository.findByEvidenciaId(entity.getId()).stream()
+                .map(obs -> new ObservacionDto(obs.getTipo(), obs.getCreadoEn()))
+                .toList();
         return new EvidenciaResponse(
             entity.getPublicId(),
             entity.getJrvId(),
@@ -95,7 +102,8 @@ public class MapperConfig {
             entity.getContentType(),
             entity.getEstado(),
             entity.getCreadoEn(),
-            entity.getActualizadoEn());
+            entity.getActualizadoEn(),
+            observaciones);
       }
     };
   }

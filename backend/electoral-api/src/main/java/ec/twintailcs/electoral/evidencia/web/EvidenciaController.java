@@ -91,6 +91,28 @@ public class EvidenciaController {
     return ResponseEntity.noContent().build();
   }
 
+  /**
+   * T-BE-16: marca hasta {@code ObservacionEvidencia.MAX_POR_EVIDENCIA} observaciones sobre la
+   * evidencia. Lista vacía = borrar todas. Solo el OBSERVER dueño puede escribir (RF-OBS-01);
+   * autorización fina (autoría) está en el servicio.
+   *
+   * <p>Roles con permiso {@code evidencia:update}: OBSERVER, COORDINATOR, MASTER. NO ADMIN
+   * (RF-OBS-06).
+   */
+  @RequiredPermission("evidencia:update")
+  @PreAuthorize("@authz.has('evidencia:update')")
+  @PatchMapping("/{id}/observaciones")
+  public EvidenciaResponse marcarObservaciones(
+      @PathVariable UUID id,
+      @Valid @org.springframework.web.bind.annotation.RequestBody
+          ec.twintailcs.electoral.evidencia.web.dto.MarcarObservacionesRequest body,
+      jakarta.servlet.http.HttpServletRequest request) {
+    Evidencia e =
+        service.marcarObservaciones(
+            id, body.tipos(), CurrentUser.staticId(), request);
+    return evidenciaMapper.toDto(e);
+  }
+
   /** Tipico: devolver 201 + Location header. Acu devolvemos la entidad. */
   @SuppressWarnings("unused")
   private static class LocationBuilder {}
