@@ -19,14 +19,14 @@ ON CONFLICT (recurso, accion) DO NOTHING;
 
 
 -- changeset electoral:009-02-rol-permiso-acta-upload
--- Solo OBSERVER registra/corrige actas.
+-- OBSERVER y MASTER registran/corrigen actas.
 INSERT INTO rol_permiso (public_id, rol_id, permiso_id)
 SELECT gen_random_uuid(), r.id, p.id
 FROM rol r, permiso p
-WHERE r.nombre = 'OBSERVER'
+WHERE r.nombre IN ('OBSERVER', 'MASTER')
   AND p.recurso = 'acta' AND p.accion = 'upload'
   AND NOT EXISTS (
       SELECT 1 FROM rol_permiso rp WHERE rp.rol_id = r.id AND rp.permiso_id = p.id
   );
--- rollback DELETE FROM rol_permiso WHERE rol_id = (SELECT id FROM rol WHERE nombre = 'OBSERVER')
+-- rollback DELETE FROM rol_permiso WHERE rol_id IN (SELECT id FROM rol WHERE nombre IN ('OBSERVER', 'MASTER'))
 --   AND permiso_id = (SELECT id FROM permiso WHERE recurso = 'acta' AND accion = 'upload');
