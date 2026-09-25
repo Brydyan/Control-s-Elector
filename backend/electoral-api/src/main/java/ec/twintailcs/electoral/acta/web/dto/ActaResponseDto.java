@@ -10,7 +10,6 @@ public record ActaResponseDto(
     Long cargoId,
     Long registradaPorId,
     EstadoActa estado,
-    String storageUrl,
     Integer totalSufragantes,
     Integer votosBlancos,
     Integer votosNulos,

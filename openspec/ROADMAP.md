@@ -50,17 +50,15 @@ Cada papel tiene su archivo, con su plantilla de lanzamiento y sus límites:
 
 ## 3. Compuertas y línea base
 
-Medidas el **2026-09-07**, rama `develop`, commit `108819d`.
+Medidas el **2026-09-25**, rama `brydyan/sc-161/t-be-14-integracion-supabase-storage`:
 
 ```
 backend build     ./mvnw -B clean package -DskipTests        exit 0
-backend test      ./mvnw -B test                             19 suites / 93 tests
-                                                             78 ERROR / 1 skip   ← ROJO
-frontend lint     npm run lint                               0 errores
-frontend tsc app  npx tsc -p tsconfig.app.json --noEmit      exit 0, 14 archivos de src/app
-frontend tsc spec npx tsc -p tsconfig.spec.json --noEmit     exit 0, 7 archivos de src/
-frontend test     ng test --watch=false --browsers=ChromeHeadless
-                                                             2 specs (scaffold, decorativos)
+backend test      ./mvnw -B test                             63 suites / 281 tests
+                                                             0 ERROR / 0 failure / 2 skip   ← VERDE
+frontend lint     pnpm lint                                  0 errores
+frontend format   pnpm format:check                          0 errores
+frontend test     pnpm test:ci                               26 suites / 118 tests / 0 failures
 ```
 
 Working directory obligatorio: backend en `backend/electoral-api/`, frontend en `frontend/app/`.
@@ -68,9 +66,9 @@ Working directory obligatorio: backend en `backend/electoral-api/`, frontend en 
 **Los números importan.** Si al añadir tests el total no sube, los tests nuevos no se están
 ejecutando. Eso es un fallo de la fase, no un detalle.
 
-**La línea base de backend está en rojo a propósito**: es el estado real y es el primer
-change. Hasta que `78 ERROR` sea `0`, ninguna verificación de backend significa nada — un
-test nuevo no se distingue de los 78 que ya fallan.
+**La suite de backend está 100% en VERDE**: el blocker inicial `78 ERROR` fue resuelto y archivado
+en `openspec/changes/archive/2026-09-24-fix-liquibase-rbac-order/`. T-BE-13 (Dashboard) también
+archivado. Los tests nuevos se distinguen y se miden con rigor contra esta línea base.
 
 ---
 
@@ -116,27 +114,30 @@ Convención de carpetas y archivado: `openspec/changes/README.md`.
 
 Lo que sigue es el resumen; el detalle vive en cada índice.
 
-### Dónde está cada cosa
+### Ruta Maestra de Alineación — Elecciones Seccionales 2027
 
-**back** — T-BE-01 … T-BE-12 implementadas. La suite está en rojo (78 errores) y ese es el
-change abierto: `back/2026-09-07-fix-liquibase-rbac-order`. Bloquea T-BE-13 … T-BE-16.
-Detalle y mutaciones canónicas del dominio: `openspec/changes/back/README.md`.
+Para garantizar que el desarrollo no se desvíe de los requerimientos operativos de campo, el trabajo se ejecuta en **tres fases estrictamente secuenciales**:
 
-**front** — sólo el esqueleto (`core/auth`, `features/{auth/login,dashboard}`, `layout/`).
-T-FE-01 … T-FE-12 sin empezar. Los 2 `.spec.ts` son del scaffold: decorativos.
-Troceo propuesto por vertical de rol: `openspec/changes/front/README.md`.
+#### Fase 1 · Backend Core y Cierre de Ciclo de Vida (Prioridad Crítica)
+1. **`T-BE-14` (Storage en actas)**: En curso. Cerrar `501`, DROP `storage_url` innecesaria y ejecutar Gate 3 (Mutaciones C.1-C.5) para archivar.
+2. **`T-BE-16` (Expediente Legal & Estado `EN_OBSERVACION`)**:
+   - Agregar `EN_OBSERVACION` al enum `EstadoActa` y Liquibase check constraint.
+   - Endpoint `POST /api/v1/coordinator/actas/{id}/observacion-legal` con causal obligatoria.
+   - Excluir actas en observación de los totales de votos y avance en `DashboardService`.
+   - Generación de metadata para expediente digital de impugnación CNE.
+3. **`T-BE-15` (Tests de integración E2E)**: Validación del ciclo de vida completo de acta con Testcontainers (PostgreSQL + RustFS/S3).
 
-**infra** — T-IN-11 está marcada ✅ HECHO y **no lo está**: `ci.yml` corre `-DskipTests` y el
-job de frontend está comentado. Staging no desplegado. La BD local es irrecuperable.
-Detalle: `openspec/changes/infra/README.md`.
+#### Fase 2 · Frontend Estabilización y Operación de Campo (Spec 2027)
+1. **`2026-09-25-fe-vitest-ionic-cleanup-race`**: Aislar teardown de Vitest en `app.component.spec.ts` y eliminar `continue-on-error: true` de `.github/workflows/ci.yml`.
+2. **Conciliación de SDDs implementadas**: Auditar y archivar retrospectivamente `T-FE-01` a `T-FE-07` y `T-FE-12` (que ya cuentan con 118 tests pasando en `frontend/app`).
+3. **`T-FE-08` (Compresión WebP inmediata)**: Canvas API en memoria a `.webp` (300-500KB) antes de cualquier desalojo a las 18h00.
+4. **`T-FE-09` (Offline-First & PIN de 4 dígitos)**: Cola en IndexedDB + fallback a Capacitor Private Storage + reintento 30s + **desbloqueo rápido por PIN offline** cuando el JWT expira sin cobertura.
+5. **`T-FE-10` (Coordinador Split-View)**: Vista 50/50 desktop (datos + visor WebP con zoom/rotación) + acción `Pasar a Observación Legal` + botón de contingencia WhatsApp `wa.me/`.
 
-**Una casilla `[x]` en un task doc no es evidencia.** T-IN-11 lo demuestra: decía «correr
-tests» mientras la compuerta llevaba semanas sin ejecutar ninguno. Al cerrar una tarea, el
-estado se cambia con la medición al lado.
-
-**Exploración pendiente — k3s + ArgoCD.** No es un change: es un `sdd-explore`. Las preguntas
-que debe contestar están en `openspec/changes/infra/README.md`. Se abre **después** de que la
-suite esté en verde — sin tests que corran, cambiar de plataforma es desplegar a ciegas.
+#### Fase 3 · Infraestructura, Realtime y Producción
+1. **`T-IN-06` (Supabase Realtime)**: WebSockets para emisión y captura de eventos de cambio de estado en `acta` (refresco en vivo de tableros).
+2. **`T-IN-11` (GitHub Actions CI/CD)**: Pipeline estricto sin `-DskipTests` ni `continue-on-error`, con despliegue automático en push a `main`.
+3. **`T-IN-07` / `T-IN-09`**: Configuración de producción para `api.twintailcs.xyz` (Railway) y `control.twintailcs.xyz` (Vercel).
 
 ---
 
@@ -224,5 +225,7 @@ Los seis del playbook (§4), instanciados aquí:
 
 ## 9. Estado del ROADMAP
 
-Última actualización: **2026-09-07**, por el Arquitecto.
-Change en curso: `openspec/changes/back/2026-09-07-fix-liquibase-rbac-order/`.
+Última actualización: **2026-09-25**, por el Arquitecto.
+Changes en curso:
+- `openspec/changes/back/2026-09-07-t-be-14-storage-acta/`
+- `openspec/changes/front/2026-09-25-fe-vitest-ionic-cleanup-race/`
