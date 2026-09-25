@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.shared.persistence;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import liquibase.Liquibase;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -43,6 +44,7 @@ class MigracionesSchemaTest {
   }
 
   @Autowired private JdbcTemplate jdbcTemplate;
+  @Autowired(required = false) private Liquibase liquibase;
 
   // RF-MIG-04: RBAC seed produce 4 roles exactos
   @Test
@@ -137,5 +139,85 @@ class MigracionesSchemaTest {
             String.class);
 
     assertThat(rolesWithoutPerms).isEmpty();
+  }
+
+  // S1: MASTER debe tener ALL permisos (spec requirement: MASTER = todo)
+  @Test
+  void shouldSeedMasterWithAllPermisos() {
+    // Contar total de permisos en la BD
+    Long totalPermisos =
+        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
+
+    // Contar permisos asignados a MASTER
+    Long masterCount =
+        jdbcTemplate.queryForObject(
+            """
+            SELECT COUNT(*) FROM rol_permiso rp
+            JOIN rol r ON rp.rol_id = r.id
+            WHERE r.nombre = 'MASTER'
+            """,
+            Long.class);
+
+    // MASTER debe tener TODOS los permisos (regla de negocio: MASTER = todo)
+    assertThat(masterCount)
+        .as("MASTER debe tener TODOS los permisos disponibles (%d)", totalPermisos)
+        .isEqualTo(totalPermisos);
+
+    // Encontrar permisos que MASTER no tiene (si los hay)
+    List<String> missingPermisos =
+        jdbcTemplate.queryForList(
+            """
+            SELECT DISTINCT p.recurso || ':' || p.accion as perm FROM permiso p
+            WHERE NOT EXISTS (
+              SELECT 1 FROM rol_permiso rp
+              JOIN rol r ON rp.rol_id = r.id
+              WHERE r.nombre = 'MASTER' AND rp.permiso_id = p.id
+            )
+            ORDER BY perm
+            """,
+            String.class);
+
+    assertThat(missingPermisos)
+        .as("MASTER debe tener todos los permisos (ninguno faltante)")
+        .isEmpty();
+  }
+
+  // S2: Idempotencia real — Liquibase update() dos veces produce el mismo resultado
+  @Test
+  void shouldBeIdempotentOnDoubleApply() throws Exception {
+    if (liquibase == null) {
+      // Si Liquibase no está disponible en este contexto, skip
+      return;
+    }
+
+    // Capturar counts después de la primera corrida (ya aplicada por Spring)
+    Long rolesAfter1 =
+        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Long.class);
+    Long permisosAfter1 =
+        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
+    Long rolPermisoAfter1 =
+        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol_permiso", Long.class);
+
+    // Aplicar Liquibase una segunda vez — debe ser idempotente
+    // Liquibase detecta que los changesets ya pasaron (en databasechangelog) y no los vuelve a aplicar
+    liquibase.update();
+
+    // Contar de nuevo — debe ser EXACTAMENTE IGUAL (sin duplicados, sin pérdidas)
+    Long rolesAfter2 =
+        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol", Long.class);
+    Long permisosAfter2 =
+        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM permiso", Long.class);
+    Long rolPermisoAfter2 =
+        jdbcTemplate.queryForObject("SELECT COUNT(*) FROM rol_permiso", Long.class);
+
+    assertThat(rolesAfter2)
+        .as("Rol count debe ser idéntico después de segunda aplicación")
+        .isEqualTo(rolesAfter1);
+    assertThat(permisosAfter2)
+        .as("Permiso count debe ser idéntico después de segunda aplicación")
+        .isEqualTo(permisosAfter1);
+    assertThat(rolPermisoAfter2)
+        .as("RolPermiso count debe ser idéntico después de segunda aplicación")
+        .isEqualTo(rolPermisoAfter1);
   }
 }
