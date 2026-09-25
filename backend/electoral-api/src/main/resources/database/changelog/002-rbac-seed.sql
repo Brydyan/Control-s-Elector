@@ -53,6 +53,7 @@ FROM rol r, (VALUES
     ('MASTER', 'evidencia', 'download'),
     ('MASTER', 'evidencia', 'delete'),
     ('MASTER', 'acta',      'read'),
+    ('MASTER', 'acta',      'upload'),
     ('MASTER', 'acta',      'aprobar'),
     ('MASTER', 'acta',      'rechazar'),
     ('MASTER', 'usuario',   'read'),
