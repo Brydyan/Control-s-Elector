@@ -21,8 +21,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -82,6 +84,12 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<Map<String, Object>> accessDenied(AccessDeniedException ex) {
     return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
+  }
+
+  /** Parte multipart faltante o parámetro requerido ausente → 400 BAD REQUEST. */
+  @ExceptionHandler({MissingServletRequestPartException.class, MissingServletRequestParameterException.class})
+  public ResponseEntity<Map<String, Object>> missingPart(MissingServletRequestPartException ex) {
+    return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
   }
 
   @ExceptionHandler(AccesoNoPermitidoException.class)
