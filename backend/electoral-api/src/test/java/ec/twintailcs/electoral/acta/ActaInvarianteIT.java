@@ -8,15 +8,13 @@ import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
 import ec.twintailcs.electoral.acta.web.ActaDetalleDto;
 import ec.twintailcs.electoral.acta.web.ActaRequestDto;
-import ec.twintailcs.electoral.electoral.domain.Partido;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * RF-TEST-02 — Invariante de votos llega hasta el HTTP, en registrar Y corregir.
@@ -24,12 +22,11 @@ import org.springframework.beans.factory.annotation.Autowired;
  * <p>Aserciones:
  *
  * <ul>
- *   <li>Si {@code SUM(detalles.votos) + blancos + nulos != totalSufragantes}, el endpoint
- *       rechaza con ActaInvalidaException y NO crea fila en {@code acta} ni en
- *       {@code acta_detalle}.
+ *   <li>Si {@code SUM(detalles.votos) + blancos + nulos != totalSufragantes}, el endpoint rechaza
+ *       con ActaInvalidaException y NO crea fila en {@code acta} ni en {@code acta_detalle}.
  *   <li>Si la suma cuadra, se crea el acta (201).
- *   <li>Misma regla en {@code corregir}: el path {@code PUT /actas/{id}/corregir} rechaza si
- *       la suma no cuadra.
+ *   <li>Misma regla en {@code corregir}: el path {@code PUT /actas/{id}/corregir} rechaza si la
+ *       suma no cuadra.
  * </ul>
  *
  * <p>Mutación C.2: invertir el {@code !=} en {@code validarSumaVotosDto} de {@code
@@ -50,7 +47,6 @@ class ActaInvarianteIT extends ActaIntegrationHarness {
     r.add("spring.liquibase.enabled", () -> "true");
   }
 
-
   @Autowired private ActaService actaService;
 
   @Test
@@ -59,7 +55,8 @@ class ActaInvarianteIT extends ActaIntegrationHarness {
     var canton = nuevoCanton(prov);
     var parro = nuevaParroquia(canton);
     var jrv = nuevoJrv(parro);
-    var cargo = nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
+    var cargo =
+        nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
     habilitarCargoEnJrv(jrv, cargo);
     var partido = nuevoPartido("X");
     var c1 = nuevoCandidato(cargo, partido, "C1");
@@ -94,7 +91,8 @@ class ActaInvarianteIT extends ActaIntegrationHarness {
     var canton = nuevoCanton(prov);
     var parro = nuevaParroquia(canton);
     var jrv = nuevoJrv(parro);
-    var cargo = nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
+    var cargo =
+        nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
     habilitarCargoEnJrv(jrv, cargo);
     var partido = nuevoPartido("X");
     var c1 = nuevoCandidato(cargo, partido, "C1");
@@ -115,7 +113,8 @@ class ActaInvarianteIT extends ActaIntegrationHarness {
     var canton = nuevoCanton(prov);
     var parro = nuevaParroquia(canton);
     var jrv = nuevoJrv(parro);
-    var cargo = nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
+    var cargo =
+        nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
     habilitarCargoEnJrv(jrv, cargo);
     var partido = nuevoPartido("X");
     var c1 = nuevoCandidato(cargo, partido, "C1");
@@ -130,13 +129,15 @@ class ActaInvarianteIT extends ActaIntegrationHarness {
     // Intentar corregir con suma inválida.
     ActaRequestDto invalida =
         new ActaRequestDto(
-            jrv.id(), cargo.id(), 999, // suma declarada NO cuadra
-            0, 0, List.of(new ActaDetalleDto(c1.getId(), 0)));
+            jrv.id(),
+            cargo.id(),
+            999, // suma declarada NO cuadra
+            0,
+            0,
+            List.of(new ActaDetalleDto(c1.getId(), 0)));
 
     assertThatThrownBy(
-            () ->
-                actaService.corregir(
-                    acta.getId(), invalida, observer.id(), false, "127.0.0.1"))
+            () -> actaService.corregir(acta.getId(), invalida, observer.id(), false, "127.0.0.1"))
         .isInstanceOf(ActaInvalidaException.class)
         .hasMessageContaining("no cuadran");
 

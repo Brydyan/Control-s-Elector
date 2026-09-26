@@ -4,18 +4,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.web.ActaRequestDto;
-import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.shared.security.RlsContext;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.testcontainers.junit.jupiter.Container;
 
 /**
  * RF-TEST-05 — RLS está realmente activa durante una petición.
@@ -24,17 +22,17 @@ import org.springframework.transaction.support.TransactionTemplate;
  *
  * <ul>
  *   <li>Abrimos una transacción explícita con {@link TransactionTemplate} para garantizar que
- *       podemos registrar un {@code TransactionSynchronization} DENTRO de ella (registrar
- *       fuera tira {@code IllegalStateException}).
+ *       podemos registrar un {@code TransactionSynchronization} DENTRO de ella (registrar fuera
+ *       tira {@code IllegalStateException}).
  *   <li>Configuramos {@code RlsContext} como si {@code RlsAuthenticationBridge} hubiera corrido.
- *   <li>En {@code beforeCommit} consultamos {@code current_setting('app.current_user_id',
- *       true)} — si RLS está activa, {@code RlsTransactionExecutionListener} ya seteo la
- *       variable en {@code afterBegin}.
+ *   <li>En {@code beforeCommit} consultamos {@code current_setting('app.current_user_id', true)} —
+ *       si RLS está activa, {@code RlsTransactionExecutionListener} ya seteo la variable en {@code
+ *       afterBegin}.
  * </ul>
  *
- * <p>Si la implementación actual de RLS no setea la variable dentro de la tx, este test va a
- * fallar — el comentario de ActaService:77-82 sería una defensa inexistente (per spec §4.3 +
- * tasks.md B.5).
+ * <p>Si la implementación actual de RLS no setea la variable dentro de la tx, este test va a fallar
+ * — el comentario de ActaService:77-82 sería una defensa inexistente (per spec §4.3 + tasks.md
+ * B.5).
  */
 class ActaRlsIntegrationIT extends ActaIntegrationHarness {
   @Container
@@ -50,7 +48,6 @@ class ActaRlsIntegrationIT extends ActaIntegrationHarness {
     r.add("spring.liquibase.enabled", () -> "true");
   }
 
-
   @Autowired private ActaService actaService;
   @Autowired private PlatformTransactionManager txManager;
 
@@ -60,7 +57,8 @@ class ActaRlsIntegrationIT extends ActaIntegrationHarness {
     var canton = nuevoCanton(prov);
     var parro = nuevaParroquia(canton);
     var jrv = nuevoJrv(parro);
-    var cargo = nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
+    var cargo =
+        nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
     habilitarCargoEnJrv(jrv, cargo);
     var partido = nuevoPartido("X");
     var c1 = nuevoCandidato(cargo, partido, "C1");
@@ -85,8 +83,7 @@ class ActaRlsIntegrationIT extends ActaIntegrationHarness {
                           }
                         });
                 // Llamar al servicio (que también es @Transactional — se une a esta tx).
-                ActaRequestDto dto =
-                    actaRequestValida(jrv, cargo, 80, 5, 15, List.of(c1));
+                ActaRequestDto dto = actaRequestValida(jrv, cargo, 80, 5, 15, List.of(c1));
                 actaService.registrar(dto, obs.id(), "127.0.0.1");
                 return null;
               });
@@ -105,4 +102,3 @@ class ActaRlsIntegrationIT extends ActaIntegrationHarness {
         .isEqualTo(String.valueOf(obs.id()));
   }
 }
-

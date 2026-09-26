@@ -10,7 +10,6 @@ import ec.twintailcs.electoral.evidencia.domain.ObservacionEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.ObservacionEvidenciaRepository;
 import ec.twintailcs.electoral.evidencia.domain.TipoObservacion;
 import jakarta.persistence.EntityManager;
-import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -57,10 +56,7 @@ public class MarcarObservacionesUseCase {
 
   @Transactional
   public Evidencia execute(
-      UUID evidenciaPublicId,
-      List<TipoObservacion> tipos,
-      UUID callerPublicId,
-      String ipAddress) {
+      UUID evidenciaPublicId, List<TipoObservacion> tipos, UUID callerPublicId, String ipAddress) {
     // 1) Cargar evidencia
     Evidencia evidencia =
         evidenciaRepository

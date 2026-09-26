@@ -7,7 +7,6 @@ import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
 import ec.twintailcs.electoral.acta.domain.JrvCargoYaRegistradoException;
 import ec.twintailcs.electoral.acta.web.ActaRequestDto;
-import ec.twintailcs.electoral.electoral.domain.Partido;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -17,11 +16,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * RF-TEST-01 — Unicidad de acta por {@code jrv_id + cargo_id} bajo concurrencia real.
@@ -30,23 +28,23 @@ import org.springframework.beans.factory.annotation.Autowired;
  *
  * <ul>
  *   <li>Dos hilos arrancan a la vez con {@link CountDownLatch} para garantizar simultaneidad.
- *   <li>Si el test se hiciera con dos llamadas SECUENCIALES, pasaría incluso sin locking:
- *       la segunda llamada encontraría el acta de la primera con un SELECT normal. Aquí
- *       forzamos la carrera.
- *   <li>Timeout explícito de 10s — los tests de concurrencia son intermitentes por
- *       naturaleza; un timeout las acota.
+ *   <li>Si el test se hiciera con dos llamadas SECUENCIALES, pasaría incluso sin locking: la
+ *       segunda llamada encontraría el acta de la primera con un SELECT normal. Aquí forzamos la
+ *       carrera.
+ *   <li>Timeout explícito de 10s — los tests de concurrencia son intermitentes por naturaleza; un
+ *       timeout las acota.
  *   <li>Aserciones:
  *       <ul>
  *         <li>Exactamente UNO gana.
  *         <li>El otro recibe {@link JrvCargoYaRegistradoException}.
  *         <li>La BD tiene UNA sola fila activa para ese par.
  *       </ul>
- *   <li>Segundo escenario: con acta ANULADA previa, una nueva debe permitirse
- *       (per spec RF-TEST-01 escenario 2).
+ *   <li>Segundo escenario: con acta ANULADA previa, una nueva debe permitirse (per spec RF-TEST-01
+ *       escenario 2).
  * </ul>
  *
- * <p>Mutación C.1: reemplazar {@code findActaActivaConLock} por {@code findActaActiva}
- * en RegistrarActaUseCase. Debe hacer caer este test.
+ * <p>Mutación C.1: reemplazar {@code findActaActivaConLock} por {@code findActaActiva} en
+ * RegistrarActaUseCase. Debe hacer caer este test.
  */
 class ActaConcurrencyIT extends ActaIntegrationHarness {
   @Container
@@ -62,7 +60,6 @@ class ActaConcurrencyIT extends ActaIntegrationHarness {
     r.add("spring.liquibase.enabled", () -> "true");
   }
 
-
   @Autowired private ActaService actaService;
 
   @Test
@@ -72,7 +69,8 @@ class ActaConcurrencyIT extends ActaIntegrationHarness {
     var canton = nuevoCanton(prov);
     var parro = nuevaParroquia(canton);
     var jrv = nuevoJrv(parro);
-    var cargo = nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
+    var cargo =
+        nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
     habilitarCargoEnJrv(jrv, cargo);
     var partido = nuevoPartido("ALIANZA");
     var c1 = nuevoCandidato(cargo, partido, "Candidato 1");
@@ -82,7 +80,8 @@ class ActaConcurrencyIT extends ActaIntegrationHarness {
     ActaRequestDto dtoA = actaRequestValida(jrv, cargo, 80, 5, 15, List.of(c1));
     ActaRequestDto dtoB = actaRequestValida(jrv, cargo, 80, 5, 15, List.of(c1));
 
-    // Forzar el binding RLS en el hilo principal (los workers usan su propio observerId manualmente).
+    // Forzar el binding RLS en el hilo principal (los workers usan su propio observerId
+    // manualmente).
     CountDownLatch start = new CountDownLatch(1);
     CountDownLatch done = new CountDownLatch(2);
     AtomicInteger successCount = new AtomicInteger();
@@ -128,9 +127,10 @@ class ActaConcurrencyIT extends ActaIntegrationHarness {
     }
 
     assertThat(successCount.get())
-        .as("exactamente UNO debe ganar la carrera; el otro recibe JrvCargoYaRegistradoException. "
-            + "Si ambos ganan, el lock pesimista no está protegiendo. "
-            + "Si ninguno gana, el error no es JrvCargoYaRegistradoException: %s",
+        .as(
+            "exactamente UNO debe ganar la carrera; el otro recibe JrvCargoYaRegistradoException. "
+                + "Si ambos ganan, el lock pesimista no está protegiendo. "
+                + "Si ninguno gana, el error no es JrvCargoYaRegistradoException: %s",
             failure.get())
         .isEqualTo(1);
     assertThat(failure.get())

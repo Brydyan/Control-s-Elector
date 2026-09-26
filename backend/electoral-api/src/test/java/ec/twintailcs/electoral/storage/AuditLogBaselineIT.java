@@ -89,13 +89,13 @@ class AuditLogBaselineIT {
     adminClient =
         S3Client.builder()
             .endpointOverride(
-                URI.create("http://" + s3container.getHost() + ":" + s3container.getMappedPort(9000)))
+                URI.create(
+                    "http://" + s3container.getHost() + ":" + s3container.getMappedPort(9000)))
             .region(Region.US_EAST_1)
             .credentialsProvider(
                 StaticCredentialsProvider.create(
                     AwsBasicCredentials.create("minioadmin", "minioadmin")))
-            .serviceConfiguration(
-                S3Configuration.builder().pathStyleAccessEnabled(true).build())
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
             .build();
     try {
       adminClient.createBucket(b -> b.bucket("electoral-evidences"));
@@ -181,9 +181,9 @@ class AuditLogBaselineIT {
    * <p>Cuenta filas en {@code audit_log} con acciones de evidencia tras un upload + delete.
    * Post-fix B.5: ambos quedan auditados → 2 filas (EVIDENCIA_SUBIDA + EVIDENCIA_ELIMINADA).
    *
-   * <p>RED-GREEN: pre-B.5 el test esperaba 1 (solo delete). Post-B.5 espera 2. Mutación C.3
-   * (quitar audit del delete) lleva a 1; mutación C.5 (no persistir ref) lleva a 1 (solo
-   * delete, porque el upload falla antes de commit).
+   * <p>RED-GREEN: pre-B.5 el test esperaba 1 (solo delete). Post-B.5 espera 2. Mutación C.3 (quitar
+   * audit del delete) lleva a 1; mutación C.5 (no persistir ref) lleva a 1 (solo delete, porque el
+   * upload falla antes de commit).
    */
   @Test
   void uploadAndDeleteAreBothAudited() {
@@ -211,8 +211,7 @@ class AuditLogBaselineIT {
                 + "ORDER BY id");
     System.out.println("[DIAG A.4] audit rows = " + rows.size());
     for (Map<String, Object> r : rows) {
-      System.out.println(
-          "[DIAG A.4]   accion=" + r.get("accion") + " entidad=" + r.get("entidad"));
+      System.out.println("[DIAG A.4]   accion=" + r.get("accion") + " entidad=" + r.get("entidad"));
     }
 
     // Post-fix B.5: ambos auditados → 2 filas.

@@ -4,25 +4,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.domain.Acta;
-import ec.twintailcs.electoral.acta.web.ActaRequestDto;
-import ec.twintailcs.electoral.electoral.domain.Partido;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * RF-TEST-06 — Filtro por OBSERVER del listado global (COORDINATOR).
  *
- * <p>Actas de dos OBSERVERs distintos; COORDINATOR consulta
- * {@code findWithFilters(..., registradaPorId=idDeA, ...)}. Solo aparecen las de A.
+ * <p>Actas de dos OBSERVERs distintos; COORDINATOR consulta {@code findWithFilters(...,
+ * registradaPorId=idDeA, ...)}. Solo aparecen las de A.
  *
  * <p>Mutación C.6: quitar la cláusula {@code (:registradaPorId IS NULL OR ...)} de {@code
- * ActaRepository.findWithFilters}. Debe hacer caer este test (el filtro se ignora, devuelve
- * todas las actas).
+ * ActaRepository.findWithFilters}. Debe hacer caer este test (el filtro se ignora, devuelve todas
+ * las actas).
  */
 class ActaFiltroRegistradaPorIT extends ActaIntegrationHarness {
   @Container
@@ -38,7 +35,6 @@ class ActaFiltroRegistradaPorIT extends ActaIntegrationHarness {
     r.add("spring.liquibase.enabled", () -> "true");
   }
 
-
   @Autowired private ActaService actaService;
 
   @Test
@@ -48,7 +44,8 @@ class ActaFiltroRegistradaPorIT extends ActaIntegrationHarness {
     var parro = nuevaParroquia(canton);
     var jrv1 = nuevoJrv(parro);
     var jrv2 = nuevoJrv(parro);
-    var cargo1 = nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
+    var cargo1 =
+        nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
     var cargo2 = nuevoCargo("Alcalde", ec.twintailcs.electoral.electoral.domain.NivelCargo.CANTON);
     habilitarCargoEnJrv(jrv1, cargo1);
     habilitarCargoEnJrv(jrv1, cargo2);

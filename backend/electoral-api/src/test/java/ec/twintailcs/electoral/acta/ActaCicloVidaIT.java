@@ -7,14 +7,12 @@ import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaEstadoInvalidoException;
 import ec.twintailcs.electoral.acta.web.ActaRequestDto;
-import ec.twintailcs.electoral.electoral.domain.Partido;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
-import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * RF-TEST-03 — Ciclo de vida completo del acta en UN SOLO test.
@@ -27,13 +25,13 @@ import org.springframework.beans.factory.annotation.Autowired;
  *   <li>Desde ANULADA no se admite ninguna transición (estado terminal).
  * </ul>
  *
- * <p>Por qué UN SOLO test (per spec RF-TEST-03): probar cada transición por separado, con el
- * estado fijado a mano, deja sin verificar que la salida de un paso es entrada válida del
- * siguiente. El camino completo expone ese tipo de bug.
+ * <p>Por qué UN SOLO test (per spec RF-TEST-03): probar cada transición por separado, con el estado
+ * fijado a mano, deja sin verificar que la salida de un paso es entrada válida del siguiente. El
+ * camino completo expone ese tipo de bug.
  *
  * <p>Mutación C.3: ampliar el guard de {@code aprobar} para aceptar EN_DISPUTA (saltarse la
- * transición CORREGIDA). Debe hacer caer este test porque tras EN_DISPUTA el flujo espera
- * CORREGIDA antes de APROBADA.
+ * transición CORREGIDA). Debe hacer caer este test porque tras EN_DISPUTA el flujo espera CORREGIDA
+ * antes de APROBADA.
  */
 class ActaCicloVidaIT extends ActaIntegrationHarness {
   @Container
@@ -49,7 +47,6 @@ class ActaCicloVidaIT extends ActaIntegrationHarness {
     r.add("spring.liquibase.enabled", () -> "true");
   }
 
-
   @Autowired private ActaService actaService;
 
   @Test
@@ -58,7 +55,8 @@ class ActaCicloVidaIT extends ActaIntegrationHarness {
     var canton = nuevoCanton(prov);
     var parro = nuevaParroquia(canton);
     var jrv = nuevoJrv(parro);
-    var cargo = nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
+    var cargo =
+        nuevoCargo("Prefecto", ec.twintailcs.electoral.electoral.domain.NivelCargo.PROVINCIA);
     habilitarCargoEnJrv(jrv, cargo);
     var partido = nuevoPartido("PARTIDO A");
     var c1 = nuevoCandidato(cargo, partido, "Candidato 1");
@@ -100,11 +98,9 @@ class ActaCicloVidaIT extends ActaIntegrationHarness {
 
     // Desde ANULADA no se admite ninguna transición.
     final Long idAnulada = acta.getId();
-    assertThatThrownBy(
-            () -> actaService.aprobar(idAnulada, coord.id(), "127.0.0.1"))
+    assertThatThrownBy(() -> actaService.aprobar(idAnulada, coord.id(), "127.0.0.1"))
         .isInstanceOf(ActaEstadoInvalidoException.class);
-    assertThatThrownBy(
-            () -> actaService.marcarEnDisputa(idAnulada, coord.id(), "x", "127.0.0.1"))
+    assertThatThrownBy(() -> actaService.marcarEnDisputa(idAnulada, coord.id(), "x", "127.0.0.1"))
         .isInstanceOf(ActaEstadoInvalidoException.class);
 
     // Conteo de audit_log: 5 transiciones (registrar, enDisputa, corregir, aprobar, anular).

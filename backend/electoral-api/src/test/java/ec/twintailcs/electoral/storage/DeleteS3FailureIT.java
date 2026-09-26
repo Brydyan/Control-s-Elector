@@ -32,10 +32,12 @@ import software.amazon.awssdk.services.s3.S3Configuration;
  * Gate 1 — A.3: Reproduce el defecto del borrado que miente (RF-STO-04).
  *
  * <p>Hipótesis: {@code EliminarEvidenciaUseCase.execute()} captura la excepción de S3, la registra
- * con {@code log.error} y devuelve éxito ({@link ec.twintailcs.electoral.evidencia.application.usecase.EliminarEvidenciaUseCase}:50-58). El
+ * con {@code log.error} y devuelve éxito ({@link
+ * ec.twintailcs.electoral.evidencia.application.usecase.EliminarEvidenciaUseCase}:50-58). El
  * frontend recibe "borrado" mientras la foto sigue accesible por presigned URL.
  *
  * <p>Diseño del test:
+ *
  * <ol>
  *   <li>Subir una evidencia (RustFS real, OK).
  *   <li>Detener el contenedor RustFS para forzar que {@code s3.delete()} falle con error de red.
@@ -98,13 +100,13 @@ class DeleteS3FailureIT {
     adminClient =
         S3Client.builder()
             .endpointOverride(
-                URI.create("http://" + s3container.getHost() + ":" + s3container.getMappedPort(9000)))
+                URI.create(
+                    "http://" + s3container.getHost() + ":" + s3container.getMappedPort(9000)))
             .region(Region.US_EAST_1)
             .credentialsProvider(
                 StaticCredentialsProvider.create(
                     AwsBasicCredentials.create("minioadmin", "minioadmin")))
-            .serviceConfiguration(
-                S3Configuration.builder().pathStyleAccessEnabled(true).build())
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
             .build();
     try {
       adminClient.createBucket(b -> b.bucket("electoral-evidences"));
@@ -186,8 +188,7 @@ class DeleteS3FailureIT {
     // Subir una evidencia (RustFS arriba, upload funciona).
     MockMultipartFile file =
         new MockMultipartFile("file", "test.webp", "image/webp", "contenido-a3".getBytes());
-    var evidencia =
-        evidenciaService.upload(file, actaId, observerPublicId);
+    var evidencia = evidenciaService.upload(file, actaId, observerPublicId);
     evidenciaPublicId = evidencia.getPublicId();
   }
 
@@ -195,12 +196,12 @@ class DeleteS3FailureIT {
    * A.3 / B.4 — El delete PROPAGA el error cuando S3 falla.
    *
    * <p>Pre-condición: evidencia subida OK. Acción: detener RustFS (S3.delete falla por red).
-   * Resultado esperado (post-fix B.4): el catch fue quitado → la excepción S3Exception
-   * se propaga al controller → el FE recibe 5xx, no 204. **Eso es el comportamiento correcto**:
-   * el usuario sabe que el borrado falló.
+   * Resultado esperado (post-fix B.4): el catch fue quitado → la excepción S3Exception se propaga
+   * al controller → el FE recibe 5xx, no 204. **Eso es el comportamiento correcto**: el usuario
+   * sabe que el borrado falló.
    *
-   * <p>RED-GREEN: pre-fix el test pasaba (no excepción). Post-fix debe tirar.
-   * La mutación C.2 reintroduce el catch → el test pasa de nuevo (regression caught).
+   * <p>RED-GREEN: pre-fix el test pasaba (no excepción). Post-fix debe tirar. La mutación C.2
+   * reintroduce el catch → el test pasa de nuevo (regression caught).
    */
   @Test
   void deletePropagatesS3Failure() {

@@ -45,9 +45,7 @@ class SubirEvidenciaUseCaseTest {
 
   @BeforeEach
   void setUp() {
-    useCase =
-        new SubirEvidenciaUseCase(
-            repository, s3, usuarios, actaRepository, auditLogService);
+    useCase = new SubirEvidenciaUseCase(repository, s3, usuarios, actaRepository, auditLogService);
   }
 
   @Test
@@ -162,8 +160,7 @@ class SubirEvidenciaUseCaseTest {
   void execute_fileOver10Mb_throwsInvalida() {
     // 11 MB > 10 MB
     byte[] big = new byte[11 * 1024 * 1024];
-    MockMultipartFile bigFile =
-        new MockMultipartFile("file", "big.webp", "image/webp", big);
+    MockMultipartFile bigFile = new MockMultipartFile("file", "big.webp", "image/webp", big);
     assertThatThrownBy(() -> useCase.execute(bigFile, 1L, UUID.randomUUID()))
         .isInstanceOf(EvidenciaInvalidaException.class)
         .hasMessageContaining("tamano maximo");

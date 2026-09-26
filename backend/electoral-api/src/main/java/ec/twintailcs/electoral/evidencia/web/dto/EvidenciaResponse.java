@@ -36,6 +36,6 @@ public record EvidenciaResponse(
         e.getEstado(),
         e.getCreadoEn(),
         e.getActualizadoEn(),
-        List.of());  // mapper sobrecargará este valor
+        List.of()); // mapper sobrecargará este valor
   }
 }
