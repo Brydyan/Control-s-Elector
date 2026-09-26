@@ -79,6 +79,7 @@ public class CoordinatorController {
   private final CurrentUser currentUser;
   private final ActaMapper actaMapper;
   private final IncidenciaService incidenciaService;
+  private final ec.twintailcs.electoral.acta.application.ExpedientePdfService expedientePdfService;
 
   public CoordinatorController(
       ActaService actaService,
@@ -89,7 +90,8 @@ public class CoordinatorController {
       CurrentUser currentUser,
       ActaMapper actaMapper,
       EvidenciaService evidenciaService,
-      IncidenciaService incidenciaService) {
+      IncidenciaService incidenciaService,
+      ec.twintailcs.electoral.acta.application.ExpedientePdfService expedientePdfService) {
     this.actaService = actaService;
     this.actaRepository = actaRepository;
     this.actaDetalleRepository = actaDetalleRepository;
@@ -99,6 +101,7 @@ public class CoordinatorController {
     this.actaMapper = actaMapper;
     this.evidenciaService = evidenciaService;
     this.incidenciaService = incidenciaService;
+    this.expedientePdfService = expedientePdfService;
   }
 
   private static final Set<String> SORTABLE_FIELDS = Set.of("fechaRegistro", "id", "estado");
@@ -327,13 +330,35 @@ public class CoordinatorController {
 
   /**
    * T-BE-19: GET /api/v1/coordinator/incidencias — listado para monitoreo. Filtro opcional
-   * por {@code jrvId}. Acceso COORDINATOR/MASTER/ADMIN (clase), OBSERVER recibe 403.
+   * por {@code jrvId}.
+   *
+   * <p>Doble capa de protección (per design.md D2): {@code @PreAuthorize} a nivel de método
+   * refuerza el de la clase. Si en el futuro alguien quita el de la clase (p.ej. para
+   * unificar permisos), el método sigue protegido — defense in depth.
    */
+  @PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")
   @GetMapping("/incidencias")
   public java.util.List<
           ec.twintailcs.electoral.incidencia.web.dto.IncidenciaResponseDto>
       listarIncidencias(
           @RequestParam(required = false) Long jrvId) {
     return incidenciaService.listarIncidencias(jrvId);
+  }
+
+  /**
+   * T-BE-20: GET /api/v1/coordinator/actas/{actaId}/expediente-pdf — descarga el PDF del
+   * expediente de impugnación CNE en memoria (sin tocar disco). Devuelve bytes con
+   * Content-Type application/pdf (via produces) y Content-Disposition inline para
+   * visualizar en navegador.
+   */
+  @PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")
+  @GetMapping(value = "/actas/{actaId}/expediente-pdf", produces = "application/pdf")
+  public org.springframework.http.ResponseEntity<byte[]> descargarExpedientePdf(
+      @PathVariable Long actaId) {
+    byte[] pdf = expedientePdfService.generarExpedientePdf(actaId, CurrentUser.staticId());
+    String filename = "expediente-acta-" + actaId + ".pdf";
+    return org.springframework.http.ResponseEntity.ok()
+        .header("Content-Disposition", "inline; filename=\"" + filename + "\"")
+        .body(pdf);
   }
 }
