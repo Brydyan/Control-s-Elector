@@ -14,6 +14,7 @@ import ec.twintailcs.electoral.auditlog.domain.AuditLog;
 import ec.twintailcs.electoral.auditlog.domain.AuditLogRepository;
 import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
+import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.shared.web.pagination.PageRequestFactory;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,17 +23,21 @@ import java.util.List;
 import java.util.Set;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Endpoints REST para COORDINATOR y MASTER.
@@ -68,6 +73,7 @@ public class CoordinatorController {
   private final ActaRepository actaRepository;
   private final ActaDetalleRepository actaDetalleRepository;
   private final UsuarioRepository usuarioRepository;
+  private final EvidenciaService evidenciaService;
   private final AuditLogRepository auditLogRepository;
   private final CurrentUser currentUser;
   private final ActaMapper actaMapper;
@@ -79,7 +85,8 @@ public class CoordinatorController {
       UsuarioRepository usuarioRepository,
       AuditLogRepository auditLogRepository,
       CurrentUser currentUser,
-      ActaMapper actaMapper) {
+      ActaMapper actaMapper,
+      EvidenciaService evidenciaService) {
     this.actaService = actaService;
     this.actaRepository = actaRepository;
     this.actaDetalleRepository = actaDetalleRepository;
@@ -87,6 +94,7 @@ public class CoordinatorController {
     this.auditLogRepository = auditLogRepository;
     this.currentUser = currentUser;
     this.actaMapper = actaMapper;
+    this.evidenciaService = evidenciaService;
   }
 
   private static final Set<String> SORTABLE_FIELDS = Set.of("fechaRegistro", "id", "estado");
@@ -288,5 +296,28 @@ public class CoordinatorController {
         base.nombreCargo(),
         base.numeroJrv(),
         subtotal);
+  }
+
+  /**
+   * T-BE-18: subida de evidencia fotográfica por COORDINATOR/MASTER como contingencia.
+   *
+   * <p>Camino normal: OBSERVER sube (POST /api/v1/observer/actas/{id}/imagen). Esta ruta es
+   * para cuando el OBSERVER no pudo hacerlo (equipo roto, emergencia) y el COORDINATOR toma
+   * el relevo. La subida va al mismo {@code SubirEvidenciaUseCase} que la del OBSERVER, pero
+   * además registra una fila de auditoría forense con la acción
+   * {@code EVIDENCIA_CONTINGENCIA_COORDINADOR}.
+   *
+   * <p>{@code @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")} refuerza la restricción del
+   * nivel de clase (que es por permisos). OBSERVER recibe 403; ADMIN igual.
+   */
+  @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")
+  @PostMapping(value = "/actas/{actaId}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+  public ResponseEntity<Void> subirImagen(
+      @PathVariable Long actaId,
+      @RequestPart("imagen") MultipartFile imagen,
+      HttpServletRequest request) {
+    evidenciaService.subirEvidenciaCoordinador(
+        actaId, imagen, CurrentUser.staticId(), request);
+    return ResponseEntity.status(201).build();
   }
 }
