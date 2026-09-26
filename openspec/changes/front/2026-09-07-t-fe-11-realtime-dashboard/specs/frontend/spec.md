@@ -1,62 +1,51 @@
-# Spec — T-FE-11: Dashboard en Tiempo Real
+# Spec — T-FE-11: Dashboard Reactivo en Tiempo Real e Integración REST
 
 ## Escenarios
 
-### S1 — Cargar estado inicial
+### S1 — Carga inicial consolidada desde backend
 
 ```gherkin
-GIVEN    usuario navega a /dashboard
-WHEN     DashboardComponent carga
-THEN     GET /api/resultados/consolidado
-AND      datos retornan {actas_total, actas_aprobadas, por_estado, por_cargo}
-AND      gráficos se dibujan
+GIVEN    usuario con rol ADMIN, MASTER o COORDINATOR autenticado
+WHEN     navega a /dashboard
+THEN     DashboardPage realiza llamadas en paralelo a:
+         - GET /api/v1/dashboard/resumen
+         - GET /api/v1/dashboard/resultados
+         - GET /api/v1/dashboard/progreso
+         - GET /api/v1/dashboard/novedades
+AND      despliega las tarjetas de métricas, barras cantonales y novedades
 ```
 
-### S2 — Realtime: nueva acta registrada
+### S2 — Evento Realtime dispara invalidación reactiva debounced
 
 ```gherkin
-GIVEN    gráficos cargados, usuario viendo dashboard
-AND      observer en otro dispositivo registra nueva acta
-WHEN     Backend INSERT en tabla acta
-THEN     Supabase Realtime emite evento
-AND      DashboardComponent recibe cambio
-AND      chart.data se actualiza en memoria
-AND      chart.update() re-renderiza
-AND      usuario ve cambio al instante (sin recargar)
+GIVEN    dashboard cargado y canal WebSocket de Supabase suscrito a tabla acta
+WHEN     un veedor envía una nueva acta o un coordinador aprueba un acta
+THEN     Supabase Realtime emite evento INSERT o UPDATE
+AND      el frontend amortigua eventos mediante debounceTime(500)
+AND      ejecuta una recarga limpia de los endpoints REST del backend
+AND      los gráficos y números se actualizan reflejando los nuevos totales calculados por el servidor
 ```
 
-### S3 — Realtime: acta cambia estado
+### S3 — Exclusión de actas anuladas en métricas
 
 ```gherkin
-GIVEN    acta en estado ENVIADA (pie chart muestra 1 en ENVIADA)
-WHEN     coordinator cambia a EN_DISPUTA
-THEN     Realtime emite UPDATE
-AND      chart.data actualiza: -1 ENVIADA, +1 EN_DISPUTA
-AND      pie chart re-renderiza
+GIVEN    un acta es ANULADA por el MASTER
+WHEN     el dashboard recibe el evento de actualización
+THEN     el backend la excluye automáticamente de las sumas de votos y actas activas
+AND      el frontend refleja la disminución de votos sin alterar la consistencia aritmética
 ```
 
-### S4 — Gráficos específicos
+### S4 — Desconexión limpia al salir del Dashboard
 
 ```gherkin
-GIVEN    dashboard cargado
-THEN     Pie: estado (ENVIADA, EN_DISPUTA, CORREGIDA, APROBADA)
-AND      Bar: votos por cargo (Prefecto, Alcalde, etc.)
-AND      Stats: total sufragantes, actas aprobadas, en disputa
+GIVEN    usuario en /dashboard con suscripción activa a WebSocket
+WHEN     navega a otra sección del sistema
+THEN     ngOnDestroy remueve los canales de Supabase y cancela las subscripciones
+AND      no quedan procesos huérfanos ni fugas de memoria
 ```
-
-## Mutaciones
-
-### M1 — No suscribirse a Realtime
-
-Si se comenta el Realtime.on('INSERT'), cambios en `acta` no se reciben. Verificación: registrar acta en otro dispositivo, dashboard no actualiza (detectar falla).
-
-### M2 — No actualizar chart
-
-Si se comenta `this.chart.update()` tras Realtime evento, chart.data cambia pero UI no se ve. Verificación: cambio de estado, chart.data tiene nuevo valor pero UI muestra lo viejo (detectar falla).
 
 ## Garantías
 
-- **G1:** Estado inicial GET /api/resultados/consolidado
-- **G2:** Realtime suscripción a cambios
-- **G3:** Chart se actualiza en tiempo real
-- **G4:** Sin recargar página
+- **G1:** Autoridad absoluta del backend sobre la suma de votos y porcentajes.
+- **G2:** Uso de Supabase Realtime como gatillo reactivo de invalidación de caché.
+- **G3:** Rutas canónicas `/api/v1/dashboard/*`.

@@ -1,60 +1,56 @@
-# Spec — T-FE-08: Captura y Compresión de Imagen
+# Spec — T-FE-08: Captura y Compresión de Imagen (WebP)
 
 ## Escenarios
 
-### S1 — Captura y compresión exitosa
+### S1 — Captura y compresión nativa exitosa
 
 ```gherkin
-GIVEN    ImageService.captureAndCompress() llamado
-AND      usuario toma foto desde cámara (Capacitor Camera)
-WHEN     foto original = 800KB, formato JPEG
-THEN     servicio convierte a WebP calidad 0.82
-AND      resultado ~350KB
-AND      Observable emite Blob(WebP, 350KB)
+GIVEN    usuario en dispositivo móvil con Capacitor
+WHEN     activa la captura de foto
+THEN     la cámara del dispositivo se abre
+AND      la fotografía capturada se dibuja en Canvas y se exporta a WebP (calidad 0.82)
+AND      si el tamaño es <= 500 KB, se emite el Blob resultante
 ```
 
-### S2 — Recompresión si >500KB
+### S2 — Recompresión adaptativa si excede 500 KB
 
 ```gherkin
-GIVEN    foto original = 2MB JPEG
-WHEN     compresión a 0.82 = 700KB (>500KB)
-THEN     recomprimir a calidad 0.65
-AND      resultado ~400KB
-AND      Observable emite Blob(WebP, 400KB)
+GIVEN    fotografía capturada de alta resolución
+WHEN     la primera pasada a calidad 0.82 resulta en 750 KB (> 500 KB)
+THEN     se ejecuta una segunda compresión automática a calidad 0.65
+AND      el Blob final resultante tiene tamaño < 500 KB
 ```
 
-### S3 — Blob es formato WebP
+### S3 — Fallback web para navegadores de escritorio
 
 ```gherkin
-GIVEN    Blob emitido
-WHEN     inspecciona type
-THEN     type === 'image/webp'
+GIVEN    usuario utilizando la app en navegador web sin Capacitor runtime
+WHEN     presiona "Tomar o seleccionar foto"
+THEN     se activa el input HTML de archivo (<input type="file" accept="image/*">)
+AND      el archivo seleccionado pasa por la misma tubería de compresión WebP en Canvas
 ```
 
-### S4 — Usuario cancela cámara
+### S4 — Transmisión Multipart con clave 'imagen'
 
 ```gherkin
-GIVEN    usuario hace click "Tomar foto"
-AND      abre cámara
-AND      cierra sin tomar foto
-WHEN     Capacitor Camera retorna error
-THEN     Observable emite error
-AND      llamador debe manejar catchError
+GIVEN    Blob WebP listo para subida
+WHEN     se invoca ObserverService.subirImagenActa(actaId, file)
+THEN     se construye un FormData con la clave exacta 'imagen' (formData.append('imagen', blob, 'acta.webp'))
+AND      se envía vía HTTP POST a /api/v1/observer/actas/:id/imagen
+AND      el backend Spring Boot acepta la petición sin MissingServletRequestPartException
 ```
 
-## Mutaciones
+### S5 — Manejo de permisos o cancelación de cámara
 
-### M1 — Usar JPEG en lugar de WebP
-
-Si Canvas.toBlob() usa 'image/jpeg' en lugar de 'image/webp', Observable debe emitir JPEG (no WebP). Verificación: inspeccionar type del Blob, debe ser 'image/jpeg' (detectar falla).
-
-### M2 — No hacer recompresión
-
-Si se quita la lógica de recompresión en 500KB, imagen >500KB pasa como está. Verificación: Blob.size >500KB → debe recomprimirse pero no lo hace (detectar falla).
+```gherkin
+GIVEN    diálogo de permisos de cámara del sistema operativo
+WHEN     el usuario cancela o niega el permiso
+THEN     la aplicación captura el error limpiamente
+AND      permite al usuario seleccionar un archivo desde el almacenamiento del dispositivo
+```
 
 ## Garantías
 
-- **G1:** Captura desde cámara Capacitor
-- **G2:** Formato WebP
-- **G3:** Tamaño <500KB (recompresión)
-- **G4:** Observable<Blob>
+- **G1:** Formato de salida estricto `image/webp`.
+- **G2:** Tamaño acotado (< 500 KB) para permitir transmisión rápida en redes 2G/3G.
+- **G3:** Clave multipart obligatoria `'imagen'` compatible con `@RequestPart("imagen")` de Spring Boot.

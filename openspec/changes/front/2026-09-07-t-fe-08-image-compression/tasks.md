@@ -1,82 +1,27 @@
-# Tasks — T-FE-08: Captura y Compresión de Imagen
+# Tasks — T-FE-08: Captura y Compresión de Imagen (WebP)
 
-## Fase A: ImageService Setup
+## Fase A: Servicio de Compresión y Captura
 
-- [ ] **A.1** — Instalar Capacitor Camera (si no está):
-  ```bash
-  npm install @capacitor/camera
-  npx cap sync
-  ```
+- [ ] **A.1** — Crear `core/services/image-compression.service.ts`:
+  - Detección de entorno: Capacitor Camera vs HTML5 File Input.
+  - Método `captureOrSelect(): Observable<File | Blob>`.
+  - Método `compressToWebP(file: File | Blob): Promise<Blob>`.
+- [ ] **A.2** — Implementar lógica de doble pasada de calidad en Canvas (0.82 -> 0.65 si > 500 KB).
+- [ ] **A.3** — Tests unitarios de compresión WebP en `image-compression.service.spec.ts`.
 
-- [ ] **A.2** — Crear `core/services/image.service.ts`.
-  - Inyectar: Camera (from @capacitor/camera)
-  - Método: `captureAndCompress(): Observable<Blob>`
-  - Llama Camera.getPhoto({quality: 90, format: 'jpeg'})
-  - Retorna Observable
+## Fase B: Contrato Multipart con Backend
 
-- [ ] **A.3** — En captureAndCompress:
-  ```typescript
-  async captureAndCompress(): Promise<Blob> {
-    const photo = await Camera.getPhoto({
-      quality: 90,
-      format: 'jpeg',
-      resultType: 'base64'
-    });
-    
-    // Convertir base64 a blob, comprimir a WebP
-    const blob = await this.compressToWebP(photo.base64String);
-    return blob;
-  }
-  ```
+- [x] **B.1** — Integrar en `ObserverService.subirImagenActa(actaId, file)`:
+  - Creación de `FormData` con clave obligatoria `'imagen'`.
+  - Petición `POST /api/v1/observer/actas/${actaId}/imagen`.
+- [x] **B.2** — Test unitario en `observer.service.spec.ts` verificando la clave del `FormData`.
 
-**Compuerta A:** `ng build`. ImageService importable.
+## Fase C: Integración con Wizard de Registro
 
-## Fase B: Compresión WebP
-
-- [ ] **B.1** — Agregar método `private compressToWebP(base64: string): Promise<Blob>`:
-  - Crear Image
-  - Dibujar en Canvas
-  - Canvas.toBlob('image/webp', 0.82) → Blob
-  - Si Blob.size > 500KB, recomprimir a 0.65
-  - Retornar Promise<Blob>
-
-- [ ] **B.2** — Test: mock Camera, verificar que Canvas.toBlob se ejecuta.
-
-- [ ] **B.3** — Test: Blob result tiene type 'image/webp'.
-
-**Compuerta B:** `ng test` pasa. toBlob() es llamado, Blob es WebP.
-
-## Fase C: Integración con Observable
-
-- [ ] **C.1** — Cambiar `captureAndCompress()` a retornar `Observable<Blob>`:
-  ```typescript
-  captureAndCompress(): Observable<Blob> {
-    return from(this.captureAndCompressAsync());
-  }
-  ```
-
-- [ ] **C.2** — Crear barrel: `core/services/index.ts` que exporta ImageService.
-
-- [ ] **C.3** — Test: llamar captureAndCompress().subscribe((blob) => { ... })
-
-**Compuerta C:** Observable funciona, Blob emitido correctamente.
-
-## Qué NO hacer
-
-- **No agregar galería** — solo cámara
-- **No agregar crop** — imagen tal cual
-- **No guardar en IndexedDB** — eso es T-FE-09
-- **No hacer upload** — servicio retorna Blob, el form lo sube
-
-## Compuertas
-
-| Fase | Comando | Expected |
-|------|---------|----------|
-| A | `ng build` | exit 0 |
-| B | `ng test` | toBlob called, type === 'image/webp' |
-| C | `ng test` | Observable emits Blob |
+- [x] **C.1** — Conectar paso `IMAGEN` de `RegistrarActaPage` con el archivo seleccionado y vista previa dataURL.
+- [x] **C.2** — Enlace tras `guardarComoBorrador()` o `enviarActaFinal()` para disparar la subida fotográfica.
 
 ## Verificación por Mutación
 
-- **V.1** — Cambiar 'image/webp' a 'image/jpeg' → type debe ser 'image/jpeg' → restaurar
-- **V.2** — Comentar recompresión en 500KB → Blob puede ser >500KB → restaurar
+- **V.1** — Cambiar el formato Canvas de 'image/webp' a 'image/jpeg' -> la comprobación de tipo de archivo debe fallar.
+- **V.2** — Cambiar `formData.append('imagen', file)` a `formData.append('file', file)` -> el test de servicio o backend debe fallar con 400.

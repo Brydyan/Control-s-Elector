@@ -1,83 +1,42 @@
-# Tasks — T-FE-06: Observer: Lista de Actas Propias
+# Tasks — T-FE-06: Observer: Flujo de JRVs Asignadas, Dignidades y Consulta de Actas
 
-## Fase A: Componente HomeComponent
+## Fase A: ObserverService y Modelos DTO
 
-- [ ] **A.1** — Crear `features/observer/home/home.component.ts`.
-  - Standalone: true
-  - Inyectar: HttpClient, Router, LoadingController
-  - Propiedades: actas$, estadoFiltro = '', loading = false
+- [x] **A.1** — Crear modelos en `features/observer/models/observer.model.ts`:
+  - `JrvConEstado`, `CargoConEstado`, `CandidatoInfo`, `ActaDetalleItem`, `ActaRequest`, `ActaResponse`, `EstadoActa`.
+- [x] **A.2** — Implementar métodos en `features/observer/services/observer.service.ts`:
+  - `getMisJrvs(): Observable<JrvConEstado[]>` -> `GET /api/v1/observer/jrvs`
+  - `getCargosDeJrv(jrvId: number): Observable<CargoConEstado[]>` -> `GET /api/v1/observer/jrv/{jrvId}/cargos`
+  - `getMisActas(): Observable<ActaResponse[]>` -> `GET /api/v1/observer/mis-actas`
+  - `getCorreccionesPendientes(): Observable<ActaResponse[]>` -> `GET /api/v1/observer/correcciones-pendientes`
+- [x] **A.3** — Tests unitarios de `ObserverService` en `observer.service.spec.ts`.
 
-- [ ] **A.2** — Crear template con:
-  - IonList (o tabla si prefieres)
-  - Rows: jrv nombre, cargo nombre, estado, fecha
-  - Dropdown IonSelect para filtro por estado
-  - Loading spinner
+## Fase B: MisJrvsPage
 
-- [ ] **A.3** — En ngOnInit(), llamar GET /api/observer/mis-actas.
-  ```typescript
-  ngOnInit() {
-    this.loading = true;
-    this.actas$ = this.http.get<Acta[]>('/api/observer/mis-actas').pipe(
-      tap(() => this.loading = false),
-      catchError(err => { ... })
-    );
-  }
-  ```
+- [x] **B.1** — Implementar `features/observer/pages/mis-jrvs/mis-jrvs.page.ts`:
+  - Consumo reactivo de `getMisJrvs()`.
+  - Pestañas de filtrado: `TODAS`, `PENDIENTES`, `COMPLETADAS`.
+  - Contadores `totalJrvs`, `totalPendientes`, `totalCompletadas`.
+  - Navegación al seleccionar JRV: `/observer/jrv/:jrvId/cargos`.
+- [x] **B.2** — Template accesible y responsivo con componentes de UI (`BadgeComponent`, `CardComponent`, etc.).
+- [x] **B.3** — Tests unitarios en `mis-jrvs.page.spec.ts`.
 
-**Compuerta A:** `ng build`. GET se ejecuta al navegar a /observer/home.
+## Fase C: JrvCargosPage
 
-## Fase B: Filtrado Frontend
+- [x] **C.1** — Implementar `features/observer/pages/jrv-cargos/jrv-cargos.page.ts`:
+  - Lectura de parámetro de ruta `jrvId`.
+  - Consumo de `getCargosDeJrv(jrvId)`.
+  - Mapeo visual de cada dignidad con su badge de estado.
+  - Navegación al formulario de registro: `/observer/jrv/:jrvId/cargo/:cargoId/registrar`.
+  - Botón de regreso a `/observer/mis-jrvs`.
+- [x] **C.2** — Tests unitarios en `jrv-cargos.page.spec.ts`.
 
-- [ ] **B.1** — Agregar método `filteredActas$`:
-  ```typescript
-  get filteredActas$() {
-    return this.actas$.pipe(
-      map(actas => 
-        this.estadoFiltro 
-          ? actas.filter(a => a.estado === this.estadoFiltro) 
-          : actas
-      )
-    );
-  }
-  ```
+## Fase D: Rutas y Verificación
 
-- [ ] **B.2** — En template, usar `filteredActas$ | async` para mostrar.
-
-- [ ] **B.3** — Dropdown `(ionChange)` actualiza `this.estadoFiltro`.
-
-**Compuerta B:** Cambiar filtro, lista se filtra.
-
-## Fase C: Navegación
-
-- [ ] **C.1** — Agregar método `goToDetail(acta)`:
-  ```typescript
-  goToDetail(acta: Acta) {
-    this.router.navigate(['/observer/acta-detail', acta.id]);
-  }
-  ```
-
-- [ ] **C.2** — En template, `(click)="goToDetail(acta)"` en cada fila.
-
-- [ ] **C.3** — Crear stub `acta-detail.component.ts` (solo template vacío).
-
-**Compuerta C:** Click navega a /observer/acta-detail/{id}.
-
-## Qué NO hacer
-
-- **No agregar paginación** — todas las actas a la vez
-- **No agregar edición inline** — solo visualización
-- **No filtro backend** — filtro cliente es suficiente
-- **No búsqueda por texto** — solo dropdown estado
-
-## Compuertas
-
-| Fase | Comando | Expected |
-|------|---------|----------|
-| A | Navegar a /observer/home, DevTools Network | GET /api/observer/mis-actas visible |
-| B | Cambiar dropdown | lista se filtra |
-| C | Click acta, inspeccionar URL | ruta /observer/acta-detail/{id} |
+- [x] **D.1** — Registrar rutas en `app.routes.ts` con `roleGuard(['OBSERVER', 'MASTER'])`.
+- [x] **D.2** — Ejecutar suite completa con `npm test -- --run` asegurando 100% verde.
 
 ## Verificación por Mutación
 
-- **V.1** — Comentar GET en ngOnInit() → actas$ nunca emite → restaurar
-- **V.2** — Comentar filtro en filteredActas$ → cambiar dropdown, lista no cambia → restaurar
+- **V.1** — Invertir condición del filtro `PENDIENTES` (`j.cargosPendientes === 0`) -> `mis-jrvs.page.spec.ts` debe fallar.
+- **V.2** — Cambiar ruta de navegación en `seleccionarJrv` -> test de navegación debe fallar.

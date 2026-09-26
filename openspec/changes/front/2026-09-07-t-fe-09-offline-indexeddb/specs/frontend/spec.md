@@ -1,60 +1,51 @@
-# Spec — T-FE-09: Resiliencia Offline con IndexedDB
+# Spec — T-FE-09: Resiliencia Offline, Cola IndexedDB y Desbloqueo por PIN
 
 ## Escenarios
 
-### S1 — Offline: guardar en IDB
+### S1 — Desbloqueo por PIN en campo sin internet
 
 ```gherkin
-GIVEN    usuario está offline (navigator.onLine = false)
-AND      intenta POST /api/observer/actas
-WHEN     POST falla con error
-THEN     ActaService guarda en IDB en table pending_actas
-AND      UI muestra "Acta guardada offline. Se sincronizará automáticamente."
-AND      Observable resuelve (no error)
+GIVEN    veedor autenticado previamente que configuró un PIN de 4 dígitos
+AND      se encuentra en una zona rural sin señal (!navigator.onLine)
+AND      el JWT de 15 minutos ha expirado
+WHEN     el veedor abre o interactúa con la aplicación
+THEN     la aplicación no redirige a /login
+AND      presenta la pantalla modal de desbloqueo por PIN
+AND      al ingresar el PIN correcto, se restablece el acceso a las vistas de trabajo
 ```
 
-### S2 — Conexión vuelve: reintento automático
+### S2 — Fallo de transmisión enruta a cola IndexedDB
 
 ```gherkin
-GIVEN    acta en IDB (pending_actas)
-AND      usuario conecta de nuevo (navigator.onLine = true)
-WHEN     ActaService detecta online
-THEN     reintenta POST /api/observer/actas con payload guardado
-AND      si éxito (200), elimina de IDB
-AND      UI muestra "Acta sincronizada"
+GIVEN    veedor transmite un acta con cuadre correcto pero falla la conexión HTTP
+WHEN     ObserverService detecta error de red (HTTP 0 o timeout)
+THEN     el acta (datos + foto) se almacena en el almacén pending_actas de IndexedDB
+AND      la interfaz informa: "Acta guardada en este dispositivo. Se transmitirá en cuanto recupere señal."
 ```
 
-### S3 — Reintento cada 30s
+### S3 — Sincronización automática al recuperar conexión
 
 ```gherkin
-GIVEN    acta en IDB, navegador sigue offline
-WHEN     30 segundos pasan
-THEN     ActaService intenta POST nuevamente (automaticamente)
-WHEN     aún offline, se vuelve a guardar en log (no reintenta infinitamente)
+GIVEN    1 o más actas pendientes en la cola IndexedDB
+WHEN     el dispositivo recupera señal de red (evento 'online')
+THEN     SyncService inicia la transmisión secuencial
+AND      por cada acta: envía datos a POST /api/v1/observer/actas
+AND      seguidamente envía la foto a POST /api/v1/observer/actas/:id/imagen
+AND      al recibir HTTP 200/201 en ambos, elimina el registro de IndexedDB
+AND      notifica visualmente: "Sincronización completada"
 ```
 
-### S4 — IDB lleno, fallback a Filesystem
+### S4 — Reintento periódico de salvaguarda cada 30 segundos
 
 ```gherkin
-GIVEN    IndexedDB falla (quota exceeded o error)
-WHEN     ActaService intenta guardar en IDB
-THEN     cae a Capacitor Filesystem
-AND      guarda en directorio privado: JRV-{jrvId}_{timestamp}_{userId}.json
+GIVEN    actas encoladas en IndexedDB
+AND      la conexión es inestable (oscila entre 2G y desconexión)
+WHEN     transcurren 30 segundos
+THEN     SyncService verifica si la red está disponible y reintenta el envío de la cola
 ```
-
-## Mutaciones
-
-### M1 — No guardar en IDB si offline
-
-Si se quita el saveOffline() call, acta debe perderse. Verificación: offline, guardar, cierra app, abre de nuevo, acta debe estar (detectar falla).
-
-### M2 — No reintento automático
-
-Si se comenta el polling setInterval(), acta queda en IDB pero nunca se reintenta. Verificación: guardar offline, conectar, esperar 30s, acta sigue en IDB (detectar falla).
 
 ## Garantías
 
-- **G1:** Acta no se pierde offline
-- **G2:** Reintento automático cada 30s
-- **G3:** Fallback a Filesystem
-- **G4:** Eliminación de IDB tras éxito
+- **G1:** Cero pérdida de datos ante caídas de red o expiración de JWT en campo.
+- **G2:** Eliminación de cola local únicamente tras confirmación HTTP 2xx de datos e imagen.
+- **G3:** Protección de acceso mediante PIN local de 4 dígitos cuando no hay conexión.
