@@ -32,25 +32,27 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * T-BE-20: tests de integración del endpoint de generación de PDF de expediente.
  *
  * <p>Cubre:
+ *
  * <ul>
- *   <li>S1 — Generación de PDF con datos de mesa (votantes, JRV, cargo) — verifica
- *       Content-Type application/pdf + header Content-Disposition + bytes mágicos %PDF- +
- *       contenido textual de JRV/cargo.
+ *   <li>S1 — Generación de PDF con datos de mesa (votantes, JRV, cargo) — verifica Content-Type
+ *       application/pdf + header Content-Disposition + bytes mágicos %PDF- + contenido textual de
+ *       JRV/cargo.
  *   <li>S2 — Generación de PDF para acta sin evidencia → 200 + recuadro de advertencia.
  *   <li>S3 — Rechazo 403 a OBSERVER.
  * </ul>
  *
  * <p>Mutaciones:
+ *
  * <ul>
  *   <li>V.1 — cambiar Content-Type a text/plain → S1 falla.
  *   <li>V.2 — quitar @PreAuthorize del método → S3 falla.
  * </ul>
  *
- * <p>Limitación: el test no usa TestContainers S3 — el endpoint S3 está configurado
- * con una URL falsa (127.0.0.1:1). Para S1 (PDF con imagen), el path de download S3
- * fallará con IOException y el servicio mostrará el recuadro de advertencia. El PDF
- * se sigue generando correctamente (verificamos bytes mágicos, header, contenido
- * textual). Para S1 con imagen real se requeriría TestContainers RustFS (futuro).
+ * <p>Limitación: el test no usa TestContainers S3 — el endpoint S3 está configurado con una URL
+ * falsa (127.0.0.1:1). Para S1 (PDF con imagen), el path de download S3 fallará con IOException y
+ * el servicio mostrará el recuadro de advertencia. El PDF se sigue generando correctamente
+ * (verificamos bytes mágicos, header, contenido textual). Para S1 con imagen real se requeriría
+ * TestContainers RustFS (futuro).
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -96,34 +98,55 @@ class ExpedientePdfIT {
     Long provinciaId =
         jdbc.queryForObject(
             "INSERT INTO provincia (nombre, codigo) VALUES (?,?) RETURNING id",
-            Long.class, "Santa Elena", "24-" + UUID.randomUUID().toString().substring(0, 4));
+            Long.class,
+            "Santa Elena",
+            "24-" + UUID.randomUUID().toString().substring(0, 4));
     Long cantonId =
         jdbc.queryForObject(
             "INSERT INTO canton (nombre, codigo, provincia_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "La Libertad",
-            "2402-" + UUID.randomUUID().toString().substring(0, 4), provinciaId);
+            Long.class,
+            "La Libertad",
+            "2402-" + UUID.randomUUID().toString().substring(0, 4),
+            provinciaId);
     Long parroquiaId =
         jdbc.queryForObject(
             "INSERT INTO parroquia (nombre, es_urbana, canton_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Central", true, cantonId);
+            Long.class,
+            "Central",
+            true,
+            cantonId);
     Long jrvId =
         jdbc.queryForObject(
             "INSERT INTO jrv (numero, recinto, total_electores, parroquia_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "JRV-PDF-001", "Recinto Test", 200, parroquiaId);
+            Long.class,
+            "JRV-PDF-001",
+            "Recinto Test",
+            200,
+            parroquiaId);
     Long cargoId =
         jdbc.queryForObject(
             "INSERT INTO cargo (nombre, nivel, puestos) VALUES (?,?,?) RETURNING id",
-            Long.class, "Prefecto", "PROVINCIA", 1);
+            Long.class,
+            "Prefecto",
+            "PROVINCIA",
+            1);
     Long partidoId =
         jdbc.queryForObject(
             "INSERT INTO partido (nombre, siglas, numero_lista) VALUES (?,?,?) RETURNING id",
-            Long.class, "PARTIDO A", "PA", 1);
+            Long.class,
+            "PARTIDO A",
+            "PA",
+            1);
     Long candidatoId =
         jdbc.queryForObject(
             "INSERT INTO candidato (nombre, orden, cargo_id, partido_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "Candidato Uno", 1, cargoId, partidoId);
+            Long.class,
+            "Candidato Uno",
+            1,
+            cargoId,
+            partidoId);
 
     observerPublicId = crearUsuario("OBSERVER", "obs");
     coordinatorPublicId = crearUsuario("COORDINATOR", "coord");
@@ -132,18 +155,27 @@ class ExpedientePdfIT {
         jdbc.queryForObject(
             "SELECT id FROM usuario WHERE public_id = ?", Long.class, observerPublicId);
     jdbc.update(
-        "INSERT INTO observer_jrv_asignacion (usuario_id, jrv_id) VALUES (?,?)",
-        observerId, jrvId);
+        "INSERT INTO observer_jrv_asignacion (usuario_id, jrv_id) VALUES (?,?)", observerId, jrvId);
 
     actaId =
         jdbc.queryForObject(
             "INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado, total_sufragantes, "
                 + "votos_blancos, votos_nulos, public_id, version) "
                 + "VALUES (?,?,?,?,?,?,?,?,0) RETURNING id",
-            Long.class, jrvId, cargoId, observerId, "ENVIADA", 100, 5, 3, UUID.randomUUID());
+            Long.class,
+            jrvId,
+            cargoId,
+            observerId,
+            "ENVIADA",
+            100,
+            5,
+            3,
+            UUID.randomUUID());
     jdbc.update(
         "INSERT INTO acta_detalle (acta_id, candidato_id, votos, version) VALUES (?,?,?,0)",
-        actaId, candidatoId, 90);
+        actaId,
+        candidatoId,
+        90);
   }
 
   private UUID crearUsuario(String rolNombre, String emailPrefix) {
@@ -191,9 +223,7 @@ class ExpedientePdfIT {
         .as("PDF debe tener tamaño razonable (>100 bytes)")
         .isGreaterThan(100);
     // Bytes mágicos %PDF-
-    assertThat(new String(pdfBytes, 0, 5))
-        .as("PDF debe empezar con %PDF-")
-        .isEqualTo("%PDF-");
+    assertThat(new String(pdfBytes, 0, 5)).as("PDF debe empezar con %PDF-").isEqualTo("%PDF-");
 
     // Verificar header Content-Type (application/pdf) — ya hecho con .andExpect arriba.
     // Header Content-Disposition: inline; filename=...
@@ -210,9 +240,10 @@ class ExpedientePdfIT {
     // documentado en apply-progress.md.
 
     // Audit
-    Long auditCount = jdbc.queryForObject(
-        "SELECT COUNT(*) FROM audit_log WHERE accion = 'EXPEDIENTE_PDF_DESCARGADO'",
-        Long.class);
+    Long auditCount =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM audit_log WHERE accion = 'EXPEDIENTE_PDF_DESCARGADO'",
+            Long.class);
     assertThat(auditCount)
         .as("debe haber 1 fila de audit con accion EXPEDIENTE_PDF_DESCARGADO")
         .isEqualTo(1L);

@@ -19,8 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Servicio para registrar y listar incidencias operativas de JRV (T-BE-19).
  *
- * <p>Per design.md D3: al persistir una incidencia, se emite un evento via
- * {@link AuditLogService} para que los monitores del dashboard lo consulten.
+ * <p>Per design.md D3: al persistir una incidencia, se emite un evento via {@link AuditLogService}
+ * para que los monitores del dashboard lo consulten.
  */
 @Service
 public class IncidenciaService {
@@ -42,12 +42,12 @@ public class IncidenciaService {
   }
 
   @Transactional
-  public IncidenciaJrv registrarIncidencia(IncidenciaRequestDto dto, UUID reporterPublicId, String ipAddress) {
+  public IncidenciaJrv registrarIncidencia(
+      IncidenciaRequestDto dto, UUID reporterPublicId, String ipAddress) {
     Jrv jrv =
         jrvRepository
             .findById(dto.jrvId())
-            .orElseThrow(
-                () -> new EntityNotFoundException("JRV no encontrada: " + dto.jrvId()));
+            .orElseThrow(() -> new EntityNotFoundException("JRV no encontrada: " + dto.jrvId()));
 
     Usuario reporter =
         usuarioRepository
@@ -76,7 +76,8 @@ public class IncidenciaService {
     return saved;
   }
 
-  public IncidenciaJrv registrarIncidencia(IncidenciaRequestDto dto, UUID reporterPublicId, HttpServletRequest request) {
+  public IncidenciaJrv registrarIncidencia(
+      IncidenciaRequestDto dto, UUID reporterPublicId, HttpServletRequest request) {
     return registrarIncidencia(dto, reporterPublicId, extractIp(request));
   }
 

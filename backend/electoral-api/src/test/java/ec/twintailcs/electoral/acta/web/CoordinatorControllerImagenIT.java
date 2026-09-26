@@ -5,7 +5,6 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.auth.config.UserPrincipal;
 import java.util.List;
@@ -33,6 +32,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * COORDINATOR/MASTER como contingencia.
  *
  * <p>Cubre:
+ *
  * <ul>
  *   <li>B.1.1 Subida exitosa con COORDINATOR → 201 Created.
  *   <li>B.1.2 Rechazo 403 con rol OBSERVER.
@@ -41,16 +41,17 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * </ul>
  *
  * <p>Mutaciones:
+ *
  * <ul>
  *   <li>V.1 cambiar {@code @RequestPart("imagen")} a {@code "archivo"} → B.1.3 cae.
  *   <li>V.2 quitar {@code @PreAuthorize} → B.1.2 cae.
  * </ul>
  *
- * <p>Nota sobre B.1.4: el test verifica que {@code SubirEvidenciaUseCase} rechaza con
- * {@code ActaInvalidaException} (acta no existe) y que NO se persiste el row de evidencia.
- * La limpieza del objeto en S3 cuando el rollback ocurre está validada en
- * {@code StorageCompensationIT} (T-BE-14); este test verifica la integración a nivel de
- * servicio: que el camino del coordinador usa el mismo use case que el camino del OBSERVER.
+ * <p>Nota sobre B.1.4: el test verifica que {@code SubirEvidenciaUseCase} rechaza con {@code
+ * ActaInvalidaException} (acta no existe) y que NO se persiste el row de evidencia. La limpieza del
+ * objeto en S3 cuando el rollback ocurre está validada en {@code StorageCompensationIT} (T-BE-14);
+ * este test verifica la integración a nivel de servicio: que el camino del coordinador usa el mismo
+ * use case que el camino del OBSERVER.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -101,35 +102,55 @@ class CoordinatorControllerImagenIT {
     Long provinciaId =
         jdbc.queryForObject(
             "INSERT INTO provincia (nombre, codigo) VALUES (?,?) RETURNING id",
-            Long.class, "Santa Elena", "24-" + UUID.randomUUID().toString().substring(0, 4));
+            Long.class,
+            "Santa Elena",
+            "24-" + UUID.randomUUID().toString().substring(0, 4));
     Long cantonId =
         jdbc.queryForObject(
             "INSERT INTO canton (nombre, codigo, provincia_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Santa Elena",
-            "2401-" + UUID.randomUUID().toString().substring(0, 4), provinciaId);
+            Long.class,
+            "Santa Elena",
+            "2401-" + UUID.randomUUID().toString().substring(0, 4),
+            provinciaId);
     Long parroquiaId =
         jdbc.queryForObject(
             "INSERT INTO parroquia (nombre, es_urbana, canton_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Santa Elena", true, cantonId);
+            Long.class,
+            "Santa Elena",
+            true,
+            cantonId);
     jrvId =
         jdbc.queryForObject(
             "INSERT INTO jrv (numero, recinto, total_electores, parroquia_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "JRV-" + UUID.randomUUID().toString().substring(0, 6),
-            "Recinto Test", 200, parroquiaId);
+            Long.class,
+            "JRV-" + UUID.randomUUID().toString().substring(0, 6),
+            "Recinto Test",
+            200,
+            parroquiaId);
     cargoId =
         jdbc.queryForObject(
             "INSERT INTO cargo (nombre, nivel, puestos) VALUES (?,?,?) RETURNING id",
-            Long.class, "Prefecto", "PROVINCIA", 1);
+            Long.class,
+            "Prefecto",
+            "PROVINCIA",
+            1);
     Long partidoId =
         jdbc.queryForObject(
             "INSERT INTO partido (nombre, siglas, numero_lista) VALUES (?,?,?) RETURNING id",
-            Long.class, "PARTIDO", "PAR", 1);
+            Long.class,
+            "PARTIDO",
+            "PAR",
+            1);
     Long candidatoId =
         jdbc.queryForObject(
             "INSERT INTO candidato (nombre, orden, cargo_id, partido_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "C1", 1, cargoId, partidoId);
+            Long.class,
+            "C1",
+            1,
+            cargoId,
+            partidoId);
     jdbc.update(
         "INSERT INTO jrv_cargo (jrv_id, cargo_id, activo) VALUES (?,?,true)", jrvId, cargoId);
 
@@ -149,10 +170,20 @@ class CoordinatorControllerImagenIT {
             "INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado, total_sufragantes, "
                 + "votos_blancos, votos_nulos, public_id, version) "
                 + "VALUES (?,?,?,?,?,?,?,?,0) RETURNING id",
-            Long.class, jrvId, cargoId, observerId, "ENVIADA", 100, 5, 3, UUID.randomUUID());
+            Long.class,
+            jrvId,
+            cargoId,
+            observerId,
+            "ENVIADA",
+            100,
+            5,
+            3,
+            UUID.randomUUID());
     jdbc.update(
         "INSERT INTO acta_detalle (acta_id, candidato_id, votos, version) VALUES (?,?,?,0)",
-        actaId, candidatoId, 90);
+        actaId,
+        candidatoId,
+        90);
   }
 
   private UUID crearUsuario(String rolNombre, String emailPrefix) {
@@ -175,8 +206,7 @@ class CoordinatorControllerImagenIT {
     List<SimpleGrantedAuthority> auths = new java.util.ArrayList<>();
     auths.add(new SimpleGrantedAuthority("ROLE_" + rol));
     for (String p : extraPerms) auths.add(new SimpleGrantedAuthority(p));
-    UserPrincipal principal =
-        new UserPrincipal(publicId, "test@test", rol, List.of(extraPerms));
+    UserPrincipal principal = new UserPrincipal(publicId, "test@test", rol, List.of(extraPerms));
     return new UsernamePasswordAuthenticationToken(principal, "n/a", auths);
   }
 
@@ -185,16 +215,15 @@ class CoordinatorControllerImagenIT {
   // -------------------------------------------------------------------------
 
   /**
-   * NOTA: este test NO usa real S3. El endpoint configurado apunta a 127.0.0.1:1 que NO
-   * responde → S3 upload fallará con ConnectionRefused. La respuesta esperada debería ser
-   * 5xx. Para probar 201 necesitaríamos TestContainers S3 (RustFS), fuera del alcance
-   * de este IT que se enfoca en autorización y validación de input.
+   * NOTA: este test NO usa real S3. El endpoint configurado apunta a 127.0.0.1:1 que NO responde →
+   * S3 upload fallará con ConnectionRefused. La respuesta esperada debería ser 5xx. Para probar 201
+   * necesitaríamos TestContainers S3 (RustFS), fuera del alcance de este IT que se enfoca en
+   * autorización y validación de input.
    *
-   * <p>El test verifica que el endpoint:
-   *   - acepta COORDINATOR (pasa @PreAuthorize).
-   *   - llama al use case (que falla al subir a S3, devolviendo 5xx).
+   * <p>El test verifica que el endpoint: - acepta COORDINATOR (pasa @PreAuthorize). - llama al use
+   * case (que falla al subir a S3, devolviendo 5xx).
    *
-   * Para el happy path completo con 201 Created, ver un test de integración con S3 real.
+   * <p>Para el happy path completo con 201 Created, ver un test de integración con S3 real.
    */
   @Test
   void coordinador_puedeIntentar_subirImagen() throws Exception {
@@ -226,9 +255,7 @@ class CoordinatorControllerImagenIT {
   // B.1.2 — Rechazo 403 con rol OBSERVER
   // -------------------------------------------------------------------------
 
-  /**
-   * Mutación V.2: quitar el {@code @PreAuthorize}. Debe caer este test (OBSERVER pasaría).
-   */
+  /** Mutación V.2: quitar el {@code @PreAuthorize}. Debe caer este test (OBSERVER pasaría). */
   @Test
   void observer_noPuede_subirImagen() throws Exception {
     MockMultipartFile imagen =
@@ -247,9 +274,8 @@ class CoordinatorControllerImagenIT {
   // -------------------------------------------------------------------------
 
   /**
-   * Envía la parte con clave {@code "imagen"}. Sin la mutación V.1, el endpoint acepta
-   * "imagen" → falla por S3 (5xx). Con la mutación V.1 (cambiar a {@code "archivo"}),
-   * Spring devuelve 400.
+   * Envía la parte con clave {@code "imagen"}. Sin la mutación V.1, el endpoint acepta "imagen" →
+   * falla por S3 (5xx). Con la mutación V.1 (cambiar a {@code "archivo"}), Spring devuelve 400.
    *
    * <p>Mutación V.1: cambiar {@code @RequestPart("imagen")} a {@code "archivo"}. Debe caer este
    * test (5xx → 400).
@@ -288,14 +314,13 @@ class CoordinatorControllerImagenIT {
   /**
    * Verifica que un actaId inexistente NO crea fila de evidencia.
    *
-   * <p>El use case lanza {@code ActaInvalidaException("Acta no encontrada")} cuando
-   * findById falla — eso cae ANTES del rollback de S3 (porque no se subió nada). El handler
-   * global mapea {@code ActaInvalidaException} (en realidad {@code EvidenciaInvalidaException})
-   * a 400 BAD REQUEST.
+   * <p>El use case lanza {@code ActaInvalidaException("Acta no encontrada")} cuando findById falla
+   * — eso cae ANTES del rollback de S3 (porque no se subió nada). El handler global mapea {@code
+   * ActaInvalidaException} (en realidad {@code EvidenciaInvalidaException}) a 400 BAD REQUEST.
    *
-   * <p>La limpieza del objeto S3 cuando ocurre rollback está validada en
-   * {@code StorageCompensationIT} (T-BE-14). Aquí validamos que el camino del COORDINADOR
-   * usa el mismo use case y por tanto la misma lógica de validación.
+   * <p>La limpieza del objeto S3 cuando ocurre rollback está validada en {@code
+   * StorageCompensationIT} (T-BE-14). Aquí validamos que el camino del COORDINADOR usa el mismo use
+   * case y por tanto la misma lógica de validación.
    */
   @Test
   void actaIdInexistente_noPersisteEvidencia() throws Exception {

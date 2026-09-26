@@ -14,9 +14,9 @@ import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.JrvCargo;
 import ec.twintailcs.electoral.electoral.domain.JrvCargoRepository;
 import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
-import ec.twintailcs.electoral.incidencia.application.IncidenciaService;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.JrvRepository;
+import ec.twintailcs.electoral.incidencia.application.IncidenciaService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -230,23 +230,23 @@ public class ObserverController {
   }
 
   /**
-   * POST /api/v1/observer/incidencias — T-BE-19. Reporte inmediato de contingencia
-   * operativa de JRV (mesa no instalada, urna violentada, etc.) por el veedor.
+   * POST /api/v1/observer/incidencias — T-BE-19. Reporte inmediato de contingencia operativa de JRV
+   * (mesa no instalada, urna violentada, etc.) por el veedor.
    */
   @PreAuthorize("@authz.has('acta:upload')")
   @PostMapping("/incidencias")
   public ResponseEntity<ec.twintailcs.electoral.incidencia.web.dto.IncidenciaResponseDto>
       registrarIncidencia(
-          @Valid
-              @org.springframework.web.bind.annotation.RequestBody
+          @Valid @org.springframework.web.bind.annotation.RequestBody
               ec.twintailcs.electoral.incidencia.web.dto.IncidenciaRequestDto dto,
           HttpServletRequest request) {
     ec.twintailcs.electoral.incidencia.domain.IncidenciaJrv inc =
         incidenciaService.registrarIncidencia(dto, currentUser.id(), request);
-    return ResponseEntity.status(HttpStatus.CREATED).body(incidenciaService.listarIncidencias(null)
-        .stream()
-        .filter(r -> r.id().equals(inc.getId()))
-        .findFirst()
-        .orElseThrow());
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(
+            incidenciaService.listarIncidencias(null).stream()
+                .filter(r -> r.id().equals(inc.getId()))
+                .findFirst()
+                .orElseThrow());
   }
 }

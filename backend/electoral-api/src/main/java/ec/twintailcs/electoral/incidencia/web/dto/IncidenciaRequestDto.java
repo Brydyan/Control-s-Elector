@@ -11,4 +11,5 @@ public record IncidenciaRequestDto(
     @NotBlank(message = "descripcion es obligatoria")
         @Size(max = 5000, message = "descripcion demasiado larga (máx 5000 chars)")
         String descripcion,
-    @Size(max = 500, message = "evidenciaUrl demasiado larga (máx 500 chars)") String evidenciaUrl) {}
+    @Size(max = 500, message = "evidenciaUrl demasiado larga (máx 500 chars)")
+        String evidenciaUrl) {}

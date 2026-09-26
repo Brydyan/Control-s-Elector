@@ -15,7 +15,6 @@ import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaDetalle;
 import ec.twintailcs.electoral.acta.domain.ActaDetalleRepository;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
-import ec.twintailcs.electoral.acta.domain.EstadoActa;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
@@ -23,7 +22,6 @@ import ec.twintailcs.electoral.evidencia.domain.EvidenciaRepository;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.storage.s3.S3StorageService;
 import jakarta.persistence.EntityNotFoundException;
-import java.util.UUID;
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -34,19 +32,20 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * T-BE-20: genera el PDF del expediente de impugnación CNE en memoria (sin tocar
- * disco) per {@code design.md D1/D2/D3}. Estructura del documento:
+ * T-BE-20: genera el PDF del expediente de impugnación CNE en memoria (sin tocar disco) per {@code
+ * design.md D1/D2/D3}. Estructura del documento:
  *
  * <ol>
  *   <li>Metadatos (folio, fecha UTC, identificador del coordinador).
  *   <li>Tabla comparativa (cantón, parroquia, JRV, cargo, totales).
  *   <li>Tabla de votos por candidato.
- *   <li>Imagen de la foto del acta (45% ancho, borde). Si no hay imagen, recuadro
- *       de advertencia "[SIN RESPALDO FOTOGRÁFICO EN EL SISTEMA]".
+ *   <li>Imagen de la foto del acta (45% ancho, borde). Si no hay imagen, recuadro de advertencia
+ *       "[SIN RESPALDO FOTOGRÁFICO EN EL SISTEMA]".
  *   <li>Pie forense: hash SHA-256 de los bytes generados + id coordinador + timestamp.
  * </ol>
  *
@@ -86,22 +85,21 @@ public class ExpedientePdfService {
   @Transactional
   public byte[] generarExpedientePdf(Long actaId, UUID usuarioPublicId) {
     Long usuarioId =
-        usuarioRepository
-            .findByPublicId(usuarioPublicId)
-            .map(u -> u.getId())
-            .orElse(null);
+        usuarioRepository.findByPublicId(usuarioPublicId).map(u -> u.getId()).orElse(null);
     Acta acta =
         actaRepository
             .findById(actaId)
             .orElseThrow(() -> new EntityNotFoundException("Acta no encontrada: " + actaId));
 
     Jrv jrv = acta.getJrv();
-    List<ActaDetalle> detalles = actaDetalleRepository.findAll().stream()
-        .filter(d -> d.getActa().getId().equals(actaId))
-        .toList();
-    List<Evidencia> evidencias = evidenciaRepository.findAll().stream()
-        .filter(e -> e.getActa() != null && e.getActa().getId().equals(actaId))
-        .toList();
+    List<ActaDetalle> detalles =
+        actaDetalleRepository.findAll().stream()
+            .filter(d -> d.getActa().getId().equals(actaId))
+            .toList();
+    List<Evidencia> evidencias =
+        evidenciaRepository.findAll().stream()
+            .filter(e -> e.getActa() != null && e.getActa().getId().equals(actaId))
+            .toList();
 
     ByteArrayOutputStream out = new ByteArrayOutputStream();
     Document document = new Document(PageSize.A4, 36, 36, 36, 36);
@@ -117,9 +115,11 @@ public class ExpedientePdfService {
       Font h1 = new Font(Font.HELVETICA, 16, Font.BOLD);
       document.add(new Paragraph("EXPEDIENTE DE IMPUGNACIÓN — CNE", h1));
       document.add(new Paragraph(" "));
-      document.add(new Paragraph("Acta #" + acta.getId() + " — Estado: " + acta.getEstado().name()));
-      document.add(new Paragraph(
-          "Fecha emisión: " + DateTimeFormatter.ISO_INSTANT.format(Instant.now()) + " UTC"));
+      document.add(
+          new Paragraph("Acta #" + acta.getId() + " — Estado: " + acta.getEstado().name()));
+      document.add(
+          new Paragraph(
+              "Fecha emisión: " + DateTimeFormatter.ISO_INSTANT.format(Instant.now()) + " UTC"));
       document.add(new Paragraph("Descargado por usuario ID: " + usuarioId));
       document.add(new Paragraph(" "));
 
@@ -173,8 +173,7 @@ public class ExpedientePdfService {
           document.add(recuadroAdvertencia("Error al leer la imagen: " + e.getMessage()));
         }
       } else {
-        document.add(
-            recuadroAdvertencia("[SIN RESPALDO FOTOGRÁFICO EN EL SISTEMA]"));
+        document.add(recuadroAdvertencia("[SIN RESPALDO FOTOGRÁFICO EN EL SISTEMA]"));
       }
 
       // 5. Pie forense
@@ -183,11 +182,13 @@ public class ExpedientePdfService {
       String sha = sha256Hex(currentBytes);
       document.add(new Paragraph("Trazabilidad forense", new Font(Font.HELVETICA, 10, Font.BOLD)));
       document.add(new Paragraph("SHA-256 del documento: " + sha, new Font(Font.COURIER, 8)));
-      document.add(new Paragraph("Coordinador que descargó: usuario_id=" + usuarioId,
-          new Font(Font.COURIER, 8)));
-      document.add(new Paragraph("Timestamp UTC: "
-          + DateTimeFormatter.ISO_INSTANT.format(Instant.now()),
-          new Font(Font.COURIER, 8)));
+      document.add(
+          new Paragraph(
+              "Coordinador que descargó: usuario_id=" + usuarioId, new Font(Font.COURIER, 8)));
+      document.add(
+          new Paragraph(
+              "Timestamp UTC: " + DateTimeFormatter.ISO_INSTANT.format(Instant.now()),
+              new Font(Font.COURIER, 8)));
 
       document.close();
     } catch (Exception e) {

@@ -308,11 +308,10 @@ public class CoordinatorController {
   /**
    * T-BE-18: subida de evidencia fotográfica por COORDINATOR/MASTER como contingencia.
    *
-   * <p>Camino normal: OBSERVER sube (POST /api/v1/observer/actas/{id}/imagen). Esta ruta es
-   * para cuando el OBSERVER no pudo hacerlo (equipo roto, emergencia) y el COORDINATOR toma
-   * el relevo. La subida va al mismo {@code SubirEvidenciaUseCase} que la del OBSERVER, pero
-   * además registra una fila de auditoría forense con la acción
-   * {@code EVIDENCIA_CONTINGENCIA_COORDINADOR}.
+   * <p>Camino normal: OBSERVER sube (POST /api/v1/observer/actas/{id}/imagen). Esta ruta es para
+   * cuando el OBSERVER no pudo hacerlo (equipo roto, emergencia) y el COORDINATOR toma el relevo.
+   * La subida va al mismo {@code SubirEvidenciaUseCase} que la del OBSERVER, pero además registra
+   * una fila de auditoría forense con la acción {@code EVIDENCIA_CONTINGENCIA_COORDINADOR}.
    *
    * <p>{@code @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")} refuerza la restricción del
    * nivel de clase (que es por permisos). OBSERVER recibe 403; ADMIN igual.
@@ -323,33 +322,29 @@ public class CoordinatorController {
       @PathVariable Long actaId,
       @RequestPart("imagen") MultipartFile imagen,
       HttpServletRequest request) {
-    evidenciaService.subirEvidenciaCoordinador(
-        actaId, imagen, CurrentUser.staticId(), request);
+    evidenciaService.subirEvidenciaCoordinador(actaId, imagen, CurrentUser.staticId(), request);
     return ResponseEntity.status(201).build();
   }
 
   /**
-   * T-BE-19: GET /api/v1/coordinator/incidencias — listado para monitoreo. Filtro opcional
-   * por {@code jrvId}.
+   * T-BE-19: GET /api/v1/coordinator/incidencias — listado para monitoreo. Filtro opcional por
+   * {@code jrvId}.
    *
    * <p>Doble capa de protección (per design.md D2): {@code @PreAuthorize} a nivel de método
-   * refuerza el de la clase. Si en el futuro alguien quita el de la clase (p.ej. para
-   * unificar permisos), el método sigue protegido — defense in depth.
+   * refuerza el de la clase. Si en el futuro alguien quita el de la clase (p.ej. para unificar
+   * permisos), el método sigue protegido — defense in depth.
    */
   @PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")
   @GetMapping("/incidencias")
-  public java.util.List<
-          ec.twintailcs.electoral.incidencia.web.dto.IncidenciaResponseDto>
-      listarIncidencias(
-          @RequestParam(required = false) Long jrvId) {
+  public java.util.List<ec.twintailcs.electoral.incidencia.web.dto.IncidenciaResponseDto>
+      listarIncidencias(@RequestParam(required = false) Long jrvId) {
     return incidenciaService.listarIncidencias(jrvId);
   }
 
   /**
-   * T-BE-20: GET /api/v1/coordinator/actas/{actaId}/expediente-pdf — descarga el PDF del
-   * expediente de impugnación CNE en memoria (sin tocar disco). Devuelve bytes con
-   * Content-Type application/pdf (via produces) y Content-Disposition inline para
-   * visualizar en navegador.
+   * T-BE-20: GET /api/v1/coordinator/actas/{actaId}/expediente-pdf — descarga el PDF del expediente
+   * de impugnación CNE en memoria (sin tocar disco). Devuelve bytes con Content-Type
+   * application/pdf (via produces) y Content-Disposition inline para visualizar en navegador.
    */
   @PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")
   @GetMapping(value = "/actas/{actaId}/expediente-pdf", produces = "application/pdf")
