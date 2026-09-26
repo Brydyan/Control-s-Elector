@@ -160,6 +160,14 @@
 			<artifactId>testcontainers-postgresql</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- T-BE-20: generación de PDF de expediente de impugnación.
+		     LGPL/MPL, sin coste de licencia (alternativa iText 7/8 es privativa). -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>2.0.3</version>
+		</dependency>
 	</dependencies>
 
 	<build>

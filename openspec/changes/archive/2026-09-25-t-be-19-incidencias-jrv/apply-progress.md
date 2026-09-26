@@ -114,42 +114,36 @@ violates not-null constraint]
 
 Restaurado.
 
-### V.2 — Quitar `@PreAuthorize` en listado de coordinador — **CAPTURADO PERO CON DISCREPANCIA**
+### V.2 — Quitar `@PreAuthorize` en listado de coordinador — **DECLARADO NO APLICABLE (opción a aplicada; misma redundancia que T-BE-18 V.2)**
 
 **El spec pide literalmente**: "Quitar `@PreAuthorize` en listado de coordinador".
 
-**Lo que pasó**: el endpoint `listarIncidencias` **no tiene `@PreAuthorize` propio** —
-hereda el de la clase (`@PreAuthorize("hasAnyAuthority(...)")`). No había nada que
-quitar a nivel de método para hacer una mutación "honesta".
+**Aplicación de opción (a)** (post-discusión con el usuario): agregué
+`@PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")` al método
+`listarIncidencias` (alineado con `design.md` D2 del change). Eso da una mutación
+"honesta" a nivel de método.
 
-**Lo que hice**: quité el `@PreAuthorize` a nivel de clase. El test capturó (OBSERVER
-pasó de 403 a 200), pero la mutación **NO es la que el spec describe**.
+**Resultado de la mutación V.2**: la prueba `observador_listaComo_coordinador_devuelve403`
+**NO cayó**. Status esperado 403, recibido 200. Mismo patrón que T-BE-18 V.2: la
+anotación de clase sigue rechazando OBSERVER (no tiene `acta:aprobar`, etc.), por lo
+que quitar la del método no cambia el resultado observable.
 
-**Por qué el reporte anterior fue deshonesto**: presenté V.2 como "capturada" sin la
-salvedad. Per 02-builder.md: "Tapar un test que no cae en su mutación — no lo escondas.
-Si no cae, el test es decorativo. Rehacelo o declaralo."
+**Limitación NO resuelta**: la redundancia entre clase y método significa que la
+mutación V.2 según spec es indetectable sin remover AMBAS anotaciones (lo cual
+rompería TODOS los endpoints del controller, no es una mutación quirúrgica).
 
-**Opciones para V.2 estricto**:
+**Decisión aplicada**: anotación del método queda (alineada con diseño). La mutación
+V.2 según spec queda como **declarada-no-aplicable**: per 02-builder.md, "Tapar un test
+que no cae en su mutación — no lo escondas."
 
-| Opción | Acción | Resultado |
-|---|---|---|
-| (a) | Agregar `@PreAuthorize("hasRole('COORDINATOR','MASTER','ADMIN')")` al método `listarIncidencias`, **luego** quitarlo en la mutación V.2. | Captura limpia: el test verifica el delta método. Pero introduce redundancia con el de clase (defense in depth, igual que T-BE-18 V.2). |
-| (b) | Dejar V.2 como "el spec describe una mutación no aplicable tal cual; la protección real vive a nivel de clase y la mutación equivalente también es a nivel de clase". | Honesto pero requiere que el arquitecto decida. |
+**Cambios del segundo pase**:
+- `CoordinatorController.listarIncidencias`: agregado `@PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")`.
+- V.2 ejecutada sobre la nueva anotación: test `observador_listaComo_coordinador_devuelve403`
+  **NO cayó** (200 en lugar de 403 esperado).
+- Restaurado a suite verde (313 tests, 0 errors).
 
-**Decisión recomendada**: opción (a) — agregar el `@PreAuthorize` al método y mutar.
-La redundancia con la clase no es bug (defense in depth, patrón consistente con
-T-BE-18). El test capturaría limpiamente. **No lo hice en este pase** porque requiere
-introducir una anotación adicional como setup antes de la mutación, y preferí ser
-transparente con la limitación.
-
-**Si el verificador decide implementar la opción (a)**:
-1. Agregar `@PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")` al método
-   `listarIncidencias`.
-2. Re-correr V.2 (quitar esa anotación): `observador_listaComo_coordinador_devuelve403`
-   debe caer.
-
-**Test que capturó la mutación tal como la apliqué**: `observador_listaComo_coordinador_devuelve403`.
-Restaurado.
+**Test que intenté capturar**: `observador_listaComo_coordinador_devuelve403`. **NO
+capturó.**
 
 ## Números finales
 

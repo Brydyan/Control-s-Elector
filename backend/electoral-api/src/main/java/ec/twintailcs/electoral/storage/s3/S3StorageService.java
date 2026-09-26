@@ -91,6 +91,20 @@ public class S3StorageService {
   }
 
   /**
+   * Descarga el contenido del objeto. Usado por {@code ExpedientePdfService} (T-BE-20).
+   *
+   * @return InputStream del objeto. El caller debe cerrarlo.
+   */
+  public java.io.InputStream download(String key) {
+    return s3.getObjectAsBytes(
+            software.amazon.awssdk.services.s3.model.GetObjectRequest.builder()
+                .bucket(props.getBucket())
+                .key(key)
+                .build())
+        .asInputStream();
+  }
+
+  /**
    * URL prefirmada para descargar el objeto. La expiración sale de {@link
    * S3Properties#getPresignExpiry()} (default 15 min, configurable por entorno vía {@code
    * aws.s3.presign-expiry}).
