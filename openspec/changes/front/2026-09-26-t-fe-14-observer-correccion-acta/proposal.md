@@ -44,3 +44,6 @@ Pantalla operativa móvil para el Veedor (`OBSERVER`) que permite subsanar incon
 
 ## Fuera de Alcance
 - Descarga de expedientes PDF (función exclusiva de coordinación y administración).
+
+## Dependencias
+- Backend `T-BE-21` (`GET /api/v1/observer/actas/{id}` con `ActaDetalleCompletoDto`).

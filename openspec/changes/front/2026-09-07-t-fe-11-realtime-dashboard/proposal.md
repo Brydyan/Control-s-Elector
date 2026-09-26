@@ -3,7 +3,7 @@
 ## Qué se construye
 Dashboard analítico para directivos y coordinadores (`ADMIN`, `MASTER`, `COORDINATOR`) con métricas electorales consolidadas y refresco reactivo:
 1. **Consumo de Endpoints Oficiales de Dashboard**:
-   - `GET /api/v1/dashboard/resumen`: Totales de actas por estado (`borrador`, `enviada`, `enDisputa`, `corregida`, `aprobada`, `enObservacion`).
+   - `GET /api/v1/dashboard/resumen`: Totales de actas activas por estado (`enviadas`, `enDisputa`, `corregidas`, `aprobadas`, `totalActivas`) excluyendo transaccionalmente las anuladas.
    - `GET /api/v1/dashboard/resultados`: Votos consolidados por candidato agrupados por dignidad/cargo electoral.
    - `GET /api/v1/dashboard/progreso`: Avance del escrutinio por cantón (Santa Elena, La Libertad, Salinas) calculando porcentaje de JRVs completadas.
    - `GET /api/v1/dashboard/novedades`: Listado de actas en disputa con tiempo de antigüedad en minutos.
