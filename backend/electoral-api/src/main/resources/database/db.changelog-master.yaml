@@ -26,3 +26,6 @@ databaseChangeLog:
   - include: { file: database/changelog/016-drop-refresh-token.sql }
   - include: { file: database/changelog/017-complete-data-seed.sql }
   - include: { file: database/changelog/018-notification-seed.sql }
+  - include: { file: database/changelog/019-drop-acta-storage-url.sql }
+  - include: { file: database/changelog/020-evidencia-observaciones.sql }
+  - include: { file: database/changelog/021-permiso-evidencia-update.sql }

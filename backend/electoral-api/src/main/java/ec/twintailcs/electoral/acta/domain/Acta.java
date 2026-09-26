@@ -47,9 +47,6 @@ public class Acta {
   @Column(nullable = false, length = 20)
   private EstadoActa estado = EstadoActa.BORRADOR;
 
-  @Column(name = "storage_url", length = 512)
-  private String storageUrl;
-
   @Column(name = "total_sufragantes", nullable = false)
   private Integer totalSufragantes;
 

@@ -22,6 +22,7 @@ import ec.twintailcs.electoral.geografia.domain.JrvRepository;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -98,7 +99,11 @@ public class RegistrarActaUseCase {
     Acta actaGuardada;
     try {
       actaGuardada = actaRepository.saveAndFlush(acta);
-    } catch (OptimisticLockingFailureException e) {
+    } catch (OptimisticLockingFailureException | DataIntegrityViolationException e) {
+      // Cualquiera de las dos indica que otro hilo ganó la carrera:
+      // - OptimisticLockingFailureException: @Version optimistic locking detectó el choque.
+      // - DataIntegrityViolationException: UNIQUE INDEX uk_acta_activa detectó duplicado.
+      // Ambos casos deben traducirse al error de dominio, no propagar la excepción JPA.
       throw new JrvCargoYaRegistradoException(dto.getJrvId(), dto.getCargoId());
     }
     persistirDetalles(actaGuardada, dto.getDetalles());

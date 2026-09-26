@@ -8,15 +8,11 @@ import ec.twintailcs.electoral.evidencia.domain.EvidenciaNotFoundException;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaRepository;
 import ec.twintailcs.electoral.storage.s3.S3StorageService;
 import java.util.UUID;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class EliminarEvidenciaUseCase {
-
-  private static final Logger log = LoggerFactory.getLogger(EliminarEvidenciaUseCase.class);
 
   private final EvidenciaRepository repository;
   private final S3StorageService s3;
@@ -47,15 +43,11 @@ public class EliminarEvidenciaUseCase {
     }
 
     repository.delete(e);
-    try {
-      s3.delete(e.getS3Key());
-    } catch (Exception s3Err) {
-      log.error(
-          "S3 delete failed for evidencia with public ID {} (key {}); queda orphan",
-          publicId,
-          e.getS3Key(),
-          s3Err);
-    }
+
+    // B.4 — El delete NO debe tragarse el error de S3. Si S3 falla, el FE recibe 5xx y puede
+    // reintentar. Antes, el catch logueaba y devolvía éxito, dejando la foto accesible mientras
+    // el usuario pensaba que se había borrado.
+    s3.delete(e.getS3Key());
 
     auditLogService.registrar(
         callerId,

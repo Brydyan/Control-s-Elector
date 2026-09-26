@@ -87,7 +87,7 @@ public interface ActaRepository extends JpaRepository<Acta, Long> {
       value =
           """
         SELECT new ec.twintailcs.electoral.acta.web.dto.ActaResponseDto(
-          a.id, a.jrv.id, a.cargo.id, a.registradaPor.id, a.estado, a.storageUrl,
+          a.id, a.jrv.id, a.cargo.id, a.registradaPor.id, a.estado,
           a.totalSufragantes, a.votosBlancos, a.votosNulos, a.fechaRegistro, a.motivoAnulacion,
           c.nombre, j.numero,
           (SELECT COALESCE(SUM(d.votos), 0) FROM ActaDetalle d WHERE d.acta = a))

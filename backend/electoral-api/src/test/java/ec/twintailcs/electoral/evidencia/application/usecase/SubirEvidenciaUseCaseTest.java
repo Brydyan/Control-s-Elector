@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
+import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.auth.domain.Rol;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
@@ -38,12 +39,13 @@ class SubirEvidenciaUseCaseTest {
   @Mock private S3StorageService s3;
   @Mock private UsuarioRepository usuarios;
   @Mock private ActaRepository actaRepository;
+  @Mock private AuditLogService auditLogService;
 
   private SubirEvidenciaUseCase useCase;
 
   @BeforeEach
   void setUp() {
-    useCase = new SubirEvidenciaUseCase(repository, s3, usuarios, actaRepository);
+    useCase = new SubirEvidenciaUseCase(repository, s3, usuarios, actaRepository, auditLogService);
   }
 
   @Test
@@ -115,7 +117,11 @@ class SubirEvidenciaUseCaseTest {
   }
 
   @Test
-  void execute_dbFails_cleansUpS3() {
+  void execute_dbFails_propagatesAndDoesNotCallS3Delete() {
+    // Post-fix B.3: el catch alrededor de save() fue removido. Sin un contexto transaccional
+    // (este test es puro Mockito), no hay rollback ni afterCompletion, así que NO se llama a
+    // s3.delete. La compensación real se valida en StorageCompensationIT (que sí tiene
+    // @SpringBootTest con PostgreSQL + transacción real).
     MockMultipartFile file =
         new MockMultipartFile("file", "test.webp", "image/webp", "image-content".getBytes());
     UUID callerId = UUID.randomUUID();
@@ -140,6 +146,23 @@ class SubirEvidenciaUseCaseTest {
 
     assertThatThrownBy(() -> useCase.execute(file, 1L, callerId))
         .isInstanceOf(RuntimeException.class);
-    verify(s3).delete(anyString());
+    // Sin tx, no hay cleanup: NO se llama s3.delete.
+    verify(s3, org.mockito.Mockito.never()).delete(anyString());
+  }
+
+  // C.4 — Validación de tamaño (RF-STO-02).
+  //
+  // Tanto la ruta de evidencia (POST /api/v1/evidencias) como la ruta de acta
+  // (POST /api/v1/observer/actas/{actaId}/imagen) pasan por SubirEvidenciaUseCase.execute()
+  // que valida MAX_SIZE_BYTES = 10 MB. Si alguien sube el límite solo en uno, este test
+  // debe caer porque AMBAS rutas comparten la misma validación centralizada.
+  @Test
+  void execute_fileOver10Mb_throwsInvalida() {
+    // 11 MB > 10 MB
+    byte[] big = new byte[11 * 1024 * 1024];
+    MockMultipartFile bigFile = new MockMultipartFile("file", "big.webp", "image/webp", big);
+    assertThatThrownBy(() -> useCase.execute(bigFile, 1L, UUID.randomUUID()))
+        .isInstanceOf(EvidenciaInvalidaException.class)
+        .hasMessageContaining("tamano maximo");
   }
 }

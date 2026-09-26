@@ -1,48 +1,41 @@
-# Proposal — T-FE-06: Observer: Lista de Actas Propias
+# Proposal — T-FE-06: Observer: Flujo de JRVs Asignadas, Dignidades y Consulta de Actas
 
 ## Qué se construye
-Pantalla principal del observer: lista de sus actas registradas (sin pre-asignación). Filtrable por estado (ENVIADA, EN_DISPUTA, CORREGIDA, APROBADA).
+Flujo guiado para el veedor electoral (OBSERVER) en territorio Santa Elena 2027:
+1. **Mis JRVs Asignadas (`/observer/mis-jrvs`)**: visualización de las mesas de votación asignadas al veedor, con métricas de progreso (pendientes vs completadas) y filtro por estado.
+2. **Dignidades por JRV (`/observer/jrv/:jrvId/cargos`)**: desglose de dignidades electorales (Alcalde, Prefecto, Concejales Urbanos/Rurales, Vocales Parroquiales) con el estado de registro de cada acta.
+3. **Servicios de Consulta y Disputas**: integración con los endpoints de actas registradas (`GET /api/v1/observer/mis-actas`) y actas que requieren subsanación urgente (`GET /api/v1/observer/correcciones-pendientes`).
 
 ## Por qué
-- Observer necesita ver qué actas ha registrado.
-- Filtro por estado acelera la búsqueda (¿cuáles están en disputa?).
-- Base para T-FE-07 (registrar nueva acta).
+- En el operativo de campo, un veedor atiende 1 o más JRVs y debe registrar múltiples dignidades en orden secuencial según el CNE cierra el conteo de cada urna.
+- Evita que el veedor intente ingresar dos veces la misma dignidad en una mesa.
+- Permite identificar de inmediato cuando un coordinador marca un acta como `EN_DISPUTA` para proceder a su corrección.
 
 ## Alcance
 
 | Elemento | Incluye | No incluye |
 |----------|---------|-----------|
-| Componente | HomeComponent en observer feature | paginación |
-| API | GET /api/observer/mis-actas | búsqueda por fecha |
-| UI | Tabla/lista con columnas: JRV, Cargo, Estado, Fecha | edición inline |
-| Filtro | Dropdown por estado | filtro por JRV |
-| Navegación | Click en acta → detalles o edición | versioning |
+| Vistas | `MisJrvsPage` (`/observer/mis-jrvs`), `JrvCargosPage` (`/observer/jrv/:jrvId/cargos`) | Registro detallado de votos (T-FE-07) |
+| API | `GET /api/v1/observer/jrvs`, `GET /api/v1/observer/jrv/{jrvId}/cargos`, `GET /api/v1/observer/mis-actas`, `GET /api/v1/observer/correcciones-pendientes` | Endpoints de coordinador / master |
+| Métricas | Contadores de JRVs totales, pendientes y completadas | Agregaciones provinciales (Dashboard) |
+| Filtros | Filtro en cliente por pestañas: `TODAS`, `PENDIENTES`, `COMPLETADAS` | Paginación pesada en servidor |
+| Navegación | JRV -> Dignidades -> Registro de Acta (`/observer/jrv/:jrvId/cargo/:cargoId/registrar`) | Saltos directos sin contexto de mesa |
 
 ## Criterio de aceptación
 
-- [ ] HomeComponent cargado en /observer/home
-- [ ] Llama GET /api/observer/mis-actas al inicializar
-- [ ] Muestra lista de actas en tabla/lista
-- [ ] Dropdown "Estado" filtra la lista en frontend
-- [ ] Click en acta navega a edición/detalles (stubs)
-- [ ] Loading spinner mientras se carga
+- [ ] `MisJrvsPage` carga en `/observer/mis-jrvs` consumiendo `GET /api/v1/observer/jrvs`.
+- [ ] Pestañas de filtro (`TODAS`, `PENDIENTES`, `COMPLETADAS`) segregan mesas según `cargosPendientes`.
+- [ ] Al seleccionar una JRV, navega a `/observer/jrv/:jrvId/cargos` y consume `GET /api/v1/observer/jrv/{jrvId}/cargos`.
+- [ ] La lista de dignidades refleja claramente si el acta no está registrada (`sinRegistrar`) o si ya fue enviada/aprobada/en disputa.
+- [ ] Si el acta está pendiente o en borrador, el botón permite iniciar/continuar el registro en `T-FE-07`.
+- [ ] Manejo de estados de carga (`LoadingStateComponent`) y error con reintento (`ErrorStateComponent`).
 
 ## Fuera de alcance
 
-- Paginación (todas las actas a la vez)
-- Búsqueda por JRV
-- Exportación (CSV, PDF)
-- Edición inline
+- Formulario de votos y fotos (cubierto por T-FE-07 y T-FE-08).
+- Modo offline local y sincronización diferida (cubierto por T-FE-09).
 
 ## Dependencias
 
-- T-FE-02 (rutas)
-- T-FE-03 (AuthService)
-- T-FE-04 (interceptors)
-- T-FE-05 (login para estar autenticado)
-
-## Decisiones a tomar
-
-**D1 — UI component library:** Usar Ionic (IonCard, IonList) o Material? Elegir Ionic (ya en el stack).
-
-**D2 — dónde filtra (frontend vs backend):** Frontend (dropdown en cliente, filtra array).
+- T-FE-02 (Rutas protegidas con `roleGuard(['OBSERVER', 'MASTER'])`).
+- T-FE-03 / T-FE-04 (Autenticación JWT con token Bearer en `environment.apiUrl = '/api/v1'`).

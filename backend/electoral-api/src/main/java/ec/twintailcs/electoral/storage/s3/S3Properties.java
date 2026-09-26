@@ -28,6 +28,12 @@ public class S3Properties {
   /** Path style para S3-compatible (RustFS, MinIO). True por default. */
   private boolean pathStyleAccessEnabled = true;
 
+  /**
+   * Duración de las presigned URLs (RF-STO-07). Por defecto 15 minutos. En prod Railway se puede
+   * bajar a 5 minutos vía configuración sin tocar código.
+   */
+  private java.time.Duration presignExpiry = java.time.Duration.ofMinutes(15);
+
   public String getBucket() {
     return bucket;
   }
@@ -58,5 +64,13 @@ public class S3Properties {
 
   public void setPathStyleAccessEnabled(boolean pathStyleAccessEnabled) {
     this.pathStyleAccessEnabled = pathStyleAccessEnabled;
+  }
+
+  public java.time.Duration getPresignExpiry() {
+    return presignExpiry;
+  }
+
+  public void setPresignExpiry(java.time.Duration presignExpiry) {
+    this.presignExpiry = presignExpiry;
   }
 }
