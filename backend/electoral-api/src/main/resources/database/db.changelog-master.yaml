@@ -29,3 +29,4 @@ databaseChangeLog:
   - include: { file: database/changelog/019-drop-acta-storage-url.sql }
   - include: { file: database/changelog/020-evidencia-observaciones.sql }
   - include: { file: database/changelog/021-permiso-evidencia-update.sql }
+  - include: { file: database/changelog/023-create-incidencia-jrv.sql }

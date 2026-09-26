@@ -53,6 +53,13 @@ public class GlobalExceptionHandler {
     return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
   }
 
+  /** EntityNotFoundException de JPA (e.g. JRV inexistente en IncidenciaService) → 404. */
+  @ExceptionHandler(jakarta.persistence.EntityNotFoundException.class)
+  public ResponseEntity<Map<String, Object>> entityNotFound(
+      jakarta.persistence.EntityNotFoundException ex) {
+    return body(HttpStatus.NOT_FOUND, ex.getMessage(), null);
+  }
+
   @ExceptionHandler(EvidenciaInvalidaException.class)
   public ResponseEntity<Map<String, Object>> evidenciaInvalida(EvidenciaInvalidaException ex) {
     return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);

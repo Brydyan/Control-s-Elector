@@ -15,6 +15,7 @@ import ec.twintailcs.electoral.auditlog.domain.AuditLogRepository;
 import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
+import ec.twintailcs.electoral.incidencia.application.IncidenciaService;
 import ec.twintailcs.electoral.shared.web.pagination.PageRequestFactory;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -77,6 +78,7 @@ public class CoordinatorController {
   private final AuditLogRepository auditLogRepository;
   private final CurrentUser currentUser;
   private final ActaMapper actaMapper;
+  private final IncidenciaService incidenciaService;
 
   public CoordinatorController(
       ActaService actaService,
@@ -86,7 +88,8 @@ public class CoordinatorController {
       AuditLogRepository auditLogRepository,
       CurrentUser currentUser,
       ActaMapper actaMapper,
-      EvidenciaService evidenciaService) {
+      EvidenciaService evidenciaService,
+      IncidenciaService incidenciaService) {
     this.actaService = actaService;
     this.actaRepository = actaRepository;
     this.actaDetalleRepository = actaDetalleRepository;
@@ -95,6 +98,7 @@ public class CoordinatorController {
     this.currentUser = currentUser;
     this.actaMapper = actaMapper;
     this.evidenciaService = evidenciaService;
+    this.incidenciaService = incidenciaService;
   }
 
   private static final Set<String> SORTABLE_FIELDS = Set.of("fechaRegistro", "id", "estado");
@@ -319,5 +323,17 @@ public class CoordinatorController {
     evidenciaService.subirEvidenciaCoordinador(
         actaId, imagen, CurrentUser.staticId(), request);
     return ResponseEntity.status(201).build();
+  }
+
+  /**
+   * T-BE-19: GET /api/v1/coordinator/incidencias — listado para monitoreo. Filtro opcional
+   * por {@code jrvId}. Acceso COORDINATOR/MASTER/ADMIN (clase), OBSERVER recibe 403.
+   */
+  @GetMapping("/incidencias")
+  public java.util.List<
+          ec.twintailcs.electoral.incidencia.web.dto.IncidenciaResponseDto>
+      listarIncidencias(
+          @RequestParam(required = false) Long jrvId) {
+    return incidenciaService.listarIncidencias(jrvId);
   }
 }
