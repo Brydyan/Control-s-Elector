@@ -126,6 +126,7 @@ Para garantizar que el desarrollo no se desvíe de los requerimientos operativos
 5. **`T-BE-18` (Subida de Evidencia por Coordinador)**: `openspec/changes/back/2026-09-25-t-be-18-coordinator-evidencia-upload/`. Endpoint `POST /api/v1/coordinator/actas/{id}/imagen` para adjuntar foto física recibida por contingencia cuando el veedor queda sin batería o con teléfono dañado.
 6. **`T-BE-19` (Incidencias Operativas de JRV sin Acta)**: `openspec/changes/back/2026-09-25-t-be-19-incidencias-jrv/`. Tabla `incidencia_jrv` y endpoints de reporte para alertar mesas no instaladas, impedimentos a veedores o disturbios sin necesidad de un acta de escrutinio.
 7. **`T-BE-20` (Expediente de Impugnación CNE en PDF)**: `openspec/changes/back/2026-09-25-t-be-20-dossier-impugnacion-cne-pdf/`. Generador OpenPDF que compila en 1 página formal la foto del acta, el cuadro de votos, la inconsistencia detectada y sello forense para defensa legal en audiencia pública CNE.
+8. **`T-BE-21` (Acta Detalle Completo DTO & GET Observer)**: `openspec/changes/back/2026-09-26-t-be-21-acta-detalle-dto-observer-get/`. DTO enriquecido `ActaDetalleCompletoDto` con votos individuales de candidatos, URL de evidencia física prefirmada y motivo de disputa, más endpoint `GET /api/v1/observer/actas/{id}`.
 
 #### Fase 2 · Frontend Estabilización y Operación de Campo (Spec 2027)
 1. **`2026-09-25-fe-vitest-ionic-cleanup-race`**: Aislar teardown de Vitest en `app.component.spec.ts` y eliminar `continue-on-error: true` de `.github/workflows/ci.yml`.

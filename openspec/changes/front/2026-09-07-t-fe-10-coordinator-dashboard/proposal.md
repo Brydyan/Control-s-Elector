@@ -8,12 +8,15 @@ Módulo integral para los coordinadores electorales (COORDINATOR y MASTER) que g
    - Paginador interactivo con control de tamaño de página y ordenamiento.
 2. **Detalle de Auditoría y Split-View 50/50 (`/coordinator/actas/:id`)**:
    - En pantallas de escritorio (`>= 992px`), diseño dividido en dos columnas:
-     - **Columna Izquierda**: Resumen electoral, desglose de votos por candidato, cálculo del invariante ($\sum \text{votos} = \text{sufragantes}$), historial de auditoría de cambios y barra de transiciones de estado.
-     - **Columna Derecha**: Visor de la fotografía original de escrutinio con controles de zoom, rotación y realce de contraste, más enlace directo de contingencia por WhatsApp con el veedor.
+     - **Columna Izquierda**: Resumen electoral, desglose de votos individuales por candidato (`List<ActaDetalleDto> detalles` provistos por `T-BE-21`), cálculo del invariante ($\sum \text{votos} = \text{sufragantes}$), historial de auditoría de cambios y barra de transiciones de estado.
+     - **Columna Derecha**: Visor de la fotografía original de escrutinio alimentado por `urlEvidencia` prefirmada de S3 (`T-BE-21`), con controles de zoom, rotación y realce de contraste, más enlace directo de contingencia por WhatsApp con el veedor.
 3. **Flujo de Acciones y Resolución de Inconsistencias**:
    - **Aprobar**: `PUT /api/v1/coordinator/actas/{id}/aprobar`.
    - **Disputar**: Modal con motivo obligatorio que envía `PUT /api/v1/coordinator/actas/{id}/disputar` con `{ motivo }`.
    - **Corregir**: Modal interactivo de corrección aritmética que valida el cuadre antes de enviar `PUT /api/v1/coordinator/actas/{id}/corregir`.
+   - **Anular (MASTER)**: `DELETE /api/v1/coordinator/actas/{id}` con `{ motivo }` en el cuerpo del request (`AnulacionDto`).
+   - **Subir Foto de Contingencia (T-BE-18)**: `POST /api/v1/coordinator/actas/{id}/imagen` (cuando el veedor no pudo transmitir foto).
+   - **Descargar Expediente CNE en PDF (T-BE-20)**: `GET /api/v1/coordinator/actas/{id}/expediente-pdf`.
    - **Manejo de Concurrencia**: Detección de bloqueos o cambios concurrentes (HTTP 409 Conflict) que recarga automáticamente la verdad del servidor.
 
 ## Por qué
