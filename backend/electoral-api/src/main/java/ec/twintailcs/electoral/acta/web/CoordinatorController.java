@@ -280,7 +280,6 @@ public class CoordinatorController {
         base.cargoId(),
         base.registradaPorId(),
         base.estado(),
-        base.storageUrl(),
         base.totalSufragantes(),
         base.votosBlancos(),
         base.votosNulos(),

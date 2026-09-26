@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.evidencia.domain;
 
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -13,9 +14,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -88,6 +92,17 @@ public class Evidencia {
 
   @Column(name = "actualizado_en", nullable = false)
   private Instant actualizadoEn = Instant.now();
+
+  /**
+   * Observaciones marcadas por el OBSERVER (RF-OBS-05). Lista vacía por defecto, nunca {@code
+   * null}. Se gestiona vía métodos para asegurar la invariante.
+   */
+  @OneToMany(
+      mappedBy = "evidencia",
+      cascade = CascadeType.ALL,
+      orphanRemoval = true,
+      fetch = FetchType.LAZY)
+  private List<ObservacionEvidencia> observaciones = new ArrayList<>();
 
   public void setSizeBytes(long sizeBytes) {
     if (sizeBytes <= 0) {

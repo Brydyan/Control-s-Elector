@@ -69,7 +69,11 @@ class EliminarEvidenciaUseCaseTest {
   }
 
   @Test
-  void execute_s3Fails_doesNotThrow() {
+  void execute_s3Fails_propagatesAndDoesNotAudit() {
+    // Post-fix B.4: el catch que tragaba el error de S3 fue removido. El delete debe PROPAGAR
+    // la excepción para que el FE reciba 5xx en lugar de un falso 204. Como la excepción
+    // aborta el método antes de auditLogService.registrar, NO se audita el borrado fallido
+    // (tampoco tendría sentido: el row en DB ya fue borrado, pero el objeto sigue en S3).
     UUID publicId = UUID.randomUUID();
     Evidencia e = new Evidencia();
     e.setId(10L);
@@ -78,11 +82,12 @@ class EliminarEvidenciaUseCaseTest {
     when(repository.findByPublicId(publicId)).thenReturn(Optional.of(e));
     doThrow(new RuntimeException("s3 error")).when(s3).delete("path/file.webp");
 
-    useCase.execute(publicId, null);
-
+    assertThatThrownBy(() -> useCase.execute(publicId, null))
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("s3 error");
     verify(repository).delete(e);
     verify(s3).delete("path/file.webp");
-    verify(auditLogService)
-        .registrar(eq(null), eq("EVIDENCIA_ELIMINADA"), eq("evidencia"), eq(10L), any());
+    verify(auditLogService, org.mockito.Mockito.never())
+        .registrar(any(), any(), any(), any(), any());
   }
 }

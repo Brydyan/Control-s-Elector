@@ -1,65 +1,63 @@
-# Spec — T-FE-06: Observer: Lista de Actas Propias
+# Spec — T-FE-06: Observer: Flujo de JRVs Asignadas, Dignidades y Consulta de Actas
 
 ## Escenarios
 
-### S1 — Cargar lista de actas
+### S1 — Cargar lista de JRVs asignadas
 
 ```gherkin
-GIVEN    usuario OBSERVER autenticado
-WHEN     navega a /observer/home
-THEN     HomeComponent carga
-AND      llama GET /api/observer/mis-actas
-AND      backend retorna [Acta{}, Acta{}, ...]
-AND      lista se muestra en pantalla
+GIVEN    usuario con rol OBSERVER autenticado
+WHEN     navega a /observer/mis-jrvs
+THEN     MisJrvsPage inicializa
+AND      llama a ObserverService.getMisJrvs() (GET /api/v1/observer/jrvs)
+AND      muestra las tarjetas de JRVs con número, parroquia y contadores de cargos pendientes
 ```
 
-### S2 — Filtrar por estado
+### S2 — Filtrar JRVs por estado de avance
 
 ```gherkin
-GIVEN    lista de actas cargada
-WHEN     usuario elige "ENVIADA" en dropdown estado
-THEN     solo actas con estado ENVIADA se muestran
-AND      otras desaparecen
+GIVEN    lista de JRVs cargada en MisJrvsPage
+WHEN     usuario presiona la pestaña "PENDIENTES"
+THEN     se muestran únicamente las JRVs con cargosPendientes > 0
+WHEN     usuario presiona "COMPLETADAS"
+THEN     se muestran únicamente las JRVs con cargosPendientes === 0
 ```
 
-### S3 — Click en acta navega a detalles
+### S3 — Navegar a las dignidades de una JRV
 
 ```gherkin
-GIVEN    lista de actas
-WHEN     usuario hace click en una acta
-THEN     navega a /observer/acta-detail/{acta-id}
+GIVEN    lista de JRVs visible
+WHEN     usuario hace click en una tarjeta de JRV
+THEN     el router navega a /observer/jrv/:jrvId/cargos
 ```
 
-### S4 — Loading spinner mientras se carga
+### S4 — Cargar dignidades de la JRV seleccionada
 
 ```gherkin
-GIVEN    componente inicializado
-WHEN     GET /api/observer/mis-actas está pending
-THEN     spinner se muestra
-WHEN     respuesta llega, spinner desaparece
+GIVEN    usuario en /observer/jrv/:jrvId/cargos
+WHEN     JrvCargosPage inicializa
+THEN     llama a ObserverService.getCargosDeJrv(jrvId) (GET /api/v1/observer/jrv/:jrvId/cargos)
+AND      muestra cada dignidad (Alcalde, Prefecto, etc.) con su estado (registrado / sin registrar)
 ```
 
-### S5 — Lista vacía
+### S5 — Iniciar registro de un acta
 
 ```gherkin
-GIVEN    usuario no ha registrado actas aún
-WHEN     navega a /observer/home
-AND      GET /api/observer/mis-actas retorna []
-THEN     se muestra mensaje "Sin actas registradas"
+GIVEN    lista de dignidades de la JRV
+WHEN     usuario presiona "Registrar Acta" en una dignidad sin registrar
+THEN     el router navega a /observer/jrv/:jrvId/cargo/:cargoId/registrar
 ```
 
-## Mutaciones
+### S6 — Manejo de errores de conexión con reintento
 
-### M1 — Remover GET en onInit
-
-Si se comenta el this.http.get() en ngOnInit(), lista debe estar vacía siempre. Verificación: navegar, lista vacía (detectar falla).
-
-### M2 — Filtro no funciona
-
-Si se comenta la lógica de filtrado (this.actas.filter(...)), dropdown no tiene efecto. Verificación: cambiar filtro, lista no cambia (detectar falla).
+```gherkin
+GIVEN    falla temporal de conectividad al consultar JRVs o dignidades
+WHEN     el servicio retorna error HTTP 5xx o de red
+THEN     se muestra ErrorStateComponent con mensaje amigable
+AND      el botón "Reintentar" permite volver a solicitar los datos al backend
+```
 
 ## Garantías
 
-- **G1:** GET /api/observer/mis-actas se llama en init
-- **G2:** Filtro por estado funciona en frontend
-- **G3:** Click navega a detalles
+- **G1:** Peticiones HTTP dirigidas a `/api/v1/observer/*` con Bearer Token inyectado.
+- **G2:** Segregación estricta de rutas con `roleGuard(['OBSERVER', 'MASTER'])`.
+- **G3:** Mapeo de estados de acta compatible con el backend (`BORRADOR`, `ENVIADA`, `APROBADA`, `EN_DISPUTA`, `CORREGIDA`, `ANULADA`, `EN_OBSERVACION`).

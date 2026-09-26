@@ -205,6 +205,22 @@
 				<version>5.0.3</version>
 			</plugin>
 
+			<!-- Surefire: incluir *IT.java además de *Test.java por convención del proyecto.
+			     Los ITs de storage (StorageCompensationIT, DeleteS3FailureIT, AuditLogBaselineIT)
+			     son integration tests con Testcontainers que viven junto a unit tests para
+			     simplificar el run. Si se prefiere separar, mover a failsafe y renombrar. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>**/*Test.java</include>
+						<include>**/*Tests.java</include>
+						<include>**/*IT.java</include>
+					</includes>
+				</configuration>
+			</plugin>
+
 			<!-- GraalVM Native Image Plugin
 			     Spring Boot parent POM ya maneja la versión y config vía
 			     el profile `-Pnative`. Solo declaramos el plugin aquí.

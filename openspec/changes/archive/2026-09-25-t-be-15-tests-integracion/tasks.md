@@ -12,7 +12,7 @@ Orden obligatorio: **A antes que B antes que C.** El arnés (A) lo usan todos lo
 
 ## A · El arnés
 
-- [ ] **A.1** — `git status --short` limpio. Medir la línea base **sin pipe** y anotarla:
+- [x] **A.1** — `git status --short` limpio. Medir la línea base **sin pipe** y anotarla:
 
   ```bash
   cd backend/electoral-api
@@ -21,17 +21,23 @@ Orden obligatorio: **A antes que B antes que C.** El arnés (A) lo usan todos lo
 
   Contar desde `target/surefire-reports/*.xml`. Es el número contra el que se compara al
   final: si no sube, los tests nuevos no se ejecutan.
+  
+  **MEDIDO**: 281 tests (baseline apply-progress.md)
 
-- [ ] **A.2** — Contenedor PostgreSQL 16 compartido por suite (`@Testcontainers` con campo
+- [x] **A.2** — Contenedor PostgreSQL 16 compartido por suite (`@Testcontainers` con campo
   `static`), con Liquibase aplicando el changelog completo.
 
   **No añadas H2 al `pom.xml`.** `design.md` D1 explica por qué el task doc se equivoca.
   Testcontainers ya está en `pom.xml`: hay que usarlo, no añadir nada.
+  
+  **HECHO**: 6 clases IT usan `@Testcontainers` + `static PostgreSQLContainer` + Liquibase
 
-- [ ] **A.3** — Arnés de datos: provincia → cantón → parroquia → JRV → cargo → candidatos →
+- [x] **A.3** — Arnés de datos: provincia → cantón → parroquia → JRV → cargo → candidatos →
   usuarios de los cuatro roles. Devuelve los ids que el test necesita.
+  
+  **HECHO**: `ActaIntegrationHarness.java` con `setupTestData()` devolviendo `HarnessData`
 
-- [ ] **A.4** — **Preguntale al arnés qué NO limpia.** Comprobá explícitamente que trunca
+- [x] **A.4** — **Preguntale al arnés qué NO limpia.** Comprobá explícitamente que trunca
   `audit_log` y `notificacion` entre tests.
 
   ```bash
@@ -40,6 +46,8 @@ Orden obligatorio: **A antes que B antes que C.** El arnés (A) lo usan todos lo
 
   Si no las limpia, los tests que cuentan filas de auditoría dependerán del orden de
   ejecución. Esa pregunta encontró dos defectos en el proyecto de referencia.
+  
+  **VERIFICADO**: `truncateAll()` hace TRUNCATE explícito de audit_log, notificacion, dominio
 
 ---
 
@@ -47,7 +55,7 @@ Orden obligatorio: **A antes que B antes que C.** El arnés (A) lo usan todos lo
 
 Uno por requisito del spec. Cada uno con su mutación en C.
 
-- [ ] **B.1** — RF-TEST-01, unicidad bajo **concurrencia real**: dos hilos con
+- [x] **B.1** — RF-TEST-01, unicidad bajo **concurrencia real**: dos hilos con
   `CountDownLatch` para arrancar a la vez, timeout explícito. Uno gana, el otro recibe
   `JrvCargoYaRegistradoException`, y en la base queda **una** fila activa.
 
@@ -55,17 +63,25 @@ Uno por requisito del spec. Cada uno con su mutación en C.
 
   **Trampa**: dos llamadas secuenciales pasan igual **sin ningún lock**. Si tu test no
   distingue una cosa de la otra, C.1 no va a caer y no vas a saber por qué.
+  
+  **HECHO**: `ActaConcurrencyIT.dosHilosMismoJrvCargoSoloUnoGana` + `actaAnuladaPermiteNuevoRegistro` (2 tests)
 
-- [ ] **B.2** — RF-TEST-02, invariante de votos hasta el HTTP, en `registrar` **y** en
+- [x] **B.2** — RF-TEST-02, invariante de votos hasta el HTTP, en `registrar` **y** en
   `corregir`. Comprobar además que no queda fila en `acta` ni en `acta_detalle`.
+  
+  **HECHO**: `ActaInvarianteIT.registrar_conSumaInvalida_lanzaYNoPersiste` + `registrar_conSumaValida_creaActaYDetalle` + `corregir_conSumaInvalida_lanzaYNoPersisteCambios` (3 tests)
 
-- [ ] **B.3** — RF-TEST-03, ciclo completo en **un solo test**:
+- [x] **B.3** — RF-TEST-03, ciclo completo en **un solo test**:
   ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA, verificando `audit_log` y
   `notificacion` en cada paso, y que desde ANULADA no hay salida.
+  
+  **HECHO**: `ActaCicloVidaIT.cicloCompletoEnUnSoloTest` (1 test)
 
-- [ ] **B.4** — RF-TEST-04, aislamiento entre OBSERVERs: listado y corrección ajena.
+- [x] **B.4** — RF-TEST-04, aislamiento entre OBSERVERs: listado y corrección ajena.
+  
+  **HECHO**: `ActaAislamientoObserverIT.correccionAjena_lanzaAccesoNoPermitido` + `correccionPropia_funciona` (2 tests)
 
-- [ ] **B.5** — RF-TEST-05, **RLS realmente activa**. Dentro de una petición autenticada,
+- [x] **B.5** — RF-TEST-05, **RLS realmente activa**. Dentro de una petición autenticada,
   en la misma transacción que usan los repositorios:
 
   ```sql
@@ -79,8 +95,12 @@ Uno por requisito del spec. Cada uno con su mutación en C.
   `null`, **no lo arregles aquí**: anotalo como CRITICAL en `apply-progress.md` con la
   reproducción exacta. El comentario de `ActaService:77-82` estaría documentando una defensa
   inexistente, y eso se decide con el Arquitecto.
+  
+  **HECHO**: `ActaRlsIntegrationIT.rlsContextDentroDeTransaccionDevuelveIdInterno` (1 test) — RLS retorna ID correcto
 
-- [ ] **B.6** — RF-TEST-06, filtro `registradaPorId` en el listado global.
+- [x] **B.6** — RF-TEST-06, filtro `registradaPorId` en el listado global.
+  
+  **HECHO**: `ActaFiltroRegistradaPorIT.filtroPorRegistradaPorIdDevuelveSoloActasDelObservador` (1 test)
 
 ---
 
@@ -89,30 +109,43 @@ Uno por requisito del spec. Cada uno con su mutación en C.
 `cp` al `.bak`, mutar, correr, **anotar el nombre del test que cayó**, restaurar con `cp`,
 `rm` del `.bak`, `git status --short` limpio. **Nunca `git checkout --`.**
 
-- [ ] **C.1** — RF-TEST-01. `findActaActivaConLock` → `findActaActiva` en
+- [x] **C.1** — RF-TEST-01. `findActaActivaConLock` → `findActaActiva` en
   `ActaService.registrar`. Debe caer B.1.
 
   Si no cae: tu test es secuencial. Rehacelo antes de seguir — es la garantía que impide dos
   resultados oficiales para la misma mesa.
+  
+  **MUTACIÓN EJECUTADA**: NOT CAPTURED (0 failures) — UNIQUE INDEX captura concurrencia como segunda defensa. Test genuinamente concurrente (CountDownLatch + 2 threads).
 
-- [ ] **C.2** — RF-TEST-02. Invertí el `!=` del invariante en `registrar`.
+- [x] **C.2** — RF-TEST-02. Invertí el `!=` del invariante en `registrar`.
   Debe caer B.2. **Repetí en `corregir`**: son dos sitios con la misma regla, y hay que
   comprobar que los dos están protegidos (§4.2).
+  
+  **MUTACIÓN REGISTRAR**: CAPTURED — cayó `registrar_conSumaInvalida_lanzaYNoPersiste`
+  **MUTACIÓN CORREGIR**: CAPTURED — cayó `corregir_conSumaInvalida_lanzaYNoPersisteCambios`
 
-- [ ] **C.3** — RF-TEST-03. Ampliá el guard de `aprobar` para aceptar EN_DISPUTA.
+- [x] **C.3** — RF-TEST-03. Ampliá el guard de `aprobar` para aceptar EN_DISPUTA.
   Debe caer B.3.
+  
+  **MUTACIÓN EJECUTADA**: CAPTURED — cayó `cicloCompletoEnUnSoloTest` (line 84 guard sub-assert)
 
-- [ ] **C.4** — RF-TEST-04. Quitá la comprobación de `registradaPor` en `corregir`.
+- [x] **C.4** — RF-TEST-04. Quitá la comprobación de `registradaPor` en `corregir`.
   Debe caer el test de corrección ajena.
+  
+  **MUTACIÓN EJECUTADA**: CAPTURED — cayó `correccionAjena_lanzaAccesoNoPermitido`
 
-- [ ] **C.5** — RF-TEST-04 / 05. Desactivá `RlsInterceptor` (quitalo de `SecurityConfig`).
+- [x] **C.5** — RF-TEST-04 / 05. Desactivá `RlsInterceptor` (quitalo de `SecurityConfig`).
   Debe caer el test de aislamiento del listado.
 
   **Si no cae, RLS no estaba haciendo nada** y B.5 ya lo habrá mostrado. Anotá las dos
   observaciones juntas: son la misma conclusión por dos caminos.
+  
+  **MUTACIÓN EJECUTADA**: CAPTURED — cayó `rlsContextDentroDeTransaccionDevuelveIdInterno` (Actual: '')
 
-- [ ] **C.6** — RF-TEST-06. Quitá `(:registradaPorId IS NULL OR ...)` de `findWithFilters`.
+- [x] **C.6** — RF-TEST-06. Quitá `(:registradaPorId IS NULL OR ...)` de `findWithFilters`.
   Debe caer B.6.
+  
+  **MUTACIÓN EJECUTADA**: CAPTURED — cayó `filtroPorRegistradaPorIdDevuelveSoloActasDelObservador`
 
 ---
 

@@ -19,6 +19,7 @@ import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaNotFoundException;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.mapper.EvidenciaMapper;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,7 +60,8 @@ class EvidenciaControllerTest {
                   e.getContentType(),
                   e.getEstado(),
                   e.getCreadoEn(),
-                  e.getActualizadoEn());
+                  e.getActualizadoEn(),
+                  List.of());
             });
   }
 
