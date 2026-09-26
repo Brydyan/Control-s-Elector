@@ -18,8 +18,8 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 /**
- * Incidencia operativa reportada por un veedor sobre una JRV (T-BE-19). Aislada del acta
- * porque representa un evento, no votos.
+ * Incidencia operativa reportada por un veedor sobre una JRV (T-BE-19). Aislada del acta porque
+ * representa un evento, no votos.
  */
 @Entity
 @Table(name = "incidencia_jrv")

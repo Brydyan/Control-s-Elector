@@ -83,29 +83,29 @@ public class EvidenciaService {
   }
 
   /**
-   * T-BE-18: subida de evidencia por COORDINATOR/MASTER como contingencia (no es el camino
-   * normal — OBSERVER es quien sube). El upload sigue el mismo camino que el OBSERVER
-   * (SubirEvidenciaUseCase), pero se registra una fila adicional de auditoría forense
-   * con la acción {@code EVIDENCIA_CONTINGENCIA_COORDINADOR} para distinguirla de las
-   * subidas regulares. La fila de EVIDENCIA queda con {@code usuario_id} del COORDINATOR
-   * (no del OBSERVER que registró el acta) — es trazabilidad para auditoría.
+   * T-BE-18: subida de evidencia por COORDINATOR/MASTER como contingencia (no es el camino normal —
+   * OBSERVER es quien sube). El upload sigue el mismo camino que el OBSERVER
+   * (SubirEvidenciaUseCase), pero se registra una fila adicional de auditoría forense con la acción
+   * {@code EVIDENCIA_CONTINGENCIA_COORDINADOR} para distinguirla de las subidas regulares. La fila
+   * de EVIDENCIA queda con {@code usuario_id} del COORDINATOR (no del OBSERVER que registró el
+   * acta) — es trazabilidad para auditoría.
    */
   public Evidencia subirEvidenciaCoordinador(
       Long actaId, MultipartFile imagen, UUID coordinadorPublicId, String ipAddress) {
     Evidencia evidencia = subirEvidenciaUseCase.execute(imagen, actaId, coordinadorPublicId);
 
     Long coordinadorId =
-        usuarioRepository
-            .findByPublicId(coordinadorPublicId)
-            .map(u -> u.getId())
-            .orElse(null);
+        usuarioRepository.findByPublicId(coordinadorPublicId).map(u -> u.getId()).orElse(null);
 
     auditLogService.registrarConIp(
         coordinadorId,
         "EVIDENCIA_CONTINGENCIA_COORDINADOR",
         "evidencia",
         evidencia.getId(),
-        "Subida de contingencia por COORDINATOR/MASTER: acta=" + actaId + ", s3Key=" + evidencia.getS3Key(),
+        "Subida de contingencia por COORDINATOR/MASTER: acta="
+            + actaId
+            + ", s3Key="
+            + evidencia.getS3Key(),
         ipAddress);
 
     return evidencia;
@@ -123,4 +123,3 @@ public class EvidenciaService {
     return request.getRemoteAddr();
   }
 }
-

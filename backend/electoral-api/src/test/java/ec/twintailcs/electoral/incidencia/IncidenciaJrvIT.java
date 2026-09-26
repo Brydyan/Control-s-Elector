@@ -7,10 +7,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import ec.twintailcs.electoral.auth.config.UserPrincipal;
-import ec.twintailcs.electoral.incidencia.web.dto.IncidenciaRequestDto;
-import ec.twintailcs.electoral.incidencia.domain.TipoIncidenciaJrv;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import ec.twintailcs.electoral.auth.config.UserPrincipal;
+import ec.twintailcs.electoral.incidencia.domain.TipoIncidenciaJrv;
+import ec.twintailcs.electoral.incidencia.web.dto.IncidenciaRequestDto;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +35,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * T-BE-19: tests de integración del módulo de incidencias operativas de JRV.
  *
  * <p>Cubre:
+ *
  * <ul>
  *   <li>S1 — Reporte de incidencia por veedor (POST /api/v1/observer/incidencias) → 201.
  *   <li>S2 — Consulta por coordinador (GET /api/v1/coordinator/incidencias) → 200 con datos.
@@ -43,6 +44,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * </ul>
  *
  * <p>Mutaciones:
+ *
  * <ul>
  *   <li>V.1 — omitir el seteo de {@code reportadaPor} → violación NOT NULL en BD.
  *   <li>V.2 — quitar {@code @PreAuthorize} del listado COORDINATOR → 200 sin auth.
@@ -83,22 +85,32 @@ class IncidenciaJrvIT {
     Long provinciaId =
         jdbc.queryForObject(
             "INSERT INTO provincia (nombre, codigo) VALUES (?,?) RETURNING id",
-            Long.class, "Santa Elena", "24-" + UUID.randomUUID().toString().substring(0, 4));
+            Long.class,
+            "Santa Elena",
+            "24-" + UUID.randomUUID().toString().substring(0, 4));
     Long cantonId =
         jdbc.queryForObject(
             "INSERT INTO canton (nombre, codigo, provincia_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Santa Elena",
-            "2401-" + UUID.randomUUID().toString().substring(0, 4), provinciaId);
+            Long.class,
+            "Santa Elena",
+            "2401-" + UUID.randomUUID().toString().substring(0, 4),
+            provinciaId);
     Long parroquiaId =
         jdbc.queryForObject(
             "INSERT INTO parroquia (nombre, es_urbana, canton_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Santa Elena", true, cantonId);
+            Long.class,
+            "Santa Elena",
+            true,
+            cantonId);
     jrvId =
         jdbc.queryForObject(
             "INSERT INTO jrv (numero, recinto, total_electores, parroquia_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "JRV-" + UUID.randomUUID().toString().substring(0, 6),
-            "Recinto Test", 200, parroquiaId);
+            Long.class,
+            "JRV-" + UUID.randomUUID().toString().substring(0, 6),
+            "Recinto Test",
+            200,
+            parroquiaId);
 
     observerPublicId = crearUsuario("OBSERVER", "obs");
     coordinatorPublicId = crearUsuario("COORDINATOR", "coord");
@@ -142,10 +154,7 @@ class IncidenciaJrvIT {
   void observador_registra_incidencia_devuelve201() throws Exception {
     IncidenciaRequestDto dto =
         new IncidenciaRequestDto(
-            jrvId,
-            TipoIncidenciaJrv.IMPEDIMENTO_VEEDOR,
-            "Policía impidió paso al aula",
-            null);
+            jrvId, TipoIncidenciaJrv.IMPEDIMENTO_VEEDOR, "Policía impidió paso al aula", null);
 
     mockMvc
         .perform(
@@ -160,8 +169,10 @@ class IncidenciaJrvIT {
     Long count = jdbc.queryForObject("SELECT COUNT(*) FROM incidencia_jrv", Long.class);
     assertThat(count).isEqualTo(1L);
 
-    Long auditCount = jdbc.queryForObject(
-        "SELECT COUNT(*) FROM audit_log WHERE accion = 'INCIDENCIA_JRV_REGISTRADA'", Long.class);
+    Long auditCount =
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM audit_log WHERE accion = 'INCIDENCIA_JRV_REGISTRADA'",
+            Long.class);
     assertThat(auditCount)
         .as("debe haber 1 fila de audit con accion INCIDENCIA_JRV_REGISTRADA")
         .isEqualTo(1L);
@@ -174,8 +185,7 @@ class IncidenciaJrvIT {
   @Test
   void jrvInexistente_devuelve404() throws Exception {
     IncidenciaRequestDto dto =
-        new IncidenciaRequestDto(
-            99999L, TipoIncidenciaJrv.OTRO, "test", null);
+        new IncidenciaRequestDto(99999L, TipoIncidenciaJrv.OTRO, "test", null);
 
     mockMvc
         .perform(
