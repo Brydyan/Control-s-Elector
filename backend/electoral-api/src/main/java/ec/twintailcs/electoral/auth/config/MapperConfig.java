@@ -80,8 +80,7 @@ public class MapperConfig {
   }
 
   @Bean
-  public EvidenciaMapper evidenciaMapper(
-      ObservacionEvidenciaRepository observacionRepository) {
+  public EvidenciaMapper evidenciaMapper(ObservacionEvidenciaRepository observacionRepository) {
     return new EvidenciaMapper() {
       @Override
       public EvidenciaResponse toDto(Evidencia entity) {

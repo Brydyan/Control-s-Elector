@@ -33,10 +33,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -48,17 +45,17 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  *   <li>Contenedor PostgreSQL 16 compartido (static) — Testcontainers, NO H2 (per design.md D1).
  *   <li>Liquibase aplica el changelog completo al levantar el contexto.
  *   <li>Cada test parte de BD limpia: {@link BeforeEach} trunca tablas en orden de FK.
- *   <li>Builder methods devuelven los ids que cada test necesita — sin depender del seed
- *       de Liquibase (per design.md D4).
- *   <li>Limpieza explícita de {@code audit_log} y {@code notificacion} en {@link BeforeEach}:
- *       si no se truncaran, los tests que cuentan filas dependerían del orden de ejecución
- *       (per design.md D4 + tasks.md A.4).
+ *   <li>Builder methods devuelven los ids que cada test necesita — sin depender del seed de
+ *       Liquibase (per design.md D4).
+ *   <li>Limpieza explícita de {@code audit_log} y {@code notificacion} en {@link BeforeEach}: si no
+ *       se truncaran, los tests que cuentan filas dependerían del orden de ejecución (per design.md
+ *       D4 + tasks.md A.4).
  * </ul>
  *
  * <p>Razón de ser base class y no helper estático: cada subclase IT arranca su propio contexto
- * Spring (convención surefire), pero comparte el contenedor estático. La BD queda como un
- * recurso compartido entre tests de la misma JVM; los TRUNCATE en {@code @BeforeEach} son la
- * garantía de aislamiento.
+ * Spring (convención surefire), pero comparte el contenedor estático. La BD queda como un recurso
+ * compartido entre tests de la misma JVM; los TRUNCATE en {@code @BeforeEach} son la garantía de
+ * aislamiento.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -110,9 +107,9 @@ public abstract class ActaIntegrationHarness {
   @PersistenceContext protected EntityManager entityManager;
 
   /**
-   * Trunca todas las tablas en orden de dependencias FK. Incluye explícitamente {@code
-   * audit_log} y {@code notificacion} (per tasks.md A.4) y las semillas RBAC. {@code
-   * RESTART IDENTITY} resetea sequences; {@code CASCADE} corta FKs sin errores.
+   * Trunca todas las tablas en orden de dependencias FK. Incluye explícitamente {@code audit_log} y
+   * {@code notificacion} (per tasks.md A.4) y las semillas RBAC. {@code RESTART IDENTITY} resetea
+   * sequences; {@code CASCADE} corta FKs sin errores.
    */
   @BeforeEach
   void truncateAll() {
@@ -185,7 +182,8 @@ public abstract class ActaIntegrationHarness {
   }
 
   protected Partido nuevoPartido(String nombre) {
-    String siglas = nombre.length() >= 3 ? nombre.substring(0, 3).toUpperCase() : nombre.toUpperCase();
+    String siglas =
+        nombre.length() >= 3 ? nombre.substring(0, 3).toUpperCase() : nombre.toUpperCase();
     return partidoRepository.save(new Partido(nombre, siglas, 1));
   }
 
@@ -269,10 +267,12 @@ public abstract class ActaIntegrationHarness {
     int total = totalVotosCandidatos + blancos + nulos;
     List<ActaDetalleDto> detalles =
         candidatos.stream()
-            .map(c -> new ActaDetalleDto(c.getId(), distribVoto(totalVotosCandidatos, candidatos.indexOf(c))))
+            .map(
+                c ->
+                    new ActaDetalleDto(
+                        c.getId(), distribVoto(totalVotosCandidatos, candidatos.indexOf(c))))
             .toList();
-    return new ActaRequestDto(
-        jrv.id(), cargo.id(), total, blancos, nulos, detalles);
+    return new ActaRequestDto(jrv.id(), cargo.id(), total, blancos, nulos, detalles);
   }
 
   private int distribVoto(int total, int idx) {
@@ -305,9 +305,9 @@ public abstract class ActaIntegrationHarness {
   }
 
   /**
-   * Ejecuta {@code SELECT current_setting('app.current_user_id', true)} en una conexión nueva
-   * (no en el contexto Spring) para verificar si RLS fue establecido durante una petición. Si
-   * devuelve {@code null} o vacío, RLS no está actuando (per design.md D3).
+   * Ejecuta {@code SELECT current_setting('app.current_user_id', true)} en una conexión nueva (no
+   * en el contexto Spring) para verificar si RLS fue establecido durante una petición. Si devuelve
+   * {@code null} o vacío, RLS no está actuando (per design.md D3).
    */
   protected String currentRlsUserId() {
     return jdbc.queryForObject(
@@ -335,9 +335,9 @@ public abstract class ActaIntegrationHarness {
   // -----------------------------------------------------------------
 
   /**
-   * Tareas A.4: este método es la verificación que debe responder "¿qué NO limpia el arnés?".
-   * Si en el futuro alguien agrega una tabla y olvida truncarla, este test fallará
-   * mostrando qué tablas se quedaron con datos.
+   * Tareas A.4: este método es la verificación que debe responder "¿qué NO limpia el arnés?". Si en
+   * el futuro alguien agrega una tabla y olvida truncarla, este test fallará mostrando qué tablas
+   * se quedaron con datos.
    */
   protected void assertArnesLimpia() {
     assertThat(contarAuditLog()).as("audit_log debe estar vacío entre tests").isZero();
@@ -345,7 +345,8 @@ public abstract class ActaIntegrationHarness {
     Long actas = jdbc.queryForObject("SELECT COUNT(*) FROM acta", Long.class);
     assertThat(actas).as("acta debe estar vacío entre tests").isZero();
     Long usuarios =
-        jdbc.queryForObject("SELECT COUNT(*) FROM usuario WHERE email LIKE '%@test.local'", Long.class);
+        jdbc.queryForObject(
+            "SELECT COUNT(*) FROM usuario WHERE email LIKE '%@test.local'", Long.class);
     assertThat(usuarios).as("usuarios de test deben estar limpios entre tests").isZero();
   }
 }

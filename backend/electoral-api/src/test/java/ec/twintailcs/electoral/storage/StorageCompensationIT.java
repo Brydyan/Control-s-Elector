@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ec.twintailcs.electoral.evidencia.application.usecase.SubirEvidenciaUseCase;
-import ec.twintailcs.electoral.storage.s3.S3StorageService;
 import java.net.URI;
 import java.security.MessageDigest;
 import java.time.Duration;
@@ -37,17 +36,17 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 /**
  * Gate 1 — A.2: Reproduce el defecto de compensación S3 (RF-STO-03).
  *
- * <p>Hipótesis (de design.md D2): el catch en {@code SubirEvidenciaUseCase.execute()} rodea
- * {@code repository.save(...)}. Con JPA, save() solo ENCOLA el INSERT; el flush/commit ocurre
- * cuando el método retorna y Spring cierra la transacción. Una violación de constraint explota
- * FUERA de ese catch → el objeto queda huérfano en S3.
+ * <p>Hipótesis (de design.md D2): el catch en {@code SubirEvidenciaUseCase.execute()} rodea {@code
+ * repository.save(...)}. Con JPA, save() solo ENCOLA el INSERT; el flush/commit ocurre cuando el
+ * método retorna y Spring cierra la transacción. Una violación de constraint explota FUERA de ese
+ * catch → el objeto queda huérfano en S3.
  *
  * <p>Diseño del test: contenedor RustFS real (Testcontainers, NO mock). Setup agrega un UNIQUE
  * INDEX sobre {@code evidencia.sha256} (la columna existe pero sin unique en el schema actual).
  * Pre-insertamos una fila con un {@code sha256} conocido. Ejecutamos el use case con un archivo
  * cuyo contenido produce exactamente ese mismo SHA-256 → el INSERT del nuevo row viola la UNIQUE
- * constraint en COMMIT (no en save()) → la excepción se lanza DESPUÉS de que execute() retornó
- * → el catch no la ve → S3 no se limpia → objeto huérfano.
+ * constraint en COMMIT (no en save()) → la excepción se lanza DESPUÉS de que execute() retornó → el
+ * catch no la ve → S3 no se limpia → objeto huérfano.
  *
  * <p>Trampa explícita (per design.md D3): NO se mockea {@code S3StorageService}. La verificación va
  * contra RustFS real con un cliente S3 aparte.
@@ -103,13 +102,13 @@ class StorageCompensationIT {
     adminClient =
         S3Client.builder()
             .endpointOverride(
-                URI.create("http://" + s3container.getHost() + ":" + s3container.getMappedPort(9000)))
+                URI.create(
+                    "http://" + s3container.getHost() + ":" + s3container.getMappedPort(9000)))
             .region(Region.US_EAST_1)
             .credentialsProvider(
                 StaticCredentialsProvider.create(
                     AwsBasicCredentials.create("minioadmin", "minioadmin")))
-            .serviceConfiguration(
-                S3Configuration.builder().pathStyleAccessEnabled(true).build())
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
             .build();
     try {
       adminClient.createBucket(b -> b.bucket("electoral-evidences"));
@@ -207,8 +206,8 @@ class StorageCompensationIT {
    * A.2 / B.3 — Sin huérfano S3 cuando el INSERT falla en commit.
    *
    * <p>Pre-condición: fila en {@code evidencia} con sha256 = X + UNIQUE constraint DEFERRABLE
-   * INITIALLY DEFERRED sobre sha256. Acción: ejecutar use case con archivo cuyo contenido
-   * hashea a X. Resultado esperado (post-fix B.3): INSERT viola UNIQUE en COMMIT → rollback →
+   * INITIALLY DEFERRED sobre sha256. Acción: ejecutar use case con archivo cuyo contenido hashea a
+   * X. Resultado esperado (post-fix B.3): INSERT viola UNIQUE en COMMIT → rollback →
    * TransactionSynchronization.afterCompletion(STATUS_ROLLED_BACK) limpia S3 → SIN huérfano.
    *
    * <p>Este test es RED-GREEN: pre-fix fallaba (orphan existía); post-fix pasa (orphan limpiado).
@@ -243,8 +242,7 @@ class StorageCompensationIT {
         "EN_REVISION");
 
     // 3) Ejecutar use case — la constraint UNIQUE deferida falla en COMMIT.
-    MockMultipartFile file =
-        new MockMultipartFile("file", "test.webp", "image/webp", content);
+    MockMultipartFile file = new MockMultipartFile("file", "test.webp", "image/webp", content);
 
     assertThatThrownBy(() -> useCase.execute(file, actaId, observerPublicId))
         .isInstanceOfAny(DataIntegrityViolationException.class, RuntimeException.class);
@@ -276,18 +274,17 @@ class StorageCompensationIT {
    * C.5 — Persistencia de la referencia (RF-STO-01).
    *
    * <p>Tras subir un acta, debe existir una fila en {@code evidencia} con el {@code s3_key} del
-   * objeto recién subido. La fila en {@code evidencia} ES la referencia a la foto del acta
-   * (después de B.2: el acta ya no tiene storage_key; la fuente de verdad es la tabla evidencia
-   * vinculada por {@code acta_id}).
+   * objeto recién subido. La fila en {@code evidencia} ES la referencia a la foto del acta (después
+   * de B.2: el acta ya no tiene storage_key; la fuente de verdad es la tabla evidencia vinculada
+   * por {@code acta_id}).
    *
-   * <p>Pre-fix: el test pasa (evidencia persistida). Post-fix: igual pasa. La mutación C.5
-   * (remover repository.save(evidencia)) rompe la persistencia → conteo queda en 0 → test cae.
+   * <p>Pre-fix: el test pasa (evidencia persistida). Post-fix: igual pasa. La mutación C.5 (remover
+   * repository.save(evidencia)) rompe la persistencia → conteo queda en 0 → test cae.
    */
   @Test
   void uploadedFileHasReferencePersisted() {
     MockMultipartFile file =
-        new MockMultipartFile(
-            "file", "ref-test.webp", "image/webp", "contenido-c5".getBytes());
+        new MockMultipartFile("file", "ref-test.webp", "image/webp", "contenido-c5".getBytes());
 
     long evidenciaCountBefore = countEvidenciaRowsForActa();
     var evidencia = useCase.execute(file, actaId, observerPublicId);
@@ -300,8 +297,9 @@ class StorageCompensationIT {
         .isEqualTo(1L);
 
     // Verificamos que el s3_key de la fila coincide con el patrón actas/{actaId}/uuid.webp.
-    String persistedKey = jdbc.queryForObject(
-        "SELECT s3_key FROM evidencia WHERE id = ?", String.class, evidencia.getId());
+    String persistedKey =
+        jdbc.queryForObject(
+            "SELECT s3_key FROM evidencia WHERE id = ?", String.class, evidencia.getId());
     assertThat(persistedKey)
         .as("s3_key persistido debe seguir el patrón actas/{actaId}/{uuid}.webp")
         .startsWith("actas/" + actaId + "/")
@@ -310,8 +308,7 @@ class StorageCompensationIT {
 
   private long countEvidenciaRowsForActa() {
     Long count =
-        jdbc.queryForObject(
-            "SELECT COUNT(*) FROM evidencia WHERE acta_id = ?", Long.class, actaId);
+        jdbc.queryForObject("SELECT COUNT(*) FROM evidencia WHERE acta_id = ?", Long.class, actaId);
     return count == null ? 0L : count;
   }
 }

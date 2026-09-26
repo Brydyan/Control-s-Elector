@@ -107,9 +107,7 @@ public class EvidenciaController {
       @Valid @org.springframework.web.bind.annotation.RequestBody
           ec.twintailcs.electoral.evidencia.web.dto.MarcarObservacionesRequest body,
       jakarta.servlet.http.HttpServletRequest request) {
-    Evidencia e =
-        service.marcarObservaciones(
-            id, body.tipos(), CurrentUser.staticId(), request);
+    Evidencia e = service.marcarObservaciones(id, body.tipos(), CurrentUser.staticId(), request);
     return evidenciaMapper.toDto(e);
   }
 

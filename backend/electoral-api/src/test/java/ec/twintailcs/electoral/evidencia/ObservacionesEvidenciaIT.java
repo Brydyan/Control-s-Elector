@@ -4,10 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
-import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaInvalidaException;
-import ec.twintailcs.electoral.evidencia.domain.ObservacionEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.ObservacionEvidenciaRepository;
 import ec.twintailcs.electoral.evidencia.domain.TipoObservacion;
 import ec.twintailcs.electoral.shared.security.RlsContext;
@@ -30,8 +28,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Tests de integración de las observaciones sobre evidencia (T-BE-16).
  *
- * <p>Cubre los 6 requisitos (RF-OBS-01 a RF-OBS-06). Cada test corresponde a un requisito y a
- * su mutación (D.1-D.5).
+ * <p>Cubre los 6 requisitos (RF-OBS-01 a RF-OBS-06). Cada test corresponde a un requisito y a su
+ * mutación (D.1-D.5).
  */
 @SpringBootTest
 @Testcontainers
@@ -79,14 +77,16 @@ class ObservacionesEvidenciaIT {
     coordinatorId = insertarUsuario("COORDINATOR", "coord");
     adminId = insertarUsuario("ADMIN", "admin");
 
-    observerPublicId = jdbc.queryForObject(
-        "SELECT public_id FROM usuario WHERE id = ?", UUID.class, observerId);
-    otherObserverPublicId = jdbc.queryForObject(
-        "SELECT public_id FROM usuario WHERE id = ?", UUID.class, otherObserverId);
-    coordinatorPublicId = jdbc.queryForObject(
-        "SELECT public_id FROM usuario WHERE id = ?", UUID.class, coordinatorId);
-    adminPublicId = jdbc.queryForObject(
-        "SELECT public_id FROM usuario WHERE id = ?", UUID.class, adminId);
+    observerPublicId =
+        jdbc.queryForObject("SELECT public_id FROM usuario WHERE id = ?", UUID.class, observerId);
+    otherObserverPublicId =
+        jdbc.queryForObject(
+            "SELECT public_id FROM usuario WHERE id = ?", UUID.class, otherObserverId);
+    coordinatorPublicId =
+        jdbc.queryForObject(
+            "SELECT public_id FROM usuario WHERE id = ?", UUID.class, coordinatorId);
+    adminPublicId =
+        jdbc.queryForObject("SELECT public_id FROM usuario WHERE id = ?", UUID.class, adminId);
   }
 
   private Long insertarUsuario(String rolNombre, String emailPrefix) {
@@ -113,35 +113,55 @@ class ObservacionesEvidenciaIT {
     Long provinciaId =
         jdbc.queryForObject(
             "INSERT INTO provincia (nombre, codigo) VALUES (?,?) RETURNING id",
-            Long.class, "Santa Elena", "24-" + UUID.randomUUID().toString().substring(0, 4));
+            Long.class,
+            "Santa Elena",
+            "24-" + UUID.randomUUID().toString().substring(0, 4));
     Long cantonId =
         jdbc.queryForObject(
             "INSERT INTO canton (nombre, codigo, provincia_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Santa Elena",
-            "2401-" + UUID.randomUUID().toString().substring(0, 4), provinciaId);
+            Long.class,
+            "Santa Elena",
+            "2401-" + UUID.randomUUID().toString().substring(0, 4),
+            provinciaId);
     Long parroquiaId =
         jdbc.queryForObject(
             "INSERT INTO parroquia (nombre, es_urbana, canton_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Santa Elena", true, cantonId);
+            Long.class,
+            "Santa Elena",
+            true,
+            cantonId);
     Long jrvId =
         jdbc.queryForObject(
             "INSERT INTO jrv (numero, recinto, total_electores, parroquia_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "JRV-" + UUID.randomUUID().toString().substring(0, 6),
-            "Recinto Test", 200, parroquiaId);
+            Long.class,
+            "JRV-" + UUID.randomUUID().toString().substring(0, 6),
+            "Recinto Test",
+            200,
+            parroquiaId);
     Long cargoId =
         jdbc.queryForObject(
             "INSERT INTO cargo (nombre, nivel, puestos) VALUES (?,?,?) RETURNING id",
-            Long.class, "Prefecto", "PROVINCIA", 1);
+            Long.class,
+            "Prefecto",
+            "PROVINCIA",
+            1);
     Long partidoId =
         jdbc.queryForObject(
             "INSERT INTO partido (nombre, siglas, numero_lista) VALUES (?,?,?) RETURNING id",
-            Long.class, "PARTIDO", "PAR", 1);
+            Long.class,
+            "PARTIDO",
+            "PAR",
+            1);
     Long candidatoId =
         jdbc.queryForObject(
             "INSERT INTO candidato (nombre, orden, cargo_id, partido_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "C1", 1, cargoId, partidoId);
+            Long.class,
+            "C1",
+            1,
+            cargoId,
+            partidoId);
     jdbc.update(
         "INSERT INTO jrv_cargo (jrv_id, cargo_id, activo) VALUES (?,?,true)", jrvId, cargoId);
     Long actaId =
@@ -149,10 +169,20 @@ class ObservacionesEvidenciaIT {
             "INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado, total_sufragantes, "
                 + "votos_blancos, votos_nulos, public_id, version) "
                 + "VALUES (?,?,?,?,?,?,?,?,0) RETURNING id",
-            Long.class, jrvId, cargoId, usuarioId, "ENVIADA", 100, 5, 3, UUID.randomUUID());
+            Long.class,
+            jrvId,
+            cargoId,
+            usuarioId,
+            "ENVIADA",
+            100,
+            5,
+            3,
+            UUID.randomUUID());
     jdbc.update(
         "INSERT INTO acta_detalle (acta_id, candidato_id, votos, version) VALUES (?,?,?,0)",
-        actaId, candidatoId, 90);
+        actaId,
+        candidatoId,
+        90);
 
     // Crear evidencia via el servicio real para usar el camino completo (incluye S3 si aplica).
     // Como no tenemos S3 corriendo, lo hacemos via INSERT directo en BD con los campos
@@ -162,9 +192,17 @@ class ObservacionesEvidenciaIT {
             "INSERT INTO evidencia (acta_id, jrv_id, cargo_id, usuario_id, s3_key, size_bytes, "
                 + "content_type, sha256, estado, version, creado_en, actualizado_en, public_id) "
                 + "VALUES (?,?,?,?,?,?,?,?,?,0,NOW(),NOW(),?) RETURNING id",
-            Long.class, actaId, jrvId, cargoId, usuarioId,
-            "actas/" + actaId + "/test.webp", 1024L, "image/webp", "deadbeef",
-            "EN_REVISION", UUID.randomUUID());
+            Long.class,
+            actaId,
+            jrvId,
+            cargoId,
+            usuarioId,
+            "actas/" + actaId + "/test.webp",
+            1024L,
+            "image/webp",
+            "deadbeef",
+            "EN_REVISION",
+            UUID.randomUUID());
 
     return entityManager.find(Evidencia.class, evidenciaId);
   }
@@ -174,22 +212,19 @@ class ObservacionesEvidenciaIT {
   // -------------------------------------------------------------------------
 
   /**
-   * OBSERVER dueño acepta; OBSERVER ajeno recibe error (no 403 porque estamos testeando a
-   * nivel de servicio, no HTTP — la traducción HTTP→service se prueba en el test del
-   * controller). El servicio DEBE rechazar al autor ajeno.
+   * OBSERVER dueño acepta; OBSERVER ajeno recibe error (no 403 porque estamos testeando a nivel de
+   * servicio, no HTTP — la traducción HTTP→service se prueba en el test del controller). El
+   * servicio DEBE rechazar al autor ajeno.
    *
-   * <p>Mutación D.1: quitar la comprobación de autoría dejando sólo el @PreAuthorize de rol.
-   * Debe caer este test (el OBSERVER ajeno lograría marcar).
+   * <p>Mutación D.1: quitar la comprobación de autoría dejando sólo el @PreAuthorize de rol. Debe
+   * caer este test (el OBSERVER ajeno lograría marcar).
    */
   @Test
   void autoria_obsA_duenio_ok() {
     Evidencia e = crearEvidencia(observerId);
     Evidencia result =
         evidenciaService.marcarObservaciones(
-            e.getPublicId(),
-            List.of(TipoObservacion.FOTO_BORROSA),
-            observerPublicId,
-            "127.0.0.1");
+            e.getPublicId(), List.of(TipoObservacion.FOTO_BORROSA), observerPublicId, "127.0.0.1");
     assertThat(result).isNotNull();
     assertThat(observacionRepository.countByEvidenciaId(e.getId())).isEqualTo(1L);
   }
@@ -215,9 +250,7 @@ class ObservacionesEvidenciaIT {
   // RF-OBS-02 — Máximo 2 categorías
   // -------------------------------------------------------------------------
 
-  /**
-   * Mutación D.2: subir el límite a 5 en el servicio. Debe caer este test (3 categorías → 400).
-   */
+  /** Mutación D.2: subir el límite a 5 en el servicio. Debe caer este test (3 categorías → 400). */
   @Test
   void maxDos_tresCategorias_rechaza() {
     Evidencia e = crearEvidencia(observerId);
@@ -265,12 +298,12 @@ class ObservacionesEvidenciaIT {
   /**
    * Test de la garantía: persistir vía JPA directo (saltándose el setter) debe fallar.
    *
-   * <p>Mutación D.3: dejar la validación SOLO en el setter, quitándola del servicio. Debe
-   * caer este test (el INSERT directo con 3 observaciones pasaría).
+   * <p>Mutación D.3: dejar la validación SOLO en el setter, quitándola del servicio. Debe caer este
+   * test (el INSERT directo con 3 observaciones pasaría).
    *
-   * <p>Limitación actual: la BD no tiene constraint/trigger (ver apply-progress.md B.2).
-   * El test valida que el SERVICIO rechaza 3+, no la BD. Para validar la BD haría falta
-   * el trigger — declarado como limitación.
+   * <p>Limitación actual: la BD no tiene constraint/trigger (ver apply-progress.md B.2). El test
+   * valida que el SERVICIO rechaza 3+, no la BD. Para validar la BD haría falta el trigger —
+   * declarado como limitación.
    */
   @Test
   void validacionEnServicio_rechazaTresCategorias() {
@@ -299,18 +332,13 @@ class ObservacionesEvidenciaIT {
   // RF-OBS-04 — Auditar la operación
   // -------------------------------------------------------------------------
 
-  /**
-   * Mutación D.4: quitar la llamada a AuditLogService. Debe caer este test.
-   */
+  /** Mutación D.4: quitar la llamada a AuditLogService. Debe caer este test. */
   @Test
   void audita_cuandoSeMarcaUnaObservacion() {
     Evidencia e = crearEvidencia(observerId);
     long auditBefore = contarAuditLog();
     evidenciaService.marcarObservaciones(
-        e.getPublicId(),
-        List.of(TipoObservacion.FOTO_BORROSA),
-        observerPublicId,
-        "127.0.0.1");
+        e.getPublicId(), List.of(TipoObservacion.FOTO_BORROSA), observerPublicId, "127.0.0.1");
     long auditAfter = contarAuditLog();
     assertThat(auditAfter - auditBefore)
         .as("RF-OBS-04: marcar observaciones debe registrar una fila en audit_log")
@@ -339,15 +367,11 @@ class ObservacionesEvidenciaIT {
     Evidencia e = crearEvidencia(observerId);
     // Marcar 1 primero.
     evidenciaService.marcarObservaciones(
-        e.getPublicId(),
-        List.of(TipoObservacion.FOTO_BORROSA),
-        observerPublicId,
-        "127.0.0.1");
+        e.getPublicId(), List.of(TipoObservacion.FOTO_BORROSA), observerPublicId, "127.0.0.1");
     assertThat(observacionRepository.countByEvidenciaId(e.getId())).isEqualTo(1L);
 
     // Ahora enviar lista vacía = borrar.
-    evidenciaService.marcarObservaciones(
-        e.getPublicId(), List.of(), observerPublicId, "127.0.0.1");
+    evidenciaService.marcarObservaciones(e.getPublicId(), List.of(), observerPublicId, "127.0.0.1");
     assertThat(observacionRepository.countByEvidenciaId(e.getId()))
         .as("RF-OBS-05: lista vacía debe borrar las observaciones existentes")
         .isZero();
@@ -358,16 +382,16 @@ class ObservacionesEvidenciaIT {
   // -------------------------------------------------------------------------
 
   /**
-   * Nota: el endpoint HTTP con @PreAuthorize("evidencia:update") bloquea ADMIN a nivel de
-   * Spring Security. A nivel de servicio, ADMIN también podría llamar el método
-   * directamente (no tiene permiso EvidenciaInvalidaException por rol). Para testear la
-   * restricción de ADMIN vía servicio habría que agregar validación adicional. Aquí testeamos
-   * a nivel de controller — el controller filtra ADMIN antes de llegar al servicio.
+   * Nota: el endpoint HTTP con @PreAuthorize("evidencia:update") bloquea ADMIN a nivel de Spring
+   * Security. A nivel de servicio, ADMIN también podría llamar el método directamente (no tiene
+   * permiso EvidenciaInvalidaException por rol). Para testear la restricción de ADMIN vía servicio
+   * habría que agregar validación adicional. Aquí testeamos a nivel de controller — el controller
+   * filtra ADMIN antes de llegar al servicio.
    *
    * <p>Mutación D.5: añadir ADMIN a los roles del PATCH. Debe caer el test de controller.
    *
-   * <p>Como este test sólo cubre la capa de servicio, no captura D.5. Lo dejamos
-   * documentado; el test del controller (HTTP) sería quien captura D.5.
+   * <p>Como este test sólo cubre la capa de servicio, no captura D.5. Lo dejamos documentado; el
+   * test del controller (HTTP) sería quien captura D.5.
    */
   @Test
   void lectura_rolesDeRevision_ok() {

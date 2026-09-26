@@ -17,12 +17,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Observación marcada por el OBSERVER sobre su evidencia. Junction entity entre {@link Evidencia}
- * y {@link TipoObservacion}.
+ * Observación marcada por el OBSERVER sobre su evidencia. Junction entity entre {@link Evidencia} y
+ * {@link TipoObservacion}.
  *
- * <p>Diseño (per design.md D1): tabla junction propia en vez de columna jsonb en evidencia.
- * La restricción de «máximo 2» se aplica en {@link #MAX_POR_EVIDENCIA} (RF-OBS-02) y se
- * respalda con trigger/constraint a nivel de BD (cambset 020).
+ * <p>Diseño (per design.md D1): tabla junction propia en vez de columna jsonb en evidencia. La
+ * restricción de «máximo 2» se aplica en {@link #MAX_POR_EVIDENCIA} (RF-OBS-02) y se respalda con
+ * trigger/constraint a nivel de BD (cambset 020).
  */
 @Entity
 @Table(name = "evidencia_observacion")

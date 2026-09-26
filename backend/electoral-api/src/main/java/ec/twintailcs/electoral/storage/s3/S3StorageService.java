@@ -2,7 +2,6 @@ package ec.twintailcs.electoral.storage.s3;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -92,11 +91,12 @@ public class S3StorageService {
   }
 
   /**
-   * URL prefirmada para descargar el objeto. La expiración sale de {@link S3Properties#getPresignExpiry()}
-   * (default 15 min, configurable por entorno vía {@code aws.s3.presign-expiry}).
+   * URL prefirmada para descargar el objeto. La expiración sale de {@link
+   * S3Properties#getPresignExpiry()} (default 15 min, configurable por entorno vía {@code
+   * aws.s3.presign-expiry}).
    *
-   * <p>El FE la usa para mostrar imagenes sin proxyar por el backend. En prod Railway se baja
-   * la expiración a 5 min vía properties sin tocar código (RF-STO-07).
+   * <p>El FE la usa para mostrar imagenes sin proxyar por el backend. En prod Railway se baja la
+   * expiración a 5 min vía properties sin tocar código (RF-STO-07).
    */
   public String presignDownloadUrl(String key) {
     GetObjectPresignRequest req =

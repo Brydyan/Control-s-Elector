@@ -126,8 +126,7 @@ public class SubirEvidenciaUseCase {
               if (status == STATUS_ROLLED_BACK) {
                 try {
                   s3.delete(s3Key);
-                  log.info(
-                      "S3 cleanup after rollback for key {} (evidencia NOT persisted)", s3Key);
+                  log.info("S3 cleanup after rollback for key {} (evidencia NOT persisted)", s3Key);
                 } catch (Exception s3Cleanup) {
                   // No podemos hacer mucho aquí: el log es la única señal. El batch de huérfanos
                   // (out of scope de este change) sería el último recurso.
