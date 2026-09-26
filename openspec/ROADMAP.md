@@ -119,20 +119,22 @@ Lo que sigue es el resumen; el detalle vive en cada índice.
 Para garantizar que el desarrollo no se desvíe de los requerimientos operativos de campo, el trabajo se ejecuta en **tres fases estrictamente secuenciales**:
 
 #### Fase 1 · Backend Core y Cierre de Ciclo de Vida (Prioridad Crítica)
-1. **`T-BE-14` (Storage en actas)**: En curso. Cerrar `501`, DROP `storage_url` innecesaria y ejecutar Gate 3 (Mutaciones C.1-C.5) para archivar.
-2. **`T-BE-16` (Expediente Legal & Estado `EN_OBSERVACION`)**:
-   - Agregar `EN_OBSERVACION` al enum `EstadoActa` y Liquibase check constraint.
-   - Endpoint `POST /api/v1/coordinator/actas/{id}/observacion-legal` con causal obligatoria.
-   - Excluir actas en observación de los totales de votos y avance en `DashboardService`.
-   - Generación de metadata para expediente digital de impugnación CNE.
-3. **`T-BE-15` (Tests de integración E2E)**: Validación del ciclo de vida completo de acta con Testcontainers (PostgreSQL + RustFS/S3).
+1. **`T-BE-14` (Storage en actas)**: Archivado / Completado (S3 con compensación transaccional).
+2. **`T-BE-16` (Expediente Legal & Estado `EN_OBSERVACION`)**: Archivado / Completado (Estado EN_OBSERVACION en DB y API).
+3. **`T-BE-15` (Tests de integración E2E)**: Archivado / Completado (Tests de ciclo de vida completo).
+4. **`T-BE-17` (Aislamiento RLS en MockMvc)**: Archivado / Completado.
+5. **`T-BE-18` (Subida de Evidencia por Coordinador)**: `openspec/changes/back/2026-09-25-t-be-18-coordinator-evidencia-upload/`. Endpoint `POST /api/v1/coordinator/actas/{id}/imagen` para adjuntar foto física recibida por contingencia cuando el veedor queda sin batería o con teléfono dañado.
+6. **`T-BE-19` (Incidencias Operativas de JRV sin Acta)**: `openspec/changes/back/2026-09-25-t-be-19-incidencias-jrv/`. Tabla `incidencia_jrv` y endpoints de reporte para alertar mesas no instaladas, impedimentos a veedores o disturbios sin necesidad de un acta de escrutinio.
+7. **`T-BE-20` (Expediente de Impugnación CNE en PDF)**: `openspec/changes/back/2026-09-25-t-be-20-dossier-impugnacion-cne-pdf/`. Generador OpenPDF que compila en 1 página formal la foto del acta, el cuadro de votos, la inconsistencia detectada y sello forense para defensa legal en audiencia pública CNE.
 
 #### Fase 2 · Frontend Estabilización y Operación de Campo (Spec 2027)
 1. **`2026-09-25-fe-vitest-ionic-cleanup-race`**: Aislar teardown de Vitest en `app.component.spec.ts` y eliminar `continue-on-error: true` de `.github/workflows/ci.yml`.
 2. **Conciliación de SDDs implementadas**: Auditar y archivar retrospectivamente `T-FE-01` a `T-FE-07` y `T-FE-12` (que ya cuentan con 118 tests pasando en `frontend/app`).
-3. **`T-FE-08` (Compresión WebP inmediata)**: Canvas API en memoria a `.webp` (300-500KB) antes de cualquier desalojo a las 18h00.
-4. **`T-FE-09` (Offline-First & PIN de 4 dígitos)**: Cola en IndexedDB + fallback a Capacitor Private Storage + reintento 30s + **desbloqueo rápido por PIN offline** cuando el JWT expira sin cobertura.
-5. **`T-FE-10` (Coordinador Split-View)**: Vista 50/50 desktop (datos + visor WebP con zoom/rotación) + acción `Pasar a Observación Legal` + botón de contingencia WhatsApp `wa.me/`.
+3. **`T-FE-13` (Modo "Foto Primero" y Cotas Electorales)**: `openspec/changes/front/2026-09-25-t-fe-13-capture-and-run-foto-primero/`. Reordenar wizard: 1: Foto -> 2: Votos -> 3: Revisión (salvaguarda ante desalojo militar); warning > 350 sufragantes, tope duro 500; cuadre estricto de votos y regla CPCCS (hasta 3 marcas).
+4. **`T-FE-08` (Compresión WebP inmediata)**: Canvas API en memoria a `.webp` (300-500KB) con clave multipart obligatoria `'imagen'`.
+5. **`T-FE-09` (Offline-First & PIN de 4 dígitos)**: Cola en IndexedDB + fallback a Capacitor Private Storage + reintento 30s + **desbloqueo rápido por PIN offline** cuando el JWT expira sin cobertura.
+6. **`T-FE-10` (Coordinador Split-View)**: Vista 50/50 desktop (datos + visor WebP con zoom/rotación) + acción `Pasar a Observación Legal` + botón de contingencia WhatsApp `wa.me/` + descarga de expediente PDF CNE.
+7. **`T-FE-11` (Dashboard Reactivo)**: Backend Authority en agregaciones de PostgreSQL con Supabase Realtime como gatillo debounced (500ms).
 
 #### Fase 3 · Infraestructura, Realtime y Producción
 1. **`T-IN-06` (Supabase Realtime)**: WebSockets para emisión y captura de eventos de cambio de estado en `acta` (refresco en vivo de tableros).
@@ -226,6 +228,10 @@ Los seis del playbook (§4), instanciados aquí:
 ## 9. Estado del ROADMAP
 
 Última actualización: **2026-09-25**, por el Arquitecto.
-Changes en curso:
-- `openspec/changes/back/2026-09-07-t-be-14-storage-acta/`
+Changes activos / preparados:
+- `openspec/changes/back/2026-09-25-t-be-18-coordinator-evidencia-upload/`
+- `openspec/changes/back/2026-09-25-t-be-19-incidencias-jrv/`
+- `openspec/changes/back/2026-09-25-t-be-20-dossier-impugnacion-cne-pdf/`
+- `openspec/changes/front/2026-09-25-t-fe-13-capture-and-run-foto-primero/`
 - `openspec/changes/front/2026-09-25-fe-vitest-ionic-cleanup-race/`
+- `openspec/changes/front/2026-09-07-t-fe-{06..11}/` (alineados con backend 2027)
