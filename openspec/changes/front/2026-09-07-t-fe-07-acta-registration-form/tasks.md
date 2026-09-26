@@ -1,92 +1,34 @@
-# Tasks — T-FE-07: Formulario de Registro de Acta
+# Tasks — T-FE-07: Formulario de Registro de Acta (Wizard 3 Pasos)
 
-## Fase A: FormGroup + FormArray Setup
+## Fase A: Estructura del Wizard y Gestión de Estado
 
-- [ ] **A.1** — Crear `features/observer/acta-form/acta-form.component.ts`.
-  - Standalone: true
-  - FormGroup: 
-    - `candidatos: FormArray` (cada FormControl: {candidatoId, nombre, votos})
-    - `votoNulos: FormControl`
-    - `votosBlancos: FormControl`
-    - `totalSufragantes: FormControl`
-  - Validators: required en todos
+- [x] **A.1** — Implementar `features/observer/services/acta-storage.service.ts`:
+  - `guardarBorrador(draft: LocalDraft): void`
+  - `recuperarBorrador(jrvId: number, cargoId: number): LocalDraft | null`
+  - `limpiarBorrador(jrvId: number, cargoId: number): void`
+- [x] **A.2** — Implementar lógica de control de pasos (`currentStep: 'VOTOS' | 'IMAGEN' | 'REVISION'`) en `RegistrarActaPage`.
+- [x] **A.3** — Carga de candidatos vía `ObserverService.getCandidatosPorCargo(cargoId)`.
 
-- [ ] **A.2** — Crear `sumaValidator()` function (custom validator).
-  - Recibe FormGroup, valida suma, retorna errors o null
+## Fase B: Validación Aritmética y Digitación
 
-- [ ] **A.3** — Aplicar validator al FormGroup:
-  ```typescript
-  form = new FormGroup({
-    candidatos: new FormArray([...]),
-    votoNulos: new FormControl('', Validators.required),
-    votosBlancos: new FormControl('', Validators.required),
-    totalSufragantes: new FormControl('', Validators.required)
-  }, { validators: sumaValidator });
-  ```
+- [x] **B.1** — Enlace bidireccional de votos por candidato (`votosPorCandidato: Map<number, number>`), blancos, nulos y total sufragantes.
+- [x] **B.2** — Getters reactivos de cuadre:
+  - `sumaVotosCandidatos`, `totalVotosComputados`, `diferenciaChecksum`, `isChecksumValid`.
+- [x] **B.3** — Autoguardado local en cada pulsación con notificación visual temporal.
 
-**Compuerta A:** `ng build`. FormGroup + FormArray creados.
+## Fase C: Respaldo Fotográfico y Previsualización
 
-## Fase B: Template y Validación Visual
+- [x] **C.1** — Manejador de selección de imagen (`onFileSelected`) con generación de `FileReader` dataURL para vista previa.
+- [x] **C.2** — Controles de navegación entre pasos (`irAPasoImagen()`, `irARevision()`, `volverAVotos()`, `volverAImagen()`).
 
-- [ ] **B.1** — Crear template con:
-  - FormArray loop: `*ngFor="let ctrl of candidatos.controls"`
-    - Input readonly con nombre candidato
-    - Input numérico para votos
-  - Inputs para nulos, blancos, sufragantes
-  - Display error si form.hasError('sumaNoValida')
-  - Botón "Guardar" [disabled]="!form.valid"
+## Fase D: Transmisión y Pruebas
 
-- [ ] **B.2** — Test: ingresa valores, suma no cuadra, error debe mostrarse.
-
-**Compuerta B:** Template renderiza, validación visual funciona.
-
-## Fase C: Guardar
-
-- [ ] **C.1** — Agregar método `guardar()`:
-  ```typescript
-  guardar() {
-    if (!form.valid) return;
-    loading = true;
-    const payload = {
-      cargoId: this.cargoId, // vendría de params o selección
-      candidatos: form.get('candidatos').value,
-      votoNulos: form.get('votoNulos').value,
-      votosBlancos: form.get('votosBlancos').value,
-      totalSufragantes: form.get('totalSufragantes').value
-    };
-    this.http.post('/api/observer/actas', payload).subscribe({
-      next: () => {
-        this.toastr.success('Acta guardada');
-        this.router.navigate(['/observer/home']);
-      },
-      error: (err) => {
-        this.errorMessage = 'Error al guardar acta';
-        loading = false;
-      }
-    });
-  }
-  ```
-
-- [ ] **C.2** — En template, botón "Guardar" llama `(click)="guardar()"`.
-
-**Compuerta C:** POST /api/observer/actas se ejecuta al guardar, navegación ocurre.
-
-## Qué NO hacer
-
-- **No agregar foto** — T-FE-08
-- **No guardar borrador** — T-FE-09
-- **No traer candidatos desde API** — hardcoded está bien
-- **No editar acta existente** — solo crear nueva
-
-## Compuertas
-
-| Fase | Comando | Expected |
-|------|---------|----------|
-| A | `ng build` | exit 0 |
-| B | Cambiar votos | error/success visual |
-| C | Click guardar, DevTools Network | POST /api/observer/actas visible |
+- [x] **D.1** — Método `guardarComoBorrador()` llamando a `ObserverService.guardarBorrador()`.
+- [x] **D.2** — Método `enviarActaFinal()` validando `isChecksumValid` y enviando a `ObserverService.enviarActaDirecta()`.
+- [x] **D.3** — Subida encadenada de imagen con `ObserverService.subirImagenActa(actaId, file)`.
+- [x] **D.4** — Tests unitarios en `registrar-acta.page.spec.ts` verificando validación y llamadas al servicio.
 
 ## Verificación por Mutación
 
-- **V.1** — Comentar sumaValidator → form.valid = true aunque suma no cuadre → restaurar
-- **V.2** — Comentar POST en guardar() → click guardar, no navega → restaurar
+- **V.1** — Modificar `isChecksumValid` para retornar siempre true -> los tests de guardia matemática deben fallar.
+- **V.2** — Cambiar clave multipart de subida de `'imagen'` a `'file'` -> el backend o los tests de integración deben rechazar con 400.
