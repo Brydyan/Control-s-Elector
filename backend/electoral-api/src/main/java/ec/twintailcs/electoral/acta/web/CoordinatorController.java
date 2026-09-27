@@ -80,6 +80,8 @@ public class CoordinatorController {
   private final ActaMapper actaMapper;
   private final IncidenciaService incidenciaService;
   private final ec.twintailcs.electoral.acta.application.ExpedientePdfService expedientePdfService;
+  private final ec.twintailcs.electoral.acta.application.usecase.ConsultarActaDetalleUseCase
+      consultarActaDetalleUseCase;
 
   public CoordinatorController(
       ActaService actaService,
@@ -91,7 +93,9 @@ public class CoordinatorController {
       ActaMapper actaMapper,
       EvidenciaService evidenciaService,
       IncidenciaService incidenciaService,
-      ec.twintailcs.electoral.acta.application.ExpedientePdfService expedientePdfService) {
+      ec.twintailcs.electoral.acta.application.ExpedientePdfService expedientePdfService,
+      ec.twintailcs.electoral.acta.application.usecase.ConsultarActaDetalleUseCase
+          consultarActaDetalleUseCase) {
     this.actaService = actaService;
     this.actaRepository = actaRepository;
     this.actaDetalleRepository = actaDetalleRepository;
@@ -102,6 +106,7 @@ public class CoordinatorController {
     this.evidenciaService = evidenciaService;
     this.incidenciaService = incidenciaService;
     this.expedientePdfService = expedientePdfService;
+    this.consultarActaDetalleUseCase = consultarActaDetalleUseCase;
   }
 
   private static final Set<String> SORTABLE_FIELDS = Set.of("fechaRegistro", "id", "estado");
@@ -205,14 +210,15 @@ public class CoordinatorController {
     }
   }
 
+  /**
+   * T-BE-21: vista de detalle con detalles, evidencia (URL prefirmada) y motivoDisputa si aplica.
+   * Reemplaza la versión plana de {@link ActaResponseDto} (que sigue usándose en el listado para
+   * evitar N+1).
+   */
   @GetMapping("/actas/{actaId}")
-  @Transactional(readOnly = true)
-  public ResponseEntity<ActaResponseDto> verActa(@PathVariable Long actaId) {
-    Acta acta =
-        actaRepository
-            .findById(actaId)
-            .orElseThrow(() -> new IllegalArgumentException("Acta no encontrada: " + actaId));
-    return ResponseEntity.ok(toDto(acta));
+  public ResponseEntity<ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto> verActaDetalle(
+      @PathVariable Long actaId) {
+    return ResponseEntity.ok(consultarActaDetalleUseCase.ejecutar(actaId));
   }
 
   /**

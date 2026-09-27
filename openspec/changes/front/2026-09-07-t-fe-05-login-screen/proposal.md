@@ -23,7 +23,7 @@ Componente LoginComponent. El usuario ingresa email y contraseña. Si éxito, es
 - [ ] Componente LoginComponent en features/auth/ o shared/
 - [ ] Formulario con email, password (validators: required, email válido)
 - [ ] Botón "Login" dispara authService.login()
-- [ ] Si éxito, redirige a /observer/home, /coordinator/actas, etc. según rol
+- [ ] Si éxito, redirige según rol: OBSERVER hacia `/observer/mis-jrvs`; COORDINATOR, ADMIN y MASTER hacia `/dashboard`
 - [ ] Si error, muestra mensaje "Email o contraseña incorrecto"
 - [ ] Loading spinner mientras se procesa el login
 
