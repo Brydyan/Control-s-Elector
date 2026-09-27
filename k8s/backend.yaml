@@ -28,18 +28,6 @@ spec:
             name: electoral-api-config
         - secretRef:
             name: electoral-api-secret
-        livenessProbe:
-          httpGet:
-            path: /api/v1/health
-            port: 8081
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /api/v1/health
-            port: 8081
-          initialDelaySeconds: 20
-          periodSeconds: 5
         resources:
           requests:
             memory: "512Mi"
