@@ -7,7 +7,6 @@ import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
 import ec.twintailcs.electoral.acta.web.ActaDetalleDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto;
-import ec.twintailcs.electoral.auditlog.domain.AuditLog;
 import ec.twintailcs.electoral.auditlog.domain.AuditLogRepository;
 import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
@@ -22,8 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
  * T-BE-21 / A.2: ensambla el {@link ActaDetalleCompletoDto} con detalles, evidencia y motivo de
  * disputa.
  *
- * <p>El listado plano (sin colecciones) sigue en otro método del controller — este use case
- * es para la vista de detalle donde SÍ se cargan colecciones.
+ * <p>El listado plano (sin colecciones) sigue en otro método del controller — este use case es para
+ * la vista de detalle donde SÍ se cargan colecciones.
  */
 @Service
 public class ConsultarActaDetalleUseCase {
@@ -55,9 +54,7 @@ public class ConsultarActaDetalleUseCase {
             .orElseThrow(() -> new EntityNotFoundException("Acta no encontrada: " + actaId));
 
     List<ActaDetalleDto> detalles =
-        actaDetalleRepository.findByActaId(actaId).stream()
-            .map(this::toDetalleDto)
-            .toList();
+        actaDetalleRepository.findByActaId(actaId).stream().map(this::toDetalleDto).toList();
 
     Evidencia evidencia = primeraEvidencia(actaId);
     UUID evidenciaPublicId = evidencia == null ? null : evidencia.getPublicId();
@@ -71,9 +68,7 @@ public class ConsultarActaDetalleUseCase {
     }
 
     String motivoDisputa =
-        (acta.getEstado() == EstadoActa.EN_DISPUTA)
-            ? buscarUltimoMotivoDisputa(actaId)
-            : null;
+        (acta.getEstado() == EstadoActa.EN_DISPUTA) ? buscarUltimoMotivoDisputa(actaId) : null;
 
     return new ActaDetalleCompletoDto(
         acta.getId(),
