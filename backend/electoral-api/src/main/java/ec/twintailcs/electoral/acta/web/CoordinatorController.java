@@ -211,13 +211,13 @@ public class CoordinatorController {
   }
 
   /**
-   * T-BE-21: vista de detalle con detalles, evidencia (URL prefirmada) y motivoDisputa si
-   * aplica. Reemplaza la versión plana de {@link ActaResponseDto} (que sigue usándose en el
-   * listado para evitar N+1).
+   * T-BE-21: vista de detalle con detalles, evidencia (URL prefirmada) y motivoDisputa si aplica.
+   * Reemplaza la versión plana de {@link ActaResponseDto} (que sigue usándose en el listado para
+   * evitar N+1).
    */
   @GetMapping("/actas/{actaId}")
-  public ResponseEntity<ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto>
-      verActaDetalle(@PathVariable Long actaId) {
+  public ResponseEntity<ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto> verActaDetalle(
+      @PathVariable Long actaId) {
     return ResponseEntity.ok(consultarActaDetalleUseCase.ejecutar(actaId));
   }
 

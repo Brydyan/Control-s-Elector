@@ -256,14 +256,14 @@ public class ObserverController {
   }
 
   /**
-   * T-BE-21: GET /api/v1/observer/actas/{actaId} — devuelve el detalle completo del acta
-   * con detalles, evidencia y motivo de disputa. Solo el OBSERVER dueño puede consultar
-   * (autoría se valida aquí para mantener el control de acceso cerca del endpoint).
+   * T-BE-21: GET /api/v1/observer/actas/{actaId} — devuelve el detalle completo del acta con
+   * detalles, evidencia y motivo de disputa. Solo el OBSERVER dueño puede consultar (autoría se
+   * valida aquí para mantener el control de acceso cerca del endpoint).
    */
   @PreAuthorize("@authz.has('acta:upload')")
   @GetMapping("/actas/{actaId}")
-  public ResponseEntity<ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto>
-      verMiActa(@PathVariable Long actaId) {
+  public ResponseEntity<ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto> verMiActa(
+      @PathVariable Long actaId) {
     ec.twintailcs.electoral.acta.domain.Acta acta =
         actaRepository
             .findById(actaId)

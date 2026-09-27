@@ -9,8 +9,8 @@ import java.util.UUID;
 /**
  * Detalle completo de un acta para vistas de COORDINATOR y OBSERVER.
  *
- * <p>Extiende {@link ActaResponseDto} con colecciones que el listado plano no carga
- * (per tasks.md "qué NO hacer": no incluir colecciones en el listado para evitar N+1).
+ * <p>Extiende {@link ActaResponseDto} con colecciones que el listado plano no carga (per tasks.md
+ * "qué NO hacer": no incluir colecciones en el listado para evitar N+1).
  */
 public record ActaDetalleCompletoDto(
     // campos base heredados de ActaResponseDto

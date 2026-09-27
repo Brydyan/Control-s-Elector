@@ -1,6 +1,5 @@
 package ec.twintailcs.electoral.acta.web;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,8 +29,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * T-BE-21: tests de integración del endpoint de detalle completo del acta.
  *
  * <ul>
- *   <li>C.1 — COORDINATOR puede ver el detalle con detalles + urlEvidencia.</li>
- *   <li>C.2 — OBSERVER dueño ve 200, OBSERVER ajeno ve 403.</li>
+ *   <li>C.1 — COORDINATOR puede ver el detalle con detalles + urlEvidencia.
+ *   <li>C.2 — OBSERVER dueño ve 200, OBSERVER ajeno ve 403.
  * </ul>
  */
 @SpringBootTest
@@ -77,34 +76,55 @@ class ActaDetalleControllerIT {
     Long provinciaId =
         jdbc.queryForObject(
             "INSERT INTO provincia (nombre, codigo) VALUES (?,?) RETURNING id",
-            Long.class, "Santa Elena", "24-" + UUID.randomUUID().toString().substring(0, 4));
+            Long.class,
+            "Santa Elena",
+            "24-" + UUID.randomUUID().toString().substring(0, 4));
     Long cantonId =
         jdbc.queryForObject(
             "INSERT INTO canton (nombre, codigo, provincia_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Santa Elena",
-            "2401-" + UUID.randomUUID().toString().substring(0, 4), provinciaId);
+            Long.class,
+            "Santa Elena",
+            "2401-" + UUID.randomUUID().toString().substring(0, 4),
+            provinciaId);
     Long parroquiaId =
         jdbc.queryForObject(
             "INSERT INTO parroquia (nombre, es_urbana, canton_id) VALUES (?,?,?) RETURNING id",
-            Long.class, "Santa Elena", true, cantonId);
+            Long.class,
+            "Santa Elena",
+            true,
+            cantonId);
     Long jrvId =
         jdbc.queryForObject(
             "INSERT INTO jrv (numero, recinto, total_electores, parroquia_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "JRV-DET-1", "Recinto Test", 200, parroquiaId);
+            Long.class,
+            "JRV-DET-1",
+            "Recinto Test",
+            200,
+            parroquiaId);
     Long cargoId =
         jdbc.queryForObject(
             "INSERT INTO cargo (nombre, nivel, puestos) VALUES (?,?,?) RETURNING id",
-            Long.class, "Prefecto", "PROVINCIA", 1);
+            Long.class,
+            "Prefecto",
+            "PROVINCIA",
+            1);
     Long partidoId =
         jdbc.queryForObject(
             "INSERT INTO partido (nombre, siglas, numero_lista) VALUES (?,?,?) RETURNING id",
-            Long.class, "PARTIDO A", "PA", 1);
+            Long.class,
+            "PARTIDO A",
+            "PA",
+            1);
     Long candidatoId =
         jdbc.queryForObject(
             "INSERT INTO candidato (nombre, orden, cargo_id, partido_id) "
                 + "VALUES (?,?,?,?) RETURNING id",
-            Long.class, "C1", 1, cargoId, partidoId);
+            Long.class,
+            "C1",
+            1,
+            cargoId,
+            partidoId);
     jdbc.update(
         "INSERT INTO jrv_cargo (jrv_id, cargo_id, activo) VALUES (?,?,true)", jrvId, cargoId);
 
@@ -123,16 +143,30 @@ class ActaDetalleControllerIT {
             "INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado, total_sufragantes, "
                 + "votos_blancos, votos_nulos, public_id, version) "
                 + "VALUES (?,?,?,?,?,?,?,?,0) RETURNING id",
-            Long.class, jrvId, cargoId, obsAId, "EN_DISPUTA", 100, 5, 3, UUID.randomUUID());
+            Long.class,
+            jrvId,
+            cargoId,
+            obsAId,
+            "EN_DISPUTA",
+            100,
+            5,
+            3,
+            UUID.randomUUID());
     jdbc.update(
         "INSERT INTO acta_detalle (acta_id, candidato_id, votos, version) VALUES (?,?,?,0)",
-        actaId, candidatoId, 90);
+        actaId,
+        candidatoId,
+        90);
 
     // Audit con motivo de disputa
     jdbc.update(
         "INSERT INTO audit_log (entidad, entidad_id, accion, detalle, registrado_por, timestamp) "
             + "VALUES (?,?,?,CAST(? AS jsonb),?,NOW())",
-        "acta", actaId, "ACTA_EN_DISPUTA", "{\"motivo\":\"duda en conteo\"}", obsAId);
+        "acta",
+        actaId,
+        "ACTA_EN_DISPUTA",
+        "{\"motivo\":\"duda en conteo\"}",
+        obsAId);
   }
 
   private UUID crearUsuario(String rolNombre, String emailPrefix) {
@@ -168,9 +202,7 @@ class ActaDetalleControllerIT {
     mockMvc
         .perform(
             get("/api/v1/coordinator/actas/{actaId}", actaId)
-                .with(
-                    authentication(
-                        authAs(coordinatorPublicId, "COORDINATOR", "acta:read"))))
+                .with(authentication(authAs(coordinatorPublicId, "COORDINATOR", "acta:read"))))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(actaId))
         .andExpect(jsonPath("$.estado").value("EN_DISPUTA"))
