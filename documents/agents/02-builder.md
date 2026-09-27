@@ -34,6 +34,9 @@ Escribí openspec/changes/<área>/<fecha>-<slug>/apply-progress.md con:
   - los NÚMEROS que mediste (suites/tests antes y después), no los que esperabas
   - por cada mutación: el nombre exacto del test que cayó
 
+**IMPORTANTE: Marca las tareas completadas en tasks.md** — cambia `- [ ]` a `- [x]` mientras implementas.
+Esto permite al verificador y al archivador saber qué tareas completaste.
+
 NO archives. NO commitees. NO pushees.
 NO escribas verify-report.md, fixes-required.md ni archive-report.md.
 NO decidas si tu trabajo está bien — eso lo hace otro.
