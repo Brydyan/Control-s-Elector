@@ -56,7 +56,8 @@ public class DashboardController {
   /** RF-DASH-03: conteo por estado de las actas activas (sin ANULADA). */
   @Operation(
       summary = "Resumen de actas por estado",
-      description = "Conteo de actas activas por estado (excluye ANULADA). Roles: ADMIN/MASTER/COORDINATOR.")
+      description =
+          "Conteo de actas activas por estado (excluye ANULADA). Roles: ADMIN/MASTER/COORDINATOR.")
   @ApiResponses({
     @ApiResponse(
         responseCode = "200",
@@ -75,8 +76,7 @@ public class DashboardController {
   /** RF-DASH-04: votos por candidato, agrupados por cargo, sin ANULADA. */
   @Operation(
       summary = "Resultados electorales consolidados",
-      description =
-          "Votos totales por candidato agrupados por cargo. Excluye actas ANULADA.")
+      description = "Votos totales por candidato agrupados por cargo. Excluye actas ANULADA.")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Resultados por cargo"),
     @ApiResponse(

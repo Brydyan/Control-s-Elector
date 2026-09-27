@@ -69,7 +69,8 @@ public class PartidoController {
 
   @Operation(
       summary = "Listar partidos politicos",
-      description = "Devuelve todos los partidos y movimientos con nombre, siglas y numero de lista.")
+      description =
+          "Devuelve todos los partidos y movimientos con nombre, siglas y numero de lista.")
   @ApiResponses({
     @ApiResponse(responseCode = "200", description = "Lista de partidos"),
     @ApiResponse(

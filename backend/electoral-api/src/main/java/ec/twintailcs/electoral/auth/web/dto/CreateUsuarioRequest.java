@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 public record CreateUsuarioRequest(
     @Schema(description = "Nombre del usuario", example = "Juan") @NotBlank String nombre,
     @Schema(description = "Apellido del usuario", example = "Perez") @NotBlank String apellido,
-    @Schema(description = "Nombre del rol: MASTER, COORDINATOR, ADMIN u OBSERVER", example = "OBSERVER")
+    @Schema(
+            description = "Nombre del rol: MASTER, COORDINATOR, ADMIN u OBSERVER",
+            example = "OBSERVER")
         @NotBlank
         String rolNombre) {}

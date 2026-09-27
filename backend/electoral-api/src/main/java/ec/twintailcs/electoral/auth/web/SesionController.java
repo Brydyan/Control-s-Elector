@@ -70,8 +70,7 @@ public class SesionController {
       @Parameter(description = "Campo y direccion: ultimoUsoEn,desc")
           @RequestParam(defaultValue = "ultimoUsoEn,desc")
           String sort,
-      @Parameter(description = "Filtrar por id interno de usuario")
-          @RequestParam(required = false)
+      @Parameter(description = "Filtrar por id interno de usuario") @RequestParam(required = false)
           Long usuarioId) {
     Pageable pageable = pageable(page, size, sort, "ultimoUsoEn");
     Instant now = Instant.now();

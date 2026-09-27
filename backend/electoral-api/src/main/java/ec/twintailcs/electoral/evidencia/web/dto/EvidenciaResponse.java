@@ -26,7 +26,8 @@ public record EvidenciaResponse(
     @Schema(description = "Estado actual: EN_REVISION, APROBADA, RECHAZADA") EstadoEvidencia estado,
     @Schema(description = "Timestamp de creacion (UTC)") Instant creadoEn,
     @Schema(description = "Timestamp de ultima actualizacion (UTC)") Instant actualizadoEn,
-    @Schema(description = "Observaciones marcadas sobre la evidencia") List<ObservacionDto> observaciones) {
+    @Schema(description = "Observaciones marcadas sobre la evidencia")
+        List<ObservacionDto> observaciones) {
   public static EvidenciaResponse from(Evidencia e) {
     return new EvidenciaResponse(
         e.getPublicId(),

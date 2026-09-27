@@ -13,7 +13,9 @@ import java.util.UUID;
 @Schema(description = "URL prefirmada S3 para descargar la evidencia (valida 15 min)")
 public record DownloadUrlResponse(
     @Schema(description = "UUID publico de la evidencia") UUID id,
-    @Schema(description = "URL prefirmada S3/MinIO", example = "https://s3.../obj?X-Amz-Signature=...")
+    @Schema(
+            description = "URL prefirmada S3/MinIO",
+            example = "https://s3.../obj?X-Amz-Signature=...")
         String url,
     @Schema(description = "Momento de emision de la URL (UTC)") Instant emitidoEn) {
   public DownloadUrlResponse(UUID id, String url) {
