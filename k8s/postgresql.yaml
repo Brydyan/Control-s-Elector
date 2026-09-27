@@ -29,6 +29,13 @@ spec:
         runAsUser: 999
         runAsGroup: 999
         fsGroup: 999
+      initContainers:
+      - name: fix-permissions
+        image: busybox:latest
+        command: ["sh", "-c", "chown -R 999:999 /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data"]
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
       containers:
       - name: postgresql
         image: postgres:16-alpine
