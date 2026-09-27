@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { environment } from '../../../environments/environment';
 import { authInterceptor } from './auth.interceptor';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { AuthStore } from './auth.store';
 import { CurrentUser } from './domain/user.model';
 
@@ -98,6 +98,24 @@ describe('authInterceptor', () => {
 
     expect(receivedError).not.toBeNull();
     expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
+    expect(store.isAuthenticated()).toBe(true);
+  });
+
+  it('should redirect OBSERVER to /observer/mis-jrvs on 403 Forbidden (avoids /dashboard loop)', () => {
+    const observerUser: CurrentUser = { ...mockUser, role: 'OBSERVER' };
+    store.setSession('test-token-123', observerUser);
+
+    let receivedError: HttpErrorResponse | null = null;
+    http.get(`${environment.apiUrl}/dashboard`).subscribe({
+      error: (err) => (receivedError = err),
+    });
+
+    const req = httpTesting.expectOne(`${environment.apiUrl}/dashboard`);
+    req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    expect(receivedError).not.toBeNull();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/observer/mis-jrvs');
+    expect(router.navigateByUrl).not.toHaveBeenCalledWith('/dashboard');
     expect(store.isAuthenticated()).toBe(true);
   });
 

@@ -34,7 +34,7 @@
 
 ## Deuda Técnica / Bugfix Detectado para Builder
 
-- [ ] **D.1** — En `core/auth/auth.interceptor.ts:56`: el manejo de 403 redirige fijamente a `/dashboard`. Para usuarios con rol `OBSERVER`, el backend devuelve 403 en `/dashboard` generando un bucle. Se debe condicionar: si `store.user()?.role === 'OBSERVER'`, redirigir a `/observer/mis-jrvs`.
+- [x] **D.1** — En `core/auth/auth.interceptor.ts:56`: el manejo de 403 redirige fijamente a `/dashboard`. Para usuarios con rol `OBSERVER`, el backend devuelve 403 en `/dashboard` generando un bucle. Se debe condicionar: si `store.user()?.role === 'OBSERVER'`, redirigir a `/observer/mis-jrvs`.
 
 ## Compuertas
 

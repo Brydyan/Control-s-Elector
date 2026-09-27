@@ -8,7 +8,7 @@ import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { finalize } from 'rxjs';
 
-import { AuthService } from '../../../core/auth/auth.service';
+import { AuthService } from '../../../core/auth/services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -48,7 +48,16 @@ export class LoginPage {
       .login(this.form.getRawValue())
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: () => this.router.navigateByUrl('/dashboard'),
+        next: (session) => {
+          // OBSERVER must be redirected to /observer/mis-jrvs, not /dashboard —
+          // the backend denies /dashboard for that role, which would trigger
+          // the 403 → /dashboard loop handled by auth.interceptor.ts.
+          const target =
+            session.user.role === 'OBSERVER'
+              ? '/observer/mis-jrvs'
+              : '/dashboard';
+          this.router.navigateByUrl(target);
+        },
         error: (err: HttpErrorResponse) =>
           this.errorMessage.set(this.readError(err)),
       });

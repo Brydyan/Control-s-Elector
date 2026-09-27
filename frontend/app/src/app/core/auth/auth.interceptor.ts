@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { AuthStore } from './auth.store';
 
 /**
@@ -22,7 +22,9 @@ import { AuthStore } from './auth.store';
  *   Tries transparent single-flight refresh via AuthService.refresh().
  *   If refresh fails or if it occurred on an auth endpoint, clears the session and navigates to /login.
  * - On 403 Forbidden (authenticated, but lack permissions):
- *   Preserves the session and navigates to /dashboard.
+ *   Preserves the session and navigates to a role-appropriate landing page:
+ *     - OBSERVER -> /observer/mis-jrvs (avoids loop with /dashboard which is forbidden for them)
+ *     - any other role -> /dashboard
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const store = inject(AuthStore);
@@ -52,8 +54,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       // 403 Forbidden: user is authenticated, but not authorized for this resource.
+      // OBSERVER must be redirected to their landing page, not /dashboard, to avoid an
+      // infinite redirect loop (the backend denies /dashboard for that role).
       if (err.status === 403) {
-        router.navigateByUrl('/dashboard');
+        const target =
+          store.user()?.role === 'OBSERVER'
+            ? '/observer/mis-jrvs'
+            : '/dashboard';
+        router.navigateByUrl(target);
         return throwError(() => err);
       }
 

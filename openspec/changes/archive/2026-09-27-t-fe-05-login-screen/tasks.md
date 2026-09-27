@@ -20,7 +20,7 @@
 - [x] **B.2** — Implementar método `submit()`:
   - Invoca `authService.login(credentials)`
   - Gestiona ciclo de vida de `loading` y captura de excepciones HTTP en `errorMessage`
-- [ ] **B.3** — **Pendiente para Builder (Alineación por Rol):**
+- [x] **B.3** — **Pendiente para Builder (Alineación por Rol):**
   - Actualmente `login.page.ts:51` navega fijamente a `/dashboard`.
   - Redirigir según el rol del usuario autenticado:
     - `OBSERVER` → `/observer/mis-jrvs` (evita 403 Forbidden)
