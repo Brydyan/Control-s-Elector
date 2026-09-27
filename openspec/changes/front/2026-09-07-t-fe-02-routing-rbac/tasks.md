@@ -2,23 +2,23 @@
 
 ## Fase A: Guards Funcionales
 
-- [ ] **A.1** — Crear `core/auth/guards/auth.guard.ts`. Exporta `authGuard: CanActivateFn`.
+- [x] **A.1** — Crear `core/auth/guards/auth.guard.ts`. Exporta `authGuard: CanActivateFn`.
   - Chequea si `TokenService` tiene token.
   - Si no, retorna `/login`.
   - Si sí, retorna true.
-- [ ] **A.2** — Crear `core/auth/guards/role.guard.ts`. Exporta `roleGuard: CanActivateFn`.
+- [x] **A.2** — Crear `core/auth/guards/role.guard.ts`. Exporta `roleGuard: CanActivateFn`.
   - Inyecta `TokenService` para saber el rol del usuario.
   - Lee `data.allowedRoles` de la ruta (ej: `{ data: { allowedRoles: ['OBSERVER'] } }`).
   - Si rol está en allowedRoles, retorna true.
   - Si no, retorna false.
-- [ ] **A.3** — Crear `core/auth/guards/index.ts` que exporta ambos guards.
-- [ ] **A.4** — Verificar que imports funcionan: `import { authGuard, roleGuard } from '@core/auth/guards'`.
+- [x] **A.3** — Crear `core/auth/guards/index.ts` que exporta ambos guards.
+- [x] **A.4** — Verificar que imports funcionan: `import { authGuard, roleGuard } from '@core/auth/guards'`.
 
 **Compuerta A:** `ng build` sin errores.
 
 ## Fase B: Rutas Base
 
-- [ ] **B.1** — Crear `src/app/app.routes.ts` con rutas base:
+- [x] **B.1** — Crear `src/app/app.routes.ts` con rutas base:
   ```typescript
   {
     path: 'login',
@@ -33,16 +33,16 @@
     data: { allowedRoles: ['OBSERVER'] }
   }
   ```
-- [ ] **B.2** — Crear `features/{observer,coordinator,master,dashboard}/` rutas internas (stubs, solo rutas vacías).
-- [ ] **B.3** — Actualizar `main.ts` o `app.config.ts` para usar `app.routes.ts`.
+- [x] **B.2** — Crear `features/{observer,coordinator,master,dashboard}/` rutas internas (stubs, solo rutas vacías).
+- [x] **B.3** — Actualizar `main.ts` o `app.config.ts` para usar `app.routes.ts`.
 
 **Compuerta B:** `ng build` compila. app.routes.ts se encuentra en src/app/.
 
 ## Fase C: Lazy-load Verificación
 
-- [ ] **C.1** — Agregar componentes stub en cada feature (`observer/home`, `coordinator/actas`, etc.).
-- [ ] **C.2** — Verificar lazy-load en DevTools: Network tab, inicialmente no debe cargar feature chunks.
-- [ ] **C.3** — Navegar a /observer/home, verificar que se carga el chunk dinámicamente.
+- [x] **C.1** — Agregar componentes stub en cada feature (`observer/home`, `coordinator/actas`, etc.).
+- [x] **C.2** — Verificar lazy-load en DevTools: Network tab, inicialmente no debe cargar feature chunks.
+- [x] **C.3** — Navegar a /observer/home, verificar que se carga el chunk dinámicamente.
 
 **Compuerta C:** `ng build`. Verificar en DevTools que chunks se cargan dinámicamente.
 
