@@ -10,7 +10,7 @@ WHEN     usuario ingresa email 'observer@example.com' + password 'pass123'
 AND      hace click en "Login"
 AND      backend retorna {accessToken, user: {id, rol: 'OBSERVER', email}}
 THEN     AuthService.login() emite {token, user}
-AND      LoginComponent redirige a /observer/home
+AND      LoginComponent redirige a /observer/mis-jrvs
 ```
 
 ### S2 — Login exitoso como COORDINATOR
@@ -19,7 +19,7 @@ AND      LoginComponent redirige a /observer/home
 GIVEN    usuario ingresa email 'coordinator@example.com' + password 'pass123'
 WHEN     hace click en "Login"
 AND      backend retorna rol: 'COORDINATOR'
-THEN     LoginComponent redirige a /coordinator/actas
+THEN     LoginComponent redirige a /dashboard
 ```
 
 ### S3 — Credenciales incorrectas
