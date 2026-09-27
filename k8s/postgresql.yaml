@@ -34,7 +34,7 @@ spec:
         image: busybox:latest
         securityContext:
           runAsUser: 0
-        command: ["sh", "-c", "rm -rf /var/lib/postgresql/data && mkdir -p /var/lib/postgresql/data && chown 999:999 /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data"]
+        command: ["sh", "-c", "rm -rf /var/lib/postgresql/data/* || true && mkdir -p /var/lib/postgresql/data && chown 999:999 /var/lib/postgresql/data && chmod 700 /var/lib/postgresql/data"]
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
