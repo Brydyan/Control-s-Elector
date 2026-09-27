@@ -10,7 +10,7 @@ import { firstValueFrom, isObservable, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { authGuard, guestGuard, roleGuard } from './auth.guard';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { AuthStore } from './auth.store';
 import { CurrentUser } from './domain/user.model';
 
