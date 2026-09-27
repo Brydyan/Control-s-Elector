@@ -7,6 +7,14 @@ import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.web.dto.CargoRequest;
 import ec.twintailcs.electoral.electoral.web.dto.CargoResponse;
 import ec.twintailcs.electoral.electoral.web.dto.mapper.CargoMapper;
+import ec.twintailcs.electoral.shared.web.dto.ApiErrorResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -29,6 +37,9 @@ import org.springframework.web.bind.annotation.RestController;
  * /api/v1/configuracion/cargos # MASTER PUT /api/v1/configuracion/cargos/{id} # MASTER DELETE
  * /api/v1/configuracion/cargos/{id} # MASTER
  */
+@Tag(
+    name = "Configuracion Electoral",
+    description = "Catalogos de cantones, cargos, partidos politicos y candidatos.")
 @RestController
 @RequestMapping("/api/v1/configuracion/cargos")
 public class CargoController {
@@ -56,12 +67,38 @@ public class CargoController {
         .getId();
   }
 
+  @Operation(
+      summary = "Listar cargos electorales",
+      description =
+          "Devuelve todos los cargos (Prefecto, Alcalde, Concejal, etc.) con nivel geografico.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Lista de cargos"),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("isAuthenticated()")
   @GetMapping
   public List<CargoResponse> listar() {
     return service.listCargos().stream().map(mapper::toDto).toList();
   }
 
+  @Operation(summary = "Crear cargo electoral", description = "Solo MASTER (configuracion:write).")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "201",
+        description = "Cargo creado",
+        content = @Content(schema = @Schema(implementation = CargoResponse.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos invalidos",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('configuracion:write')")
   @PostMapping
   public ResponseEntity<CargoResponse> crear(
@@ -70,17 +107,39 @@ public class CargoController {
     return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(cargo));
   }
 
+  @Operation(summary = "Actualizar cargo electoral", description = "Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Cargo actualizado",
+        content = @Content(schema = @Schema(implementation = CargoResponse.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Cargo no encontrado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('configuracion:write')")
   @PutMapping("/{id}")
   public CargoResponse actualizar(
-      @PathVariable Long id, @Valid @RequestBody CargoRequest dto, HttpServletRequest request) {
+      @Parameter(description = "ID del cargo") @PathVariable Long id,
+      @Valid @RequestBody CargoRequest dto,
+      HttpServletRequest request) {
     Cargo cargo = service.updateCargo(id, dto, masterId(), request);
     return mapper.toDto(cargo);
   }
 
+  @Operation(summary = "Eliminar cargo electoral", description = "Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "204", description = "Cargo eliminado"),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Cargo no encontrado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('configuracion:write')")
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> eliminar(@PathVariable Long id, HttpServletRequest request) {
+  public ResponseEntity<Void> eliminar(
+      @Parameter(description = "ID del cargo") @PathVariable Long id, HttpServletRequest request) {
     service.deleteCargo(id, masterId(), request);
     return ResponseEntity.noContent().build();
   }

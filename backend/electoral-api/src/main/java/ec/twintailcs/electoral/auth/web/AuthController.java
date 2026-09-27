@@ -13,6 +13,14 @@ import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
 import ec.twintailcs.electoral.auth.web.dto.RefreshRequest;
 import ec.twintailcs.electoral.auth.web.dto.RegisterRequest;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import ec.twintailcs.electoral.shared.web.dto.ApiErrorResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.time.Instant;
@@ -43,6 +51,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Logout solo opera con el refresh en cookie o body (no requiere auth access; revocacion es
  * idempotente).
  */
+@Tag(name = "Auth", description = "Endpoints de autenticacion, sesion y registro de usuarios.")
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -75,6 +84,25 @@ public class AuthController {
     this.currentUser = currentUser;
   }
 
+  @SecurityRequirements
+  @Operation(
+      summary = "Iniciar sesion",
+      description =
+          "Autentica credenciales y emite access token JWT + cookie refresh_token httpOnly.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Autenticacion exitosa",
+        content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos de entrada invalidos",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "Credenciales incorrectas o usuario inactivo",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PostMapping("/login")
   public ResponseEntity<AuthResponse> login(
       @Valid @RequestBody LoginRequest body, HttpServletRequest req) {
@@ -101,6 +129,21 @@ public class AuthController {
         .body(payload);
   }
 
+  @SecurityRequirements
+  @Operation(
+      summary = "Renovar access token",
+      description =
+          "Intercambia un refresh token valido (cookie httpOnly o body) por un nuevo par de tokens.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Tokens renovados",
+        content = @Content(schema = @Schema(implementation = AuthResponse.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "Refresh token ausente, expirado o revocado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PostMapping("/refresh")
   public ResponseEntity<AuthResponse> refresh(
       @RequestBody(required = false) RefreshRequest body, HttpServletRequest req) {
@@ -124,6 +167,18 @@ public class AuthController {
         .body(payload);
   }
 
+  @SecurityRequirements
+  @Operation(
+      summary = "Cerrar sesion",
+      description =
+          "Revoca el refresh token (cookie o body) e invalida la sesion activa. Idempotente.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "204", description = "Sesion cerrada — cookie borrada"),
+    @ApiResponse(
+        responseCode = "401",
+        description = "Refresh token ausente",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PostMapping("/logout")
   public ResponseEntity<Void> logout(
       @RequestBody(required = false) RefreshRequest body, HttpServletRequest req) {
@@ -138,6 +193,19 @@ public class AuthController {
   }
 
   /** Informacion del usuario actual (parseado del access token en el SecurityContext). */
+  @Operation(
+      summary = "Perfil del usuario autenticado",
+      description = "Devuelve id, email y rol del usuario cuyo JWT viaja en el header.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Datos del usuario",
+        content = @Content(schema = @Schema(implementation = AuthResponse.UsuarioActual.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @GetMapping("/me")
   public AuthResponse.UsuarioActual me() {
     String email = currentUser.email();
@@ -154,6 +222,24 @@ public class AuthController {
    *
    * <p>Email se genera automáticamente a partir de nombre, apellido y rol.
    */
+  @Operation(
+      summary = "Registrar usuario",
+      description =
+          "Crea un usuario nuevo con password temporal autogenerado. Solo accesible para rol MASTER.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "201",
+        description = "Usuario creado — incluye passwordTemporal en la respuesta",
+        content = @Content(schema = @Schema(implementation = AuthResponse.UsuarioActual.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos de entrada invalidos",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes — requiere MASTER",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PostMapping("/register")
   @PreAuthorize("hasAuthority('usuario:create') or hasRole('MASTER')")
   public ResponseEntity<AuthResponse.UsuarioActual> register(
