@@ -51,6 +51,7 @@ describe('FocusTrapDirective', () => {
 
   it('renders the modal children after opening', () => {
     component.open();
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#first')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('#last')).toBeTruthy();
@@ -58,6 +59,7 @@ describe('FocusTrapDirective', () => {
 
   it('invokes escapeCallback when Escape is dispatched from inside the modal', () => {
     component.open();
+    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
 
     const last = fixture.nativeElement.querySelector('#last') as HTMLElement;
