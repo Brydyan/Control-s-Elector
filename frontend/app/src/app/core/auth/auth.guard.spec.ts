@@ -62,9 +62,13 @@ describe('guards de routing (T-FE-02)', () => {
       restoreSession: vi.fn(),
     };
     router = {
-      parseUrl: vi.fn((url: string) => ({ toString: () => url }) as unknown as UrlTree),
+      parseUrl: vi.fn(
+        (url: string) => ({ toString: () => url }) as unknown as UrlTree,
+      ),
       createUrlTree: vi.fn((cmds: unknown | unknown[]) => {
-        const path = Array.isArray(cmds) ? cmds.join('/') : String(cmds).replace(/^\//, '');
+        const path = Array.isArray(cmds)
+          ? cmds.join('/')
+          : String(cmds).replace(/^\//, '');
         return { toString: () => path } as unknown as UrlTree;
       }),
     };
