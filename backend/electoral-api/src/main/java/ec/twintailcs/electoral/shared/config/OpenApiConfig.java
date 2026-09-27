@@ -1,5 +1,9 @@
 package ec.twintailcs.electoral.shared.config;
 
+import ec.twintailcs.electoral.shared.web.dto.ApiErrorResponseDto;
+import io.swagger.v3.core.converter.AnnotatedType;
+import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -114,8 +118,7 @@ public class OpenApiConfig {
                         "Gestion de usuarios y revocacion de sesiones concurrentes (MASTER)."),
                 new Tag()
                     .name("Configuracion Electoral")
-                    .description(
-                        "Catalogos de cantones, cargos, partidos politicos y candidatos."),
+                    .description("Catalogos de cantones, cargos, partidos politicos y candidatos."),
                 new Tag()
                     .name("Evidencias")
                     .description(
@@ -132,15 +135,29 @@ public class OpenApiConfig {
                     .name("Actas - Coordinador")
                     .description(
                         "Revision, disputa, correccion, aprobacion, anulacion y expediente PDF.")))
-        .components(
-            new Components()
-                .addSecuritySchemes(
-                    SECURITY_SCHEME_BEARER,
-                    new SecurityScheme()
-                        .name(SECURITY_SCHEME_BEARER)
-                        .type(SecurityScheme.Type.HTTP)
-                        .scheme("bearer")
-                        .bearerFormat("JWT")
-                        .description(bearerDescription)));
+        .components(components(bearerDescription));
+  }
+
+  private Components components(String bearerDescription) {
+    Components c =
+        new Components()
+            .addSecuritySchemes(
+                SECURITY_SCHEME_BEARER,
+                new SecurityScheme()
+                    .name(SECURITY_SCHEME_BEARER)
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT")
+                    .description(bearerDescription));
+    // Registro explicito del DTO de error canonico para que aparezca en la
+    // seccion Components/Schemas del spec y pueda referenciarse sin necesidad
+    // de que springdoc lo encuentre por escaneo de controllers.
+    ResolvedSchema resolved =
+        ModelConverters.getInstance()
+            .resolveAsResolvedSchema(new AnnotatedType(ApiErrorResponseDto.class));
+    if (resolved != null && resolved.schema != null) {
+      c.addSchemas("ApiErrorResponse", resolved.schema);
+    }
+    return c;
   }
 }

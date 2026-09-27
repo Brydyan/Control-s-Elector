@@ -164,7 +164,8 @@ public class EvidenciaController {
 
   @Operation(
       summary = "Eliminar evidencia",
-      description = "Elimina el registro y el objeto en S3. Solo el dueno o roles con evidencia:delete.")
+      description =
+          "Elimina el registro y el objeto en S3. Solo el dueno o roles con evidencia:delete.")
   @ApiResponses({
     @ApiResponse(responseCode = "204", description = "Evidencia eliminada"),
     @ApiResponse(

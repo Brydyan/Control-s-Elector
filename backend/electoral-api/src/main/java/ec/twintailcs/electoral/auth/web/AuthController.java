@@ -230,8 +230,7 @@ public class AuthController {
     @ApiResponse(
         responseCode = "201",
         description = "Usuario creado — incluye passwordTemporal en la respuesta",
-        content =
-            @Content(schema = @Schema(implementation = AuthResponse.UsuarioActual.class))),
+        content = @Content(schema = @Schema(implementation = AuthResponse.UsuarioActual.class))),
     @ApiResponse(
         responseCode = "400",
         description = "Datos de entrada invalidos",

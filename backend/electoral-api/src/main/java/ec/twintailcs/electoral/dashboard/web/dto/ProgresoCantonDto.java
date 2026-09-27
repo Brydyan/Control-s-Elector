@@ -21,4 +21,5 @@ public record ProgresoCantonDto(
     @Schema(description = "Nombre del canton", example = "Santa Elena") String cantonNombre,
     @Schema(description = "Total de JRVs del canton") long totalJrvs,
     @Schema(description = "JRVs con al menos un acta no anulada") long jrvsConActa,
-    @Schema(description = "Porcentaje de avance (0.0 a 100.0)", example = "67.5") double porcentaje) {}
+    @Schema(description = "Porcentaje de avance (0.0 a 100.0)", example = "67.5")
+        double porcentaje) {}

@@ -29,7 +29,8 @@ public record NovedadDto(
     @Schema(description = "ID del cargo") Long cargoId,
     @Schema(description = "Nombre del cargo", example = "Alcalde/sa") String cargoNombre,
     @Schema(description = "UUID publico del veedor que registro el acta") UUID observerPublicId,
-    @Schema(description = "Nombre completo del veedor", example = "Juan Perez") String observerNombre,
+    @Schema(description = "Nombre completo del veedor", example = "Juan Perez")
+        String observerNombre,
     @Schema(description = "Motivo de la disputa (puede ser null)") String motivo,
     @Schema(description = "Minutos transcurridos desde el registro del acta", example = "35")
         long minutosTranscurridos) {}
