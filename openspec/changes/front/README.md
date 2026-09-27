@@ -7,7 +7,7 @@ Cambios frontend pendientes (nuevas funcionalidades), estructurados usando Spec-
 | Cambio | Título | Dependencias | Status |
 |--------|--------|--------------|--------|
 | T-FE-01 | Arquitectura Angular Base (feature-based, standalone) | ninguna | Pending |
-| T-FE-02 | Routing con RBAC Guards | T-FE-01 | Pending |
+| T-FE-02 | Routing con RBAC Guards | T-FE-01 | ✓ Archived (2026-09-27) |
 | T-FE-03 | AuthService y Manejo de Tokens | T-FE-01 | Pending |
 | T-FE-04 | Interceptors HTTP (JWT + Refresh) | T-FE-03 | Pending |
 | T-FE-05 | Pantalla de Login | T-FE-02, T-FE-03, T-FE-04 | Pending |
