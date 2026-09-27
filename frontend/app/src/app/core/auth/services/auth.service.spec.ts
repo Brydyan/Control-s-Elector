@@ -76,7 +76,9 @@ describe('AuthService (T-FE-03)', () => {
   });
 
   it('S-AuthService-1b: login propaga error sin tocar el store', () => {
-    repo.login.mockReturnValue(throwError(() => new Error('credenciales inválidas')));
+    repo.login.mockReturnValue(
+      throwError(() => new Error('credenciales inválidas')),
+    );
     const observed: unknown[] = [];
     service.login({ email: 'bad@test.local', password: 'wrong' }).subscribe({
       error: (e) => observed.push(e),
@@ -132,7 +134,9 @@ describe('AuthService (T-FE-03)', () => {
   });
 
   it('S-AuthService-3b: refresh() persiste el nuevo token en store', () => {
-    repo.refresh.mockReturnValue(of({ ...mockSession, accessToken: 'new-token' }));
+    repo.refresh.mockReturnValue(
+      of({ ...mockSession, accessToken: 'new-token' }),
+    );
 
     service.refresh().subscribe();
 
