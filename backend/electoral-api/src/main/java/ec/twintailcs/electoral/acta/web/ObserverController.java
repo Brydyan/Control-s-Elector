@@ -62,6 +62,8 @@ public class ObserverController {
 
   private final ActaService actaService;
   private final ActaRepository actaRepository;
+  private final ec.twintailcs.electoral.acta.application.usecase.ConsultarActaDetalleUseCase
+      consultarActaDetalleUseCase;
   private final ActaMapper actaMapper;
   private final CurrentUser currentUser;
   private final UsuarioRepository usuarioRepository;
@@ -79,7 +81,9 @@ public class ObserverController {
       JrvRepository jrvRepository,
       JrvCargoRepository jrvCargoRepository,
       EvidenciaService evidenciaService,
-      IncidenciaService incidenciaService) {
+      IncidenciaService incidenciaService,
+      ec.twintailcs.electoral.acta.application.usecase.ConsultarActaDetalleUseCase
+          consultarActaDetalleUseCase) {
     this.actaService = actaService;
     this.actaRepository = actaRepository;
     this.actaMapper = actaMapper;
@@ -89,6 +93,7 @@ public class ObserverController {
     this.jrvCargoRepository = jrvCargoRepository;
     this.evidenciaService = evidenciaService;
     this.incidenciaService = incidenciaService;
+    this.consultarActaDetalleUseCase = consultarActaDetalleUseCase;
   }
 
   private Long observerId() {
@@ -248,5 +253,39 @@ public class ObserverController {
                 .filter(r -> r.id().equals(inc.getId()))
                 .findFirst()
                 .orElseThrow());
+  }
+
+  /**
+   * T-BE-21: GET /api/v1/observer/actas/{actaId} — devuelve el detalle completo del acta con
+   * detalles, evidencia y motivo de disputa. Solo el OBSERVER dueño puede consultar (autoría se
+   * valida aquí para mantener el control de acceso cerca del endpoint).
+   */
+  @PreAuthorize("@authz.has('acta:upload')")
+  @GetMapping("/actas/{actaId}")
+  public ResponseEntity<ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto> verMiActa(
+      @PathVariable Long actaId) {
+    ec.twintailcs.electoral.acta.domain.Acta acta =
+        actaRepository
+            .findById(actaId)
+            .orElseThrow(
+                () ->
+                    new ec.twintailcs.electoral.acta.domain.ActaInvalidaException(
+                        "Acta no encontrada: " + actaId));
+
+    // Autoría — el OBSERVER solo ve SUS actas (per RF-OBS-04 escenario 2, análogo).
+    Long observerId =
+        usuarioRepository
+            .findByPublicId(currentUser.id())
+            .orElseThrow(
+                () ->
+                    new ec.twintailcs.electoral.acta.domain.ActaInvalidaException(
+                        "Usuario autenticado no encontrado"))
+            .getId();
+    if (!acta.getRegistradaPor().getId().equals(observerId)) {
+      throw new ec.twintailcs.electoral.acta.domain.AccesoNoPermitidoException(
+          "Solo puedes consultar tus propias actas");
+    }
+
+    return ResponseEntity.ok(consultarActaDetalleUseCase.ejecutar(actaId));
   }
 }
