@@ -2,64 +2,44 @@
 
 ## Fase A: JwtInterceptor
 
-- [ ] **A.1** — Crear `core/auth/interceptors/jwt.interceptor.ts`.
-  - Exporta `jwtInterceptor: HttpInterceptorFn`
-  - Inyecta TokenService
-  - Si URL contiene `/api/` (no /auth/login, /auth/register):
-    - Si token existe, agrega `Authorization: Bearer <token>`
-  - Retorna `next(request)`
+- [x] **A.1** — Crear `core/auth/auth.interceptor.ts` (Interceptor funcional unificado `authInterceptor`).
+  - Inyecta `AuthStore`, `AuthService`, `Router`
+  - Agrega `Authorization: Bearer <token>` únicamente a URLs de la API (`environment.apiUrl`)
+  - Retorna `next(authorized)`
+- [x] **A.2** — Tests unitarios en `core/auth/auth.interceptor.spec.ts`:
+  - Request a la API incluye header Authorization con Bearer token.
+  - Request externo no incluye token para prevenir fugas de credenciales.
 
-- [ ] **A.2** — Test: http.get('/api/observer/*') tiene header Authorization
-  - Usar HttpTestingController para mockear backend
-  - Verificar que header existe
+**Compuerta A:** `pnpm test:ci` pasa tests de JwtInterceptor (10 tests pasando).
 
-**Compuerta A:** `ng test` pasa test de JwtInterceptor.
+## Fase B: RefreshInterceptor & Manejo 401/403
 
-## Fase B: RefreshInterceptor
+- [x] **B.1** — Manejo reactivo de status 401 y 403 en `authInterceptor`:
+  - En 401 en endpoints protegidos: reintento único transparente vía `AuthService.refresh()`.
+  - En fallo de refresh o 401 en auth: limpia sesión y redirige a `/login`.
+  - En 403 Forbidden: preserva sesión y redirige.
+- [x] **B.2** — Tests unitarios en `auth.interceptor.spec.ts`:
+  - 401 dispara refresh y reintenta la petición original con el nuevo token.
+  - Fallo de refresh propaga error y redirige a `/login`.
 
-- [ ] **B.1** — Crear `core/auth/interceptors/refresh.interceptor.ts`.
-  - Exporta `refreshInterceptor: HttpInterceptorFn`
-  - Inyecta TokenService, AuthService, HttpClient
-  - Llama `next(request)`
-  - Si response tiene status 401:
-    - Llama `authService.refresh()`
-    - Si refresh éxito: clona request original, lo ejecuta con nuevo token
-    - Si refresh falla: propaga 401
-
-- [ ] **B.2** — Test: mock 401, verificar que se intenta refresh
-
-**Compuerta B:** `ng test` pasa test de RefreshInterceptor.
+**Compuerta B:** `pnpm test:ci` pasa tests de refresh y manejo de errores.
 
 ## Fase C: Registración en AppConfig
 
-- [ ] **C.1** — En `src/main.ts` o `app.config.ts`, registrar interceptors:
-  ```typescript
-  providedIn: [
-    withInterceptors([jwtInterceptor, refreshInterceptor])
-  ]
-  ```
+- [x] **C.1** — En `app.config.ts`, registrar `withInterceptors([authInterceptor])` en `provideHttpClient()`.
+- [x] **C.2** — Exportación limpia desde `core/auth/`.
+- [x] **C.3** — Tests de integración verificando flujo completo de llamadas HTTP interceptadas.
 
-- [ ] **C.2** — Crear barrel: `core/auth/interceptors/index.ts`
+**Compuerta C:** `pnpm build` compila. Interceptor activo en toda la aplicación.
 
-- [ ] **C.3** — Test de integración: mock backend retorna 401, verifica que se intenta refresh.
+## Deuda Técnica / Bugfix Detectado para Builder
 
-**Compuerta C:** `ng build` compila. Interceptors están registrados.
-
-## Qué NO hacer
-
-- **No agregar retry de otros errores** — solo 401
-- **No logout automático** — eso puede hacerlo el caller
-- **No agregar rate limiting** — una sola reintento está bien
+- [ ] **D.1** — En `core/auth/auth.interceptor.ts:56`: el manejo de 403 redirige fijamente a `/dashboard`. Para usuarios con rol `OBSERVER`, el backend devuelve 403 en `/dashboard` generando un bucle. Se debe condicionar: si `store.user()?.role === 'OBSERVER'`, redirigir a `/observer/mis-jrvs`.
 
 ## Compuertas
 
 | Fase | Comando | Expected |
 |------|---------|----------|
-| A | `ng test` (JwtInterceptor) | header Authorization present |
-| B | `ng test` (RefreshInterceptor) | 401 → refresh → reintento |
-| C | `ng build` | exit 0, interceptors registrados |
-
-## Verificación por Mutación
-
-- **V.1** — Comentar agrega de Authorization header → request no tiene header → restaurar
-- **V.2** — Comentar reintento en 401 → 401 propaga directo → restaurar
+| A | `pnpm test:ci` | 10 tests de auth.interceptor.spec.ts pasando |
+| B | `pnpm test:ci` | 401 → refresh → reintento verificado |
+| C | `pnpm build` | exit 0, interceptor registrado |

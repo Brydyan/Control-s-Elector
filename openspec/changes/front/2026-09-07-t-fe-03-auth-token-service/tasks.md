@@ -1,57 +1,44 @@
 # Tasks — T-FE-03: AuthService y Manejo de Tokens
 
-## Fase A: TokenService
+## Fase A: TokenService / AuthStore
 
-- [ ] **A.1** — Crear `core/auth/services/token.service.ts`.
-  - Propiedades privadas: `private token: string | null = null`
-  - Métodos: `getToken()`, `setToken(token)`, `clearToken()`
+- [x] **A.1** — Crear `core/auth/auth.store.ts` (Signals: access token en memoria, no localStorage).
+  - Propiedades privadas: `accessToken: signal<string | null>(null)`
+  - Getters reactivos: `isAuthenticated()`, `user()`, `accessToken()`
+  - Métodos: `setSession()`, `clear()`
   - Sin uso de localStorage
+- [x] **A.2** — Crear `core/auth/data/auth.repository.ts`.
+  - Método `login(credentials)` → POST /api/v1/auth/login
+  - Método `refresh()` → POST /api/v1/auth/refresh
+  - Método `logout()` → POST /api/v1/auth/logout
+  - Todos retornan Observable y usan `withCredentials: true` para cookies httpOnly
+- [x] **A.3** — Tests para almacenamiento en memoria y repositorio de autenticación.
 
-- [ ] **A.2** — Crear `core/auth/services/auth.repository.ts`.
-  - Método `login(email, password)` → POST /api/auth/login
-  - Método `refresh()` → POST /api/auth/refresh
-  - Método `logout()` → POST /api/auth/logout (si backend lo requiere)
-  - Todos retornan Observable
-
-- [ ] **A.3** — Crear tests para TokenService:
-  ```
-  getToken() retorna null al inicio
-  setToken() actualiza el token
-  clearToken() limpia el token
-  ```
-  Reportar nombre de archivo de test.
-
-**Compuerta A:** `ng test` sin errores en TokenService.
+**Compuerta A:** `pnpm test:ci` sin errores en AuthStore/AuthRepository.
 
 ## Fase B: AuthService
 
-- [ ] **B.1** — Crear `core/auth/services/auth.service.ts`.
-  - Inyectar: TokenService, AuthRepository, HttpClient
-  - Propiedad: `currentUser$ = new BehaviorSubject<CurrentUser | null>(null)`
-  - Método: `login(email, password): Observable<{token, user}>`
+- [x] **B.1** — Crear `core/auth/auth.service.ts`.
+  - Inyectar: AuthStore, AuthRepository
+  - Método `login(credentials): Observable<Session>`
     - Llamar authRepository.login()
-    - Si éxito: tokenService.setToken(), currentUser$.next(user)
-    - Si error: currentUser$.next(null), relanzar error
-
-- [ ] **B.2** — Agregar `logout()`: limpia token y currentUser$
-
-- [ ] **B.3** — Agregar `refresh(): Observable<{token}>`
+    - Si éxito: persistir en AuthStore
+    - Si error: relanzar error
+- [x] **B.2** — Agregar `logout()`: limpia token y AuthStore
+- [x] **B.3** — Agregar `refresh(): Observable<Session>`
   - Llama authRepository.refresh()
-  - Actualiza token
-  - No toca currentUser$ (usuario sigue igual)
+  - Single-flight refresh con `shareReplay`
+  - Actualiza token en store
+- [x] **B.4** — Exportar en módulo core/auth.
 
-- [ ] **B.4** — Crear barrel: `core/auth/services/index.ts`
+**Compuerta B:** `pnpm build` compila. `AuthService` inyectable globalmente.
 
-**Compuerta B:** `ng build` compila. `import { AuthService } from '@core/auth/services'` funciona.
+## Fase C: Integración y Restauración de Sesión
 
-## Fase C: Integración Stubs
+- [x] **C.1** — Implementar `restoreSession()` para reconstruir sesión al recargar página vía cookie httpOnly.
+- [x] **C.2** — Tests de integración: orquestación de login, restoreSession, refresh y logout.
 
-- [ ] **C.1** — Crear stubs de `AuthRepository` que retornan datos hardcodeados (para desarrollo).
-  - login() retorna {accessToken: 'jwt-stub', user: {id: 1, rol: 'OBSERVER', email: 'test@ex.com'}}
-
-- [ ] **C.2** — Test de integración: inyecta AuthService, llama login(), verifica que currentUser$ emite.
-
-**Compuerta C:** Test pasa. `ng test` sin errores en auth.service.
+**Compuerta C:** Test pasa. `pnpm test:ci` sin errores en auth.service.
 
 ## Qué NO hacer
 
@@ -64,11 +51,11 @@
 
 | Fase | Comando | Expected |
 |------|---------|----------|
-| A | `ng test` (TokenService) | exit 0, 3+ tests pass |
-| B | `ng build` | exit 0, AuthService importable |
-| C | `ng test` (AuthService.login) | Observable emite, currentUser$ actualiza |
+| A | `pnpm test:ci` | exit 0 |
+| B | `pnpm build` | exit 0, AuthService importable |
+| C | `pnpm test:ci` | Observable emite, sesión actualiza |
 
 ## Verificación por Mutación
 
-- **V.1** — Comentar tokenService.setToken() en login() → currentUser$ emite pero token es null → restaurar
-- **V.2** — Comentar currentUser$.next() en logout() → token se limpia pero currentUser$ no emite nada → restaurar
+- **V.1** — Comentar persistencia en login() → store no actualiza → restaurar
+- **V.2** — Comentar store.clear() en logout() → sesión permanece abierta → restaurar
