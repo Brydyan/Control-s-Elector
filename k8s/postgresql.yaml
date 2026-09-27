@@ -32,7 +32,7 @@ spec:
       containers:
       - name: postgresql
         image: postgres:16-alpine
-        command: ["postgres", "-c", "listen_addresses=*"]
+        args: ["-c", "listen_addresses=*"]
         ports:
         - containerPort: 5432
         env:
