@@ -107,22 +107,31 @@ public class OpenApiConfig {
             List.of(
                 new Tag()
                     .name("Auth")
-                    .description("Login, refresh, logout y registro de usuarios (RBAC)."),
+                    .description("Login, refresh, logout, me y arbol de menus dinamico."),
+                new Tag()
+                    .name("Administracion")
+                    .description(
+                        "Gestion de usuarios y revocacion de sesiones concurrentes (MASTER)."),
+                new Tag()
+                    .name("Configuracion Electoral")
+                    .description(
+                        "Catalogos de cantones, cargos, partidos politicos y candidatos."),
                 new Tag()
                     .name("Evidencias")
                     .description(
-                        "Subida, descarga, aprobacion y borrado de "
-                            + "evidencias fotograficas de actas (.webp)."),
+                        "Subida, descarga, estados y auditoria de actas fisicas en S3/MinIO."),
                 new Tag()
-                    .name("Actas")
+                    .name("Dashboard")
                     .description(
-                        "Registro y ciclo de vida de actas electorales "
-                            + "(Borrador, Enviada, EnDisputa, Corregida, Aprobada, Anulada)."),
+                        "Metricas consolidadas, avance cantonal y novedades en tiempo real."),
                 new Tag()
-                    .name("JRV")
+                    .name("Actas - Observador")
                     .description(
-                        "Juntas Receptoras del Voto: asignacion de "
-                            + "observadores, consulta por canton/parroquia.")))
+                        "Registro, borradores, correcciones, fotos e incidencias por veedor en JRV."),
+                new Tag()
+                    .name("Actas - Coordinador")
+                    .description(
+                        "Revision, disputa, correccion, aprobacion, anulacion y expediente PDF.")))
         .components(
             new Components()
                 .addSecuritySchemes(
