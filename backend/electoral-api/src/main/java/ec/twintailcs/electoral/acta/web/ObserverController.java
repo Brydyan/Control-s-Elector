@@ -17,6 +17,14 @@ import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.JrvRepository;
 import ec.twintailcs.electoral.incidencia.application.IncidenciaService;
+import ec.twintailcs.electoral.shared.web.dto.ApiErrorResponseDto;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -56,6 +64,9 @@ import org.springframework.web.multipart.MultipartFile;
  *   <li>POST /api/v1/observer/actas/{id}/imagen (T-BE-14, sigue 501)
  * </ul>
  */
+@Tag(
+    name = "Actas - Observador",
+    description = "Registro, borradores, correcciones, fotos e incidencias por veedor en JRV.")
 @RestController
 @RequestMapping("/api/v1/observer")
 public class ObserverController {
@@ -103,16 +114,46 @@ public class ObserverController {
         .getId();
   }
 
+  @Operation(
+      summary = "Mis actas",
+      description =
+          "Lista las actas registradas por el OBSERVER autenticado. Filtro opcional por estado.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Lista de actas del observer",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/mis-actas")
   @Transactional(readOnly = true)
-  public List<ActaResponseDto> misActas(@RequestParam(required = false) EstadoActa estado) {
+  public List<ActaResponseDto> misActas(
+      @Parameter(description = "Filtrar por estado del acta (ej. BORRADOR, ENVIADA, EN_DISPUTA)")
+          @RequestParam(required = false)
+          EstadoActa estado) {
     Long observerId = observerId();
     return actaRepository.findWithFilters(estado, null, null, null, observerId).stream()
         .map(actaMapper::toDto)
         .toList();
   }
 
+  @Operation(
+      summary = "Correcciones pendientes",
+      description = "Lista las actas en estado EN_DISPUTA asignadas a este OBSERVER para corregir.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Lista de actas en disputa del observer",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/correcciones-pendientes")
   @Transactional(readOnly = true)
@@ -125,6 +166,20 @@ public class ObserverController {
         .toList();
   }
 
+  @Operation(
+      summary = "JRVs del observer",
+      description =
+          "Lista todas las JRVs con su estado de registro (cargos pendientes y registrados).")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Lista de JRVs con estado",
+        content = @Content(schema = @Schema(implementation = JrvConEstadoDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/jrvs")
   @Transactional(readOnly = true)
@@ -146,10 +201,25 @@ public class ObserverController {
         jrv.getId(), jrv.getNumero(), parroquia, pendientes, (int) registrados);
   }
 
+  @Operation(
+      summary = "Cargos de una JRV",
+      description =
+          "Lista los cargos activos de una JRV con el estado de su acta (sin registrar o con estado).")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Lista de cargos con estado de acta",
+        content = @Content(schema = @Schema(implementation = CargoConEstadoDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/jrv/{jrvId}/cargos")
   @Transactional(readOnly = true)
-  public List<CargoConEstadoDto> cargosDeJrv(@PathVariable Long jrvId) {
+  public List<CargoConEstadoDto> cargosDeJrv(
+      @Parameter(description = "ID interno de la JRV") @PathVariable Long jrvId) {
     List<JrvCargo> jrvCargos = jrvCargoRepository.findByJrvIdAndActivo(jrvId, true);
 
     Map<Long, Acta> actaActivaPorCargo =
@@ -181,6 +251,33 @@ public class ObserverController {
    * clientes que ya cargan todos los datos. Equivale a {@code guardarBorrador()} seguido de {@code
    * enviar()}.
    */
+  @Operation(
+      summary = "Registrar acta (alta directa)",
+      description =
+          "Crea y envia el acta directamente en estado ENVIADA. Requiere todos los datos completos."
+              + " Uso legacy; preferir el flujo borrador + enviar.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "201",
+        description = "Acta creada y enviada",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos invalidos o suma de votos incorrecta",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Sin permiso acta:upload",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description = "Ya existe un acta activa para esta JRV y cargo",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('acta:upload')")
   @PostMapping("/actas")
   public ResponseEntity<ActaResponseDto> registrarActa(
@@ -193,6 +290,29 @@ public class ObserverController {
    * POST /api/v1/observer/actas/borrador — guarda o reanuda un BORRADOR. No exige integridad
    * electoral; el observador puede ir guardando mientras junta los datos del acta.
    */
+  @Operation(
+      summary = "Guardar borrador de acta",
+      description =
+          "Guarda o reanuda un acta en estado BORRADOR. No valida integridad electoral."
+              + " El observer puede ir completando los datos antes de enviar.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Borrador guardado",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos de entrada invalidos",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Sin permiso acta:upload",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('acta:upload')")
   @PostMapping("/actas/borrador")
   public ResponseEntity<ActaResponseDto> guardarBorrador(
@@ -202,20 +322,75 @@ public class ObserverController {
   }
 
   /**
-   * POST /api/v1/observer/actas/{actaId}/enviar — transición BORRADOR → ENVIADA con validación
+   * POST /api/v1/observer/actas/{actaId}/enviar — transicion BORRADOR → ENVIADA con validacion
    * completa.
    */
+  @Operation(
+      summary = "Enviar borrador",
+      description =
+          "Transiciona el acta de BORRADOR a ENVIADA con validacion completa de integridad electoral"
+              + " (suma de votos = total sufragantes).")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Acta enviada",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Suma de votos incorrecta o acta no en BORRADOR",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Sin permiso acta:upload o no es el dueno del acta",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('acta:upload')")
   @PostMapping("/actas/{actaId}/enviar")
-  public ActaResponseDto enviarBorrador(@PathVariable Long actaId, HttpServletRequest request) {
+  public ActaResponseDto enviarBorrador(
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
+      HttpServletRequest request) {
     Acta acta = actaService.enviar(actaId, observerId(), request);
     return actaMapper.toDto(acta);
   }
 
+  @Operation(
+      summary = "Corregir acta (observer)",
+      description =
+          "Aplica correcciones al acta en estado EN_DISPUTA segun las indicaciones del coordinador.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Acta corregida",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos invalidos o acta no en EN_DISPUTA",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Sin permiso acta:upload",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('acta:upload')")
   @PutMapping("/actas/{actaId}/corregir")
   public ActaResponseDto corregirActa(
-      @PathVariable Long actaId,
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
       @Valid @RequestBody ActaRequestDto dto,
       HttpServletRequest request) {
     Acta acta = actaService.corregir(actaId, dto, observerId(), false, request);
@@ -224,12 +399,34 @@ public class ObserverController {
 
   /**
    * POST /api/v1/observer/actas/{actaId}/imagen — T-BE-14 cerrado en PR δ. Sube la foto del acta a
-   * Supabase Storage vía EvidenciaService.
+   * Supabase Storage via EvidenciaService.
    */
+  @Operation(
+      summary = "Subir fotografia del acta",
+      description =
+          "Sube imagen (JPG/PNG/WEBP, max 10MB) como evidencia fotografica del acta fisica.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "201", description = "Imagen subida y vinculada al acta"),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Archivo ausente, tipo no permitido o supera el limite de 10MB",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Sin permiso acta:upload o no es el dueno del acta",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('acta:upload')")
   @PostMapping(value = "/actas/{actaId}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Void> subirImagen(
-      @PathVariable Long actaId, @RequestPart("imagen") MultipartFile imagen) {
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
+      @Parameter(description = "Archivo de imagen (max 10MB, formatos: jpg/png/webp)")
+          @RequestPart("imagen")
+          MultipartFile imagen) {
     evidenciaService.upload(imagen, actaId, currentUser.id());
     return ResponseEntity.status(HttpStatus.CREATED).build();
   }
@@ -238,6 +435,34 @@ public class ObserverController {
    * POST /api/v1/observer/incidencias — T-BE-19. Reporte inmediato de contingencia operativa de JRV
    * (mesa no instalada, urna violentada, etc.) por el veedor.
    */
+  @Operation(
+      summary = "Registrar incidencia",
+      description =
+          "Registra una incidencia operativa en la JRV (mesa no instalada, urna violentada, etc.).")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "201",
+        description = "Incidencia registrada",
+        content =
+            @Content(
+                schema =
+                    @Schema(
+                        implementation =
+                            ec.twintailcs.electoral.incidencia.web.dto.IncidenciaResponseDto
+                                .class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos invalidos",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Sin permiso acta:upload",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('acta:upload')")
   @PostMapping("/incidencias")
   public ResponseEntity<ec.twintailcs.electoral.incidencia.web.dto.IncidenciaResponseDto>
@@ -257,13 +482,41 @@ public class ObserverController {
 
   /**
    * T-BE-21: GET /api/v1/observer/actas/{actaId} — devuelve el detalle completo del acta con
-   * detalles, evidencia y motivo de disputa. Solo el OBSERVER dueño puede consultar (autoría se
-   * valida aquí para mantener el control de acceso cerca del endpoint).
+   * detalles, evidencia y motivo de disputa. Solo el OBSERVER dueno puede consultar (autoria se
+   * valida aqui para mantener el control de acceso cerca del endpoint).
    */
+  @Operation(
+      summary = "Ver detalle de mi acta",
+      description =
+          "Retorna el detalle completo del acta (votos por candidato, evidencia, motivo de disputa)."
+              + " Solo el OBSERVER dueno puede consultar.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Detalle completo del acta",
+        content =
+            @Content(
+                schema =
+                    @Schema(
+                        implementation =
+                            ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "No eres el dueno de esta acta",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("@authz.has('acta:upload')")
   @GetMapping("/actas/{actaId}")
   public ResponseEntity<ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto> verMiActa(
-      @PathVariable Long actaId) {
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId) {
     ec.twintailcs.electoral.acta.domain.Acta acta =
         actaRepository
             .findById(actaId)
@@ -272,7 +525,7 @@ public class ObserverController {
                     new ec.twintailcs.electoral.acta.domain.ActaInvalidaException(
                         "Acta no encontrada: " + actaId));
 
-    // Autoría — el OBSERVER solo ve SUS actas (per RF-OBS-04 escenario 2, análogo).
+    // Autoria — el OBSERVER solo ve SUS actas (per RF-OBS-04 escenario 2, analogo).
     Long observerId =
         usuarioRepository
             .findByPublicId(currentUser.id())

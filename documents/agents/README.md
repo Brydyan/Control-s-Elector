@@ -89,6 +89,16 @@ sin commitear que hubiera alrededor.
 Anotá el NOMBRE del test que cayó. Si no cae ninguno, el test es decorativo.
 ```
 
+### Uso de RTK (Rust Token Killer) por rol
+
+Para ahorrar tokens y prevenir saturación de contexto:
+
+| Rol | Cuándo usar `rtk` | Comandos recomendados |
+|---|---|---|
+| **Arquitecto / QA** | Inspección ágil sin desbordar el hilo principal | `rtk git status`, `rtk git diff`, `rtk smart <archivo>` |
+| **Builder (`sdd-apply`)** | Compilación, mutaciones y verificación rápida | `rtk err ./mvnw clean compile`, `rtk err pnpm build`, `rtk test ./mvnw test`, `rtk test pnpm test:ci`, `rtk git status --short` |
+| **Verify (Contexto limpio)** | Auditoría de mutaciones y formateo | `rtk test <cmd>`, `rtk err ./mvnw spotless:check`. *(Nota: la compuerta final SIEMPRE cuenta totales exactos desde XMLs/Vitest)* |
+
 ---
 
 ## Qué NO se delega

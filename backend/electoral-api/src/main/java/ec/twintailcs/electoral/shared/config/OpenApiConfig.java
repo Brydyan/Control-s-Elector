@@ -1,5 +1,9 @@
 package ec.twintailcs.electoral.shared.config;
 
+import ec.twintailcs.electoral.shared.web.dto.ApiErrorResponseDto;
+import io.swagger.v3.core.converter.AnnotatedType;
+import io.swagger.v3.core.converter.ModelConverters;
+import io.swagger.v3.core.converter.ResolvedSchema;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -107,31 +111,53 @@ public class OpenApiConfig {
             List.of(
                 new Tag()
                     .name("Auth")
-                    .description("Login, refresh, logout y registro de usuarios (RBAC)."),
+                    .description("Login, refresh, logout, me y arbol de menus dinamico."),
+                new Tag()
+                    .name("Administracion")
+                    .description(
+                        "Gestion de usuarios y revocacion de sesiones concurrentes (MASTER)."),
+                new Tag()
+                    .name("Configuracion Electoral")
+                    .description("Catalogos de cantones, cargos, partidos politicos y candidatos."),
                 new Tag()
                     .name("Evidencias")
                     .description(
-                        "Subida, descarga, aprobacion y borrado de "
-                            + "evidencias fotograficas de actas (.webp)."),
+                        "Subida, descarga, estados y auditoria de actas fisicas en S3/MinIO."),
                 new Tag()
-                    .name("Actas")
+                    .name("Dashboard")
                     .description(
-                        "Registro y ciclo de vida de actas electorales "
-                            + "(Borrador, Enviada, EnDisputa, Corregida, Aprobada, Anulada)."),
+                        "Metricas consolidadas, avance cantonal y novedades en tiempo real."),
                 new Tag()
-                    .name("JRV")
+                    .name("Actas - Observador")
                     .description(
-                        "Juntas Receptoras del Voto: asignacion de "
-                            + "observadores, consulta por canton/parroquia.")))
-        .components(
-            new Components()
-                .addSecuritySchemes(
-                    SECURITY_SCHEME_BEARER,
-                    new SecurityScheme()
-                        .name(SECURITY_SCHEME_BEARER)
-                        .type(SecurityScheme.Type.HTTP)
-                        .scheme("bearer")
-                        .bearerFormat("JWT")
-                        .description(bearerDescription)));
+                        "Registro, borradores, correcciones, fotos e incidencias por veedor en JRV."),
+                new Tag()
+                    .name("Actas - Coordinador")
+                    .description(
+                        "Revision, disputa, correccion, aprobacion, anulacion y expediente PDF.")))
+        .components(components(bearerDescription));
+  }
+
+  private Components components(String bearerDescription) {
+    Components c =
+        new Components()
+            .addSecuritySchemes(
+                SECURITY_SCHEME_BEARER,
+                new SecurityScheme()
+                    .name(SECURITY_SCHEME_BEARER)
+                    .type(SecurityScheme.Type.HTTP)
+                    .scheme("bearer")
+                    .bearerFormat("JWT")
+                    .description(bearerDescription));
+    // Registro explicito del DTO de error canonico para que aparezca en la
+    // seccion Components/Schemas del spec y pueda referenciarse sin necesidad
+    // de que springdoc lo encuentre por escaneo de controllers.
+    ResolvedSchema resolved =
+        ModelConverters.getInstance()
+            .resolveAsResolvedSchema(new AnnotatedType(ApiErrorResponseDto.class));
+    if (resolved != null && resolved.schema != null) {
+      c.addSchemas("ApiErrorResponse", resolved.schema);
+    }
+    return c;
   }
 }

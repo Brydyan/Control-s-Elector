@@ -1,31 +1,39 @@
 package ec.twintailcs.electoral.acta.web;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
+@Schema(description = "Datos para registrar o corregir un acta electoral")
 public class ActaRequestDto {
 
+  @Schema(description = "ID de la JRV", example = "42")
   @NotNull(message = "jrvId es obligatorio")
   private Long jrvId;
 
+  @Schema(description = "ID del cargo electoral", example = "3")
   @NotNull(message = "cargoId es obligatorio")
   private Long cargoId;
 
+  @Schema(description = "Total de sufragantes en la JRV", example = "156")
   @NotNull(message = "totalSufragantes es obligatorio")
   @Min(value = 0, message = "totalSufragantes no puede ser negativo")
   private Integer totalSufragantes;
 
+  @Schema(description = "Total de votos en blanco", example = "8")
   @NotNull(message = "votosBlancos es obligatorio")
   @Min(value = 0, message = "votosBlancos no puede ser negativo")
   private Integer votosBlancos;
 
+  @Schema(description = "Total de votos nulos", example = "3")
   @NotNull(message = "votosNulos es obligatorio")
   @Min(value = 0, message = "votosNulos no puede ser negativo")
   private Integer votosNulos;
 
+  @Schema(description = "Votos por candidato (al menos uno requerido)")
   @NotEmpty(message = "Debe haber al menos un candidato")
   @Valid
   private List<ActaDetalleDto> detalles;

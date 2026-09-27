@@ -16,8 +16,16 @@ import ec.twintailcs.electoral.auth.config.CurrentUser;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.evidencia.application.EvidenciaService;
 import ec.twintailcs.electoral.incidencia.application.IncidenciaService;
+import ec.twintailcs.electoral.shared.web.dto.ApiErrorResponseDto;
 import ec.twintailcs.electoral.shared.web.pagination.PageRequestFactory;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -64,6 +72,9 @@ import org.springframework.web.multipart.MultipartFile;
  *   <li>DELETE /api/v1/coordinator/actas/{actaId} — anular APROBADA (solo MASTER)
  * </ul>
  */
+@Tag(
+    name = "Actas - Coordinador",
+    description = "Revision, disputa, correccion, aprobacion, anulacion y expediente PDF.")
 @RestController
 @RequestMapping("/api/v1/coordinator")
 @PreAuthorize(
@@ -132,6 +143,26 @@ public class CoordinatorController {
    * GlobalExceptionHandler} (existing error format) — validation lives in the shared {@code
    * PageRequestFactory}.
    */
+  @Operation(
+      summary = "Listar actas (coordinador)",
+      description =
+          "Pagina actas con filtros por estado, JRV, cargo, canton y busqueda libre."
+              + " Roles: COORDINATOR y MASTER.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Pagina de actas"),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Parametros de paginacion invalidos",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @GetMapping("/actas")
   public ResponseEntity<PagedResponse<ActaResponseDto>> listarActas(
       @RequestParam(required = false) EstadoActa estado,
@@ -212,23 +243,70 @@ public class CoordinatorController {
 
   /**
    * T-BE-21: vista de detalle con detalles, evidencia (URL prefirmada) y motivoDisputa si aplica.
-   * Reemplaza la versión plana de {@link ActaResponseDto} (que sigue usándose en el listado para
+   * Reemplaza la version plana de {@link ActaResponseDto} (que sigue usandose en el listado para
    * evitar N+1).
    */
+  @Operation(
+      summary = "Ver detalle del acta (coordinador)",
+      description =
+          "Retorna el detalle completo del acta (votos por candidato, evidencia, motivo de disputa).")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Detalle del acta",
+        content =
+            @Content(
+                schema =
+                    @Schema(
+                        implementation =
+                            ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @GetMapping("/actas/{actaId}")
   public ResponseEntity<ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto> verActaDetalle(
-      @PathVariable Long actaId) {
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId) {
     return ResponseEntity.ok(consultarActaDetalleUseCase.ejecutar(actaId));
   }
 
   /**
-   * Devuelve el historial de transiciones del acta (cada acción crítica queda registrada en {@code
+   * Devuelve el historial de transiciones del acta (cada accion critica queda registrada en {@code
    * audit_log}). Solo expone entradas de la propia entidad y nunca el log global del sistema.
-   * Ordenado de más reciente a más antiguo.
+   * Ordenado de mas reciente a mas antiguo.
    */
+  @Operation(
+      summary = "Historial de transiciones del acta",
+      description =
+          "Retorna el log de acciones auditadas del acta (cambios de estado, correcciones)."
+              + " Ordenado de mas reciente a mas antiguo.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Historial de transiciones",
+        content = @Content(schema = @Schema(implementation = HistorialActaDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @GetMapping("/actas/{actaId}/historial")
   @Transactional(readOnly = true)
-  public ResponseEntity<List<HistorialActaDto>> historialActa(@PathVariable Long actaId) {
+  public ResponseEntity<List<HistorialActaDto>> historialActa(
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId) {
     List<AuditLog> entries =
         auditLogRepository.findByEntidadAndEntidadIdOrderByTimestampDesc("acta", actaId);
     List<HistorialActaDto> dto =
@@ -257,33 +335,138 @@ public class CoordinatorController {
     return ResponseEntity.ok(dto);
   }
 
+  @Operation(
+      summary = "Disputar acta",
+      description =
+          "Transiciona el acta a EN_DISPUTA registrando el motivo. El OBSERVER debera corregirla.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Acta marcada EN_DISPUTA",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Acta no esta en estado disputable",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes — requiere acta:disputar",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PutMapping("/actas/{actaId}/disputar")
   public ResponseEntity<ActaResponseDto> disputar(
-      @PathVariable Long actaId, @Valid @RequestBody DisputaDto dto, HttpServletRequest request) {
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
+      @Valid @RequestBody DisputaDto dto,
+      HttpServletRequest request) {
     Acta acta = actaService.marcarEnDisputa(actaId, coordinatorId(), dto.getMotivo(), request);
     return ResponseEntity.ok(toDto(acta));
   }
 
+  @Operation(
+      summary = "Corregir acta (coordinador)",
+      description = "El COORDINATOR aplica la correccion directamente sobre el acta EN_DISPUTA.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Acta corregida",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos invalidos o acta no en EN_DISPUTA",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PutMapping("/actas/{actaId}/corregir")
   public ResponseEntity<ActaResponseDto> corregir(
-      @PathVariable Long actaId,
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
       @Valid @RequestBody ActaRequestDto dto,
       HttpServletRequest request) {
     Acta acta = actaService.corregir(actaId, dto, coordinatorId(), true, request);
     return ResponseEntity.ok(toDto(acta));
   }
 
+  @Operation(
+      summary = "Aprobar acta electoral",
+      description =
+          "Aprueba formalmente un acta en estado ENVIADA o CORREGIDA."
+              + " Requiere rol COORDINATOR o MASTER.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Acta aprobada",
+        content = @Content(schema = @Schema(implementation = ActaResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes — requiere acta:aprobar",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description = "El acta no esta en estado aprobable",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PutMapping("/actas/{actaId}/aprobar")
   public ResponseEntity<ActaResponseDto> aprobar(
-      @PathVariable Long actaId, HttpServletRequest request) {
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
+      HttpServletRequest request) {
     Acta acta = actaService.aprobar(actaId, coordinatorId(), request);
     return ResponseEntity.ok(toDto(acta));
   }
 
+  @Operation(
+      summary = "Anular acta",
+      description = "Anula un acta en estado APROBADA. Irreversible. Solo MASTER (acta:anular).")
+  @ApiResponses({
+    @ApiResponse(responseCode = "204", description = "Acta anulada"),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes — requiere acta:anular (MASTER)",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "409",
+        description = "El acta no esta en estado anulable (debe estar APROBADA)",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @DeleteMapping("/actas/{actaId}")
   @PreAuthorize("hasAuthority('acta:anular')")
   public ResponseEntity<Void> anular(
-      @PathVariable Long actaId, @Valid @RequestBody AnulacionDto dto, HttpServletRequest request) {
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
+      @Valid @RequestBody AnulacionDto dto,
+      HttpServletRequest request) {
     actaService.anular(actaId, coordinatorId(), dto.getMotivo(), request);
     return ResponseEntity.noContent().build();
   }
@@ -312,21 +495,43 @@ public class CoordinatorController {
   }
 
   /**
-   * T-BE-18: subida de evidencia fotográfica por COORDINATOR/MASTER como contingencia.
+   * T-BE-18: subida de evidencia fotografica por COORDINATOR/MASTER como contingencia.
    *
    * <p>Camino normal: OBSERVER sube (POST /api/v1/observer/actas/{id}/imagen). Esta ruta es para
    * cuando el OBSERVER no pudo hacerlo (equipo roto, emergencia) y el COORDINATOR toma el relevo.
-   * La subida va al mismo {@code SubirEvidenciaUseCase} que la del OBSERVER, pero además registra
-   * una fila de auditoría forense con la acción {@code EVIDENCIA_CONTINGENCIA_COORDINADOR}.
+   * La subida va al mismo {@code SubirEvidenciaUseCase} que la del OBSERVER, pero ademas registra
+   * una fila de auditoria forense con la accion {@code EVIDENCIA_CONTINGENCIA_COORDINADOR}.
    *
-   * <p>{@code @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")} refuerza la restricción del
+   * <p>{@code @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")} refuerza la restriccion del
    * nivel de clase (que es por permisos). OBSERVER recibe 403; ADMIN igual.
    */
+  @Operation(
+      summary = "Subir imagen del acta (contingencia coordinador)",
+      description =
+          "Sube imagen (JPG/PNG/WEBP, max 10MB) como contingencia cuando el OBSERVER no pudo hacerlo."
+              + " Requiere rol COORDINATOR o MASTER.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "201", description = "Imagen subida"),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Archivo ausente o excede el limite de tamano",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes — requiere COORDINATOR o MASTER",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")
   @PostMapping(value = "/actas/{actaId}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
   public ResponseEntity<Void> subirImagen(
-      @PathVariable Long actaId,
-      @RequestPart("imagen") MultipartFile imagen,
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
+      @Parameter(description = "Archivo de imagen (max 10MB, formatos: jpg/png/webp)")
+          @RequestPart("imagen")
+          MultipartFile imagen,
       HttpServletRequest request) {
     evidenciaService.subirEvidenciaCoordinador(actaId, imagen, CurrentUser.staticId(), request);
     return ResponseEntity.status(201).build();
@@ -336,26 +541,70 @@ public class CoordinatorController {
    * T-BE-19: GET /api/v1/coordinator/incidencias — listado para monitoreo. Filtro opcional por
    * {@code jrvId}.
    *
-   * <p>Doble capa de protección (per design.md D2): {@code @PreAuthorize} a nivel de método
+   * <p>Doble capa de proteccion (per design.md D2): {@code @PreAuthorize} a nivel de metodo
    * refuerza el de la clase. Si en el futuro alguien quita el de la clase (p.ej. para unificar
-   * permisos), el método sigue protegido — defense in depth.
+   * permisos), el metodo sigue protegido — defense in depth.
    */
+  @Operation(
+      summary = "Listar incidencias",
+      description =
+          "Listado de incidencias para monitoreo. Filtro opcional por JRV."
+              + " Roles: COORDINATOR, MASTER, ADMIN.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Lista de incidencias"),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")
   @GetMapping("/incidencias")
   public java.util.List<ec.twintailcs.electoral.incidencia.web.dto.IncidenciaResponseDto>
-      listarIncidencias(@RequestParam(required = false) Long jrvId) {
+      listarIncidencias(
+          @Parameter(description = "Filtrar por ID de JRV (opcional)")
+              @RequestParam(required = false)
+              Long jrvId) {
     return incidenciaService.listarIncidencias(jrvId);
   }
 
   /**
    * T-BE-20: GET /api/v1/coordinator/actas/{actaId}/expediente-pdf — descarga el PDF del expediente
-   * de impugnación CNE en memoria (sin tocar disco). Devuelve bytes con Content-Type
+   * de impugnacion CNE en memoria (sin tocar disco). Devuelve bytes con Content-Type
    * application/pdf (via produces) y Content-Disposition inline para visualizar en navegador.
    */
+  @Operation(
+      summary = "Descargar expediente de impugnacion CNE en PDF",
+      description =
+          "Genera y descarga el expediente completo del acta en formato PDF para tramite ante el CNE.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Documento PDF generado exitosamente",
+        content =
+            @Content(
+                mediaType = "application/pdf",
+                schema = @Schema(type = "string", format = "binary"))),
+    @ApiResponse(
+        responseCode = "401",
+        description = "No autenticado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Acta no encontrada",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PreAuthorize("hasAnyRole('COORDINATOR','MASTER','ADMIN')")
   @GetMapping(value = "/actas/{actaId}/expediente-pdf", produces = "application/pdf")
   public org.springframework.http.ResponseEntity<byte[]> descargarExpedientePdf(
-      @PathVariable Long actaId) {
+      @Parameter(description = "ID interno del acta") @PathVariable Long actaId) {
     byte[] pdf = expedientePdfService.generarExpedientePdf(actaId, CurrentUser.staticId());
     String filename = "expediente-acta-" + actaId + ".pdf";
     return org.springframework.http.ResponseEntity.ok()
