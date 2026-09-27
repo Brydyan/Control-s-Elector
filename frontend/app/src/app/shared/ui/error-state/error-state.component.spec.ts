@@ -26,7 +26,7 @@ describe('ErrorStateComponent', () => {
 
   it('should emit retry when retry button is clicked', () => {
     spyOn(component.retry, 'emit');
-    component.showRetry = true;
+    fixture.componentRef.setInput('showRetry', true);
     fixture.detectChanges();
 
     const button = fixture.nativeElement.querySelector(

@@ -70,9 +70,9 @@ describe('PaginatorComponent', () => {
   });
 
   it('should render the page info text', () => {
-    component.page = 1;
-    component.size = 20;
-    component.totalElements = 42;
+    fixture.componentRef.setInput('page', 1);
+    fixture.componentRef.setInput('size', 20);
+    fixture.componentRef.setInput('totalElements', 42);
     fixture.detectChanges();
 
     const info = fixture.debugElement.query(By.css('.paginator-info'));
