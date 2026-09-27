@@ -4,6 +4,7 @@ import {
   ElementRef,
   HostListener,
   Input,
+  OnChanges,
   OnDestroy,
   inject,
 } from '@angular/core';
@@ -35,7 +36,7 @@ const FOCUSABLE_SELECTOR = [
   selector: '[appFocusTrap]',
   standalone: true,
 })
-export class FocusTrapDirective implements AfterViewInit, OnDestroy {
+export class FocusTrapDirective implements AfterViewInit, OnChanges, OnDestroy {
   private readonly host = inject(ElementRef<HTMLElement>);
 
   /** Si está en false, la directiva no hace nada (útil mientras el modal está cerrado). */
