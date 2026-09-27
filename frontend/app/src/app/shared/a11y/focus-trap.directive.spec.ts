@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
@@ -10,7 +10,7 @@ import { FocusTrapDirective } from './focus-trap.directive';
   template: `
     <button id="trigger" type="button" (click)="open()">Trigger</button>
     <div
-      *ngIf="openModal"
+      *ngIf="openModal()"
       [appFocusTrap]="true"
       [escapeCallback]="close.bind(this)"
     >
@@ -24,10 +24,10 @@ import { FocusTrapDirective } from './focus-trap.directive';
 class HostComponent {
   @ViewChild('trigger', { static: true })
   trigger!: ElementRef<HTMLElement>;
-  openModal = false;
+  openModal = signal(false);
   close = vi.fn();
   open() {
-    this.openModal = true;
+    this.openModal.set(true);
   }
 }
 
@@ -51,7 +51,6 @@ describe('FocusTrapDirective', () => {
 
   it('renders the modal children after opening', () => {
     component.open();
-    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#first')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('#last')).toBeTruthy();
@@ -59,7 +58,6 @@ describe('FocusTrapDirective', () => {
 
   it('invokes escapeCallback when Escape is dispatched from inside the modal', () => {
     component.open();
-    fixture.changeDetectorRef.markForCheck();
     fixture.detectChanges();
 
     const last = fixture.nativeElement.querySelector('#last') as HTMLElement;

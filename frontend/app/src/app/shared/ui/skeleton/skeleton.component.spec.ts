@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SkeletonComponent } from './skeleton.component';
@@ -7,13 +7,13 @@ import { SkeletonComponent } from './skeleton.component';
   standalone: true,
   imports: [SkeletonComponent],
   template: `
-    <app-skeleton [loading]="loading" [loadingBoundary]="true">
+    <app-skeleton [loading]="loading()" [loadingBoundary]="true">
       <span class="projected-loading">Loading records</span>
     </app-skeleton>
   `,
 })
 class LoadingBoundaryHostComponent {
-  loading = true;
+  loading = signal(true);
 }
 
 describe('SkeletonComponent', () => {
@@ -76,8 +76,7 @@ describe('SkeletonComponent', () => {
       hostFixture.nativeElement.querySelector('.projected-loading'),
     ).toBeTruthy();
 
-    hostFixture.componentInstance.loading = false;
-    hostFixture.changeDetectorRef.markForCheck();
+    hostFixture.componentInstance.loading.set(false);
     hostFixture.detectChanges();
     expect(
       hostFixture.nativeElement.querySelector('.projected-loading'),
