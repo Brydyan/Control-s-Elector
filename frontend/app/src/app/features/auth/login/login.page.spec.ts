@@ -85,7 +85,10 @@ describe('LoginPage (T-FE-05)', () => {
 
   it('S-Login-1b: tras login exitoso de ADMIN redirige a /dashboard', () => {
     authService.login.mockReturnValue(of(buildSession('ADMIN')));
-    component.form.setValue({ email: 'admin@test.local', password: 'secret123' });
+    component.form.setValue({
+      email: 'admin@test.local',
+      password: 'secret123',
+    });
 
     component.submit();
 
@@ -94,7 +97,10 @@ describe('LoginPage (T-FE-05)', () => {
 
   it('S-Login-1c: tras login exitoso de MASTER redirige a /dashboard', () => {
     authService.login.mockReturnValue(of(buildSession('MASTER')));
-    component.form.setValue({ email: 'master@test.local', password: 'secret123' });
+    component.form.setValue({
+      email: 'master@test.local',
+      password: 'secret123',
+    });
 
     component.submit();
 
@@ -103,7 +109,10 @@ describe('LoginPage (T-FE-05)', () => {
 
   it('S-Login-1d: tras login exitoso de COORDINATOR redirige a /dashboard', () => {
     authService.login.mockReturnValue(of(buildSession('COORDINATOR')));
-    component.form.setValue({ email: 'coord@test.local', password: 'secret123' });
+    component.form.setValue({
+      email: 'coord@test.local',
+      password: 'secret123',
+    });
 
     component.submit();
 
@@ -126,7 +135,10 @@ describe('LoginPage (T-FE-05)', () => {
   });
 
   it('S-Login-2b: loading vuelve a false después de un error HTTP', () => {
-    const err = new HttpErrorResponse({ status: 401, statusText: 'Unauthorized' });
+    const err = new HttpErrorResponse({
+      status: 401,
+      statusText: 'Unauthorized',
+    });
     authService.login.mockReturnValue(throwError(() => err));
     component.form.setValue({ email: 'a@test.local', password: 'secret123' });
 
