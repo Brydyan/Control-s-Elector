@@ -5,8 +5,16 @@ import ec.twintailcs.electoral.auth.domain.SesionRepository;
 import ec.twintailcs.electoral.auth.domain.UsuarioRepository;
 import ec.twintailcs.electoral.auth.web.dto.SesionResponseDto;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import ec.twintailcs.electoral.shared.web.dto.ApiErrorResponseDto;
 import ec.twintailcs.electoral.shared.web.pagination.PageRequestFactory;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.time.Instant;
 import java.util.Set;
 import org.springframework.data.domain.Page;
@@ -22,6 +30,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+@Tag(
+    name = "Administracion",
+    description = "Gestion de usuarios y revocacion de sesiones concurrentes (MASTER).")
 @RestController
 @RequestMapping("/api/v1/admin/sesiones")
 public class SesionController {
@@ -38,13 +49,30 @@ public class SesionController {
     this.mapper = mapper;
   }
 
+  @Operation(
+      summary = "Listar sesiones activas",
+      description =
+          "Devuelve sesiones activas (no revocadas y no expiradas) con paginacion. Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Pagina de sesiones"),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @GetMapping
   @PreAuthorize("hasAuthority('sesion:list') or hasRole('MASTER')")
   public PagedResponse<SesionResponseDto> listar(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(defaultValue = "ultimoUsoEn,desc") String sort,
-      @RequestParam(required = false) Long usuarioId) {
+      @Parameter(description = "Numero de pagina (0-based)") @RequestParam(defaultValue = "0")
+          int page,
+      @Parameter(description = "Elementos por pagina (max 100)") @RequestParam(defaultValue = "20")
+          int size,
+      @Parameter(description = "Campo y direccion: ultimoUsoEn,desc")
+          @RequestParam(defaultValue = "ultimoUsoEn,desc")
+          String sort,
+      @Parameter(description = "Filtrar por id interno de usuario")
+          @RequestParam(required = false)
+          Long usuarioId) {
     Pageable pageable = pageable(page, size, sort, "ultimoUsoEn");
     Instant now = Instant.now();
     Page<Sesion> result =
@@ -54,16 +82,50 @@ public class SesionController {
     return PagedResponse.of(result.map(this::toDto));
   }
 
+  @Operation(
+      summary = "Obtener sesion por ID",
+      description = "Retorna el detalle de una sesion activa especifica. Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Sesion encontrada",
+        content = @Content(schema = @Schema(implementation = SesionResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Sesion no encontrada o inactiva",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @GetMapping("/{sesionId}")
   @PreAuthorize("hasAuthority('sesion:list') or hasRole('MASTER')")
-  public SesionResponseDto obtener(@PathVariable String sesionId) {
+  public SesionResponseDto obtener(
+      @Parameter(description = "UUID publico de la sesion") @PathVariable String sesionId) {
     Sesion sesion = findSession(sesionId);
     return toDto(sesion);
   }
 
+  @Operation(
+      summary = "Revocar sesion",
+      description =
+          "Invalida el refresh token de la sesion indicada. Idempotente si ya estaba revocada. Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "204", description = "Sesion revocada"),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Sesion no encontrada o ya inactiva",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @DeleteMapping("/{sesionId}")
   @PreAuthorize("hasAuthority('sesion:revoke') or hasRole('MASTER')")
-  public ResponseEntity<Void> revocar(@PathVariable String sesionId) {
+  public ResponseEntity<Void> revocar(
+      @Parameter(description = "UUID publico de la sesion") @PathVariable String sesionId) {
     Sesion sesion = findSession(sesionId);
     if (sesion.isRevocado()) {
       throw notFound();

@@ -10,8 +10,16 @@ import ec.twintailcs.electoral.auth.web.dto.CreateUsuarioRequest;
 import ec.twintailcs.electoral.auth.web.dto.UpdateUsuarioRequest;
 import ec.twintailcs.electoral.auth.web.dto.UsuarioResponseDto;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import ec.twintailcs.electoral.shared.web.dto.ApiErrorResponseDto;
 import ec.twintailcs.electoral.shared.web.pagination.PageRequestFactory;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -33,6 +41,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+@Tag(
+    name = "Administracion",
+    description = "Gestion de usuarios y revocacion de sesiones concurrentes (MASTER).")
 @RestController
 @RequestMapping("/api/v1/admin/usuarios")
 public class UsuarioController {
@@ -59,14 +70,31 @@ public class UsuarioController {
     this.mapper = mapper;
   }
 
+  @Operation(
+      summary = "Listar usuarios",
+      description = "Devuelve la lista paginada de usuarios con filtros opcionales. Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "200", description = "Pagina de usuarios"),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @GetMapping
   @PreAuthorize("hasAuthority('usuario:read') or hasRole('MASTER')")
   public PagedResponse<UsuarioResponseDto> listar(
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "20") int size,
-      @RequestParam(defaultValue = "creadoEn,desc") String sort,
-      @RequestParam(required = false) String rol,
-      @RequestParam(required = false) Boolean habilitado) {
+      @Parameter(description = "Numero de pagina (0-based)") @RequestParam(defaultValue = "0")
+          int page,
+      @Parameter(description = "Elementos por pagina") @RequestParam(defaultValue = "20") int size,
+      @Parameter(description = "Campo y direccion: creadoEn,desc")
+          @RequestParam(defaultValue = "creadoEn,desc")
+          String sort,
+      @Parameter(description = "Filtrar por nombre de rol (MASTER, COORDINATOR, ADMIN, OBSERVER)")
+          @RequestParam(required = false)
+          String rol,
+      @Parameter(description = "Filtrar por estado habilitado/deshabilitado")
+          @RequestParam(required = false)
+          Boolean habilitado) {
     Pageable pageable = pageable(page, size, sort, "creadoEn");
     Page<Usuario> result;
     if (rol != null && habilitado != null) {
@@ -81,12 +109,42 @@ public class UsuarioController {
     return PagedResponse.of(result.map(mapper::toAdminDto));
   }
 
+  @Operation(summary = "Obtener usuario por publicId", description = "Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Usuario encontrado",
+        content = @Content(schema = @Schema(implementation = UsuarioResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Usuario no encontrado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @GetMapping("/{publicId}")
   @PreAuthorize("hasAuthority('usuario:read') or hasRole('MASTER')")
-  public UsuarioResponseDto obtener(@PathVariable UUID publicId) {
+  public UsuarioResponseDto obtener(
+      @Parameter(description = "UUID publico del usuario (UUIDv7)") @PathVariable UUID publicId) {
     return mapper.toAdminDto(findUser(publicId));
   }
 
+  @Operation(
+      summary = "Crear usuario",
+      description =
+          "Crea un usuario con password temporal. El email se genera automaticamente. Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "201",
+        description = "Usuario creado — incluye passwordTemporal",
+        content = @Content(schema = @Schema(implementation = UsuarioResponseDto.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos invalidos",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "403",
+        description = "Permisos insuficientes",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PostMapping
   @PreAuthorize("hasAuthority('usuario:create') or hasRole('MASTER')")
   public ResponseEntity<UsuarioResponseDto> crear(
@@ -108,10 +166,28 @@ public class UsuarioController {
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
 
+  @Operation(
+      summary = "Actualizar usuario",
+      description = "Modifica nombre, apellido, rol y estado habilitado. Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(
+        responseCode = "200",
+        description = "Usuario actualizado",
+        content = @Content(schema = @Schema(implementation = UsuarioResponseDto.class))),
+    @ApiResponse(
+        responseCode = "400",
+        description = "Datos invalidos",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class))),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Usuario no encontrado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @PutMapping("/{publicId}")
   @PreAuthorize("hasAuthority('usuario:update') or hasRole('MASTER')")
   public UsuarioResponseDto actualizar(
-      @PathVariable UUID publicId, @Valid @RequestBody UpdateUsuarioRequest request) {
+      @Parameter(description = "UUID publico del usuario") @PathVariable UUID publicId,
+      @Valid @RequestBody UpdateUsuarioRequest request) {
     Usuario usuario = findUser(publicId);
     usuario.setNombre(request.nombre());
     usuario.setApellido(request.apellido());
@@ -120,9 +196,20 @@ public class UsuarioController {
     return mapper.toAdminDto(usuarios.save(usuario));
   }
 
+  @Operation(
+      summary = "Deshabilitar usuario",
+      description = "Marca el usuario como deshabilitado (soft-delete). Solo MASTER.")
+  @ApiResponses({
+    @ApiResponse(responseCode = "204", description = "Usuario deshabilitado"),
+    @ApiResponse(
+        responseCode = "404",
+        description = "Usuario no encontrado",
+        content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
+  })
   @DeleteMapping("/{publicId}")
   @PreAuthorize("hasAuthority('usuario:delete') or hasRole('MASTER')")
-  public ResponseEntity<Void> deshabilitar(@PathVariable UUID publicId) {
+  public ResponseEntity<Void> deshabilitar(
+      @Parameter(description = "UUID publico del usuario") @PathVariable UUID publicId) {
     Usuario usuario = findUser(publicId);
     usuario.setHabilitado(false);
     usuarios.save(usuario);
