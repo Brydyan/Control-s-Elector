@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.dashboard.web.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
 /**
@@ -9,5 +10,9 @@ import java.util.List;
  * que las actas ANULADAS no aporten votos: el filtro se aplica en la query de agregación ({@code
  * ActaDetalleRepository.votosTotalesPorCandidato()}), nunca aquí.
  */
+@Schema(description = "Resultados electorales agrupados por cargo")
 public record ResultadoCargoDto(
-    Long cargoId, String cargoNombre, List<ResultadoCandidatoDto> candidatos) {}
+    @Schema(description = "ID del cargo electoral") Long cargoId,
+    @Schema(description = "Nombre del cargo", example = "Prefecto/a Provincial") String cargoNombre,
+    @Schema(description = "Candidatos con sus votos totales, ordenados desc")
+        List<ResultadoCandidatoDto> candidatos) {}
