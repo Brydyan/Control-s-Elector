@@ -28,7 +28,10 @@ describe('EmptyStateComponent', () => {
 
   it('should render custom title and description', () => {
     fixture.componentRef.setInput('title', 'Sin registros');
-    fixture.componentRef.setInput('description', 'No se encontraron actas pendientes');
+    fixture.componentRef.setInput(
+      'description',
+      'No se encontraron actas pendientes',
+    );
     fixture.detectChanges();
 
     const titleEl = fixture.nativeElement.querySelector('.empty-state__title');

@@ -29,7 +29,9 @@ describe('configuración de rutas (lazy-load)', () => {
       (r) => !r.path?.endsWith('**') && r.path !== '',
     );
 
-    expect(lazyRoutes.length).toBeGreaterThanOrEqual(totalNonError.length * 0.7);
+    expect(lazyRoutes.length).toBeGreaterThanOrEqual(
+      totalNonError.length * 0.7,
+    );
   });
 
   it('rutas /observer/* usan loadComponent', () => {
@@ -65,7 +67,9 @@ describe('configuración de rutas (lazy-load)', () => {
     await router.navigate(['/dashboard']);
     // No importa el resultado de la navegación (guard redirige), solo que la ruta existe.
     const url = router.url;
-    expect(url === '/login' || url.startsWith('/dashboard') || url === '/').toBe(true);
+    expect(
+      url === '/login' || url.startsWith('/dashboard') || url === '/',
+    ).toBe(true);
   });
 });
 
