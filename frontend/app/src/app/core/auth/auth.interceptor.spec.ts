@@ -15,7 +15,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { environment } from '../../../environments/environment';
 import { authInterceptor } from './auth.interceptor';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { AuthStore } from './auth.store';
 import { CurrentUser } from './domain/user.model';
 

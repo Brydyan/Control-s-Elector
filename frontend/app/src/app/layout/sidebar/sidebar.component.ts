@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '../../core/auth/services/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { MenuNode } from '../../core/menu/menu.model';
 import { MenuService } from '../../core/menu/menu.service';

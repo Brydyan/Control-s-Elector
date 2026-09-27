@@ -10,7 +10,7 @@ import { Router } from '@angular/router';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AuthService } from './auth.service';
+import { AuthService } from './services/auth.service';
 import { AuthStore } from './auth.store';
 
 /**

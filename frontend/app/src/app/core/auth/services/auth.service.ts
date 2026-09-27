@@ -9,9 +9,9 @@ import {
   tap,
 } from 'rxjs';
 
-import { AuthRepository, Session } from './data/auth.repository';
-import { LoginRequestDto } from './data/auth.dto';
-import { AuthStore } from './auth.store';
+import { AuthRepository, Session } from '../data/auth.repository';
+import { LoginRequestDto } from '../data/auth.dto';
+import { AuthStore } from '../auth.store';
 
 /**
  * Auth use cases. This is the single entry point the UI talks to:

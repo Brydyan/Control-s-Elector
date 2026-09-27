@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of } from 'rxjs';
-import { AuthService } from '../../core/auth/auth.service';
+import { AuthService } from '../../core/auth/services/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { MenuService } from '../../core/menu/menu.service';
 import { SidebarComponent } from './sidebar.component';
