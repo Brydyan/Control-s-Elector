@@ -2,12 +2,12 @@
 
 ## Fase A: DTOs y Caso de Uso de Detalle
 
-- [ ] **A.1** — Crear `ActaDetalleCompletoDto` en `backend/electoral-api/src/main/java/ec/twintailcs/electoral/acta/web/dto/`:
+- [x] **A.1** — Crear `ActaDetalleCompletoDto` en `backend/electoral-api/src/main/java/ec/twintailcs/electoral/acta/web/dto/`:
   - Incluir campos de `ActaResponseDto`.
   - Añadir `List<ActaDetalleDto> detalles`.
   - Añadir `String urlEvidencia` y `UUID evidenciaPublicId`.
   - Añadir `String motivoDisputa`.
-- [ ] **A.2** — Crear o extender caso de uso `ConsultarActaDetalleUseCase`:
+- [x] **A.2** — Crear o extender caso de uso `ConsultarActaDetalleUseCase`:
   - Cargar entidad `Acta` con lock compartido / read-only.
   - Cargar `actaDetalleRepository.findByActaId(actaId)` y mapear a `ActaDetalleDto`.
   - Buscar evidencia activa en `EvidenciaRepository` y llamar `EvidenciaService.presignDownload(publicId)`.
@@ -16,21 +16,21 @@
 
 ## Fase B: Endpoints en Controllers
 
-- [ ] **B.1** — En `CoordinatorController.java`:
+- [x] **B.1** — En `CoordinatorController.java`:
   - Modificar `verActa(@PathVariable Long actaId)` para retornar `ResponseEntity<ActaDetalleCompletoDto>`.
-- [ ] **B.2** — En `ObserverController.java`:
+- [x] **B.2** — En `ObserverController.java`:
   - Añadir endpoint `GET /api/v1/observer/actas/{actaId}` con `@PreAuthorize("hasAuthority('acta:upload')")`.
   - Validar autoría: `acta.getRegistradaPor()` debe coincidir con `CurrentUser.staticId()` (o lanzar `AccessDeniedException`).
 
 ## Fase C: Tests de Integración y Unitarios
 
-- [ ] **C.1** — En `CoordinatorControllerIT`:
+- [x] **C.1** — En `CoordinatorControllerIT`:
   - Test `GET /api/v1/coordinator/actas/{id}` retorna HTTP 200 con `detalles` poblados y `urlEvidencia`.
   - Test `motivoDisputa` presente cuando el acta está en `EN_DISPUTA`.
-- [ ] **C.2** — En `ObserverControllerIT`:
+- [x] **C.2** — En `ObserverControllerIT`:
   - Test `GET /api/v1/observer/actas/{id}` retorna HTTP 200 para el veedor dueño.
   - Test `GET /api/v1/observer/actas/{id}` retorna HTTP 403 cuando otro veedor intenta consultar.
-- [ ] **C.3** — Verificación por mutación, ejecutada por quien implementa:
+- [x] **C.3** — Verificación por mutación, ejecutada por quien implementa:
   - Quitar la asignación de `detalles` en el builder del DTO y comprobar que **cae** el test de votos individuales. Anotá en `apply-progress.md` **el nombre del test que cayó**.
   - Quitar la comprobación de autoría en el endpoint de Observer y comprobar que **cae** el test de 403 Forbidden. Anotá en `apply-progress.md` **el nombre del test que cayó**.
 
