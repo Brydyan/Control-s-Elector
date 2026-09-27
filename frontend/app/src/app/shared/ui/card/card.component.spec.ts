@@ -20,7 +20,7 @@ describe('CardComponent', () => {
   });
 
   it('should display headerTitle when provided', () => {
-    component.headerTitle = 'Card Title';
+    fixture.componentRef.setInput('headerTitle', 'Card Title');
     fixture.detectChanges();
     const titleEl = fixture.nativeElement.querySelector('.app-card__title');
     expect(titleEl).toBeTruthy();
@@ -28,8 +28,8 @@ describe('CardComponent', () => {
   });
 
   it('should not display header when no title or subtitle', () => {
-    component.headerTitle = undefined;
-    component.subtitle = undefined;
+    fixture.componentRef.setInput('headerTitle', undefined);
+    fixture.componentRef.setInput('subtitle', undefined);
     fixture.detectChanges();
     const headerEl = fixture.nativeElement.querySelector('.app-card__header');
     expect(headerEl).toBeNull();

@@ -20,7 +20,7 @@ describe('BadgeComponent', () => {
   });
 
   it('should apply variant class', () => {
-    component.variant = 'APROBADA';
+    fixture.componentRef.setInput('variant', 'APROBADA');
     fixture.detectChanges();
     const span = fixture.nativeElement.querySelector('span');
     expect(span.classList).toContain('badge-APROBADA');
