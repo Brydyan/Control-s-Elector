@@ -101,6 +101,24 @@ describe('authInterceptor', () => {
     expect(store.isAuthenticated()).toBe(true);
   });
 
+  it('should redirect OBSERVER to /observer/mis-jrvs on 403 Forbidden (avoids /dashboard loop)', () => {
+    const observerUser: CurrentUser = { ...mockUser, role: 'OBSERVER' };
+    store.setSession('test-token-123', observerUser);
+
+    let receivedError: HttpErrorResponse | null = null;
+    http.get(`${environment.apiUrl}/dashboard`).subscribe({
+      error: (err) => (receivedError = err),
+    });
+
+    const req = httpTesting.expectOne(`${environment.apiUrl}/dashboard`);
+    req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    expect(receivedError).not.toBeNull();
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/observer/mis-jrvs');
+    expect(router.navigateByUrl).not.toHaveBeenCalledWith('/dashboard');
+    expect(store.isAuthenticated()).toBe(true);
+  });
+
   it('should redirect to /login and clear session on 401 from /auth/refresh', () => {
     store.setSession('test-token-123', mockUser);
 
