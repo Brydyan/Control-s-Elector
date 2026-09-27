@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SkeletonComponent } from './skeleton.component';
@@ -7,13 +7,13 @@ import { SkeletonComponent } from './skeleton.component';
   standalone: true,
   imports: [SkeletonComponent],
   template: `
-    <app-skeleton [loading]="loading" [loadingBoundary]="true">
+    <app-skeleton [loading]="loading()" [loadingBoundary]="true">
       <span class="projected-loading">Loading records</span>
     </app-skeleton>
   `,
 })
 class LoadingBoundaryHostComponent {
-  loading = true;
+  loading = signal(true);
 }
 
 describe('SkeletonComponent', () => {
@@ -36,9 +36,9 @@ describe('SkeletonComponent', () => {
   });
 
   it('renders a circle when variant=circle', () => {
-    component.variant = 'circle';
-    component.width = '48px';
-    component.height = '48px';
+    fixture.componentRef.setInput('variant', 'circle');
+    fixture.componentRef.setInput('width', '48px');
+    fixture.componentRef.setInput('height', '48px');
     fixture.detectChanges();
     const circle = fixture.nativeElement.querySelector('.skeleton--circle');
     expect(circle).toBeTruthy();
@@ -46,9 +46,9 @@ describe('SkeletonComponent', () => {
   });
 
   it('renders N lines when variant=text and lines > 1', () => {
-    component.variant = 'text';
-    component.lines = 4;
-    component.height = '0.9em';
+    fixture.componentRef.setInput('variant', 'text');
+    fixture.componentRef.setInput('lines', 4);
+    fixture.componentRef.setInput('height', '0.9em');
     fixture.detectChanges();
     const lines = fixture.nativeElement.querySelectorAll('.skeleton--text');
     expect(lines.length).toBe(4);
@@ -63,7 +63,7 @@ describe('SkeletonComponent', () => {
   });
 
   it('disables shimmer when animate is none', () => {
-    component.animate = 'none';
+    fixture.componentRef.setInput('animate', 'none');
     fixture.detectChanges();
     const skeleton = fixture.nativeElement.querySelector('.skeleton');
     expect(skeleton.classList).toContain('skeleton--no-animation');
@@ -76,7 +76,7 @@ describe('SkeletonComponent', () => {
       hostFixture.nativeElement.querySelector('.projected-loading'),
     ).toBeTruthy();
 
-    hostFixture.componentInstance.loading = false;
+    hostFixture.componentInstance.loading.set(false);
     hostFixture.detectChanges();
     expect(
       hostFixture.nativeElement.querySelector('.projected-loading'),
@@ -84,7 +84,7 @@ describe('SkeletonComponent', () => {
   });
 
   it('does not render loading content when loading is false', () => {
-    component.loading = false;
+    fixture.componentRef.setInput('loading', false);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.skeleton')).toBeNull();
   });

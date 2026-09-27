@@ -27,7 +27,7 @@ describe('LoadingStateComponent', () => {
   });
 
   it('should apply overlay class when overlay is true', () => {
-    component.overlay = true;
+    fixture.componentRef.setInput('overlay', true);
     fixture.detectChanges();
     const container = fixture.nativeElement.querySelector('.loading-state');
     expect(container.classList).toContain('loading-state--overlay');

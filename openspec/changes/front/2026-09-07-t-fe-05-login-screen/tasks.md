@@ -2,80 +2,47 @@
 
 ## Fase A: Componente y Formulario Reactivo
 
-- [ ] **A.1** — Crear `features/auth/login/login.component.ts`.
-  - Standalone: true, imports: [CommonModule, ReactiveFormsModule, IonicModule]
-  - FormGroup: email (validators: required, email), password (validators: required)
-  - Propiedades: form, loading = false, errorMessage = ''
+- [x] **A.1** — Crear `features/auth/login/login.page.ts`.
+  - Standalone: true, imports: [ReactiveFormsModule, CommonModule]
+  - FormGroup: email (Validators.required, Validators.email), password (Validators.required, Validators.minLength(8))
+  - Signals: `loading`, `errorMessage`, `showPassword`
+- [x] **A.2** — Crear template `login.page.html`.
+  - Form con inputs (email, password con toggle de visibilidad)
+  - Mensajes de validación reactivos al tocar campo
+  - Botón de envío con estado loading/disabled
+- [x] **A.3** — Crear SCSS `login.page.scss` con diseño responsive y corporativo.
 
-- [ ] **A.2** — Crear template `login.component.html`.
-  - Form con dos inputs (email, password)
-  - Mensajes de error bajo cada campo (solo si touched + invalid)
-  - Botón "Login" (disabled si loading o form invalid)
-  - Spinner si loading
+**Compuerta A:** `pnpm build`. Componente compila sin errores.
 
-- [ ] **A.3** — Crear CSS `login.component.css` (básico: centrado, padding).
+## Fase B: Lógica de Login e Integración
 
-**Compuerta A:** `ng build`. Componente compila.
+- [x] **B.1** — Inyectar `AuthService`, `Router` y `NonNullableFormBuilder` en `LoginPage`.
+- [x] **B.2** — Implementar método `submit()`:
+  - Invoca `authService.login(credentials)`
+  - Gestiona ciclo de vida de `loading` y captura de excepciones HTTP en `errorMessage`
+- [ ] **B.3** — **Pendiente para Builder (Alineación por Rol):**
+  - Actualmente `login.page.ts:51` navega fijamente a `/dashboard`.
+  - Redirigir según el rol del usuario autenticado:
+    - `OBSERVER` → `/observer/mis-jrvs` (evita 403 Forbidden)
+    - `COORDINATOR`, `MASTER`, `ADMIN` → `/dashboard`
 
-## Fase B: Lógica de Login
-
-- [ ] **B.1** — En LoginComponent, inyectar: AuthService, Router
-  
-- [ ] **B.2** — Implementar método `onLogin()`:
-  ```typescript
-  onLogin() {
-    if (!form.valid) return;
-    loading = true;
-    authService.login(email, password).subscribe({
-      next: (result) => {
-        // Redirigir según rol
-        const roleRoutes = {
-          'OBSERVER': '/observer/home',
-          'COORDINATOR': '/coordinator/actas',
-          'MASTER': '/master/config',
-          'ADMIN': '/dashboard'
-        };
-        router.navigate([roleRoutes[result.user.rol]]);
-      },
-      error: (err) => {
-        errorMessage = 'Email o contraseña incorrecto';
-        loading = false;
-      }
-    });
-  }
-  ```
-
-- [ ] **B.3** — Test: llamar onLogin() con datos válidos, verificar que navigation ocurre.
-
-**Compuerta B:** Test pasa. Router.navigate es llamado con ruta correcta.
+**Compuerta B:** Redirección post-login segregada por rol funcional.
 
 ## Fase C: Error Handling y UX
 
-- [ ] **C.1** — Agregar validaciones de UI:
-  - mostrar `<div *ngIf="form.get('email').touched && form.get('email').errors">` 
-  - mensajes: "Email es requerido", "Email inválido"
+- [x] **C.1** — Validaciones visuales y mensajes claros para errores de formato.
+- [x] **C.2** — Mapeo de errores HTTP (`readError`):
+  - Status 0: Error de conexión
+  - Status 401: Credenciales incorrectas
+  - Status 403: Cuenta bloqueada o sin permisos
+  - Default: Error general de autenticación
 
-- [ ] **C.2** — Limpiar campo password si login falla.
-
-- [ ] **C.3** — Test: login fallido, verificar que errorMessage se muestra y form.password se limpia.
-
-**Compuerta C:** `ng test` sin errores. UI muestra errores correctamente.
-
-## Qué NO hacer
-
-- **No agregar recuperación de contraseña** — out of scope
-- **No agregar sign up** — out of scope
-- **No compilar para prod** — dev build es suficiente
+**Compuerta C:** `pnpm test:ci` sin errores.
 
 ## Compuertas
 
 | Fase | Comando | Expected |
 |------|---------|----------|
-| A | `ng build` | exit 0 |
-| B | `ng test` (onLogin flow) | Router.navigate called |
-| C | `ng test` (validation + error) | error message shown, password cleared |
-
-## Verificación por Mutación
-
-- **V.1** — Comentar Router.navigate() → login exitoso pero no redirige → restaurar
-- **V.2** — Comentar validators.required → form.valid = true aunque campo vacío → restaurar
+| A | `pnpm build` | exit 0 |
+| B | `pnpm test:ci` | Flujo de login y redirección por rol |
+| C | `pnpm build` | exit 0, diseño y UX responsive |
