@@ -18,6 +18,11 @@ Cambios frontend pendientes (nuevas funcionalidades), estructurados usando Spec-
 | T-FE-10 | Coordinator: Gestión Global de Actas | T-FE-02, T-FE-03 | Pending |
 | T-FE-11 | Dashboard en Tiempo Real (Supabase Realtime) | T-FE-05 | Pending |
 | T-FE-12 | Componentes Compartidos (Shared) | T-FE-01 | Pending |
+| T-FE-13 | Modo "Foto Primero" y Cotas Electorales | T-FE-07, T-FE-08 | Pending |
+| T-FE-14 | Observer: Corrección de Acta en Disputa | T-FE-06, T-FE-07 | Pending |
+| T-FE-15 | Dashboard Analítico: Resultados y Progreso Cantonal | T-FE-11 | Pending |
+| T-FE-16 | MASTER: Configuración Preelectoral (Cargos, Partidos, Candidatos) | T-FE-02 | Pending |
+| T-FE-17 | Coordinator: Reportes y Expedientes CNE | T-FE-10, T-BE-20 | Pending |
 
 **Línea base 2026-09-07:** Proyecto Angular inicializado. Todas las tareas son nuevas (sin retrospectivas).
 
