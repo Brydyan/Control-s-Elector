@@ -61,13 +61,23 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: "selfsigned-issuer"
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   tls:
   - hosts:
     - control.twintailcs.xyz
     secretName: electoral-frontend-tls
   rules:
   - host: control.twintailcs.xyz
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: electoral-frontend
+            port:
+              number: 80
+  - host: k3s-staging.tailc8cd10.ts.net
     http:
       paths:
       - path: /
