@@ -10,7 +10,3 @@ resources:
   - postgresql.yaml
   - backend.yaml
   - frontend.yaml
-
-commonLabels:
-  app: control-electoral
-  managed-by: argocd
