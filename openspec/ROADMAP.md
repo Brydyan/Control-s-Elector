@@ -18,6 +18,7 @@ Método: `SDD-PLAYBOOK.md` en la raíz. Este archivo es su adaptación concreta 
 | Verificador | subagente aparte, **contexto limpio**, nunca el mismo que implementó | 2026-09-07 |
 | Fuente de trabajo | `documents/task-control/{backend,frontend,infra}.md` + `*task/T-*.md` | 2026-09-07 |
 | Idioma de artefactos | español; identificadores y estados en el idioma del código | 2026-09-07 |
+| Canal de distribución y runtime | **PWA instalable (Angular 19 + Ionic 8 + Service Worker + Webmanifest)** como canal principal; **Capacitor APK** como contingencia secundaria; `navigator.storage.persist()` para blindar IndexedDB contra evicciones del navegador | 2026-10-03 |
 
 **No se discute de nuevo:** una sola app con RBAC por ruta (sin subdominios por rol), UUID
 público `publicId` en DTOs, `AuditLogService → JPA → PG` siempre. Ver `CLAUDE.md`.
@@ -86,6 +87,7 @@ Descubiertas midiendo, el 2026-09-07. Cada una cuesta una ronda si no se avisa. 
 | El shell del proyecto es **fish** | `$?` no existe; es `$status`. `eslint.config*` sin match aborta el comando | Escribir comandos sin globs opcionales, o correrlos con `bash -c` |
 | `mvnw` no está en la raíz | Está en `backend/electoral-api/mvnw` | Fijar el working directory siempre |
 | MapStruct sin `componentModel="spring"` | Convención del proyecto: mappers como `@Bean` en `MapperConfig.java` | Ver `CLAUDE.md`, sección Convenciones de Código |
+| Android LMK mata la pestaña al abrir cámara en móviles de gama baja (2GB RAM) | Android Low Memory Killer elimina el proceso Chrome/PWA al invocar la cámara nativa si el heap o los buffers de imagen saturan la RAM | Patrón "Guardar antes de capturar" en IndexedDB (`acta_drafts`), decodificación C++/GPU vía `createImageBitmap(blob, { resizeWidth: 1920 })`, cero Base64 en memoria y compresión WebP en Web Worker |
 
 ### Cómo buscar trampas nuevas
 
@@ -131,9 +133,9 @@ Para garantizar que el desarrollo no se desvíe de los requerimientos operativos
 #### Fase 2 · Frontend Estabilización y Operación de Campo (Spec 2027)
 1. **`2026-09-25-fe-vitest-ionic-cleanup-race`**: Aislar teardown de Vitest en `app.component.spec.ts` y eliminar `continue-on-error: true` de `.github/workflows/ci.yml`.
 2. **Conciliación de SDDs implementadas**: Auditar y archivar retrospectivamente `T-FE-01` a `T-FE-07` y `T-FE-12` (que ya cuentan con 118 tests pasando en `frontend/app`).
-3. **`T-FE-13` (Modo "Foto Primero" y Cotas Electorales)**: `openspec/changes/front/2026-09-25-t-fe-13-capture-and-run-foto-primero/`. Reordenar wizard: 1: Foto -> 2: Votos -> 3: Revisión (salvaguarda ante desalojo militar); warning > 350 sufragantes, tope duro 500; cuadre estricto de votos y regla CPCCS (hasta 3 marcas).
-4. **`T-FE-08` (Compresión WebP inmediata)**: Canvas API en memoria a `.webp` (300-500KB) con clave multipart obligatoria `'imagen'`.
-5. **`T-FE-09` (Offline-First & PIN de 4 dígitos)**: Cola en IndexedDB + fallback a Capacitor Private Storage + reintento 30s + **desbloqueo rápido por PIN offline** cuando el JWT expira sin cobertura.
+3. **`T-FE-13` (Modo "Foto Primero" y Cotas Electorales)**: `openspec/changes/front/2026-09-25-t-fe-13-capture-and-run-foto-primero/`. Reordenar wizard: 1: Foto -> 2: Votos -> 3: Revisión (salvaguarda ante desalojo militar); warning > 350 sufragantes, tope duro 500; cuadre estricto de votos y regla CPCCS (hasta 3 marcas); persistencia de borrador local en IndexedDB (`acta_drafts`) previa a captura para resistir cierres del navegador/LMK.
+4. **`T-FE-08` (Compresión WebP y Optimización de RAM)**: Decodificación directa C++/GPU vía `createImageBitmap(blob, { resizeWidth: 1920 })`, compresión WebP en Web Worker con `OffscreenCanvas`, cero Base64 (blobs binarios puros), limpieza inmediata con `URL.revokeObjectURL()` y captura PWA con `<input type="file" accept="image/*" capture="environment">`.
+5. **`T-FE-09` (Offline-First PWA, IndexedDB Blindada & PIN de 4 dígitos)**: Cola en IndexedDB blindada con `navigator.storage.persist()`, patrón "Guardar antes de capturar" en almacén `acta_drafts` con auto-recuperación ante reinicio de pestaña por Android LMK, Service Worker para app shell 100% offline, reintento 30s y **desbloqueo rápido por PIN offline** cuando el JWT expira sin cobertura.
 6. **`T-FE-10` (Coordinador Split-View)**: Vista 50/50 desktop (datos + visor WebP con zoom/rotación) + acción `Pasar a Observación Legal` + botón de contingencia WhatsApp `wa.me/` + descarga de expediente PDF CNE.
 7. **`T-FE-11` (Dashboard Reactivo)**: Backend Authority en agregaciones de PostgreSQL con Supabase Realtime como gatillo debounced (500ms).
 8. **`T-FE-14` (Observer Corrección de Acta Disputada)**: `openspec/changes/front/2026-09-26-t-fe-14-observer-correccion-acta/`. Pantalla móvil `/observer/acta/:id/corregir` con motivo de coordinador, visor de foto original, checksum dinámico y reenvío transaccional.

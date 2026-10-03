@@ -1,12 +1,15 @@
 # Tasks — T-FE-13: Modo "Foto Primero" (Capture & Run) y Cotas Electorales
 
-## Fase A: Reordenamiento del Wizard
+## Fase A: Reordenamiento del Wizard y Persistencia Preventiva
 
 - [ ] **A.1** — En `RegistrarActaPage`:
   - Cambiar valor inicial de `currentStep` a `'IMAGEN'`.
   - Botón "Continuar a Votos" visible tras seleccionar o capturar la foto.
   - Opción secundaria de texto "Digitar votos primero" para casos excepcionales sin cámara.
-- [ ] **A.2** — Persistir dataURL o referencia de la foto en `ActaStorageService` para no perderla si se refresca la pantalla.
+- [ ] **A.2** — Persistir borrador y `Blob` de la foto en IndexedDB (almacén `'acta_drafts'` vía `OfflineStorageService` / `ActaStorageService`):
+  - Guardado asíncrono preventivo antes de navegar al siguiente paso o disparar la cámara.
+  - Prohibición estricta de `localStorage` sincrónico y cadenas Base64.
+  - Restauración automática del estado si la pantalla se recarga o se reinicia tras cierre de pestaña por Android LMK.
 
 ## Fase B: Cotas de Sufragantes y Validaciones de Suma
 
@@ -25,12 +28,15 @@
 ## Fase D: Tests Unitarios
 
 - [ ] **D.1** — En `registrar-acta.page.spec.ts`:
-  - Test inicio en paso IMAGEN.
+  - Test inicio en paso IMAGEN por defecto.
+  - Test persistencia en IndexedDB (`acta_drafts`) al capturar y recuperación de borrador.
+  - Test verificación de ausencia de `localStorage` y ausencia de Base64 en el almacenamiento del borrador.
   - Test advertencia con 380 sufragantes y bloqueo con 501.
-  - Test validación de cuadre exacto.
+  - Test validación de cuadre exacto (unipersonal vs CPCCS).
 - [ ] **D.2** — Medir con `npm test -- --run`.
 
 ## Verificación por Mutación
 
 - **V.1** — Quitar la validación de > 500 sufragantes -> test con 2500 sufragantes debe fallar.
 - **V.2** — Cambiar el paso inicial a 'VOTOS' -> test de flujo Foto Primero debe fallar.
+- **V.3** — Sustituir guardado en IndexedDB (`acta_drafts`) por llamada a `localStorage.setItem` -> test de arquitectura offline/no-localstorage debe fallar.
