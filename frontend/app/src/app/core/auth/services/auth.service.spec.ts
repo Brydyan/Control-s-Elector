@@ -6,6 +6,7 @@ import { AuthRepository, Session } from '../data/auth.repository';
 import { AuthStore } from '../auth.store';
 import { AuthService } from './auth.service';
 import { CurrentUser } from '../domain/user.model';
+import { StoragePersistenceService } from './storage-persistence.service';
 
 /**
  * Tests unitarios para AuthService (T-FE-03 CRITICAL pendientes).
@@ -141,5 +142,21 @@ describe('AuthService (T-FE-03)', () => {
     service.refresh().subscribe();
 
     expect(store.accessToken()).toBe('new-token');
+  });
+
+  /**
+   * T-FE-09 B.2 / V.3: el login exitoso debe invocar
+   * `navigator.storage.persist()` para blindar IndexedDB.
+   */
+  it('T-FE-09 V.3: login() should request storage persistence', () => {
+    const persistence = TestBed.inject(StoragePersistenceService);
+    const persistSpy = vi
+      .spyOn(persistence, 'requestPersistence')
+      .mockResolvedValue(true);
+
+    repo.login.mockReturnValue(of(mockSession));
+    service.login({ email: 'a@b.c', password: 'x' }).subscribe();
+
+    expect(persistSpy).toHaveBeenCalled();
   });
 });

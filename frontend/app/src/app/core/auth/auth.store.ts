@@ -19,6 +19,18 @@ export class AuthStore {
   readonly accessToken = this._accessToken.asReadonly();
   readonly isAuthenticated = computed(() => this._accessToken() !== null);
 
+  /**
+   * T-FE-09: señal global que indica que el veedor debe desbloquear
+   * con PIN local (offline + token expirado). El layout raíz observa
+   * esta señal para mostrar {@link PinUnlockModalComponent}.
+   */
+  private readonly _requiresPinUnlock = signal<boolean>(false);
+  readonly requiresPinUnlock = this._requiresPinUnlock.asReadonly();
+
+  setRequiresPinUnlock(value: boolean): void {
+    this._requiresPinUnlock.set(value);
+  }
+
   setSession(accessToken: string, user: CurrentUser): void {
     this._accessToken.set(accessToken);
     this._user.set(user);
