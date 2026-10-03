@@ -24,7 +24,7 @@ El frontend no calcula porcentajes electorales a partir de actas individuales ni
 El cliente solo normaliza el cálculo de porcentajes relativos para renderizar el ancho en píxeles/porcentaje de las barras CSS (`style="width: ${candidato.porcentaje}%"`).
 
 **Alternativa descartada — Descargar todas las actas y procesar sumatorias en Angular**:
-Descartada porque viola la regla fundamental de arquitectura del proyecto: el backend es la única fuente de verdad contable y excluye de forma transaccional las actas anuladas o en observación. Calcular en cliente provocaría discrepancias visuales.
+Descartada porque viola la regla fundamental de arquitectura del proyecto: el backend es la única fuente de verdad contable y excluye de forma transaccional las actas en estado ANULADA. Calcular en cliente provocaría discrepancias visuales.
 
 ---
 

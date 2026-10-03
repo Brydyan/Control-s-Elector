@@ -12,7 +12,7 @@ El sistema debe renderizar el panel de métricas operativas para usuarios con ro
 ---
 
 ## Requirement: Descarga de Expediente de Impugnación CNE en PDF
-El sistema debe permitir solicitar y descargar el archivo binario PDF generado por el backend para cualquier acta en observación o disputa.
+El sistema debe permitir solicitar y descargar el archivo binario PDF generado por el backend para cualquier acta en disputa o para expediente CNE.
 
 ### Scenario: Descarga exitosa de expediente PDF
 - **GIVEN** que existe un acta ID `55` con inconsistencia

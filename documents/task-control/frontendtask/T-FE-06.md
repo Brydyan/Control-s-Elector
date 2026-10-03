@@ -352,7 +352,7 @@ export class CargosJrvPage implements OnInit {
 ## Cómo verificar que funciona
 
 1. Logueate como OBSERVER
-2. Debes ver la lista de JRVs asignadas a ese observer
+2. Debes ver la lista de JRVs disponibles del recinto/cantón para libre selección
 3. El badge debe mostrar cuántos cargos tiene pendientes
 4. Al tocar una JRV, debe navegar a la lista de cargos
 5. Los cargos pendientes deben aparecer en gris, los registrados en color según estado
@@ -364,7 +364,7 @@ export class CargosJrvPage implements OnInit {
 
 | Error | Causa | Solución |
 |-------|-------|----------|
-| Lista vacía | Observer no tiene JRVs asignadas en BD | Verifica tabla `observer_jrv_asignacion` en la BD |
+| Lista vacía | No hay JRVs registradas o configuradas para el recinto/cantón | Verifica catálogo de JRVs en BD (selección libre de JRVs; `observer_jrv_asignacion` deprecada) |
 | `async pipe` no renderiza | Observable tiene error | Agrega `catchError` al observable y verifica en consola |
 | Skeleton se queda pegado | Observable nunca completa | Verifica que el request HTTP completa (200 o error) |
 | `ActivatedRoute` no tiene el param | Ruta no configurada correctamente | Verifica que en `observer.routes.ts` la ruta tiene `:jrvId` |

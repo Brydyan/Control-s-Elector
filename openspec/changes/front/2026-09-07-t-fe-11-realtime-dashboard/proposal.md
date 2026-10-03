@@ -14,7 +14,7 @@ Dashboard analítico para directivos y coordinadores (`ADMIN`, `MASTER`, `COORDI
    - Al recibir un evento, se dispara un refresco con debounce (500 ms) de los endpoints REST del backend, manteniendo los gráficos y métricas actualizados en vivo sin sobrecargar la red ni recalcular datos en el navegador.
 
 ## Por qué
-- Calcular subtotales y porcentajes electorales en JavaScript en el navegador es propenso a desincronización, ignora reglas de negocio complejas (votos de actas anuladas o en observación) y satura dispositivos móviles.
+- Calcular subtotales y porcentajes electorales en JavaScript en el navegador es propenso a desincronización, ignora reglas de negocio complejas (votos de actas anuladas / estado ANULADA) y satura dispositivos móviles.
 - Utilizar Realtime como un invalidador de caché reactivo combina lo mejor de dos mundos: inmediatez visual WebSocket y consistencia transaccional ACID garantizada por el backend.
 
 ## Alcance
