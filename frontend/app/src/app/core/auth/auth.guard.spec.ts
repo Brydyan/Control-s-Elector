@@ -13,6 +13,7 @@ import { authGuard, guestGuard, roleGuard } from './auth.guard';
 import { AuthService } from './services/auth.service';
 import { AuthStore } from './auth.store';
 import { CurrentUser } from './domain/user.model';
+import { PinAuthService } from './pin-auth.service';
 
 /**
  * Tests unitarios para los guards CanActivateFn (T-FE-02 CRITICAL 1).
@@ -56,6 +57,7 @@ describe('guards de routing (T-FE-02)', () => {
     parseUrl: ReturnType<typeof vi.fn>;
     createUrlTree: ReturnType<typeof vi.fn>;
   };
+  let pinAuth: { tienePinConfigurado: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     auth = {
@@ -72,12 +74,16 @@ describe('guards de routing (T-FE-02)', () => {
         return { toString: () => path } as unknown as UrlTree;
       }),
     };
+    pinAuth = {
+      tienePinConfigurado: vi.fn(),
+    };
 
     TestBed.configureTestingModule({
       providers: [
         AuthStore,
         { provide: AuthService, useValue: auth },
         { provide: Router, useValue: router },
+        { provide: PinAuthService, useValue: pinAuth },
         provideRouter([]),
       ],
     });
@@ -171,6 +177,25 @@ describe('guards de routing (T-FE-02)', () => {
     );
     const resolved = await extractValue(result);
     expect(resolved).toBe(true);
+  });
+
+  // -------------------------------------------------------------------------
+  // S1 (T-FE-09): authGuard offline + PIN configurado → requiresPinUnlock
+  // -------------------------------------------------------------------------
+
+  it('S1 (T-FE-09): authGuard sin token + offline + PIN configurado seta requiresPinUnlock=true', async () => {
+    // Simular token expirado (restore falla) + offline + PIN configurado
+    auth.restoreSession.mockReturnValue(of(false)); // token no restituido
+    pinAuth.tienePinConfigurado.mockReturnValue(true);
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false);
+
+    const result = TestBed.runInInjectionContext(() =>
+      authGuard({} as any, {} as any),
+    );
+
+    const resolved = await extractValue(result);
+    expect(resolved).toBe(false); // Bloquea navegación
+    expect(store.requiresPinUnlock()).toBe(true); // Modal se muestra
   });
 });
 

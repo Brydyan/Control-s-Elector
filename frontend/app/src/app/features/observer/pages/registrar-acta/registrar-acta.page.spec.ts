@@ -4,12 +4,14 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { RegistrarActaPage } from './registrar-acta.page';
 import { ObserverService } from '../../services/observer.service';
+import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
 
 describe('RegistrarActaPage', () => {
   let component: RegistrarActaPage;
   let fixture: ComponentFixture<RegistrarActaPage>;
   let observerServiceSpy: jasmine.SpyObj<ObserverService>;
   let routerSpy: jasmine.SpyObj<Router>;
+  let offlineStorageSpy: jasmine.SpyObj<OfflineStorageService>;
 
   beforeEach(async () => {
     observerServiceSpy = jasmine.createSpyObj('ObserverService', [
@@ -19,6 +21,15 @@ describe('RegistrarActaPage', () => {
       'subirImagenActa',
     ]);
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    offlineStorageSpy = jasmine.createSpyObj('OfflineStorageService', [
+      'guardarBorrador',
+      'obtenerBorrador',
+      'eliminarBorrador',
+      'encolarActa',
+      'obtenerPendientes',
+      'eliminarPendiente',
+    ]);
+    offlineStorageSpy.obtenerBorrador.and.returnValue(Promise.resolve(null));
 
     observerServiceSpy.getCandidatosPorCargo.and.returnValue(
       of([
@@ -46,6 +57,7 @@ describe('RegistrarActaPage', () => {
       providers: [
         { provide: ObserverService, useValue: observerServiceSpy },
         { provide: Router, useValue: routerSpy },
+        { provide: OfflineStorageService, useValue: offlineStorageSpy },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -255,5 +267,81 @@ describe('RegistrarActaPage', () => {
     expect(fileInput).toBeTruthy();
     expect(fileInput.getAttribute('accept')).toBe('image/*');
     expect(fileInput.getAttribute('capture')).toBe('environment');
+  });
+
+  it('should save draft to IndexedDB before advancing to IMAGEN step (T-FE-09 V.4)', async () => {
+    component.totalSufragantes = 100;
+    component.votosBlancos = 5;
+    component.votosNulos = 5;
+    component.votosPorCandidato.set(1, 45);
+    component.votosPorCandidato.set(2, 45);
+
+    offlineStorageSpy.guardarBorrador.and.returnValue(Promise.resolve());
+
+    component.irAPasoImagen();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(component.currentStep).toBe('IMAGEN');
+    expect(offlineStorageSpy.guardarBorrador).toHaveBeenCalledWith(
+      expect.objectContaining({
+        draftId: 'draft_101_2',
+        totalSufragantes: 100,
+        votosPorCandidato: { 1: 45, 2: 45 },
+      }),
+    );
+  });
+
+  it('should restore draft from IndexedDB after LMK reload (T-FE-09 V.5)', async () => {
+    offlineStorageSpy.obtenerBorrador.and.returnValue(
+      Promise.resolve({
+        draftId: 'draft_101_2',
+        jrvId: 101,
+        cargoId: 2,
+        totalSufragantes: 150,
+        votosBlancos: 10,
+        votosNulos: 5,
+        votosPorCandidato: { 1: 70, 2: 65 },
+        updatedAt: Date.now(),
+      }),
+    );
+
+    // Re-fetch candidatos dispara restaurarBorradorOffline().
+    component.cargarCandidatos();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(component.totalSufragantes).toBe(150);
+    expect(component.votosBlancos).toBe(10);
+    expect(component.votosNulos).toBe(5);
+    expect(component.getVoto(1)).toBe(70);
+    expect(component.getVoto(2)).toBe(65);
+  });
+
+  it('should enqueue acta in IndexedDB on HTTP failure (T-FE-09 S2)', async () => {
+    component.totalSufragantes = 100;
+    component.votosBlancos = 0;
+    component.votosNulos = 0;
+    component.votosPorCandidato.set(1, 50);
+    component.votosPorCandidato.set(2, 50);
+
+    observerServiceSpy.enviarActaDirecta.and.returnValue({
+      subscribe: (handlers: {
+        next: (r: unknown) => void;
+        error: (e: unknown) => void;
+      }) => handlers.error({ error: { message: 'Network timeout' } }),
+    } as never);
+    offlineStorageSpy.encolarActa.and.returnValue(
+      Promise.resolve('mock-uuid'),
+    );
+    offlineStorageSpy.eliminarBorrador.and.returnValue(Promise.resolve());
+
+    component.enviarActaFinal();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(offlineStorageSpy.encolarActa).toHaveBeenCalledWith(
+      expect.objectContaining({
+        jrvId: 101,
+        cargoId: 2,
+      }),
+    );
   });
 });
