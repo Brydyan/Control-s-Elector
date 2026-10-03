@@ -10,8 +10,8 @@ Adaptación de la interfaz del veedor electoral para responder a la realidad fí
 3. **Cotas de Sufragantes y Regla de Invariante CNE**:
    - **Alerta preventiva de padrón**: Advertencia visual si `totalSufragantes > 350` (capacidad estándar CNE).
    - **Tope duro de seguridad**: Bloqueo estricto si `totalSufragantes > 500` (previene error de tipeo tipo 2500 o 3500 en mesas especiales).
-   - **Invariante Matemático Estricto**: $\sum \text{votos candidatos} + \text{blancos} + \text{nulos} = \text{totalSufragantes}$ para dignidades estándar (Prefecto, Alcalde, Concejales).
-   - **Soporte CPCCS**: Manejo de dignidades con múltiple selección (hasta 3 votos por elector).
+   - **Invariante Matemático Estricto**: $\sum \text{votos candidatos} + \text{blancos} + \text{nulos} = \text{totalSufragantes}$ para todas las dignidades.
+   - **Soporte CPCCS y Pluripersonales**: Gestión de dignidades pluripersonales con actas unívocas por cargo o sub-lista donde cada voto cuadra 1:1 contra los sufragantes.
 
 ## Por qué
 - Exigir que el veedor digite primero decenas de candidatos antes de tomar la foto es un riesgo operativo grave en recintos donde se corta la energía o las autoridades ordenan evacuar el aula.
@@ -23,7 +23,7 @@ Adaptación de la interfaz del veedor electoral para responder a la realidad fí
 |----------|---------|-----------|
 | Wizard | Pasos reordenados: 1: Foto, 2: Votos, 3: Revisión | OCR automático en cliente |
 | Cotas | Warning > 350 sufragantes, error duro > 500 | Modificación del padrón electoral |
-| Invariante | Chequeo estricto $\sum = \text{sufragantes}$ y regla CPCCS | Distribución D'Hondt |
+| Invariante | Chequeo estricto $\sum = \text{sufragantes}$ (cuadre 1:1) | Distribución D'Hondt |
 | Almacenamiento | Almacenamiento previo de la foto en borrador local | Envío a servidores no autorizados |
 
 ## Criterio de aceptación

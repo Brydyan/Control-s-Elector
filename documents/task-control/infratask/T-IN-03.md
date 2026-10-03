@@ -9,6 +9,10 @@
 
 ## ¿Qué vas a construir?
 
+> [!IMPORTANT]
+> **ADDENDUM HISTÓRICO / DECISIÓN OPERATIVA (2026-08-14, Commit 46c1a1b):**
+> El filtrado estricto de JRVs por observer_jrv_asignacion en RLS fue desactivado deliberadamente por el equipo para permitir la libre selección de JRVs por parte de los veedores en campo (facilitando sustituciones, ausencias y reasignaciones dinámicas sin fricción de BD). RLS se mantiene activo para el aislamiento de actas propias por registrada_por_id (acta.usuario_id = current_user_id), mientras que la tabla observer_jrv_asignacion permanece @Deprecated en el backend.
+
 Vas a implementar **Row Level Security (RLS)** en PostgreSQL: reglas automáticas que filtran filas según el usuario conectado. Sin RLS, un COORDINATOR vería TODAS las actas; con RLS, un OBSERVER solo verá las suyas (según `observer_jrv_asignacion`).
 
 **Por qué es crítico:**

@@ -24,7 +24,7 @@ Este documento especifica los requisitos funcionales y no funcionales del sistem
 El sistema cubre los siguientes procesos electorales:
 
 1. **Autenticación y control de acceso** (JWT, RBAC, sesiones)
-2. **Registro de actas** por observadores en JRVs asignadas
+2. **Registro de actas** por observadores con selección libre de JRVs
 3. **Validación de datos** (totales, candidatos, partidos)
 4. **Captura y almacenamiento** de evidencia fotografica (WebP)
 5. **Flujo de disputas y correcciones** (COORDINATOR interviene ante inconsistencias)
@@ -51,7 +51,7 @@ El sistema cubre los siguientes procesos electorales:
 | **JRV** | Junta Receptora de Votos — recinto donde se realiza votación. Identifica única por `jrv_id + cargo_id`. |
 | **JRV_CARGO** | Tabla de mapeo: qué cargos aplican a cada JRV según geografía (nivel parroquia, cantón o provincial). |
 | **MASTER** | Rol administrativo: registra catálogos (cargos, partidos, candidatos), crea usuarios, revoca sesiones, anula actas. |
-| **OBSERVER** | Rol de veedores políticos: registra actas en JRVs asignadas, corrige ante solicitud. |
+| **OBSERVER** | Rol de veedores políticos: registra actas con selección libre de JRVs en su recinto, corrige ante solicitud. |
 | **ADMIN** | Rol de lectura global: accede a dashboard y estadísticas, no modifica datos. |
 | **RLS** | Row Level Security — política de seguridad en PostgreSQL que filtra filas según usuario. |
 | **RBAC** | Role-Based Access Control — matriz de permisos por rol. |
@@ -89,7 +89,7 @@ Sección 5 — Apéndices (tablas, glosarios, diagramas)
 ### 2.1 Perspectiva del Producto
 
 **Visión de negocio:**  
-Control Electoral es un observatorio digital para las Elecciones Seccionales 2027-2031. Los veedores políticos registran resultados en sus JRVs asignadas (entrada de datos + foto). Coordinadores revisan y corrigen. MASTER sella y puede anular por fraude. Todo queda auditado en bases de datos seguras.
+Control Electoral es un observatorio digital para las Elecciones Seccionales 2027-2031. Los veedores políticos registran resultados con libre selección de JRVs (entrada de datos + foto). Coordinadores revisan y corrigen. MASTER sella y puede anular por fraude. Todo queda auditado en bases de datos seguras.
 
 **Posicionamiento técnico:**  
 - **Escalable:** PostgreSQL + RLS para millones de registros, Supabase Object Storage para fotos.
@@ -103,7 +103,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 
 | Rol | Capacidades principales |
 |-----|--------|
-| **OBSERVER** | • Crear actas en JRVs asignadas (BORRADOR → ENVIADA) • Descargar foto de acta previamente capturada • Corregir datos si COORDINATOR marca EN_DISPUTA • Ver propias actas y correcciones pendientes • Capturar foto (Canvas API, WebP) e intentar upload automático. Si falla → IndexedDB (reintento cada 30s) → fallback storage privado |
+| **OBSERVER** | • Crear actas con libre selección de JRVs (BORRADOR → ENVIADA) • Descargar foto de acta previamente capturada • Corregir datos si COORDINATOR marca EN_DISPUTA • Ver propias actas y correcciones pendientes • Capturar foto (Canvas API, WebP) e intentar upload automático. Si falla → IndexedDB (reintento cada 30s) → fallback storage privado |
 | **COORDINATOR** | • Revisar actas ENVIADAS • Marcar EN_DISPUTA si foto no coincide • Aprobar si datos OK • Corregir directamente si OBSERVER no está • Listar actas por estado, observer, cargo • Resolver disputas • Notificar cambios |
 | **MASTER** | • Registrar cargos, partidos, candidatos • Crear usuarios (email + password, rol) • Asignar JRVs a OBSERVERs • Revocar sesiones (logout global) • Anular actas APROBADAS por fraude grave • Ver dashboard completo |
 | **ADMIN** | • Dashboard y estadísticas (solo lectura) • Gráficos por canton, cargo, estado • Filtros por fecha, rol, region |
@@ -131,7 +131,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 | Asignar JRVs a OBSERVER | `POST /observer/{id}/jrvs` | ✅ | ❌ | ❌ | ❌ |
 | Ver dashboard estadísticas | `GET /resultados/consolidado` | ✅ | ✅ | ✅ | ❌ |
 
-*OBSERVER solo registra en sus JRVs asignadas  
+*OBSERVER registra con libre selección de JRV  
 **OBSERVER solo ve propias; COORDINATOR ve todas  
 ***OBSERVER solo propias; COORDINATOR todas  
 ****OBSERVER solo propias (EN_DISPUTA); COORDINATOR cualquiera
@@ -171,7 +171,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 
 - **Geografía:** Sistema exclusivo para Santa Elena (3 cantones: Santa Elena 2401, La Libertad 2402, Salinas 2403).
 - **Período:** Válido durante proceso electoral 2027-2031; datos pueden persistir post-electoral para auditoría.
-- **Observadores fijos:** OBSERVER ve/registra solo en JRVs asignadas via `observer_jrv_asignacion`.
+- **Libre selección de JRVs:** OBSERVER opera sobre cualquier JRV del cantón/recinto (decisión 2026-08-14 para contingencia y sustitución en campo; observer_jrv_asignacion deprecada). RLS filtra actas por registrada_por_id.
 - **Una sola acta por JRV+Cargo:** Garantizado por locking pesimista en BD. Evita doble registro.
 - **Acta anulada es irreversible:** MASTER no puede "desanular". Solo marca ANULADA.
 - **ADMIN nunca escribe:** Lectura de dashboard únicamente.
@@ -194,7 +194,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 - Existen conectividades intermitentes (4G en Juntas); fallback offline es crítico.
 - COORDINATOR/ADMIN/MASTER acceden desde navegador web (desktop o tablet).
 - Datos electorales (cargos, partidos, candidatos) preexisten en BD antes de proceso electoral (MASTER registra).
-- JRVs están pre-asignadas a OBSERVERs antes de inicio.
+- JRVs disponibles para selección libre por OBSERVERs.
 
 #### Dependencias Externas
 
@@ -815,7 +815,7 @@ ANULADA [final, irreversible]
 | **Refresh Token Storage** | Cookie httpOnly, HTTPS only (prod), SameSite=Strict |
 | **Password Hashing** | bcrypt (Spring Security, strength 10+) |
 | **HTTPS** | Obligatorio en prod. Certificado LetsEncrypt. |
-| **RLS Policies** | OBSERVER: `jrv_id IN observer_jrv_asignacion`. COORDINATOR/ADMIN/MASTER: sin restricción. |
+| **RLS Policies** | OBSERVER: registrada_por_id = current_user_id (aislamiento de actas; selección libre de JRV). COORDINATOR/ADMIN/MASTER: sin restricción. |
 | **Audit Logging** | Toda acción en AUDIT_LOG (creación, modificación, aprobación, anulación). |
 
 ### G. Stack Técnico Resumido

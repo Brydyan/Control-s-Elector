@@ -16,13 +16,16 @@ Los servicios de autenticación:
 
 ## Conceptos clave
 
-### ¿Por qué el access token en memoria y no localStorage?
-`localStorage` es accesible por cualquier script JavaScript de la página. Si un atacante inyecta código (XSS), puede robar el token de localStorage. En memoria, el token desaparece al recargar/cerrar la página.
+### Arquitectura de Seguridad: Tokens en Memoria y Cookie HttpOnly
+
+La seguridad de autenticación del sistema se basa en dos capas estrictas:
+- **Access Token**: Se almacena **exclusivamente en memoria JS** (Signal reactivo en `AuthStore` o variable en `TokenService`). **Nunca** en `localStorage` ni `sessionStorage`. Al recargar o cerrar la pestaña, el access token desaparece, protegiéndolo completamente de robo por inyección de código (XSS).
+- **Refresh Token**: Viaja y se almacena en una **Cookie HttpOnly** (`SameSite=Strict; Secure; Path=/`). Es totalmente invisible e inaccesible para cualquier código JavaScript (`document.cookie` no puede leerla). El navegador la administra y envía automáticamente al backend en cada petición relevante (`withCredentials: true`).
 
 ```
-localStorage:  persiste para siempre, accesible por cualquier JS ⚠️
-sessionStorage: persiste en la pestaña, accesible por cualquier JS ⚠️
-memoria (variable): desaparece al recargar, solo accesible dentro del servicio ✅
+localStorage / sessionStorage: accesible por cualquier JS (vulnerable a XSS) ❌
+Access Token:                  memoria JS (Signal en AuthStore / TokenService) ✅
+Refresh Token:                 Cookie HttpOnly (SameSite=Strict, Secure) invisible a JS ✅
 ```
 
 ### BehaviorSubject — estado reactivo
@@ -95,12 +98,9 @@ interface JwtPayload {
 })
 export class TokenService {
 
-  // El access token vive SOLO en esta variable — nunca localStorage
-  // Al recargar la página, se pierde (eso es lo que queremos)
+  // El access token vive SOLO en memoria JS (Signal reactivo o variable) — nunca localStorage
+  // Al recargar la página, se pierde y se recupera vía Cookie HttpOnly
   private accessToken: string | null = null;
-
-  // Clave para el refresh token en localStorage
-  private readonly REFRESH_TOKEN_KEY = 'electoral_refresh_token';
 
   // ─── Access Token ──────────────────────────────────────────────────────────
 
@@ -151,27 +151,15 @@ export class TokenService {
     }
   }
 
-  // ─── Refresh Token ─────────────────────────────────────────────────────────
-  // El refresh token SÍ va en localStorage porque tiene vida más corta (8h)
-  // y necesita sobrevivir a los recargas de página
-
-  setRefreshToken(token: string): void {
-    localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
-  }
-
-  getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
-  }
-
-  clearRefreshToken(): void {
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-  }
+  // ─── Refresh Token (Cookie HttpOnly) ───────────────────────────────────────
+  // El refresh token NO se almacena en localStorage ni en ninguna API de JS.
+  // Viaja y reside exclusivamente en una Cookie HttpOnly (SameSite=Strict, Secure)
+  // administrada de forma nativa por el navegador.
 
   // ─── Limpiar todo ──────────────────────────────────────────────────────────
 
   clearAll(): void {
     this.clearAccessToken();
-    this.clearRefreshToken();
   }
 }
 ```
@@ -210,14 +198,18 @@ export class AuthService {
 
   /**
    * Iniciar sesión.
-   * Guarda tokens y emite el usuario autenticado.
+   * Guarda access token en memoria y emite el usuario autenticado.
+   * El refresh token viaja en Cookie HttpOnly (SameSite=Strict, Secure) gestionada por el navegador.
    */
   login(email: string, password: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, { email, password }).pipe(
+    return this.http.post<LoginResponse>(
+      `${this.apiUrl}/auth/login`,
+      { email, password },
+      { withCredentials: true }
+    ).pipe(
       tap(response => {
-        // Guardar tokens
+        // Guardar access token en memoria
         this.tokenService.setAccessToken(response.accessToken);
-        this.tokenService.setRefreshToken(response.refreshToken);
 
         // Emitir usuario autenticado
         this.usuarioActual$.next({
@@ -230,25 +222,20 @@ export class AuthService {
   }
 
   /**
-   * Renovar el access token usando el refresh token.
+   * Renovar el access token usando la Cookie HttpOnly del refresh token.
    * Se llama automáticamente desde el interceptor cuando hay un 401.
    */
-  refresh(): Observable<{ accessToken: string }> {
-    const refreshToken = this.tokenService.getRefreshToken();
-    if (!refreshToken) {
-      this.logout();
-      return EMPTY;
-    }
-
-    return this.http.post<{ accessToken: string }>(
+  refresh(): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(
       `${this.apiUrl}/auth/refresh`,
-      { refreshToken }
+      {},
+      { withCredentials: true }
     ).pipe(
       tap(response => {
         this.tokenService.setAccessToken(response.accessToken);
       }),
       catchError(() => {
-        // Si el refresh falla, cerrar sesión
+        // Si el refresh falla (cookie ausente, expirada o revocada), cerrar sesión
         this.logout();
         return EMPTY;
       })
@@ -257,16 +244,13 @@ export class AuthService {
 
   /**
    * Cerrar sesión.
-   * Limpia tokens y redirige al login.
+   * Revoca la sesión en backend (eliminando la cookie HttpOnly) y limpia el estado local.
    */
   logout(): void {
-    // Intentar revocar el refresh token en el backend
-    const refreshToken = this.tokenService.getRefreshToken();
-    if (refreshToken) {
-      this.http.post(`${this.apiUrl}/auth/logout`, {}).subscribe({
-        error: () => {}  // Ignorar error — igual limpiamos localmente
-      });
-    }
+    // Revocar en el backend enviando la cookie HttpOnly
+    this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true }).subscribe({
+      error: () => {}  // Ignorar error — igual limpiamos localmente
+    });
 
     // Limpiar estado local
     this.tokenService.clearAll();
@@ -306,13 +290,10 @@ export class AuthService {
   }
 
   /**
-   * Intenta recuperar la sesión usando el refresh token.
-   * Se llama al iniciar la app (si el usuario ya había iniciado sesión).
+   * Intenta recuperar la sesión usando la cookie HttpOnly al iniciar la app.
    */
   private intentarRecuperarSesion(): void {
-    if (this.tokenService.getRefreshToken()) {
-      this.refresh().subscribe();
-    }
+    this.refresh().subscribe();
   }
 
   isAuthenticated(): boolean {
@@ -332,16 +313,16 @@ this.authService.login('test@email.com', 'pass').subscribe({
   next: (response) => {
     console.log('Login exitoso:', response);
     console.log('Token en memoria:', this.tokenService.getAccessToken()?.slice(0, 20) + '...');
-    console.log('Refresh en localStorage:', localStorage.getItem('electoral_refresh_token'));
+    console.log('Refresh Token en Cookie HttpOnly: gestionado por navegador (withCredentials: true)');
   },
   error: (err) => console.error('Login falló:', err)
 });
 ```
 
 Verifica:
-- El access token está en memoria (no en localStorage)
-- El refresh token aparece en localStorage
-- Al recargar la página, el access token desaparece pero el refresh token persiste
+- El access token está exclusivamente en memoria JS (Signal reactivo en AuthStore o variable en TokenService, nunca en localStorage ni sessionStorage)
+- El refresh token viaja y se almacena en Cookie HttpOnly (`SameSite=Strict, Secure`), invisible para JavaScript (`document.cookie` no lo muestra) y visible únicamente en DevTools del navegador (pestaña Application > Cookies)
+- Al recargar la página, el access token en memoria se recupera mediante la llamada a `/auth/refresh` con `withCredentials: true` gracias a la cookie HttpOnly
 
 ---
 

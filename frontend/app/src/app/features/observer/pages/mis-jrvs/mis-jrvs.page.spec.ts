@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 import { MisJrvsPage } from './mis-jrvs.page';
 import { ObserverService } from '../../services/observer.service';
 
@@ -72,5 +73,33 @@ describe('MisJrvsPage', () => {
       1,
       'cargos',
     ]);
+  });
+
+  it('should show error state on HTTP failure and retry', async () => {
+    const errorServiceSpy = jasmine.createSpyObj('ObserverService', [
+      'getMisJrvs',
+    ]);
+    const error = new HttpErrorResponse({ status: 500 });
+    errorServiceSpy.getMisJrvs.and.returnValue(throwError(() => error));
+
+    await TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [MisJrvsPage],
+      providers: [
+        { provide: ObserverService, useValue: errorServiceSpy },
+        { provide: Router, useValue: routerSpy },
+      ],
+    }).compileComponents();
+
+    const fixture2 = TestBed.createComponent(MisJrvsPage);
+    const component2 = fixture2.componentInstance;
+    fixture2.detectChanges();
+
+    expect(component2.error).toBeTruthy();
+    expect(component2.loading).toBe(false);
+
+    // Retry
+    component2.cargarJrvs();
+    expect(errorServiceSpy.getMisJrvs).toHaveBeenCalledTimes(2);
   });
 });
