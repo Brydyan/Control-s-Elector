@@ -183,31 +183,77 @@ describe('RegistrarActaPage', () => {
     );
   });
 
-  it('should load image and set preview dataURL on file selection (S4)', () => {
-    const mockFile = new File(['fake-image-data'], 'test.webp', {
+  it('should preview image via URL.createObjectURL, NOT readAsDataURL (T-FE-08 D1, V.4)', () => {
+    const revokeSpy = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockReturnValue(undefined);
+    const createSpy = vi
+      .spyOn(URL, 'createObjectURL')
+      .mockReturnValue('blob:mock-uuid-xyz');
+
+    const fakeFile = new File(['pixel-data'], 'acta.webp', {
       type: 'image/webp',
     });
-    const dataUrl = 'data:image/webp;base64,Zmfha2UtaW1hZ2UtZGF0YQ==';
+    const event = {
+      target: { files: [fakeFile] },
+    } as unknown as Event;
 
-    // Mock FileReader constructor
-    const mockOnLoad = vi.fn();
-    const mockReadAsDataURL = vi.fn(function (this: any) {
-      this.result = dataUrl;
-      this.onload();
-    });
+    component.onFileSelected(event);
 
-    const FileReaderMock = vi.fn(function (this: any) {
-      this.readAsDataURL = mockReadAsDataURL;
-    }) as any;
-    FileReaderMock.prototype.readAsDataURL = mockReadAsDataURL;
+    expect(createSpy).toHaveBeenCalledWith(fakeFile);
+    expect(component.imagePreviewUrl).toBe('blob:mock-uuid-xyz');
+    // Garantizar que NUNCA produce data: URL (Base64).
+    expect(component.imagePreviewUrl?.startsWith('data:')).toBe(false);
 
-    vi.stubGlobal('FileReader', FileReaderMock);
+    // Cleanup en ngOnDestroy.
+    component.ngOnDestroy();
+    expect(revokeSpy).toHaveBeenCalledWith('blob:mock-uuid-xyz');
+  });
 
-    component.onFileSelected({ target: { files: [mockFile] } });
+  it('should mark captureCancelled when user cancels (D7 S5, no file selected)', () => {
+    // Estado inicial limpio.
+    component.captureCancelled = false;
+    component.error = null;
 
-    expect(component.selectedImageFile).toBe(mockFile);
-    expect(component.imagePreviewUrl).toBe(dataUrl);
+    const event = {
+      target: { files: [] }, // FileList vacío = cancelación
+    } as unknown as Event;
 
-    vi.unstubAllGlobals();
+    component.onFileSelected(event);
+
+    expect(component.captureCancelled).toBe(true);
+    expect(component.error).toBeNull(); // No es error de sistema.
+    expect(component.selectedImageFile).toBeNull();
+    expect(component.imagePreviewUrl).toBeNull();
+    // D7: NO se resetean datos digitados.
+    expect(component.votosPorCandidato.size).toBeGreaterThan(0);
+    expect(component.candidatos.length).toBe(2);
+  });
+
+  it('should clear captureCancelled when user selects a file after cancelling (D7)', () => {
+    component.captureCancelled = true; // estado previo de cancelación
+
+    const fakeFile = new File(['x'], 'acta.webp', { type: 'image/webp' });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:new-url');
+    component.onFileSelected({
+      target: { files: [fakeFile] },
+    } as unknown as Event);
+
+    expect(component.captureCancelled).toBe(false);
+    expect(component.selectedImageFile).toBe(fakeFile);
+    expect(component.imagePreviewUrl).toBe('blob:new-url');
+  });
+
+  it('should have file input with accept="image/*" and capture="environment" (S3)', () => {
+    // Navegar a IMAGEN step para renderizar el input
+    component.currentStep = 'IMAGEN';
+    fixture.detectChanges();
+
+    const fileInput = fixture.nativeElement.querySelector(
+      'input[type="file"]',
+    );
+    expect(fileInput).toBeTruthy();
+    expect(fileInput.getAttribute('accept')).toBe('image/*');
+    expect(fileInput.getAttribute('capture')).toBe('environment');
   });
 });
