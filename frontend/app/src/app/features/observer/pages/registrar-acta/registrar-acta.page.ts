@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -9,6 +9,7 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 
+import { ImageCompressionService } from '../../../../core/services/image-compression.service';
 import {
   ActaDetalleItem,
   ActaRequest,
@@ -33,11 +34,12 @@ type Step = 'VOTOS' | 'IMAGEN' | 'REVISION';
   templateUrl: './registrar-acta.page.html',
   styleUrls: ['./registrar-acta.page.scss'],
 })
-export class RegistrarActaPage implements OnInit {
+export class RegistrarActaPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly observerService = inject(ObserverService);
   private readonly storageService = inject(ActaStorageService);
+  private readonly imageCompression = inject(ImageCompressionService);
 
   jrvId!: number;
   cargoId!: number;
@@ -58,6 +60,8 @@ export class RegistrarActaPage implements OnInit {
 
   selectedImageFile: File | null = null;
   imagePreviewUrl: string | null = null;
+  /** D7 (T-FE-08 S5): true cuando el usuario cancela cámara o no selecciona archivo. */
+  captureCancelled = false;
 
   ngOnInit(): void {
     const jrvParam = this.route.snapshot.paramMap.get('jrvId');
@@ -198,12 +202,28 @@ export class RegistrarActaPage implements OnInit {
     if (target.files && target.files[0]) {
       const file = target.files[0];
       this.selectedImageFile = file;
+      this.captureCancelled = false;
+      this.error = null;
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.imagePreviewUrl = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+      // D1 (T-FE-08): usar URL.createObjectURL (Blob binario) en vez de
+      // FileReader.readAsDataURL (que produce data:image/... Base64 en heap).
+      if (this.imagePreviewUrl) {
+        this.imageCompression.revokePreviewUrl(this.imagePreviewUrl);
+      }
+      this.imagePreviewUrl = this.imageCompression.createPreviewUrl(file);
+      return;
+    }
+
+    // D7 (T-FE-08 S5): usuario canceló cámara o no seleccionó archivo.
+    // Estado informativo; NO resetear datos digitados (currentStep, votos, etc.).
+    this.captureCancelled = true;
+    this.error = null;
+  }
+
+  ngOnDestroy(): void {
+    // D1 cleanup: revocar URL efímera al desmontar la página.
+    if (this.imagePreviewUrl) {
+      this.imageCompression.revokePreviewUrl(this.imagePreviewUrl);
     }
   }
 

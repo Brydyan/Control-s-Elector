@@ -29,6 +29,25 @@ if (!window.matchMedia) {
   })) as typeof window.matchMedia;
 }
 
+// jsdom polyfills para ImageCompressionService (T-FE-08).
+// createImageBitmap no existe en jsdom; tests específicos mockean el global.
+// OffscreenCanvas idem. Solo necesitamos los símbolos para que el módulo compile.
+if (typeof globalThis.createImageBitmap === 'undefined') {
+  globalThis.createImageBitmap = (() =>
+    Promise.reject(new Error('createImageBitmap no mockeado en este test'))) as typeof createImageBitmap;
+}
+if (typeof globalThis.OffscreenCanvas === 'undefined') {
+  class OffscreenCanvasStub {
+    constructor(_w: number, _h: number) {}
+    getContext(): unknown { return null; }
+    convertToBlob(): Promise<Blob> {
+      return Promise.reject(new Error('OffscreenCanvas no mockeado'));
+    }
+  }
+  (globalThis as unknown as { OffscreenCanvas: typeof OffscreenCanvas }).OffscreenCanvas =
+    OffscreenCanvasStub as unknown as typeof OffscreenCanvas;
+}
+
 import { addIcons } from 'ionicons';
 import {
   alertCircleOutline,
