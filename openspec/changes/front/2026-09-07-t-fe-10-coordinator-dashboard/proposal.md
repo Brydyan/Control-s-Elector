@@ -4,7 +4,7 @@
 Módulo integral para los coordinadores electorales (COORDINATOR y MASTER) que garantiza la integridad, auditoría y resolución de discrepancias en las actas de toda la provincia de Santa Elena:
 1. **Listado Paginado Global (`/coordinator/actas`)**:
    - Consumo de `GET /api/v1/coordinator/actas` con sobre de paginación del servidor `{ data, meta }`.
-   - Filtros avanzados por estado (`ENVIADA`, `EN_DISPUTA`, `CORREGIDA`, `APROBADA`, `EN_OBSERVACION`, `ANULADA`), dignidad/cargo, cantón, JRV y búsqueda textual por número de mesa o recinto.
+   - Filtros avanzados por estado (`ENVIADA`, `EN_DISPUTA`, `CORREGIDA`, `APROBADA`, `ANULADA`), dignidad/cargo, cantón, JRV y búsqueda textual por número de mesa o recinto.
    - Paginador interactivo con control de tamaño de página y ordenamiento.
 2. **Detalle de Auditoría y Split-View 50/50 (`/coordinator/actas/:id`)**:
    - En pantallas de escritorio (`>= 992px`), diseño dividido en dos columnas:
