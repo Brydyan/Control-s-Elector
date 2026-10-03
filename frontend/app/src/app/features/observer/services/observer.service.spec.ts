@@ -86,4 +86,21 @@ describe('ObserverService', () => {
     expect(req.request.method).toBe('POST');
     req.flush({ id: 123, ...payload, estado: 'ENVIADA' });
   });
+
+  it('should post image with multipart key "imagen" (V.2 contract)', () => {
+    const file = new File(['x'], 'acta.webp', { type: 'image/webp' });
+
+    service.subirImagenActa(7, file).subscribe();
+
+    const req = httpMock.expectOne(
+      `${environment.apiUrl}/observer/actas/7/imagen`,
+    );
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body instanceof FormData).toBe(true);
+    const formData = req.request.body as FormData;
+    const keys = Array.from(formData.keys());
+    expect(keys).toContain('imagen');
+    expect(keys).not.toContain('file');
+    req.flush(null);
+  });
 });

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 import { RegistrarActaPage } from './registrar-acta.page';
 import { ObserverService } from '../../services/observer.service';
 
@@ -94,5 +95,119 @@ describe('RegistrarActaPage', () => {
     component.irAPasoImagen();
     expect(component.currentStep).toBe('IMAGEN');
     expect(component.error).toBeNull();
+  });
+
+  it('should NOT call enviarActaDirecta when checksum is invalid (D.4)', () => {
+    component.totalSufragantes = 100;
+    component.votosBlancos = 0;
+    component.votosNulos = 0;
+    component.votosPorCandidato.set(1, 50);
+    component.votosPorCandidato.set(2, 40); // 90 != 100 → invalid
+
+    component.enviarActaFinal();
+
+    expect(component.error).toContain('votos no cuadran');
+    expect(observerServiceSpy.enviarActaDirecta).not.toHaveBeenCalled();
+  });
+
+  it('should chain enviarActaDirecta + subirImagenActa + navigate on valid send (D.4)', async () => {
+    component.totalSufragantes = 100;
+    component.votosBlancos = 0;
+    component.votosNulos = 0;
+    component.votosPorCandidato.set(1, 50);
+    component.votosPorCandidato.set(2, 50); // 100 == 100 → valid
+    component.selectedImageFile = new File(['x'], 'acta.webp', {
+      type: 'image/webp',
+    });
+
+    observerServiceSpy.enviarActaDirecta.and.returnValue(
+      of({
+        id: 99,
+        jrvId: 101,
+        cargoId: 2,
+        estado: 'ENVIADA',
+        totalSufragantes: 100,
+        votosBlancos: 0,
+        votosNulos: 0,
+        detalles: [],
+      }),
+    );
+    observerServiceSpy.subirImagenActa.and.returnValue(of(undefined));
+
+    component.enviarActaFinal();
+    // finalizarEnvio usa setTimeout(1800ms) para navegación. Usamos timer real.
+    await new Promise((resolve) => setTimeout(resolve, 1900));
+
+    expect(observerServiceSpy.enviarActaDirecta).toHaveBeenCalled();
+    expect(observerServiceSpy.subirImagenActa).toHaveBeenCalledWith(
+      99,
+      expect.any(File),
+    );
+    expect(routerSpy.navigate).toHaveBeenCalledWith([
+      '/observer/jrv',
+      101,
+      'cargos',
+    ]);
+  });
+
+  it('should chain subirImagenActa after guardarBorrador (D.4)', () => {
+    component.totalSufragantes = 100;
+    component.votosBlancos = 0;
+    component.votosNulos = 0;
+    component.votosPorCandidato.set(1, 50);
+    component.votosPorCandidato.set(2, 50);
+    component.selectedImageFile = new File(['x'], 'acta.webp', {
+      type: 'image/webp',
+    });
+
+    observerServiceSpy.guardarBorrador.and.returnValue(
+      of({
+        id: 88,
+        jrvId: 101,
+        cargoId: 2,
+        estado: 'BORRADOR',
+        totalSufragantes: 100,
+        votosBlancos: 0,
+        votosNulos: 0,
+        detalles: [],
+      }),
+    );
+    observerServiceSpy.subirImagenActa.and.returnValue(of(undefined));
+
+    component.guardarComoBorrador();
+
+    expect(observerServiceSpy.guardarBorrador).toHaveBeenCalled();
+    expect(observerServiceSpy.subirImagenActa).toHaveBeenCalledWith(
+      88,
+      expect.any(File),
+    );
+  });
+
+  it('should load image and set preview dataURL on file selection (S4)', () => {
+    const mockFile = new File(['fake-image-data'], 'test.webp', {
+      type: 'image/webp',
+    });
+    const dataUrl = 'data:image/webp;base64,Zmfha2UtaW1hZ2UtZGF0YQ==';
+
+    // Mock FileReader constructor
+    const mockOnLoad = vi.fn();
+    const mockReadAsDataURL = vi.fn(function (this: any) {
+      this.result = dataUrl;
+      this.onload();
+    });
+
+    const FileReaderMock = vi.fn(function (this: any) {
+      this.readAsDataURL = mockReadAsDataURL;
+    }) as any;
+    FileReaderMock.prototype.readAsDataURL = mockReadAsDataURL;
+
+    vi.stubGlobal('FileReader', FileReaderMock);
+
+    component.onFileSelected({ target: { files: [mockFile] } });
+
+    expect(component.selectedImageFile).toBe(mockFile);
+    expect(component.imagePreviewUrl).toBe(dataUrl);
+
+    vi.unstubAllGlobals();
   });
 });
