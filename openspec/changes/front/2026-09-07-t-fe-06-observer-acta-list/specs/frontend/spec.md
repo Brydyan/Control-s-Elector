@@ -60,4 +60,4 @@ AND      el botón "Reintentar" permite volver a solicitar los datos al backend
 
 - **G1:** Peticiones HTTP dirigidas a `/api/v1/observer/*` con Bearer Token inyectado.
 - **G2:** Segregación estricta de rutas con `roleGuard(['OBSERVER', 'MASTER'])`.
-- **G3:** Mapeo de estados de acta compatible con el backend (`BORRADOR`, `ENVIADA`, `APROBADA`, `EN_DISPUTA`, `CORREGIDA`, `ANULADA`, `EN_OBSERVACION`).
+- **G3:** Mapeo de estados de acta compatible con el backend (`BORRADOR`, `ENVIADA`, `APROBADA`, `EN_DISPUTA`, `CORREGIDA`, `ANULADA`).

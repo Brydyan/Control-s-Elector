@@ -16,7 +16,7 @@
 - [ ] **B.1** — Implementar getters de validación de cota:
   - `alertaSufragantes`: Warning si > 350, Error si > 500.
   - `esSufragantesValido`: `totalSufragantes > 0 && totalSufragantes <= 500`.
-- [ ] **B.2** — Ajustar regla de cuadre para soportar CPCCS (hasta 3 votos por elector si el cargo corresponde a CPCCS).
+- [ ] **B.2** — Validar regla de cuadre estricto 1:1 en todas las dignidades (actas unívocas por cargo/sub-lista CPCCS: SUM(votos) + blancos + nulos = totalSufragantes).
 - [ ] **B.3** — Integrar banners visuales de advertencia y error en el template `registrar-acta.page.html`.
 
 ## Fase C: Botón de Captura Rápida en JrvCargosPage
@@ -32,7 +32,7 @@
   - Test persistencia en IndexedDB (`acta_drafts`) al capturar y recuperación de borrador.
   - Test verificación de ausencia de `localStorage` y ausencia de Base64 en el almacenamiento del borrador.
   - Test advertencia con 380 sufragantes y bloqueo con 501.
-  - Test validación de cuadre exacto (unipersonal vs CPCCS).
+  - Test validación de cuadre exacto 1:1 (invariante estricto).
 - [ ] **D.2** — Medir con `npm test -- --run`.
 
 ## Verificación por Mutación

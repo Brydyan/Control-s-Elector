@@ -37,14 +37,13 @@ get esSufragantesValido(): boolean {
 
 ---
 
-## D3 — Regla Matemática Diferenciada: Unipersonal vs CPCCS
+## D3 — Regla Matemática de Invariante Estricto
 
 **Decisión**:
-- Para `Prefecto`, `Alcalde`, `Concejales`:
-  $$\sum \text{votos} = \text{totalSufragantes}$$
-- Para `CPCCS` (tres sub-listas: hombres, mujeres, pueblos):
-  $$\sum \text{votos} \le \text{totalSufragantes} \times 3$$
-  (Cada elector tiene derecho a votar hasta por 3 consejeros).
+En el backend (`RegistrarActaUseCase`) y en la base de datos el invariante es estricto y sin excepciones para cada acta `(jrv_id, cargo_id)`:
+$$\sum \text{detalle.votos} + \text{votos\_blancos} + \text{votos\_nulos} = \text{totalSufragantes}$$
+
+Cualquier discrepancia provoca rechazo con `HTTP 400 Bad Request` en el backend. Se elimina la fórmula de hasta $3\times$ en el cliente. Las dignidades pluripersonales o CPCCS se gestionan con actas unívocas por cargo o lista cerrada donde cada voto individual cuadra 1:1 contra los sufragantes registrados en esa acta.
 
 ---
 

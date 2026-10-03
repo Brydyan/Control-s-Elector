@@ -43,7 +43,7 @@ que no prueban nada (`assertTrue(true)` equivalentes) o que faltan casos crític
 | MASTER | Todo. Único que revoca sesiones y anula actas APROBADA. |
 | COORDINATOR | Disputas/correcciones/aprobaciones en todas las JRVs. |
 | ADMIN | Solo lectura — dashboard. Nunca escribe. |
-| OBSERVER | Registra/corrige actas solo en sus JRVs asignadas (`observer_jrv_asignacion`). |
+| OBSERVER | Registra actas con libre selección de JRV. Corrige actas registradas por él (registrada_por_id). |
 
 Cualquier endpoint mutante sin guard de rol exacto a esta tabla es hallazgo crítico.
 `ADMIN` en cualquier guard de escritura es hallazgo crítico.
@@ -166,7 +166,7 @@ equivalente), es hallazgo crítico, no da igual que el frontend "lo oculte".
 - Falta cobertura de casos críticos explícitos (T-BE-15):
   - Locking pesimista con dos requests simultáneos a la misma JRV+cargo.
   - Validación de suma de votos incorrecta → debe fallar 400.
-  - RLS/scoping — OBSERVER no debe ver actas de JRV no asignada.
+  - Aislamiento de actas — OBSERVER solo accede a actas propias registradas por él (registrada_por_id).
   - Flujo completo de máquina de estados: BORRADOR→ENVIADA→EN_DISPUTA→CORREGIDA→APROBADA.
 - Tests de repositorio/integración que mockean la BD en vez de usar Testcontainers con Postgres real
   para código sensible a locking/concurrencia — mock pasa, prod con carrera real falla.
