@@ -17,7 +17,7 @@ export default defineConfig({
     reporters: ['default'],
     hookTimeout: 10000,
     testTimeout: 10000,
-    isolate: false,
+    isolate: true,
     server: {
       deps: {
         inline: [/@ionic/],
