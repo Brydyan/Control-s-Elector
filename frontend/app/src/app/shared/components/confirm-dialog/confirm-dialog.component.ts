@@ -25,26 +25,33 @@ import { FocusTrapDirective } from '../../a11y/focus-trap.directive';
   imports: [CommonModule, ButtonComponent, FocusTrapDirective],
   template: `
     @if (visible) {
-    <div class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
-      <div class="modal-card" [appFocusTrap]="true">
-        <h2 id="confirm-title">{{ title }}</h2>
-        @if (message) {
-        <p class="message">{{ message }}</p>
-        }
-        <div class="actions">
-          <app-button
-            variant="secondary"
-            (click)="onCancel()"
-            data-testid="confirm-cancel"
-          >{{ cancelLabel }}</app-button>
-          <app-button
-            [variant]="variant"
-            (click)="onConfirm()"
-            data-testid="confirm-accept"
-          >{{ confirmLabel }}</app-button>
+      <div
+        class="modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-title"
+      >
+        <div class="modal-card" [appFocusTrap]="true">
+          <h2 id="confirm-title">{{ title }}</h2>
+          @if (message) {
+            <p class="message">{{ message }}</p>
+          }
+          <div class="actions">
+            <app-button
+              variant="secondary"
+              (click)="onCancel()"
+              data-testid="confirm-cancel"
+              >{{ cancelLabel }}</app-button
+            >
+            <app-button
+              [variant]="variant"
+              (click)="onConfirm()"
+              data-testid="confirm-accept"
+              >{{ confirmLabel }}</app-button
+            >
+          </div>
         </div>
       </div>
-    </div>
     }
   `,
   styles: [
@@ -86,7 +93,11 @@ export class ConfirmDialogComponent {
   @Output() cancel$ = new EventEmitter<void>();
 
   /** Programmatic API — spec S3: `ref.open({title, message})`. */
-  open(opts: { title: string; message?: string; variant?: 'primary' | 'danger' }): void {
+  open(opts: {
+    title: string;
+    message?: string;
+    variant?: 'primary' | 'danger';
+  }): void {
     this.title = opts.title;
     this.message = opts.message ?? null;
     if (opts.variant) this.variant = opts.variant;

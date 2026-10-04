@@ -20,14 +20,22 @@
   <div class="progress-banner-left">
     <div class="banner-head">
       <h2>Progreso de Escrutinio</h2>
-      <p>{{ sentActos() }} de {{ totalJrv() }} JRVs han enviado actas registradas</p>
+      <p>
+        {{ sentActos() }} de {{ totalJrv() }} JRVs han enviado actas registradas
+      </p>
     </div>
     <div class="progress-bar-banner">
-      <div class="progress-bar-banner-fill" [style.width.%]="overallPct()"></div>
+      <div
+        class="progress-bar-banner-fill"
+        [style.width.%]="overallPct()"
+      ></div>
     </div>
     <div class="banner-cantons">
       @for (c of progreso(); track c.cantonId) {
-      <span>{{ c.cantonNombre }}: {{ pct(c) }}% ({{ c.jrvsConActa }}/{{ c.totalJrvs }})</span>
+      <span
+        >{{ c.cantonNombre }}: {{ pct(c) }}% ({{ c.jrvsConActa }}/{{ c.totalJrvs
+        }})</span
+      >
       }
     </div>
   </div>
@@ -93,8 +101,7 @@
     <div class="card-title">🕐 Actas en Disputa</div>
     @if (novedades().length === 0) {
     <p class="empty">Sin actas en disputa actualmente.</p>
-    }
-    @for (n of novedades(); track n.actaPublicId) {
+    } @for (n of novedades(); track n.actaPublicId) {
     <div class="acta-row">
       <div class="acta-info">
         <div class="acta-jrv">JRV {{ n.jrvNumero }}</div>

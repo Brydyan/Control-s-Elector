@@ -60,7 +60,14 @@ describe('DashboardService (T-FE-11 A.3)', () => {
       {
         cargoId: 1,
         cargoNombre: 'Prefecto/a',
-        candidatos: [{ candidatoId: 10, candidatoNombre: 'C1', partidoNombre: 'PA', votos: 100 }],
+        candidatos: [
+          {
+            candidatoId: 10,
+            candidatoNombre: 'C1',
+            partidoNombre: 'PA',
+            votos: 100,
+          },
+        ],
       },
     ]);
   });
@@ -115,47 +122,39 @@ describe('DashboardService (T-FE-11 A.3)', () => {
       expect(d.novedades.length).toBe(1);
     });
 
-    httpTesting
-      .expectOne(`${environment.apiUrl}/dashboard/resumen`)
-      .flush({
-        enviadas: 1,
-        enDisputa: 1,
-        corregidas: 1,
-        aprobadas: 2,
-        totalActivas: 5,
-      });
+    httpTesting.expectOne(`${environment.apiUrl}/dashboard/resumen`).flush({
+      enviadas: 1,
+      enDisputa: 1,
+      corregidas: 1,
+      aprobadas: 2,
+      totalActivas: 5,
+    });
     httpTesting
       .expectOne(`${environment.apiUrl}/dashboard/resultados`)
-      .flush([
-        { cargoId: 1, cargoNombre: 'X', candidatos: [] },
-      ]);
-    httpTesting
-      .expectOne(`${environment.apiUrl}/dashboard/progreso`)
-      .flush([
-        {
-          cantonId: 1,
-          cantonNombre: 'X',
-          totalJrvs: 10,
-          jrvsConActa: 5,
-          porcentaje: 50,
-        },
-      ]);
-    httpTesting
-      .expectOne(`${environment.apiUrl}/dashboard/novedades`)
-      .flush([
-        {
-          actaPublicId: '11111111-1111-1111-1111-111111111111',
-          tipo: 'ACTA_EN_DISPUTA',
-          jrvId: 1,
-          jrvNumero: '0023',
-          cargoId: 1,
-          cargoNombre: 'Alcalde/sa',
-          observerPublicId: '22222222-2222-2222-2222-222222222222',
-          observerNombre: 'Juan',
-          motivo: null,
-          minutosTranscurridos: 35,
-        },
-      ]);
+      .flush([{ cargoId: 1, cargoNombre: 'X', candidatos: [] }]);
+    httpTesting.expectOne(`${environment.apiUrl}/dashboard/progreso`).flush([
+      {
+        cantonId: 1,
+        cantonNombre: 'X',
+        totalJrvs: 10,
+        jrvsConActa: 5,
+        porcentaje: 50,
+      },
+    ]);
+    httpTesting.expectOne(`${environment.apiUrl}/dashboard/novedades`).flush([
+      {
+        actaPublicId: '11111111-1111-1111-1111-111111111111',
+        tipo: 'ACTA_EN_DISPUTA',
+        jrvId: 1,
+        jrvNumero: '0023',
+        cargoId: 1,
+        cargoNombre: 'Alcalde/sa',
+        observerPublicId: '22222222-2222-2222-2222-222222222222',
+        observerNombre: 'Juan',
+        motivo: null,
+        minutosTranscurridos: 35,
+      },
+    ]);
   });
 
   it('should fall back to empty/zero when an endpoint fails (defensive UX)', () => {
@@ -173,9 +172,7 @@ describe('DashboardService (T-FE-11 A.3)', () => {
     httpTesting
       .expectOne(`${environment.apiUrl}/dashboard/resultados`)
       .flush([{ cargoId: 1, cargoNombre: 'X', candidatos: [] }]);
-    httpTesting
-      .expectOne(`${environment.apiUrl}/dashboard/progreso`)
-      .flush([]);
+    httpTesting.expectOne(`${environment.apiUrl}/dashboard/progreso`).flush([]);
     httpTesting
       .expectOne(`${environment.apiUrl}/dashboard/novedades`)
       .flush([]);

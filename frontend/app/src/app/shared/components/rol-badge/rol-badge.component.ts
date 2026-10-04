@@ -16,11 +16,7 @@ import { BadgeComponent, BadgeVariant } from '../../ui/badge/badge.component';
   `,
 })
 export class RolBadgeComponent {
-  @Input() rol:
-    | 'OBSERVER'
-    | 'COORDINATOR'
-    | 'ADMIN'
-    | 'MASTER' = 'OBSERVER';
+  @Input() rol: 'OBSERVER' | 'COORDINATOR' | 'ADMIN' | 'MASTER' = 'OBSERVER';
 
   get variant(): BadgeVariant {
     // Mapeo simple — roles fuera del enum variante usan 'default'.

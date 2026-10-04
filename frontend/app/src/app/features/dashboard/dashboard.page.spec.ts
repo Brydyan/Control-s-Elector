@@ -22,9 +22,7 @@ describe('DashboardPage (T-FE-11)', () => {
       aprobadas: 4,
       totalActivas: 10,
     },
-    resultados: [
-      { cargoId: 1, cargoNombre: 'Prefecto/a', candidatos: [] },
-    ],
+    resultados: [{ cargoId: 1, cargoNombre: 'Prefecto/a', candidatos: [] }],
     progreso: [
       {
         cantonId: 1,
@@ -96,9 +94,15 @@ describe('DashboardPage (T-FE-11)', () => {
   });
 
   it('should color tier green/blue/amber by completion', () => {
-    expect(component.tier({ ...component.progreso()[0], porcentaje: 100 })).toBe('green');
-    expect(component.tier({ ...component.progreso()[0], porcentaje: 80 })).toBe('blue');
-    expect(component.tier({ ...component.progreso()[0], porcentaje: 30 })).toBe('amber');
+    expect(
+      component.tier({ ...component.progreso()[0], porcentaje: 100 }),
+    ).toBe('green');
+    expect(component.tier({ ...component.progreso()[0], porcentaje: 80 })).toBe(
+      'blue',
+    );
+    expect(component.tier({ ...component.progreso()[0], porcentaje: 30 })).toBe(
+      'amber',
+    );
   });
 
   it('should subscribe to realtime reload on init and stop on destroy', () => {
@@ -108,8 +112,9 @@ describe('DashboardPage (T-FE-11)', () => {
   });
 
   it('should render error state when service fails', () => {
-    (dashboardServiceMock.getDashboardCompleto as ReturnType<typeof vi.fn>)
-      .mockReturnValue(throwError(() => new Error('boom')));
+    (
+      dashboardServiceMock.getDashboardCompleto as ReturnType<typeof vi.fn>
+    ).mockReturnValue(throwError(() => new Error('boom')));
     component.cargar();
     expect(component.error()).toBe('boom');
     expect(component.loading()).toBe(false);
