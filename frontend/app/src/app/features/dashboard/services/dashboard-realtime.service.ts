@@ -1,11 +1,5 @@
 import { Injectable, InjectionToken, OnDestroy, inject } from '@angular/core';
-import {
-  Observable,
-  Subject,
-  Subscription,
-  debounceTime,
-  share,
-} from 'rxjs';
+import { Observable, Subject, Subscription, debounceTime, share } from 'rxjs';
 
 /**
  * Shape mínima del cliente Supabase Realtime que necesitamos. Definida
@@ -69,10 +63,7 @@ export class DashboardRealtimeService implements OnDestroy {
   });
 
   constructor() {
-    this.reload$ = this.raw$.pipe(
-      debounceTime(500),
-      share(),
-    );
+    this.reload$ = this.raw$.pipe(debounceTime(500), share());
   }
 
   /**

@@ -23,14 +23,18 @@ describe('NotificacionBellComponent (T-FE-12 S4)', () => {
   it('should NOT render badge when count=0 (S4)', () => {
     component.count = 0;
     fixture.detectChanges();
-    const badge = fixture.nativeElement.querySelector('[data-testid="bell-count"]');
+    const badge = fixture.nativeElement.querySelector(
+      '[data-testid="bell-count"]',
+    );
     expect(badge).toBeNull();
   });
 
   it('should render badge with count=5 (S4)', () => {
     component.count = 5;
     fixture.detectChanges();
-    const badge = fixture.nativeElement.querySelector('[data-testid="bell-count"]');
+    const badge = fixture.nativeElement.querySelector(
+      '[data-testid="bell-count"]',
+    );
     expect(badge?.textContent).toContain('5');
   });
 

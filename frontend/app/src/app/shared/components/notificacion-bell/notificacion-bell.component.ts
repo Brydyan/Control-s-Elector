@@ -22,7 +22,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     >
       <span class="bell-icon" aria-hidden="true">🔔</span>
       @if (count > 0) {
-      <span class="bell-badge" data-testid="bell-count">{{ count }}</span>
+        <span class="bell-badge" data-testid="bell-count">{{ count }}</span>
       }
     </button>
   `,

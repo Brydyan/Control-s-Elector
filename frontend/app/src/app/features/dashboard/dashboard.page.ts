@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { Subscription } from 'rxjs';
 import {
   ButtonComponent,
@@ -57,9 +64,7 @@ export class DashboardPage implements OnInit, OnDestroy {
   readonly progreso = computed<ProgresoCanton[]>(
     () => this.data()?.progreso ?? [],
   );
-  readonly novedades = computed<Novedad[]>(
-    () => this.data()?.novedades ?? [],
-  );
+  readonly novedades = computed<Novedad[]>(() => this.data()?.novedades ?? []);
 
   /** % global: total JRVs con acta (sum jrvsConActa) / total JRVs (sum totalJrvs). */
   readonly overallPct = computed(() => {
@@ -105,7 +110,9 @@ export class DashboardPage implements OnInit, OnDestroy {
       },
       error: (err: unknown) => {
         const msg =
-          err instanceof Error ? err.message : 'No se pudo cargar el dashboard.';
+          err instanceof Error
+            ? err.message
+            : 'No se pudo cargar el dashboard.';
         this.error.set(msg);
         this.loading.set(false);
       },
