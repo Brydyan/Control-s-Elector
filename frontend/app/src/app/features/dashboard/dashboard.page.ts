@@ -1,124 +1,138 @@
-import { Component } from '@angular/core';
-
-type ActaStatus = 'ENVIADA' | 'APROBADA' | 'EN_DISPUTA' | 'CORREGIDA';
-
-interface StatCard {
-  key: string;
-  label: string;
-  value: number;
-  sub: string;
-}
-
-interface CantonProgress {
-  name: string;
-  code: string;
-  done: number;
-  total: number;
-}
-
-interface RecentActa {
-  jrv: string;
-  canton: string;
-  cargo: string;
-  status: ActaStatus;
-  time: string;
-}
+import { CommonModule } from '@angular/common';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Subscription } from 'rxjs';
+import {
+  ButtonComponent,
+  ErrorStateComponent,
+  LoadingStateComponent,
+} from '../../shared/ui';
+import {
+  DashboardData,
+  Novedad,
+  ProgresoCanton,
+  ResumenActas,
+  ResultadoCargo,
+} from './models/dashboard.model';
+import { DashboardRealtimeService } from './services/dashboard-realtime.service';
+import { DashboardService } from './services/dashboard.service';
 
 /**
- * ADMIN dashboard — "Resumen General".
+ * ADMIN/MASTER/COORDINATOR dashboard — "Resumen General".
  *
- * NOTE: the figures below are placeholder data taken from the mockup.
- * There is no dashboard/summary endpoint yet; when it lands, replace
- * these fields with data fetched through a DashboardService and render
- * with signals. The template already binds to these properties.
+ * T-FE-11 B.1+B.2: conectado al backend via DashboardService (4 endpoints REST).
+ * T-FE-11 C.1+C.2: invalidación reactiva via DashboardRealtimeService
+ * (Supabase Realtime con debounce 500ms).
+ *
+ * G1: el backend es autoridad absoluta sobre sumas; FE no recalcula nada.
+ * G3: rutas canónicas `/api/v1/dashboard/*`.
  */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
+  imports: [
+    CommonModule,
+    ButtonComponent,
+    LoadingStateComponent,
+    ErrorStateComponent,
+  ],
   templateUrl: './dashboard.page.html',
   styleUrl: './dashboard.page.scss',
 })
-export class DashboardPage {
-  readonly totalJrv = 450;
-  readonly sentActas = 305;
-  readonly overallPct = Math.round((this.sentActas / this.totalJrv) * 100);
+export class DashboardPage implements OnInit, OnDestroy {
+  private readonly dashboardService = inject(DashboardService);
+  private readonly realtime = inject(DashboardRealtimeService);
 
-  readonly stats: StatCard[] = [
-    { key: 'total', label: 'Total Actas', value: 291, sub: 'De 450 JRVs' },
-    {
-      key: 'enviada',
-      label: 'Enviadas',
-      value: 142,
-      sub: 'Pendientes revisión',
-    },
-    {
-      key: 'disputa',
-      label: 'En Disputa',
-      value: 18,
-      sub: 'Requieren corrección',
-    },
-    { key: 'aprobada', label: 'Aprobadas', value: 128, sub: 'Confirmadas' },
-    {
-      key: 'anulada',
-      label: 'Anuladas',
-      value: 3,
-      sub: 'Excluidas del conteo',
-    },
-  ];
+  // Estado expuesto al template.
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
+  readonly data = signal<DashboardData | null>(null);
 
-  readonly cantons: CantonProgress[] = [
-    { name: 'La Libertad', code: '2402', done: 150, total: 150 },
-    { name: 'Santa Elena', code: '2401', done: 144, total: 200 },
-    { name: 'Salinas', code: '2403', done: 11, total: 100 },
-  ];
+  // Derivados para el template.
+  readonly resumen = computed<ResumenActas>(
+    () => this.data()?.resumen ?? this.emptyResumen(),
+  );
+  readonly resultados = computed<ResultadoCargo[]>(
+    () => this.data()?.resultados ?? [],
+  );
+  readonly progreso = computed<ProgresoCanton[]>(
+    () => this.data()?.progreso ?? [],
+  );
+  readonly novedades = computed<Novedad[]>(
+    () => this.data()?.novedades ?? [],
+  );
 
-  readonly recentActas: RecentActa[] = [
-    {
-      jrv: 'JRV 088',
-      canton: 'La Libertad',
-      cargo: 'Prefecto/a Provincial',
-      status: 'APROBADA',
-      time: '16:42',
-    },
-    {
-      jrv: 'JRV 120',
-      canton: 'Salinas',
-      cargo: 'Consejero/a CPCCS',
-      status: 'CORREGIDA',
-      time: '16:38',
-    },
-    {
-      jrv: 'JRV 002',
-      canton: 'Santa Elena',
-      cargo: 'Alcalde/sa Cantón',
-      status: 'EN_DISPUTA',
-      time: '16:21',
-    },
-    {
-      jrv: 'JRV 015',
-      canton: 'Chanduy',
-      cargo: 'Vocal Junta Parroquial',
-      status: 'ENVIADA',
-      time: '16:10',
-    },
-    {
-      jrv: 'JRV 001',
-      canton: 'Santa Elena',
-      cargo: 'Prefecto/a Provincial',
-      status: 'APROBADA',
-      time: '14:32',
-    },
-  ];
+  /** % global: total JRVs con acta (sum jrvsConActa) / total JRVs (sum totalJrvs). */
+  readonly overallPct = computed(() => {
+    const ps = this.progreso();
+    const totalJrvs = ps.reduce((s, p) => s + p.totalJrvs, 0);
+    const jrvsConActa = ps.reduce((s, p) => s + p.jrvsConActa, 0);
+    return totalJrvs === 0 ? 0 : Math.round((jrvsConActa / totalJrvs) * 100);
+  });
 
-  pct(canton: CantonProgress): number {
-    return canton.total === 0
-      ? 0
-      : Math.round((canton.done / canton.total) * 100);
+  /** Total JRVs sumando los cantones (para `sentActos / totalJrv` del template). */
+  readonly totalJrv = computed(() =>
+    this.progreso().reduce((s, p) => s + p.totalJrvs, 0),
+  );
+
+  /** SentActos = JRVs con acta (sum jrvsConActa). */
+  readonly sentActos = computed(() =>
+    this.progreso().reduce((s, p) => s + p.jrvsConActa, 0),
+  );
+
+  private reloadSub: Subscription | null = null;
+
+  ngOnInit(): void {
+    this.cargar();
+    this.realtime.start();
+    // C.1/C.2: invalidar caché cuando Supabase emita eventos debounced.
+    this.reloadSub = this.realtime.reload$.subscribe(() => {
+      this.cargar();
+    });
   }
 
-  /** Color tier by completion: full → green, mid → blue, low → amber. */
-  tier(canton: CantonProgress): 'green' | 'blue' | 'amber' {
+  ngOnDestroy(): void {
+    this.reloadSub?.unsubscribe();
+    this.realtime.stop();
+  }
+
+  cargar(): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.dashboardService.getDashboardCompleto().subscribe({
+      next: (data) => {
+        this.data.set(data);
+        this.loading.set(false);
+      },
+      error: (err: unknown) => {
+        const msg =
+          err instanceof Error ? err.message : 'No se pudo cargar el dashboard.';
+        this.error.set(msg);
+        this.loading.set(false);
+      },
+    });
+  }
+
+  pct(canton: ProgresoCanton): number {
+    return Math.round(canton.porcentaje);
+  }
+
+  /** Color tier: ≥100 verde, ≥50 azul, <50 ámbar. */
+  tier(canton: ProgresoCanton): 'green' | 'blue' | 'amber' {
     const p = this.pct(canton);
     return p >= 100 ? 'green' : p >= 50 ? 'blue' : 'amber';
+  }
+
+  reintentar(): void {
+    this.cargar();
+  }
+
+  private emptyResumen(): ResumenActas {
+    return {
+      enviadas: 0,
+      enDisputa: 0,
+      corregidas: 0,
+      aprobadas: 0,
+      totalActivas: 0,
+    };
   }
 }
