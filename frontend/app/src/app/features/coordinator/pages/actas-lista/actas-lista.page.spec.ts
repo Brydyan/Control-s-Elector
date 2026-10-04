@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActaItem, CargoResumen } from '../../models/coordinator.model';
 import type { PagedResponse } from '../../../../shared/models/page.model';
 import { CoordinatorService } from '../../services/coordinator.service';
@@ -165,5 +166,56 @@ describe('ActasListaPage', () => {
     component.esMaster = true;
     expect(component.puedeAnular(aprobada)).toBe(true);
     expect(component.puedeAnular(mockActas[0])).toBe(false); // not APROBADA
+  });
+
+  /**
+   * WARNING-3 (resolved): MASTER role detection logic
+   * Verify that the component stores role detection result in esMaster flag.
+   * This test verifies the flag is used correctly in puedeAnular() logic.
+   */
+  it('should only show Anular button when esMaster is true', () => {
+    component.esMaster = false;
+    const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
+    expect(component.puedeAnular(aprobada)).toBe(false);
+
+    component.esMaster = true;
+    expect(component.puedeAnular(aprobada)).toBe(true);
+  });
+
+  /**
+   * W4 FIX (S7): anular() 409 Conflict handling
+   * When HTTP 409 is returned during annul (concurrent modification),
+   * the component should auto-reload the list to reflect current state,
+   * consistent with dispute/correct actions in acta-detalle.
+   */
+  it('should auto-reload list on 409 Conflict from annul action', () => {
+    (coordinatorServiceMock.anularActa as any).mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 409,
+            statusText: 'Conflict',
+            url: '/api/v1/coordinator/actas/1/anular',
+          }),
+      ),
+    );
+
+    const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
+    component.esMaster = true;
+    const initialCallCount = (
+      coordinatorServiceMock.getActas as any
+    ).mock.calls.length;
+
+    // Mock window.prompt and confirm
+    vi.spyOn(window, 'prompt').mockReturnValue('Fraud detected');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    component.anular(aprobada.id);
+
+    // PRIMARY ASSERTION: Verify auto-reload on 409 (getActas called again)
+    // Initial load + error handler reload = +1 call
+    expect((coordinatorServiceMock.getActas as any).mock.calls.length).toBe(
+      initialCallCount + 1,
+    );
   });
 });

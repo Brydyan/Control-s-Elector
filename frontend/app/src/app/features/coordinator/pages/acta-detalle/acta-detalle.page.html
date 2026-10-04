@@ -159,11 +159,11 @@
         <div class="evidence-container">
           <div
             class="evidence-preview-wrapper"
-            *ngIf="data.acta.storageUrl; else placeholderImage"
+            *ngIf="data.acta.urlEvidencia; else placeholderImage"
             (click)="imagenZoomAbierto = true"
           >
             <img
-              [src]="data.acta.storageUrl"
+              [src]="data.acta.urlEvidencia"
               alt="Evidencia fotográfica de acta de escrutinio"
               class="evidence-image"
             />
@@ -188,6 +188,44 @@
               >
             </div>
           </ng-template>
+
+          <!-- T-FE-10 E.4: subida de contingencia cuando no hay foto -->
+          <div class="contingency-upload" *ngIf="!data.acta.urlEvidencia">
+            <input
+              #fileInputContingencia
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              (change)="onContingenciaImagenSeleccionada($event)"
+              data-testid="contingencia-input"
+            />
+            <app-button
+              label="Subir foto de contingencia"
+              icon="cloud-upload-outline"
+              variant="secondary"
+              [disabled]="uploadingContingencia"
+              (click)="fileInputContingencia.click()"
+              data-testid="contingencia-upload"
+            ></app-button>
+            <p *ngIf="uploadingContingencia" class="upload-status">
+              Subiendo...
+            </p>
+          </div>
+        </div>
+
+        <!-- T-FE-10 E.4: descarga expediente PDF CNE -->
+        <div class="pdf-actions">
+          <app-button
+            label="Descargar expediente CNE"
+            icon="document-text-outline"
+            variant="tertiary"
+            [disabled]="downloadingPdf"
+            (click)="descargarExpedientePdf()"
+            data-testid="pdf-download"
+          ></app-button>
+          <p *ngIf="downloadingPdf" class="download-status">
+            Generando PDF...
+          </p>
         </div>
       </app-card>
     </div>
@@ -522,7 +560,7 @@
   <!-- Fullscreen Image Zoom Modal -->
   <div
     class="modal-backdrop"
-    *ngIf="imagenZoomAbierto && data?.acta?.storageUrl"
+    *ngIf="imagenZoomAbierto && data?.acta.urlEvidencia"
     (click)="imagenZoomAbierto = false"
   >
     <div class="image-zoom-dialog" (click)="$event.stopPropagation()">
@@ -534,7 +572,7 @@
         ✕
       </button>
       <img
-        [src]="data!.acta.storageUrl"
+        [src]="data!.acta.urlEvidencia"
         alt="Acta de escrutinio ampliada"
         class="full-evidence-img"
       />

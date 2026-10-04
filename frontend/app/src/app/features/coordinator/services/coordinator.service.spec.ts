@@ -147,6 +147,12 @@ describe('CoordinatorService', () => {
       expect(detalle.totalVotosCalculado).toBe(100);
       expect(detalle.diferenciaChecksum).toBe(0);
       expect(detalle.checksumValido).toBe(true);
+      // T-FE-10 E.2: votos reales vienen en `detalles` (no hardcode 0).
+      const votosPorCandidato = detalle.candidatos.reduce(
+        (acc, c) => acc + c.votos,
+        0,
+      );
+      expect(votosPorCandidato).toBe(95);
     });
 
     const actaReq = httpTesting.expectOne(
@@ -164,29 +170,41 @@ describe('CoordinatorService', () => {
       nombreCargo: 'Prefecto/a',
       numeroJrv: 'JRV-12',
       totalVotosCandidatos: 95,
+      detalles: [
+        { candidatoId: 100, votos: 50 },
+        { candidatoId: 101, votos: 45 },
+      ],
+      urlEvidencia: 'https://s3.example.com/acta-7.webp',
+    });
+  });
+
+  /**
+   * T-FE-10 E.3: el detalle expone `urlEvidencia` (URL prefirmada S3),
+   * no `storageUrl`.
+   */
+  it('should expose urlEvidencia on acta detail (T-FE-10 E.3)', () => {
+    service.getActaDetalleCompleto(8).subscribe((detalle) => {
+      expect(detalle.acta.urlEvidencia).toBe('https://s3.example.com/acta-8.webp');
+      // El modelo legacy storageUrl ya no existe.
+      expect(
+        (detalle.acta as unknown as { storageUrl?: string }).storageUrl,
+      ).toBeUndefined();
     });
 
-    httpTesting
-      .expectOne(`${environment.apiUrl}/configuracion/cargos`)
-      .flush([{ id: 1, nombre: 'Prefecto/a', nivel: 'PROVINCIA' }]);
-    httpTesting.expectOne(`${environment.apiUrl}/observer/jrvs`).flush([
-      {
-        jrvId: 10,
-        numero: 'JRV-12',
-        parroquia: 'Centro',
-        cargosPendientes: 0,
-        cargosRegistrados: 1,
-      },
-    ]);
-    httpTesting
-      .expectOne(`${environment.apiUrl}/configuracion/candidatos?cargoId=1`)
-      .flush([]);
-    httpTesting
-      .expectOne(`${environment.apiUrl}/configuracion/partidos`)
-      .flush([]);
-    httpTesting
-      .expectOne(`${environment.apiUrl}/coordinator/actas/7/historial`)
-      .flush([]);
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/coordinator/actas/8`,
+    );
+    req.flush({
+      id: 8,
+      jrvId: 1,
+      cargoId: 1,
+      estado: 'ENVIADA',
+      totalSufragantes: 100,
+      votosBlancos: 0,
+      votosNulos: 0,
+      fechaRegistro: '2026-09-12T12:00:00Z',
+      urlEvidencia: 'https://s3.example.com/acta-8.webp',
+    });
   });
 
   it('should throw on a bare array response instead of wrapping it', () => {
@@ -290,5 +308,22 @@ describe('CoordinatorService', () => {
       votosNulos: 2,
       fechaRegistro: '2026-09-12T12:00:00Z',
     });
+  });
+
+  /**
+   * T-FE-10 E.1 / V.3: `anularActa` debe enviar `{ motivo }` en el body del
+   * DELETE para evitar 400 `MissingRequestBody` del backend.
+   */
+  it('should send motivo in DELETE body when anularActa is called', () => {
+    service.anularActa(99, 'Datos verificados como fraudulentos').subscribe();
+
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/coordinator/actas/99`,
+    );
+    expect(req.request.method).toBe('DELETE');
+    expect(req.request.body).toEqual({
+      motivo: 'Datos verificados como fraudulentos',
+    });
+    req.flush(null);
   });
 });
