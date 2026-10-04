@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map, switchMap } from 'rxjs';
+import { Observable, forkJoin, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type { PagedResponse } from '../../../shared/models/page.model';
 import {
@@ -15,6 +15,30 @@ import {
   HistorialEntry,
   JrvResumen,
 } from '../models/coordinator.model';
+
+/**
+ * Shape que retorna el backend en GET /coordinator/actas/{id}
+ * (ActaDetalleCompletoDto.java). Mapeado al modelo FE en
+ * {@link CoordinatorService.toActaDetalleCompleto}.
+ */
+interface BackendActaDetalleCompleto {
+  id: number;
+  jrvId: number;
+  cargoId: number;
+  registradaPorId?: number | null;
+  estado: ActaItem['estado'];
+  totalSufragantes?: number | null;
+  votosBlancos?: number | null;
+  votosNulos?: number | null;
+  fechaRegistro: string;
+  motivoAnulacion?: string | null;
+  nombreCargo?: string | null;
+  numeroJrv?: string | null;
+  totalVotosCandidatos?: number | null;
+  detalles?: Array<{ candidatoId: number; votos: number }> | null;
+  urlEvidencia?: string | null;
+  motivoDisputa?: string | null;
+}
 
 interface PartidoDto {
   id: number;
@@ -172,48 +196,76 @@ export class CoordinatorService {
   }
 
   getActaDetalleCompleto(actaId: number): Observable<ActaDetalleCompleto> {
-    return this.getActaById(actaId).pipe(
-      switchMap((acta) =>
-        forkJoin({
-          cargos: this.getCargos(),
-          jrvs: this.getJrvs(),
-          candidatos: this.getCandidatosPorCargo(acta.cargoId),
-          historial: this.getHistorial(actaId),
-        }).pipe(
-          map(({ cargos, jrvs, candidatos, historial }) => {
-            const cargo = cargos.find((c) => c.id === acta.cargoId);
-            const jrv = jrvs.find((j) => j.id === acta.jrvId);
+    // T-FE-10 E.2: el backend expone endpoint único que retorna
+    // ActaDetalleCompletoDto con `detalles` (votos reales por candidato),
+    // `urlEvidencia` (URL prefirmada S3), `motivoDisputa`, etc.
+    // Antes: forkJoin de 5 GETs (getActaById + getCargos + getJrvs +
+    // getCandidatosPorCargo + getHistorial) con hardcode `votos: 0`.
+    return this.http
+      .get<BackendActaDetalleCompleto>(`${this.baseUrl}/actas/${actaId}`)
+      .pipe(map((raw) => this.toActaDetalleCompleto(raw)));
+  }
 
-            // When the backend provides the candidate-votes subtotal, the
-            // checksum is exact: SUM(candidatos) + blancos + nulos == total.
-            // Otherwise fall back to the legacy partial check (blancos + nulos).
-            const tieneSubtotal = acta.totalVotosCandidatos != null;
-            const totalVotosCalculado =
-              (tieneSubtotal ? (acta.totalVotosCandidatos as number) : 0) +
-              (acta.votosBlancos || 0) +
-              (acta.votosNulos || 0);
-            const diferenciaChecksum =
-              totalVotosCalculado - (acta.totalSufragantes || 0);
-            const checksumValido =
-              (acta.totalSufragantes || 0) > 0 &&
-              (tieneSubtotal
-                ? diferenciaChecksum === 0
-                : totalVotosCalculado <= (acta.totalSufragantes || 0));
+  private toActaDetalleCompleto(
+    raw: BackendActaDetalleCompleto,
+  ): ActaDetalleCompleto {
+    const acta: ActaItem = {
+      id: raw.id,
+      jrvId: raw.jrvId,
+      cargoId: raw.cargoId,
+      registradaPorId: raw.registradaPorId ?? undefined,
+      estado: raw.estado,
+      urlEvidencia: raw.urlEvidencia ?? null,
+      totalSufragantes: raw.totalSufragantes ?? 0,
+      votosBlancos: raw.votosBlancos ?? 0,
+      votosNulos: raw.votosNulos ?? 0,
+      fechaRegistro: raw.fechaRegistro,
+      motivoAnulacion: raw.motivoAnulacion ?? null,
+      motivoDisputa: raw.motivoDisputa ?? null,
+      nombreCargo: raw.nombreCargo ?? null,
+      numeroJrv: raw.numeroJrv ?? null,
+      totalVotosCandidatos: raw.totalVotosCandidatos ?? null,
+      detalles: raw.detalles ?? null,
+    };
 
-            return {
-              acta,
-              cargo,
-              jrv,
-              candidatos,
-              historial: historial ?? [],
-              totalVotosCalculado,
-              diferenciaChecksum,
-              checksumValido,
-            };
-          }),
-        ),
-      ),
-    );
+    const candidatos: CandidatoResumen[] = (raw.detalles ?? []).map((d) => ({
+      id: d.candidatoId,
+      nombre: '',
+      orden: 0,
+      cargoId: raw.cargoId,
+      partidoId: 0,
+      votos: d.votos,
+    }));
+
+    const jrv: JrvResumen | undefined = raw.numeroJrv
+      ? { id: raw.jrvId, numero: raw.numeroJrv, parroquia: null }
+      : undefined;
+
+    const cargo: CargoResumen | undefined = raw.nombreCargo
+      ? { id: raw.cargoId, nombre: raw.nombreCargo, nivel: '' }
+      : undefined;
+
+    // Checksum exacto: SUM(detalles.votos) + blancos + nulos == total.
+    const totalVotosCalculado =
+      (raw.totalVotosCandidatos ??
+        candidatos.reduce((s, c) => s + c.votos, 0)) +
+      (raw.votosBlancos ?? 0) +
+      (raw.votosNulos ?? 0);
+    const diferenciaChecksum =
+      totalVotosCalculado - (raw.totalSufragantes ?? 0);
+    const checksumValido =
+      (raw.totalSufragantes ?? 0) > 0 && diferenciaChecksum === 0;
+
+    return {
+      acta,
+      jrv,
+      cargo,
+      candidatos,
+      historial: [],
+      totalVotosCalculado,
+      diferenciaChecksum,
+      checksumValido,
+    };
   }
 
   getHistorial(actaId: number): Observable<HistorialEntry[]> {
@@ -249,11 +301,41 @@ export class CoordinatorService {
     );
   }
 
-  anularActa(actaId: number): Observable<void> {
+  /**
+   * T-FE-10 E.1: el backend `DELETE /coordinator/actas/{id}` requiere
+   * `@Valid @RequestBody AnulacionDto` con `motivo` obligatorio.
+   * Enviar el motivo en el body evita 400 `MissingRequestBody`.
+   */
+  /**
+   * T-FE-10 E.4: subida de imagen de contingencia (T-BE-18). El COORDINATOR
+   * puede subir el respaldo fotográfico cuando el OBSERVER no pudo hacerlo.
+   * Mismo `FormData` con clave `'imagen'` que el endpoint del OBSERVER.
+   */
+  subirImagenContingencia(actaId: number, file: File): Observable<void> {
+    const formData = new FormData();
+    formData.append('imagen', file);
+    return this.http.post<void>(
+      `${this.baseUrl}/actas/${actaId}/imagen`,
+      formData,
+    );
+  }
+
+  /**
+   * T-FE-10 E.4: descarga del expediente de impugnación CNE en PDF (T-BE-20).
+   * Devuelve `Blob` con `application/pdf` para abrir o descargar.
+   */
+  descargarExpedientePdf(actaId: number): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/actas/${actaId}/expediente-pdf`, {
+      responseType: 'blob',
+    });
+  }
+
+  anularActa(actaId: number, motivo: string): Observable<void> {
     // Backend returns 204 No Content; HttpClient errors on 2xx without a body
     // unless we ask for { responseType: 'text' } + observe: 'response'.
     return this.http
       .delete(`${this.baseUrl}/actas/${actaId}`, {
+        body: { motivo },
         observe: 'response',
         responseType: 'text',
       })

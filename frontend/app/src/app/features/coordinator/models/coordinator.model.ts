@@ -9,7 +9,8 @@ export interface ActaItem {
   cargoId: number;
   registradaPorId?: number;
   estado: EstadoActa;
-  storageUrl?: string | null;
+  /** T-FE-10 E.3: URL prefirmada S3 (reemplaza `storageUrl`, columna inexistente). */
+  urlEvidencia?: string | null;
   totalSufragantes: number;
   votosBlancos: number;
   votosNulos: number;
@@ -18,6 +19,12 @@ export interface ActaItem {
   nombreCargo?: string | null;
   numeroJrv?: string | null;
   totalVotosCandidatos?: number | null;
+  motivoDisputa?: string | null;
+  /** T-FE-10 E.2: votos reales por candidato (devuelto por ActaDetalleCompletoDto). */
+  detalles?: Array<{
+    candidatoId: number;
+    votos: number;
+  }> | null;
 }
 
 export interface CandidatoResumen {
