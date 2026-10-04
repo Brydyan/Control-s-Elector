@@ -202,9 +202,8 @@ describe('ActasListaPage', () => {
 
     const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
     component.esMaster = true;
-    const initialCallCount = (
-      coordinatorServiceMock.getActas as any
-    ).mock.calls.length;
+    const initialCallCount = (coordinatorServiceMock.getActas as any).mock.calls
+      .length;
 
     // Mock window.prompt and confirm
     vi.spyOn(window, 'prompt').mockReturnValue('Fraud detected');
