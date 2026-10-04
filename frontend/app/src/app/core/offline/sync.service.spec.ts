@@ -106,6 +106,13 @@ describe('SyncService', () => {
     expect(transmitter.enviarActaDirecta).not.toHaveBeenCalled();
   });
 
+  it('should register 30s timer on start (S4)', async () => {
+    const setIntervalSpy = vi.spyOn(global, 'setInterval');
+    service.start();
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 30_000);
+    setIntervalSpy.mockRestore();
+  });
+
   it('should sync two-step: payload then image', async () => {
     transmitter.enviarActaDirecta = vi.fn().mockReturnValue(of({ id: 42 }));
     transmitter.subirImagenActa = vi.fn().mockReturnValue(of(undefined));
