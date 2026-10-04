@@ -87,7 +87,9 @@ export class OfflineStorageService {
   // Cola de actas pendientes
   // -----------------------------------------------------------------
 
-  async encolarActa(acta: Omit<PendingActa, 'id' | 'createdAt' | 'retries' | 'lastError'>): Promise<string> {
+  async encolarActa(
+    acta: Omit<PendingActa, 'id' | 'createdAt' | 'retries' | 'lastError'>,
+  ): Promise<string> {
     const full: PendingActa = {
       id: this.uuid(),
       createdAt: Date.now(),
@@ -110,7 +112,11 @@ export class OfflineStorageService {
     await db.delete('pending_actas', id);
   }
 
-  async actualizarIntentos(id: string, retries: number, lastError: string | null): Promise<void> {
+  async actualizarIntentos(
+    id: string,
+    retries: number,
+    lastError: string | null,
+  ): Promise<void> {
     const db = await this.getDB();
     const current = await db.get('pending_actas', id);
     if (!current) return;
@@ -146,7 +152,10 @@ export class OfflineStorageService {
   // -----------------------------------------------------------------
 
   private uuid(): string {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    if (
+      typeof crypto !== 'undefined' &&
+      typeof crypto.randomUUID === 'function'
+    ) {
       return crypto.randomUUID();
     }
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {

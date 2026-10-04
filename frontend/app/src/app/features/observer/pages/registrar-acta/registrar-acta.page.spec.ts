@@ -261,9 +261,7 @@ describe('RegistrarActaPage', () => {
     component.currentStep = 'IMAGEN';
     fixture.detectChanges();
 
-    const fileInput = fixture.nativeElement.querySelector(
-      'input[type="file"]',
-    );
+    const fileInput = fixture.nativeElement.querySelector('input[type="file"]');
     expect(fileInput).toBeTruthy();
     expect(fileInput.getAttribute('accept')).toBe('image/*');
     expect(fileInput.getAttribute('capture')).toBe('environment');
@@ -329,9 +327,7 @@ describe('RegistrarActaPage', () => {
         error: (e: unknown) => void;
       }) => handlers.error({ error: { message: 'Network timeout' } }),
     } as never);
-    offlineStorageSpy.encolarActa.and.returnValue(
-      Promise.resolve('mock-uuid'),
-    );
+    offlineStorageSpy.encolarActa.and.returnValue(Promise.resolve('mock-uuid'));
     offlineStorageSpy.eliminarBorrador.and.returnValue(Promise.resolve());
 
     component.enviarActaFinal();

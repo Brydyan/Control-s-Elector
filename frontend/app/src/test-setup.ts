@@ -36,18 +36,23 @@ if (!window.matchMedia) {
 // OffscreenCanvas idem. Solo necesitamos los símbolos para que el módulo compile.
 if (typeof globalThis.createImageBitmap === 'undefined') {
   globalThis.createImageBitmap = (() =>
-    Promise.reject(new Error('createImageBitmap no mockeado en este test'))) as typeof createImageBitmap;
+    Promise.reject(
+      new Error('createImageBitmap no mockeado en este test'),
+    )) as typeof createImageBitmap;
 }
 if (typeof globalThis.OffscreenCanvas === 'undefined') {
   class OffscreenCanvasStub {
     constructor(_w: number, _h: number) {}
-    getContext(): unknown { return null; }
+    getContext(): unknown {
+      return null;
+    }
     convertToBlob(): Promise<Blob> {
       return Promise.reject(new Error('OffscreenCanvas no mockeado'));
     }
   }
-  (globalThis as unknown as { OffscreenCanvas: typeof OffscreenCanvas }).OffscreenCanvas =
-    OffscreenCanvasStub as unknown as typeof OffscreenCanvas;
+  (
+    globalThis as unknown as { OffscreenCanvas: typeof OffscreenCanvas }
+  ).OffscreenCanvas = OffscreenCanvasStub as unknown as typeof OffscreenCanvas;
 }
 
 // jsdom polyfill para Web Crypto API (PinAuthService en T-FE-09).
@@ -63,7 +68,9 @@ if (
       data: BufferSource,
     ): Promise<ArrayBuffer> => {
       const algoName =
-        typeof algorithm === 'string' ? algorithm : (algorithm as { name: string }).name;
+        typeof algorithm === 'string'
+          ? algorithm
+          : (algorithm as { name: string }).name;
       const hashName = (() => {
         if (algoName === 'SHA-256' || algoName === 'sha-256') return 'sha256';
         if (algoName === 'SHA-384') return 'sha384';

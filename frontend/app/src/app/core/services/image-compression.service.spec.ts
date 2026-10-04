@@ -29,9 +29,9 @@ describe('ImageCompressionService', () => {
       height: 1080,
       close: vi.fn(),
     } as unknown as ImageBitmap;
-    const convertToBlob = vi.fn().mockResolvedValue(
-      new Blob(['x'], { type: 'image/webp' }),
-    );
+    const convertToBlob = vi
+      .fn()
+      .mockResolvedValue(new Blob(['x'], { type: 'image/webp' }));
     const getContext = vi.fn().mockReturnValue({
       drawImage: vi.fn(),
     });
@@ -76,7 +76,9 @@ describe('ImageCompressionService', () => {
       OffscreenCanvasMock;
     vi.spyOn(globalThis, 'createImageBitmap').mockResolvedValue(fakeBitmap);
 
-    const result = await service.compress(new Blob(['x'], { type: 'image/jpeg' }));
+    const result = await service.compress(
+      new Blob(['x'], { type: 'image/jpeg' }),
+    );
 
     expect(result.type).toBe('image/webp');
     expect(convertToBlob).toHaveBeenCalledTimes(1); // 1 sola pasada si <500KB

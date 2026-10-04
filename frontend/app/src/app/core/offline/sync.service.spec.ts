@@ -1,11 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of, throwError } from 'rxjs';
 import { vi, afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  ACTA_TRANSMITTER,
-  ActaTransmitter,
-  SyncService,
-} from './sync.service';
+import { ACTA_TRANSMITTER, ActaTransmitter, SyncService } from './sync.service';
 import { OfflineStorageService } from './offline-storage.service';
 
 /**
@@ -138,5 +134,4 @@ describe('SyncService', () => {
     );
     expect(service.pendientes()).toBe(0);
   });
-
 });

@@ -10,6 +10,13 @@ on:
       - 'frontend/**'
       - '.github/workflows/ci.yml'
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ===========================================================================
   # BACKEND JOBS
@@ -130,10 +137,9 @@ jobs:
         working-directory: frontend/app
         run: pnpm install --frozen-lockfile
 
-      - name: Run Unit Tests (Headless)
+      - name: Run Unit Tests (Vitest)
         working-directory: frontend/app
         run: pnpm test:ci
-        continue-on-error: true
 
   frontend-build:
     name: Frontend Production Build
