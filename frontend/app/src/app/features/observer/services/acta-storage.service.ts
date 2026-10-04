@@ -47,7 +47,7 @@ export class ActaStorageService {
     }
   }
 
-  eliminarBorrador(jrvId: number, cargoId: number): void {
+  limpiarBorrador(jrvId: number, cargoId: number): void {
     if (typeof localStorage === 'undefined') return;
     try {
       localStorage.removeItem(this.getKey(jrvId, cargoId));

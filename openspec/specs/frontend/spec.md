@@ -329,3 +329,192 @@ AND      el botón "Reintentar" permite volver a solicitar los datos al backend
 - **G1:** Peticiones HTTP dirigidas a `/api/v1/observer/*` con Bearer Token inyectado.
 - **G2:** Segregación estricta de rutas con `roleGuard(['OBSERVER', 'MASTER'])`.
 - **G3:** Mapeo de estados de acta compatible con el backend (`BORRADOR`, `ENVIADA`, `APROBADA`, `EN_DISPUTA`, `CORREGIDA`, `ANULADA`).
+
+---
+
+# Spec — T-FE-07: Formulario de Registro de Acta (Wizard 3 Pasos)
+
+## Escenarios
+
+### S1 — Carga dinámica de candidatos y restauración de borrador
+
+```gherkin
+GIVEN    veedor en /observer/jrv/:jrvId/cargo/:cargoId/registrar
+WHEN     RegistrarActaPage inicializa
+THEN     consulta candidatos y partidos para el cargoId
+AND      si existe un borrador previo en local storage, rellena automáticamente los votos ingresados
+```
+
+### S2 — Validación en tiempo real del cuadre de votos
+
+```gherkin
+GIVEN    formulario en paso VOTOS con candidatos cargados
+WHEN     usuario ingresa votos a candidatos, votos en blanco, nulos y total sufragantes
+THEN     se actualizan reactivamente: totalVotosComputados, diferenciaChecksum e isChecksumValid
+AND      si totalVotosComputados === totalSufragantes (y totalSufragantes > 0), el indicador muestra cuadre exacto
+```
+
+### S3 — Navegación del Wizard: Votos a Imagen
+
+```gherkin
+GIVEN    usuario en paso VOTOS
+WHEN     presiona "Siguiente: Respaldo Fotográfico"
+THEN     currentStep cambia a 'IMAGEN'
+AND      se despliega el selector de fotografía y captura
+```
+
+### S4 — Carga y previsualización de fotografía
+
+```gherkin
+GIVEN    usuario en paso IMAGEN
+WHEN     selecciona o captura una imagen
+THEN     se genera la URL de vista previa (DataURL)
+AND      se habilita el botón "Siguiente: Revisión"
+```
+
+### S5 — Guardado como Borrador (Permite Inconsistencias Aritméticas)
+
+```gherkin
+GIVEN    acta con digitación parcial (suma aún no cuadra)
+WHEN     usuario presiona "Guardar como Borrador"
+THEN     envía payload a POST /api/v1/observer/actas/borrador
+AND      backend responde con éxito (HTTP 200)
+AND      si hay imagen adjunta, se envía a POST /api/v1/observer/actas/:id/imagen
+```
+
+### S6 — Envío de Acta Final (Exige Cuadre Estricto)
+
+```gherkin
+GIVEN    acta con cuadre perfecto (isChecksumValid === true)
+WHEN     usuario presiona "Confirmar y Transmitir Acta"
+THEN     envía payload a POST /api/v1/observer/actas
+AND      si hay imagen adjunta, ejecuta POST /api/v1/observer/actas/:id/imagen
+AND      redirige a /observer/jrv/:jrvId/cargos tras confirmación visual
+```
+
+### S7 — Bloqueo de Envío Final ante Descuadre
+
+```gherkin
+GIVEN    acta con diferenciaChecksum !== 0
+WHEN     usuario intenta transmitir acta final
+THEN     la acción se rechaza
+AND      se muestra mensaje de error: "Verificación electoral inválida: los votos no cuadran"
+```
+
+## Garantías
+
+- **G1:** Invariante matemático verificado antes del envío final.
+- **G2:** Contrato JSON idéntico a `ActaRequestDto` del backend Spring Boot.
+- **G3:** Subida de evidencia encadenada usando `@RequestPart("imagen")`.
+
+---
+
+# T-FE-08: Captura y Compresión de Imagen (WebP)
+
+## Escenarios
+
+### S1 — Captura y compresión nativa exitosa
+
+```gherkin
+GIVEN    usuario en dispositivo móvil con Capacitor
+WHEN     activa la captura de foto
+THEN     la cámara del dispositivo se abre
+AND      la fotografía capturada se dibuja en Canvas y se exporta a WebP (calidad 0.82)
+AND      si el tamaño es <= 500 KB, se emite el Blob resultante
+```
+
+### S2 — Recompresión adaptativa si excede 500 KB
+
+```gherkin
+GIVEN    fotografía capturada de alta resolución
+WHEN     la primera pasada a calidad 0.82 resulta en 750 KB (> 500 KB)
+THEN     se ejecuta una segunda compresión automática a calidad 0.65
+AND      el Blob final resultante tiene tamaño < 500 KB
+```
+
+### S3 — Fallback web para navegadores de escritorio
+
+```gherkin
+GIVEN    usuario utilizando la app en navegador web sin Capacitor runtime
+WHEN     presiona "Tomar o seleccionar foto"
+THEN     se activa el input HTML de archivo (<input type="file" accept="image/*">)
+AND      el archivo seleccionado pasa por la misma tubería de compresión WebP en Canvas
+```
+
+### S4 — Transmisión Multipart con clave 'imagen'
+
+```gherkin
+GIVEN    Blob WebP listo para subida
+WHEN     se invoca ObserverService.subirImagenActa(actaId, file)
+THEN     se construye un FormData con la clave exacta 'imagen' (formData.append('imagen', blob, 'acta.webp'))
+AND      se envía vía HTTP POST a /api/v1/observer/actas/:id/imagen
+AND      el backend Spring Boot acepta la petición sin MissingServletRequestPartException
+```
+
+### S5 — Manejo de permisos o cancelación de cámara
+
+```gherkin
+GIVEN    diálogo de permisos de cámara del sistema operativo
+WHEN     el usuario cancela o niega el permiso
+THEN     la aplicación captura el error limpiamente
+AND      permite al usuario seleccionar un archivo desde el almacenamiento del dispositivo
+```
+
+## Garantías
+
+- **G1:** Formato de salida estricto `image/webp`.
+- **G2:** Tamaño acotado (< 500 KB) para permitir transmisión rápida en redes 2G/3G.
+- **G3:** Clave multipart obligatoria `'imagen'` compatible con `@RequestPart("imagen")` de Spring Boot.
+
+---
+
+## T-FE-09: Resiliencia Offline, Cola IndexedDB y Desbloqueo por PIN
+
+### S1 — Desbloqueo por PIN en campo sin internet
+
+```gherkin
+GIVEN    veedor autenticado previamente que configuró un PIN de 4 dígitos
+AND      se encuentra en una zona rural sin señal (!navigator.onLine)
+AND      el JWT de 15 minutos ha expirado
+WHEN     el veedor abre o interactúa con la aplicación
+THEN     la aplicación no redirige a /login
+AND      presenta la pantalla modal de desbloqueo por PIN
+AND      al ingresar el PIN correcto, se restablece el acceso a las vistas de trabajo
+```
+
+### S2 — Fallo de transmisión enruta a cola IndexedDB
+
+```gherkin
+GIVEN    veedor transmite un acta con cuadre correcto pero falla la conexión HTTP
+WHEN     ObserverService detecta error de red (HTTP 0 o timeout)
+THEN     el acta (datos + foto) se almacena en el almacén pending_actas de IndexedDB
+AND      la interfaz informa: "Acta guardada en este dispositivo. Se transmitirá en cuanto recupere señal."
+```
+
+### S3 — Sincronización automática al recuperar conexión
+
+```gherkin
+GIVEN    1 o más actas pendientes en la cola IndexedDB
+WHEN     el dispositivo recupera señal de red (evento 'online')
+THEN     SyncService inicia la transmisión secuencial
+AND      por cada acta: envía datos a POST /api/v1/observer/actas
+AND      seguidamente envía la foto a POST /api/v1/observer/actas/:id/imagen
+AND      al recibir HTTP 200/201 en ambos, elimina el registro de IndexedDB
+AND      notifica visualmente: "Sincronización completada"
+```
+
+### S4 — Reintento periódico de salvaguarda cada 30 segundos
+
+```gherkin
+GIVEN    actas encoladas en IndexedDB
+AND      la conexión es inestable (oscila entre 2G y desconexión)
+WHEN     transcurren 30 segundos
+THEN     SyncService verifica si la red está disponible y reintenta el envío de la cola
+```
+
+## Garantías
+
+- **G1:** Cero pérdida de datos ante caídas de red o expiración de JWT en campo.
+- **G2:** Eliminación de cola local únicamente tras confirmación HTTP 2xx de datos e imagen.
+- **G3:** Protección de acceso mediante PIN local de 4 dígitos cuando no hay conexión.
+

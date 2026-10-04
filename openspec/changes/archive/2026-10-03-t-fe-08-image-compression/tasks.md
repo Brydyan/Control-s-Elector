@@ -2,17 +2,21 @@
 
 ## Fase A: Servicio de Compresión, Web Worker y Captura PWA
 
-- [ ] **A.1** — Implementar `core/services/image-compression.service.ts`:
+- [x] **A.1** — Implementar `core/services/image-compression.service.ts`:
   - Captura PWA mediante `<input type="file" accept="image/*" capture="environment">` con detección y fallback secundario a Capacitor Camera si aplica.
   - Decodificación y desescalado nativo directo en buffer GPU/C++ usando `createImageBitmap(blob, { resizeWidth: 1920, resizeQuality: 'medium' })`.
   - Prohibición estricta de Base64 (`readAsDataURL`): manejo exclusivo de `Blob` / `File` binario y URLs efímeras con `URL.createObjectURL()`.
   - Liberación inmediata de memoria con `URL.revokeObjectURL(url)` una vez proyectada la vista previa.
 - [ ] **A.2** — Implementar Web Worker `core/workers/image-compression.worker.ts`:
-  - Recepción de `ImageBitmap` o `Blob` transferible.
+  - Recepción de `ImageBitmap` o `Blob` transferable.
   - Dibujo y renderizado offscreen usando `OffscreenCanvas`.
   - Compresión a `image/webp` con calidad inicial 0.82; reintento a 0.65 si el resultado supera 500 KB.
   - Cierre explícito de bitmaps con `bitmap.close()`.
-- [ ] **A.3** — Tests unitarios de compresión y memoria en `image-compression.service.spec.ts`:
+  > **DESVÍO DECLARADO** (Opción B acordada con PO, ver `apply-progress.md` § H-D5):
+  > Web Worker NO implementado en esta iteración. La compresión corre en main thread.
+  > Trade-off aceptado: 400-800ms de UI freeze durante encode. A.1 ya entrega D1, D3, D4.
+  > Refactor incremental futuro: extraer compresión a worker sin cambiar API pública.
+- [x] **A.3** — Tests unitarios de compresión y memoria en `image-compression.service.spec.ts`:
   - Verificar llamada a `createImageBitmap` con `{ resizeWidth: 1920, resizeQuality: 'medium' }`.
   - Verificar generación de `Blob` con MIME type exacto `image/webp`.
   - Verificar ausencia total de strings Base64 (`data:image/`) en el heap / pipeline de procesamiento.
@@ -28,6 +32,7 @@
 ## Fase C: Integración con Wizard de Registro
 
 - [x] **C.1** — Conectar paso `IMAGEN` de `RegistrarActaPage` con el archivo seleccionado y vista previa mediante `URL.createObjectURL()` (sin Base64).
+  > Fix aplicado en esta iteración: `onFileSelected` usaba `FileReader.readAsDataURL` (violación D1). Reemplazado por `ImageCompressionService.createPreviewUrl` + `revokePreviewUrl` en `ngOnDestroy`.
 - [x] **C.2** — Enlace tras `guardarComoBorrador()` o `enviarActaFinal()` para disparar la subida fotográfica comprimida.
 
 ## Verificación por Mutación

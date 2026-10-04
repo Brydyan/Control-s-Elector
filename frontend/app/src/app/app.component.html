@@ -1,3 +1,6 @@
 <ion-app>
   <ion-router-outlet></ion-router-outlet>
+  @if (authStore.requiresPinUnlock()) {
+    <app-pin-unlock-modal></app-pin-unlock-modal>
+  }
 </ion-app>

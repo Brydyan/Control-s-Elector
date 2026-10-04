@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -9,6 +9,8 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 
+import { ImageCompressionService } from '../../../../core/services/image-compression.service';
+import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
 import {
   ActaDetalleItem,
   ActaRequest,
@@ -33,11 +35,13 @@ type Step = 'VOTOS' | 'IMAGEN' | 'REVISION';
   templateUrl: './registrar-acta.page.html',
   styleUrls: ['./registrar-acta.page.scss'],
 })
-export class RegistrarActaPage implements OnInit {
+export class RegistrarActaPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly observerService = inject(ObserverService);
   private readonly storageService = inject(ActaStorageService);
+  private readonly imageCompression = inject(ImageCompressionService);
+  private readonly offlineStorage = inject(OfflineStorageService);
 
   jrvId!: number;
   cargoId!: number;
@@ -58,6 +62,8 @@ export class RegistrarActaPage implements OnInit {
 
   selectedImageFile: File | null = null;
   imagePreviewUrl: string | null = null;
+  /** D7 (T-FE-08 S5): true cuando el usuario cancela cámara o no selecciona archivo. */
+  captureCancelled = false;
 
   ngOnInit(): void {
     const jrvParam = this.route.snapshot.paramMap.get('jrvId');
@@ -85,6 +91,8 @@ export class RegistrarActaPage implements OnInit {
           }
         });
 
+        // T-FE-09 V.5: restaurar borrador IndexedDB si existe (resiliencia LMK).
+        void this.restaurarBorradorOffline();
         // Restaurar borrador local si existe
         this.restaurarBorradorLocal();
         this.loading = false;
@@ -95,6 +103,25 @@ export class RegistrarActaPage implements OnInit {
         console.error('Error loading candidatos:', err);
       },
     });
+  }
+
+  /**
+   * T-FE-09 V.5: tras cargar candidatos, consulta `acta_drafts` y, si hay
+   * un borrador para (jrvId, cargoId), repobla el estado del formulario.
+   */
+  private async restaurarBorradorOffline(): Promise<void> {
+    const draftId = OfflineStorageService.draftId(this.jrvId, this.cargoId);
+    const draft = await this.offlineStorage.obtenerBorrador(draftId);
+    if (!draft) return;
+    this.totalSufragantes = draft.totalSufragantes;
+    this.votosBlancos = draft.votosBlancos;
+    this.votosNulos = draft.votosNulos;
+    Object.entries(draft.votosPorCandidato).forEach(([id, votos]) => {
+      this.votosPorCandidato.set(Number(id), Number(votos));
+    });
+    this.mostrarMensajeBorrador(
+      'Borrador restaurado desde almacenamiento offline.',
+    );
   }
 
   private restaurarBorradorLocal(): void {
@@ -190,7 +217,32 @@ export class RegistrarActaPage implements OnInit {
 
   irAPasoImagen(): void {
     this.error = null;
+    // T-FE-09 B.3 / V.4 — patrón "Guardar antes de capturar":
+    // persistir el estado actual en IndexedDB antes de abrir la cámara
+    // para sobrevivir un eventual LMK de Android.
+    void this.guardarBorradorOffline();
     this.currentStep = 'IMAGEN';
+  }
+
+  /**
+   * Persiste el estado actual del wizard en IndexedDB (`acta_drafts`).
+   * Idempotente: reemplaza el borrador previo para esta (jrvId, cargoId).
+   */
+  private async guardarBorradorOffline(): Promise<void> {
+    const votosObj: Record<number, number> = {};
+    this.votosPorCandidato.forEach((v, k) => {
+      votosObj[k] = v;
+    });
+    await this.offlineStorage.guardarBorrador({
+      draftId: OfflineStorageService.draftId(this.jrvId, this.cargoId),
+      jrvId: this.jrvId,
+      cargoId: this.cargoId,
+      totalSufragantes: this.totalSufragantes,
+      votosBlancos: this.votosBlancos,
+      votosNulos: this.votosNulos,
+      votosPorCandidato: votosObj,
+      updatedAt: Date.now(),
+    });
   }
 
   onFileSelected(event: Event): void {
@@ -198,12 +250,28 @@ export class RegistrarActaPage implements OnInit {
     if (target.files && target.files[0]) {
       const file = target.files[0];
       this.selectedImageFile = file;
+      this.captureCancelled = false;
+      this.error = null;
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.imagePreviewUrl = reader.result as string;
-      };
-      reader.readAsDataURL(file);
+      // D1 (T-FE-08): usar URL.createObjectURL (Blob binario) en vez de
+      // FileReader.readAsDataURL (que produce data:image/... Base64 en heap).
+      if (this.imagePreviewUrl) {
+        this.imageCompression.revokePreviewUrl(this.imagePreviewUrl);
+      }
+      this.imagePreviewUrl = this.imageCompression.createPreviewUrl(file);
+      return;
+    }
+
+    // D7 (T-FE-08 S5): usuario canceló cámara o no seleccionó archivo.
+    // Estado informativo; NO resetear datos digitados (currentStep, votos, etc.).
+    this.captureCancelled = true;
+    this.error = null;
+  }
+
+  ngOnDestroy(): void {
+    // D1 cleanup: revocar URL efímera al desmontar la página.
+    if (this.imagePreviewUrl) {
+      this.imageCompression.revokePreviewUrl(this.imagePreviewUrl);
     }
   }
 
@@ -267,6 +335,10 @@ export class RegistrarActaPage implements OnInit {
             .subirImagenActa(res.id, this.selectedImageFile)
             .subscribe({
               next: () => {
+                // Éxito total: limpiar draft.
+                void this.offlineStorage.eliminarBorrador(
+                  OfflineStorageService.draftId(this.jrvId, this.cargoId),
+                );
                 this.finalizarEnvio();
               },
               error: (imgErr) => {
@@ -278,6 +350,9 @@ export class RegistrarActaPage implements OnInit {
               },
             });
         } else {
+          void this.offlineStorage.eliminarBorrador(
+            OfflineStorageService.draftId(this.jrvId, this.cargoId),
+          );
           this.finalizarEnvio();
         }
       },
@@ -286,8 +361,35 @@ export class RegistrarActaPage implements OnInit {
         this.error =
           'Error al enviar el acta: ' +
           (err.error?.message || 'Revisa la conexión.');
+        // T-FE-09 S2 / G1: encolar en IndexedDB para sync posterior.
+        void this.encolarActaOffline(payload, err);
       },
     });
+  }
+
+  /**
+   * T-FE-09 S2: encolar acta + foto en IndexedDB tras fallo HTTP.
+   * El SyncService la transmitirá al recuperar señal.
+   */
+  private async encolarActaOffline(
+    payload: ActaRequest,
+    _err: unknown,
+  ): Promise<void> {
+    try {
+      await this.offlineStorage.encolarActa({
+        jrvId: this.jrvId,
+        cargoId: this.cargoId,
+        payload,
+        imageBlob: this.selectedImageFile,
+      });
+      await this.offlineStorage.eliminarBorrador(
+        OfflineStorageService.draftId(this.jrvId, this.cargoId),
+      );
+      this.error =
+        'Acta guardada en este dispositivo. Se transmitirá en cuanto recupere señal.';
+    } catch (enqueueErr) {
+      console.error('Error al encolar acta offline:', enqueueErr);
+    }
   }
 
   private buildActaRequest(): ActaRequest {

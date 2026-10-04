@@ -12,6 +12,7 @@ import {
 import { AuthRepository, Session } from '../data/auth.repository';
 import { LoginRequestDto } from '../data/auth.dto';
 import { AuthStore } from '../auth.store';
+import { StoragePersistenceService } from './storage-persistence.service';
 
 /**
  * Auth use cases. This is the single entry point the UI talks to:
@@ -22,11 +23,18 @@ import { AuthStore } from '../auth.store';
 export class AuthService {
   private readonly repo = inject(AuthRepository);
   private readonly store = inject(AuthStore);
+  private readonly persistence = inject(StoragePersistenceService);
 
   private refreshInFlight$: Observable<Session> | null = null;
 
   login(credentials: LoginRequestDto): Observable<Session> {
-    return this.repo.login(credentials).pipe(tap((s) => this.persist(s)));
+    return this.repo.login(credentials).pipe(
+      tap((s) => this.persist(s)),
+      // T-FE-09 B.2: blindar IndexedDB tras login exitoso.
+      tap(() => {
+        this.persistence.requestPersistence();
+      }),
+    );
   }
 
   /**
