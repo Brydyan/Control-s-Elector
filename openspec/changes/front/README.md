@@ -23,6 +23,7 @@ Cambios frontend pendientes (nuevas funcionalidades), estructurados usando Spec-
 | T-FE-15 | Dashboard Analítico: Resultados y Progreso Cantonal | T-FE-11 | Pending |
 | T-FE-16 | MASTER: Configuración Preelectoral (Cargos, Partidos, Candidatos) | T-FE-02 | Pending |
 | T-FE-17 | Coordinator: Reportes y Expedientes CNE | T-FE-10, T-BE-20 | Pending |
+| T-FE-18 | Menús Dinámicos RBAC y Navegación Limpia en Sidebar | T-FE-02, T-FE-03 | Pending |
 
 **Línea base 2026-09-07:** Proyecto Angular inicializado. Todas las tareas son nuevas (sin retrospectivas).
 
@@ -104,6 +105,7 @@ T-FE-05 (Login)
 | T-FE-10 | Filtro frontend | AlertController confirm | PUT actions |
 | T-FE-11 | Supabase Realtime WS | ng2-charts | Pie + Bar |
 | T-FE-12 | String union types | IonModal confirm | Barrel shared |
+| T-FE-18 | NAV_CONFIG declarativo | Erradicación placeholders | Resiliencia offline sin mapRoute |
 
 ## Trampas Documentadas
 
