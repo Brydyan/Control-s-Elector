@@ -45,8 +45,13 @@ spec:
   selector:
     app: electoral-api
   ports:
-  - protocol: TCP
+  - name: http
+    protocol: TCP
     port: 80
+    targetPort: 8081
+  - name: api
+    protocol: TCP
+    port: 8080
     targetPort: 8081
   type: ClusterIP
 ---
@@ -58,7 +63,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: "selfsigned-issuer"
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   tls:
   - hosts:
     - api.twintailcs.xyz
