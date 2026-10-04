@@ -19,8 +19,7 @@ import { PinAuthService } from '../../../core/auth/pin-auth.service';
       <div class="modal-card">
         <h2>Desbloqueo por PIN</h2>
         <p>
-          Sin conexión a internet. Ingresa tu PIN de 4 dígitos para
-          continuar.
+          Sin conexión a internet. Ingresa tu PIN de 4 dígitos para continuar.
         </p>
         <input
           type="password"

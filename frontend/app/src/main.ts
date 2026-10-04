@@ -4,9 +4,9 @@ import {
   provideRouter,
   withPreloading,
   PreloadAllModules,
-  APP_INITIALIZER,
 } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { inject, APP_INITIALIZER } from '@angular/core';
 import {
   IonicRouteStrategy,
   provideIonicAngular,
@@ -37,7 +37,6 @@ import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/core/auth/auth.interceptor';
 import { SyncService } from './app/core/offline/sync.service';
-import { inject } from '@angular/core';
 
 addIcons({
   'menu-outline': menuOutline,

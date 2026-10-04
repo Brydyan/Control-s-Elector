@@ -1,9 +1,6 @@
 import { Injectable, InjectionToken, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import {
-  OfflineStorageService,
-  PendingActa,
-} from './offline-storage.service';
+import { OfflineStorageService, PendingActa } from './offline-storage.service';
 
 /**
  * Interfaz de transmisión inyectable. Permite desacoplar SyncService de
@@ -131,10 +128,12 @@ export class SyncService {
       // Paso 2: imagen si hay blob.
       if (item.imageBlob) {
         await new Promise<void>((resolve, reject) => {
-          this.transmitter!.subirImagenActa(acta.id, item.imageBlob!).subscribe({
-            next: () => resolve(),
-            error: (e) => reject(e),
-          });
+          this.transmitter!.subirImagenActa(acta.id, item.imageBlob!).subscribe(
+            {
+              next: () => resolve(),
+              error: (e) => reject(e),
+            },
+          );
         });
       }
       // Paso 3: borrar de cola solo tras ambos 2xx (G2).
