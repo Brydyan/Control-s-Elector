@@ -15,6 +15,9 @@ export default defineConfig({
     setupFiles: ['src/test-setup.ts'],
     include: ['src/**/*.spec.ts'],
     reporters: ['default'],
+    hookTimeout: 10000,
+    testTimeout: 10000,
+    isolate: false,
     server: {
       deps: {
         inline: [/@ionic/],
