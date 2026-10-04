@@ -247,10 +247,12 @@ export class CoordinatorService {
 
     // Checksum exacto: SUM(detalles.votos) + blancos + nulos == total.
     const totalVotosCalculado =
-      (raw.totalVotosCandidatos ?? candidatos.reduce((s, c) => s + c.votos, 0)) +
+      (raw.totalVotosCandidatos ??
+        candidatos.reduce((s, c) => s + c.votos, 0)) +
       (raw.votosBlancos ?? 0) +
       (raw.votosNulos ?? 0);
-    const diferenciaChecksum = totalVotosCalculado - (raw.totalSufragantes ?? 0);
+    const diferenciaChecksum =
+      totalVotosCalculado - (raw.totalSufragantes ?? 0);
     const checksumValido =
       (raw.totalSufragantes ?? 0) > 0 && diferenciaChecksum === 0;
 
@@ -323,10 +325,9 @@ export class CoordinatorService {
    * Devuelve `Blob` con `application/pdf` para abrir o descargar.
    */
   descargarExpedientePdf(actaId: number): Observable<Blob> {
-    return this.http.get(
-      `${this.baseUrl}/actas/${actaId}/expediente-pdf`,
-      { responseType: 'blob' },
-    );
+    return this.http.get(`${this.baseUrl}/actas/${actaId}/expediente-pdf`, {
+      responseType: 'blob',
+    });
   }
 
   anularActa(actaId: number, motivo: string): Observable<void> {

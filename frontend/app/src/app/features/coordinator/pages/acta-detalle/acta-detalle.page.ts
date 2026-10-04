@@ -375,17 +375,19 @@ export class ActaDetallePage implements OnInit, OnDestroy {
     const file = target.files?.[0];
     if (!file) return;
     this.uploadingContingencia = true;
-    this.coordinatorService.subirImagenContingencia(this.actaId, file).subscribe({
-      next: () => {
-        this.uploadingContingencia = false;
-        this.actionSuccessMessage = 'Foto de contingencia subida.';
-        this.cargarDetalle();
-      },
-      error: (err) => {
-        this.uploadingContingencia = false;
-        this.handleActionError(err, 'main', false);
-      },
-    });
+    this.coordinatorService
+      .subirImagenContingencia(this.actaId, file)
+      .subscribe({
+        next: () => {
+          this.uploadingContingencia = false;
+          this.actionSuccessMessage = 'Foto de contingencia subida.';
+          this.cargarDetalle();
+        },
+        error: (err) => {
+          this.uploadingContingencia = false;
+          this.handleActionError(err, 'main', false);
+        },
+      });
     target.value = ''; // permite re-subir el mismo archivo
   }
 

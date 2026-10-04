@@ -253,7 +253,8 @@ describe('ActaDetallePage', () => {
 
     // PRIMARY ASSERTION: verify auto-reload (cargarDetalle calls getActaDetalleCompleto)
     // Initial load: 1 call. Error handler with reloadOnConflict=true: +1 call = 2 total.
-    expect(coordinatorServiceMock.getActaDetalleCompleto).toHaveBeenCalledTimes(2);
+    expect(coordinatorServiceMock.getActaDetalleCompleto).toHaveBeenCalledTimes(
+      2,
+    );
   });
-
 });

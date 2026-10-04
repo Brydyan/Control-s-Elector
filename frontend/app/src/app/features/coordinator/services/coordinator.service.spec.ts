@@ -184,7 +184,9 @@ describe('CoordinatorService', () => {
    */
   it('should expose urlEvidencia on acta detail (T-FE-10 E.3)', () => {
     service.getActaDetalleCompleto(8).subscribe((detalle) => {
-      expect(detalle.acta.urlEvidencia).toBe('https://s3.example.com/acta-8.webp');
+      expect(detalle.acta.urlEvidencia).toBe(
+        'https://s3.example.com/acta-8.webp',
+      );
       // El modelo legacy storageUrl ya no existe.
       expect(
         (detalle.acta as unknown as { storageUrl?: string }).storageUrl,
