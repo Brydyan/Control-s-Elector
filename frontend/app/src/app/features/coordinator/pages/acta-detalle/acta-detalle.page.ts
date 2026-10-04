@@ -12,7 +12,8 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { mapError } from '../../../../shared/errors/error-handler';
-import { FocusTrapDirective } from '../../../../shared/a11y/focus-trap.directive';
+import { FocusTrapDirective } from '@shared/a11y/focus-trap.directive';
+import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
 import {
   ActaDetalleCompleto,
   ActaItem,
@@ -38,6 +39,7 @@ type ErrorTarget = 'main' | 'disputa' | 'corregir';
     LoadingStateComponent,
     ErrorStateComponent,
     FocusTrapDirective,
+    ConfirmDialogComponent,
   ],
   templateUrl: './acta-detalle.page.html',
   styleUrls: ['./acta-detalle.page.scss'],
@@ -61,6 +63,7 @@ export class ActaDetallePage implements OnInit, OnDestroy {
   private successTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Modal / Action states
+  confirmAprobarAbierto = false;
   modalDisputarAbierto = false;
   motivoDisputa = '';
   errorDisputa: string | null = null;
@@ -172,9 +175,11 @@ export class ActaDetallePage implements OnInit, OnDestroy {
 
   // APROBAR
   abrirAprobar(): void {
-    if (!confirm('¿Confirma que desea APROBAR esta acta electoral?')) {
-      return;
-    }
+    this.confirmAprobarAbierto = true;
+  }
+
+  confirmarAprobar(): void {
+    this.confirmAprobarAbierto = false;
     this.submitting = true;
     this.error = null;
     this.errorEsConflicto = false;

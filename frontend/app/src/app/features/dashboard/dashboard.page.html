@@ -7,7 +7,7 @@
 @if (error(); as err) {
 <app-error-state
   [title]="'No se pudo cargar el dashboard'"
-  [description]="err"
+  [message]="err"
   [showRetry]="true"
   (retry)="reintentar()"
   data-testid="dashboard-error"
