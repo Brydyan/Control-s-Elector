@@ -1,5 +1,7 @@
 import 'zone.js';
 import 'zone.js/testing';
+// jsdom polyfill para IndexedDB (OfflineStorageService en T-FE-09).
+import 'fake-indexeddb/auto';
 import { getTestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
@@ -46,6 +48,57 @@ if (typeof globalThis.OffscreenCanvas === 'undefined') {
   }
   (globalThis as unknown as { OffscreenCanvas: typeof OffscreenCanvas }).OffscreenCanvas =
     OffscreenCanvasStub as unknown as typeof OffscreenCanvas;
+}
+
+// jsdom polyfill para Web Crypto API (PinAuthService en T-FE-09).
+// Implementación mínima: SHA-256 sobre buffer; suficiente para tests del PIN.
+import { createHash } from 'node:crypto';
+if (
+  typeof globalThis.crypto === 'undefined' ||
+  typeof globalThis.crypto.subtle === 'undefined'
+) {
+  const subtlePolyfill: SubtleCrypto = {
+    digest: async (
+      algorithm: AlgorithmIdentifier,
+      data: BufferSource,
+    ): Promise<ArrayBuffer> => {
+      const algoName =
+        typeof algorithm === 'string' ? algorithm : (algorithm as { name: string }).name;
+      const hashName = (() => {
+        if (algoName === 'SHA-256' || algoName === 'sha-256') return 'sha256';
+        if (algoName === 'SHA-384') return 'sha384';
+        if (algoName === 'SHA-512') return 'sha512';
+        return 'sha256';
+      })();
+      const nodeHash = createHash(hashName);
+      nodeHash.update(Buffer.from(data as ArrayBuffer));
+      const buf = nodeHash.digest();
+      // Copy into a fresh ArrayBuffer so the result is an ArrayBuffer view, not Node Buffer.
+      const ab = new ArrayBuffer(buf.byteLength);
+      new Uint8Array(ab).set(buf);
+      return ab;
+    },
+  } as unknown as SubtleCrypto;
+  const cryptoPolyfill = {
+    getRandomValues<T extends ArrayBufferView>(arr: T): T {
+      for (let i = 0; i < arr.byteLength; i++) {
+        (arr as unknown as Uint8Array)[i] = Math.floor(Math.random() * 256);
+      }
+      return arr;
+    },
+    subtle: subtlePolyfill,
+    randomUUID: () =>
+      'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
+        return v.toString(16);
+      }),
+  } as unknown as Crypto;
+  Object.defineProperty(globalThis, 'crypto', {
+    value: cryptoPolyfill,
+    configurable: true,
+    writable: true,
+  });
 }
 
 import { addIcons } from 'ionicons';
