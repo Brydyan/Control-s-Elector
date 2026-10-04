@@ -2,9 +2,11 @@
 
 ## D1 — Chart Library
 
-**Decisión:** ng2-charts + Chart.js. Estándar en Angular, soporte comunidad.
+**Decisión (T-FE-11):** CSS cards + progress bars. MVP lightweight.
 
-**Alternativa descartada — Plotly, ECharts.** Más pesados, overkill para MVP.
+**Deferred to T-FE-12:** ng2-charts + Chart.js (sería estándar, soporte comunidad, pero scope creep para T-FE-11).
+
+**Alternativa descartada en scope actual — Plotly, ECharts.** Más pesados aún.
 
 ## D2 — Qué eventos escuchar
 
@@ -14,12 +16,20 @@
 
 ## D3 — Cálculos en frontend vs backend
 
-**Decisión:** Frontend. Recibe cambio en Realtime, actualiza chart en memoria.
+**Decisión:** Backend. `DashboardService` en PostgreSQL calcula totales, porcentajes, agrupaciones. Frontend solo invalida caché + recarga endpoints REST con debounce.
 
-**Alternativa descartada — backend calcula y envía agregados.** Más tráfico.
+**Por qué:** Evita desincronización, complejidad electorales (actas anuladas), saturación móvil.
 
-## D4 — Inicialización: GET o esperar primer evento
+**Alternativa descartada — frontend recalcula en memoria.** Propenso a bugs de negocio electoral, lógica duplicada.
 
-**Decisión:** GET /api/resultados/consolidado al cargar (estado inicial), luego Realtime para cambios.
+## D4 — Endpoints oficiales de Dashboard
+
+**Decisión:** Consume 4 endpoints en paralelo (forkJoin):
+- `GET /api/v1/dashboard/resumen` — totales por estado
+- `GET /api/v1/dashboard/resultados` — votos consolidados
+- `GET /api/v1/dashboard/progreso` — avance por cantón
+- `GET /api/v1/dashboard/novedades` — actas en disputa
+
+Al cargar (estado inicial), luego Realtime invalida caché + recarga con debounce 500ms.
 
 **Alternativa descartada — solo Realtime.** Usuarios que abren dashboard por primera vez ven vacío hasta primer evento.
