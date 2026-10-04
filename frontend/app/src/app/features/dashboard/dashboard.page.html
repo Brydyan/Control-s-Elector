@@ -1,51 +1,86 @@
-<!-- Progress banner -->
+<!-- Loading state -->
+@if (loading() && !data()) {
+<app-loading-state label="Cargando métricas del proceso..."></app-loading-state>
+}
+
+<!-- Error state -->
+@if (error(); as err) {
+<app-error-state
+  [title]="'No se pudo cargar el dashboard'"
+  [message]="err"
+  [showRetry]="true"
+  (retry)="reintentar()"
+  data-testid="dashboard-error"
+></app-error-state>
+}
+
+<!-- Main dashboard content -->
+@if (data(); as d) {
 <section class="progress-banner">
   <div class="progress-banner-left">
     <div class="banner-head">
       <h2>Progreso de Escrutinio</h2>
       <p>
-        {{ sentActas }} de {{ totalJrv }} JRVs han enviado actas registradas
+        {{ sentActos() }} de {{ totalJrv() }} JRVs han enviado actas registradas
       </p>
     </div>
     <div class="progress-bar-banner">
-      <div class="progress-bar-banner-fill" [style.width.%]="overallPct"></div>
+      <div
+        class="progress-bar-banner-fill"
+        [style.width.%]="overallPct()"
+      ></div>
     </div>
     <div class="banner-cantons">
-      @for (c of cantons; track c.code) {
-      <span>{{ c.name }}: {{ pct(c) }}% ({{ c.done }}/{{ c.total }})</span>
+      @for (c of progreso(); track c.cantonId) {
+      <span
+        >{{ c.cantonNombre }}: {{ pct(c) }}% ({{ c.jrvsConActa }}/{{ c.totalJrvs
+        }})</span
+      >
       }
     </div>
   </div>
   <div class="progress-banner-right">
-    <div class="big-pct">{{ overallPct }}%</div>
+    <div class="big-pct">{{ overallPct() }}%</div>
     <div class="big-pct-label">Completado</div>
   </div>
 </section>
 
 <!-- Stats row -->
 <section class="stats-row">
-  @for (s of stats; track s.key) {
-  <div class="stat-card" [class]="'c-' + s.key">
-    <div class="stat-card-label">{{ s.label }}</div>
-    <div class="stat-card-value" [class]="'v-' + s.key">{{ s.value }}</div>
-    <div class="stat-card-sub">{{ s.sub }}</div>
+  <div class="stat-card c-enviada">
+    <div class="stat-card-label">Enviadas</div>
+    <div class="stat-card-value v-enviada">{{ resumen().enviadas }}</div>
+    <div class="stat-card-sub">Pendientes revisión</div>
   </div>
-  }
+  <div class="stat-card c-disputa">
+    <div class="stat-card-label">En Disputa</div>
+    <div class="stat-card-value v-disputa">{{ resumen().enDisputa }}</div>
+    <div class="stat-card-sub">Requieren corrección</div>
+  </div>
+  <div class="stat-card c-corregida">
+    <div class="stat-card-label">Corregidas</div>
+    <div class="stat-card-value v-corregida">{{ resumen().corregidas }}</div>
+    <div class="stat-card-sub">Listas para aprobación</div>
+  </div>
+  <div class="stat-card c-aprobada">
+    <div class="stat-card-label">Aprobadas</div>
+    <div class="stat-card-value v-aprobada">{{ resumen().aprobadas }}</div>
+    <div class="stat-card-sub">Confirmadas</div>
+  </div>
 </section>
 
 <!-- Bottom grid -->
 <section class="bottom-grid">
-  <!-- Canton progress -->
+  <!-- Progreso por cantón -->
   <article class="card">
     <div class="card-title">🗺️ Progreso por Cantón</div>
-
-    @for (c of cantons; track c.code) {
+    @for (c of progreso(); track c.cantonId) {
     <div class="canton-row">
       <div class="canton-row-header">
         <div>
-          <div class="canton-name">{{ c.name }}</div>
+          <div class="canton-name">{{ c.cantonNombre }}</div>
           <div class="canton-meta">
-            {{ c.done }}/{{ c.total }} JRVs · Código {{ c.code }}
+            {{ c.jrvsConActa }}/{{ c.totalJrvs }} JRVs · ID {{ c.cantonId }}
           </div>
         </div>
         <div class="canton-pct" [class]="'tier-' + tier(c)">{{ pct(c) }}%</div>
@@ -61,19 +96,21 @@
     }
   </article>
 
-  <!-- Recent actas -->
+  <!-- Novedades (actas en disputa) -->
   <article class="card">
-    <div class="card-title">🕐 Actas Recientes</div>
-
-    @for (a of recentActas; track $index) {
+    <div class="card-title">🕐 Actas en Disputa</div>
+    @if (novedades().length === 0) {
+    <p class="empty">Sin actas en disputa actualmente.</p>
+    } @for (n of novedades(); track n.actaPublicId) {
     <div class="acta-row">
       <div class="acta-info">
-        <div class="acta-jrv">{{ a.jrv }} — {{ a.canton }}</div>
-        <div class="acta-cargo">{{ a.cargo }}</div>
+        <div class="acta-jrv">JRV {{ n.jrvNumero }}</div>
+        <div class="acta-cargo">{{ n.cargoNombre }}</div>
       </div>
-      <span class="badge" [class]="'badge-' + a.status">{{ a.status }}</span>
-      <span class="acta-time">{{ a.time }}</span>
+      <span class="badge badge-EN_DISPUTA">EN_DISPUTA</span>
+      <span class="acta-time">{{ n.minutosTranscurridos }} min</span>
     </div>
     }
   </article>
 </section>
+}

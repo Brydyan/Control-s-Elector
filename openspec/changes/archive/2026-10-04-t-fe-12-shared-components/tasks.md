@@ -29,7 +29,7 @@
 
 ## Fase D: Barrel + Integración
 
-- [x] **D.1** — Exportación unificada en `shared/ui/index.ts`.
-- [x] **D.2** — Tests unitarios de todos los componentes compartidos (23 tests pasando).
+- [x] **D.1** — Exportación unificada en `shared/ui/index.ts` y `shared/components/index.ts`.
+- [x] **D.2** — Tests unitarios de todos los componentes compartidos (64 tests pasando).
 
 **Compuerta D:** `pnpm build` compila sin errores.
