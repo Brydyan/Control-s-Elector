@@ -10,9 +10,9 @@ A constata la línea base y la compuerta permisiva. B aplica el aislamiento. C e
 
 ## A · Línea base y comprobación de compuerta
 
-- [ ] **A.1** — Comprobar estado limpio de git: `git status --short`.
-- [ ] **A.2** — Verificar la presencia de `continue-on-error: true` en `.github/workflows/ci.yml:132`. Anotar en `apply-progress.md`.
-- [ ] **A.3** — Ejecutar la suite completa de pruebas unitarias:
+- [x] **A.1** — Comprobar estado limpio de git: `git status --short`.
+- [x] **A.2** — Verificar la presencia de `continue-on-error: true` en `.github/workflows/ci.yml:132`. Anotar en `apply-progress.md`.
+- [x] **A.3** — Ejecutar la suite completa de pruebas unitarias:
   ```bash
   cd frontend/app && pnpm test:ci
   ```
@@ -22,11 +22,11 @@ A constata la línea base y la compuerta permisiva. B aplica el aislamiento. C e
 
 ## B · Implementación y endurecimiento de CI
 
-- [ ] **B.1** — Desacoplar `app.component.spec.ts` de la inicialización de Stencil/Ionic:
+- [x] **B.1** — Desacoplar `app.component.spec.ts` de la inicialización de Stencil/Ionic:
   En `frontend/app/src/app/app.component.spec.ts`, utilizar `TestBed.overrideComponent(AppComponent, { set: { imports: [], schemas: [CUSTOM_ELEMENTS_SCHEMA] } })` o stubear los elementos `ion-app` e `ion-router-outlet`.
-- [ ] **B.2** — Verificar si `frontend/app/vite.config.ts` requiere ajuste adicional en `test.deps.inline` o `test.server.deps.inline` para módulos de `@ionic`.
-- [ ] **B.3** — Retirar la línea `continue-on-error: true` de `.github/workflows/ci.yml`.
-- [ ] **B.4** — Eliminar el archivo temporal `FRONTEND_ISSUES.md`.
+- [x] **B.2** — Verificar si `frontend/app/vite.config.ts` requiere ajuste adicional en `test.deps.inline` o `test.server.deps.inline` para módulos de `@ionic`.
+- [x] **B.3** — Retirar la línea `continue-on-error: true` de `.github/workflows/ci.yml`.
+- [x] **B.4** — Eliminar el archivo temporal `FRONTEND_ISSUES.md`.
 
 ---
 
@@ -34,7 +34,7 @@ A constata la línea base y la compuerta permisiva. B aplica el aislamiento. C e
 
 Protocolo: `cp` al `.bak`, mutar, correr, **anotar el nombre exacto del test que cayó**, restaurar con `cp`, `rm` del `.bak`, `git status --short` limpio. **Nunca `git checkout --`.**
 
-- [ ] **C.1** — RF-TEST-02. En `frontend/app/src/app/app.component.spec.ts`, mutar la aserción a:
+- [x] **C.1** — RF-TEST-02. En `frontend/app/src/app/app.component.spec.ts`, mutar la aserción a:
   ```typescript
   expect(app).toBeFalsy();
   ```
@@ -42,7 +42,7 @@ Protocolo: `cp` al `.bak`, mutar, correr, **anotar el nombre exacto del test que
   **Debe caer el test de `AppComponent`.**
   Anotar el nombre exacto del test caído en `apply-progress.md`. Restaurar `.bak`.
 
-- [ ] **C.2** — RF-TEST-03 (Compuerta CI). En `frontend/app/src/app/shared/ui/button/button.component.spec.ts`, forzar un fallo:
+- [x] **C.2** — RF-TEST-03 (Compuerta CI). En `frontend/app/src/app/shared/ui/button/button.component.spec.ts`, forzar un fallo:
   ```typescript
   expect(true).toBe(false);
   ```

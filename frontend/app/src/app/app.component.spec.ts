@@ -12,6 +12,7 @@ describe('AppComponent', () => {
       .overrideComponent(AppComponent, {
         set: {
           imports: [],
+          template: '<div></div>',
           schemas: [CUSTOM_ELEMENTS_SCHEMA],
         },
       })

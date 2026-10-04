@@ -174,9 +174,13 @@ describe('ActaDetallePage', () => {
     });
   });
 
-  it('should approve acta when confirmed', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+  it('should approve acta when confirmed (T-FE-12 S3 modal)', () => {
+    // T-FE-12: abrirAprobar ahora abre modal; el servicio se llama en confirmarAprobar.
     component.abrirAprobar();
+    expect(component.confirmAprobarAbierto).toBe(true);
+    expect(coordinatorServiceMock.aprobarActa).not.toHaveBeenCalled();
+
+    component.confirmarAprobar();
 
     // El observable mock emite sincrónicamente, así que submitting vuelve
     // a false al finalizar el subscribe. Verificamos que el servicio fue

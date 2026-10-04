@@ -20,9 +20,9 @@ El workflow de integración continua `.github/workflows/ci.yml` debe ejecutar el
 ## Escenarios
 
 ### Escenario 1: Ejecución de la suite completa de frontend en CI
-- **GIVEN** el proyecto frontend con sus 26 archivos de prueba y 118 casos de test
+- **GIVEN** el proyecto frontend con su suite completa de pruebas unitarias (≥ 41 archivos y ≥ 235 casos de test)
 - **WHEN** se ejecuta `pnpm test:ci` en el directorio `frontend/app`
-- **THEN** los 118 tests pasan satisfactoriamente
+- **THEN** todos los tests de la suite pasan satisfactoriamente
 - **AND** el proceso finaliza con código de salida `0`
 - **AND** no se emiten errores de `Vite module runner has been closed` en stderr
 

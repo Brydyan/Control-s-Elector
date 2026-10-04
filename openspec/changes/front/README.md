@@ -16,8 +16,9 @@ Cambios frontend pendientes (nuevas funcionalidades), estructurados usando Spec-
 | T-FE-08 | Captura y Compresión de Imagen (WebP) | T-FE-01 | Pending |
 | T-FE-09 | Resiliencia Offline con IndexedDB | T-FE-07, T-FE-08 | Pending |
 | T-FE-10 | Coordinator: Gestión Global de Actas | T-FE-02, T-FE-03 | Pending |
-| T-FE-11 | Dashboard en Tiempo Real (Supabase Realtime) | T-FE-05 | Pending |
-| T-FE-12 | Componentes Compartidos (Shared) | T-FE-01 | Pending |
+| T-FE-11 | Dashboard en Tiempo Real (Supabase Realtime) | T-FE-05 | ✓ Archived (2026-10-04) |
+| T-FE-12 | Componentes Compartidos (Shared) | T-FE-01 | ✓ Archived (2026-10-04) |
+| Fix Vitest Race | Fix condición de carrera Vitest + Ionic y compuerta estricta CI (`2026-09-25-fe-vitest-ionic-cleanup-race`) | ninguna | ✓ Archived (2026-10-04) |
 | T-FE-13 | Modo "Foto Primero" y Cotas Electorales | T-FE-07, T-FE-08 | Pending |
 | T-FE-14 | Observer: Corrección de Acta en Disputa | T-FE-06, T-FE-07 | Pending |
 | T-FE-15 | Dashboard Analítico: Resultados y Progreso Cantonal | T-FE-11 | Pending |
@@ -107,7 +108,8 @@ T-FE-05 (Login)
 | T-FE-11 | Supabase Realtime WS | ng2-charts | Pie + Bar |
 | T-FE-12 | String union types | IonModal confirm | Barrel shared |
 | T-FE-18 | NAV_CONFIG declarativo | Erradicación placeholders | Resiliencia offline sin mapRoute |
+| Vitest Race | Stubs + template vacía en AppComponent | isolate: true en vite.config.ts | Eliminación continue-on-error CI |
 
 ## Trampas Documentadas
 
-Ninguna aún. Se agregarán conforme aparezcan en implementación.
+- **Carrera asíncrona de Stencil `@ionic/core` en teardown de Vitest:** Al montar `AppComponent` con `<ion-router-outlet>`, Stencil lanza import dinámico (`connectedCallback`) de gestos de navegación. Al cerrar Vitest el runner en `isolate: true`, la microtarea rezagada causa `Unhandled Rejection: Vite module runner has been closed`. Solución: sobreescribir template con `template: '<div></div>'` en `app.component.spec.ts` y proteger `addIcons` con `try-catch`.

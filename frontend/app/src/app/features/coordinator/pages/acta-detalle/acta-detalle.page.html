@@ -576,4 +576,15 @@
       />
     </div>
   </div>
+
+  <!-- T-FE-12 S3: confirmar aprobación -->
+  <app-confirm-dialog
+    [visible]="confirmAprobarAbierto"
+    title="¿Confirma que desea APROBAR esta acta electoral?"
+    message="Una vez aprobada, el acta pasa al conteo oficial y no puede modificarse salvo anulación MASTER."
+    variant="primary"
+    confirmLabel="Sí, aprobar"
+    (confirm$)="confirmarAprobar()"
+    (cancel$)="confirmAprobarAbierto = false"
+  ></app-confirm-dialog>
 </div>

@@ -655,3 +655,122 @@ AND      no quedan procesos huérfanos ni fugas de memoria
 - **G1:** Autoridad absoluta del backend sobre la suma de votos y porcentajes.
 - **G2:** Uso de Supabase Realtime como gatillo reactivo de invalidación de caché.
 - **G3:** Rutas canónicas `/api/v1/dashboard/*`.
+
+---
+
+## Fix: 2026-09-25-fe-vitest-ionic-cleanup-race — Aislamiento de Teardown Vitest y Compuerta Estricta CI
+
+### Requisitos
+
+#### RF-TEST-01: Ejecución limpia y determinista de tests en modo CI
+La suite de pruebas unitarias (`pnpm test:ci`) debe ejecutarse en su totalidad (≥ 41 archivos y ≥ 235 casos de test), reportar todos los tests en verde y salir con código `0` sin registrar rechazos de promesas no manejados (`Unhandled Rejection`) durante la fase de teardown de Vitest con `isolate: true`.
+
+#### RF-TEST-02: Aislamiento del componente raíz de aplicación
+`AppComponent` debe poder inicializarse e instanciarse en entorno de pruebas unitarias sin desencadenar la carga asíncrona de Web Components de Stencil ni registrar dependencias externas fuera del ciclo de vida del módulo runner de Vitest.
+
+#### RF-TEST-03: Compuerta dura en CI sin excepciones
+El workflow de integración continua `.github/workflows/ci.yml` debe ejecutar el paso de pruebas de frontend con compuerta estricta. Si cualquier test unitario falla, el job `frontend-test` debe fallar inmediatamente y bloquear el pipeline.
+
+### Escenarios
+
+#### Escenario 1: Ejecución de la suite completa de frontend en CI
+- **GIVEN** el proyecto frontend con su suite completa de pruebas unitarias (≥ 41 archivos y ≥ 235 casos de test)
+- **WHEN** se ejecuta `pnpm test:ci` en el directorio `frontend/app`
+- **THEN** todos los tests de la suite pasan satisfactoriamente
+- **AND** el proceso finaliza con código de salida `0`
+- **AND** no se emiten errores de `Vite module runner has been closed` en stderr
+
+#### Escenario 2: Prueba unitaria de AppComponent
+- **GIVEN** la suite de pruebas unitarias de `AppComponent` (`app.component.spec.ts`)
+- **WHEN** se ejecuta el test con `TestBed.createComponent(AppComponent)`
+- **THEN** la instancia del componente es creada (`app` is truthy)
+- **AND** no quedan promesas ni microtareas asíncronas huérfanas al cerrar el test
+
+#### Escenario 3: Bloqueo estricto ante regresiones reales en CI
+- **GIVEN** el workflow de GitHub Actions en `.github/workflows/ci.yml`
+- **WHEN** se produce una falla intencional en cualquier test unitario de frontend
+- **THEN** el comando `pnpm test:ci` retorna código distinto de cero
+- **AND** el job `frontend-test` falla, deteniendo el pipeline de CI
+
+### Garantías (Fix Vitest + Ionic)
+- **G1:** `pnpm test:ci` corre con `isolate: true` sin unhandled rejections ni cuelgues de Stencil/Ionic.
+- **G2:** `.github/workflows/ci.yml` no contiene `continue-on-error: true` en steps de pruebas unitarias de frontend.
+- **G3:** `AppComponent` en test usa override con `template: '<div></div>'` para neutralizar la hidratación de `<ion-router-outlet>`.
+
+---
+
+## T-FE-12: Componentes Compartidos (Shared UI & Components)
+
+### Requisitos
+
+#### RF-SHARED-01: Componentes atómicos reutilizables y tipados
+Proveer componentes de presentación desacoplados (`EstadoBadgeComponent`, `RolBadgeComponent`, `ConfirmDialogComponent`, `NotificacionBellComponent`, `PaginatorComponent`, `BadgeComponent`, `ButtonComponent`, `CardComponent`, `IconComponent`, componentes de estado de carga/error/vacío/skeleton) accesibles mediante el alias `@shared/*` y barrels centralizados.
+
+#### RF-SHARED-02: Retroalimentación y control de diálogo accesible
+`ConfirmDialogComponent` debe proveer una ventana modal con aislamiento de foco (`[appFocusTrap]="true"`), proyección de texto en botones mediante `<ng-content>`, y emisión reactiva de eventos `(confirm$)` y `(cancel$)` cerrando automáticamente el estado visible.
+
+#### RF-SHARED-03: Mapeo de estados y roles del sistema electoral
+`EstadoBadgeComponent` y `RolBadgeComponent` deben mapear unívocamente los estados del ciclo de vida del acta (`ENVIADA`, `APROBADA`, `EN_DISPUTA`, `CORREGIDA`, `BORRADOR`, `ANULADA`) y los roles de usuario (`COORDINATOR`, `MASTER`, `ADMIN`, `OBSERVER`) a variantes cromáticas e iconográficas consistentes en todo el sistema.
+
+### Escenarios
+
+#### S1 — EstadoBadgeComponent
+```gherkin
+GIVEN    <app-estado-badge [estado]="'ENVIADA'"></app-estado-badge>
+WHEN     componente renderiza
+THEN     chip muestra "ENVIADA" con color azul (variante ENVIADA) y renderiza app-badge en el DOM
+```
+
+#### S2 — RolBadgeComponent
+```gherkin
+GIVEN    <app-rol-badge [rol]="'COORDINATOR'"></app-rol-badge>
+WHEN     renderiza
+THEN     chip muestra icono coordinator + "COORDINATOR" mapeado a variante CORREGIDA
+AND      para MASTER mapea a APROBADA, ADMIN a ENVIADA y OBSERVER a default
+```
+
+#### S3 — ConfirmDialogComponent (open/close y proyección de contenido)
+```gherkin
+GIVEN    componente en template con [appFocusTrap]="true"
+WHEN     parent invoca open({title: 'Disputar?', message: 'Está seguro?'})
+THEN     modal se vuelve visible y atrapa el foco
+WHEN     usuario hace click en botón cancelar proyectado vía ng-content
+THEN     (cancel$) emite y modal se cierra
+WHEN     usuario hace click en botón confirmar proyectado vía ng-content
+THEN     (confirm$) emite y modal se cierra
+```
+
+#### S4 — NotificacionBellComponent
+```gherkin
+GIVEN    <app-notificacion-bell [count]="5"></app-notificacion-bell>
+WHEN     renderiza con count > 0
+THEN     muestra campana e indicador badge con número "5"
+WHEN     count es 0
+THEN     el badge numérico se oculta
+```
+
+#### S5 — Importación y consumo vía @shared/*
+```gherkin
+GIVEN    página consumidora (ej: ActaDetallePage o DashboardPage)
+WHEN     importa { EstadoBadgeComponent, ConfirmDialogComponent } desde '@shared/components'
+THEN     TypeScript compila sin errores (exit 0) y el empaquetador resuelve los componentes compartidos
+```
+
+### Mutaciones
+
+#### M1 — Remover @Input() de EstadoBadgeComponent
+Si se elimina el binding de entrada `@Input() estado`, el componente no recibe datos y muestra la variante por defecto, provocando la falla de los tests de variante.
+
+#### M2 — ConfirmDialog no emite evento confirm$
+Si se comenta `this.confirm$.emit()` en `onConfirm()`, el click de confirmación no notifica al llamador y falla el test `ConfirmDialogComponent (T-FE-12 S3) > should emit confirm$ on accept click (S3, M2)`.
+
+#### M3 — Alteración del mapeo de roles en RolBadgeComponent
+Si se modifica el retorno para el rol `MASTER` retornando `'default'`, falla el test `RolBadgeComponent (T-FE-12 S2) > should map MASTER to APROBADA variant`.
+
+### Garantías (T-FE-12)
+
+- **G1:** Componentes renderizan correctamente a partir de sus `@Input()` (estados electorales y roles).
+- **G2:** Componentes interactivos emiten eventos en sus `@Output()` observables (`confirm$`, `cancel$`).
+- **G3:** Exportación y consumo estricto a través de alias `@shared/*` y barrels `shared/components/index.ts` y `shared/ui/index.ts`.
+- **G4:** Reutilización y compatibilidad completa en páginas consumidoras sin errores de compilación (`NG8002`, `TS2322`).
+
