@@ -4,6 +4,7 @@ import {
   provideRouter,
   withPreloading,
   PreloadAllModules,
+  APP_INITIALIZER,
 } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
@@ -35,6 +36,8 @@ import {
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/core/auth/auth.interceptor';
+import { SyncService } from './app/core/offline/sync.service';
+import { inject } from '@angular/core';
 
 addIcons({
   'menu-outline': menuOutline,
@@ -63,5 +66,13 @@ bootstrapApplication(AppComponent, {
     provideIonicAngular(),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(routes, withPreloading(PreloadAllModules)),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: () => {
+        const syncService = inject(SyncService);
+        return () => syncService.start();
+      },
+      multi: true,
+    },
   ],
 });
