@@ -8,6 +8,9 @@ export default defineConfig({
   ],
   resolve: {
     tsconfigPaths: true,
+    alias: {
+      '@shared': '/src/app/shared',
+    },
   },
   test: {
     globals: true,

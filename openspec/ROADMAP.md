@@ -52,15 +52,16 @@ Cada papel tiene su archivo, con su plantilla de lanzamiento y sus límites:
 
 ## 3. Compuertas y línea base
 
-Medidas el **2026-09-25**, rama `brydyan/sc-161/t-be-14-integracion-supabase-storage`:
+Medidas el **2026-10-04**, tras archivar `2026-10-04-t-fe-12-shared-components` (rama `brydyan/sc-174/t-fe-12-componentes-compartidos`):
 
 ```
 backend build     ./mvnw -B clean package -DskipTests        exit 0
 backend test      ./mvnw -B test                             63 suites / 281 tests
                                                              0 ERROR / 0 failure / 2 skip   ← VERDE
-frontend lint     pnpm lint                                  0 errores
+frontend lint     pnpm lint                                  0 errores (exit 0)
 frontend format   pnpm format:check                          0 errores
-frontend test     pnpm test:ci                               26 suites / 118 tests / 0 failures
+frontend build    pnpm build                                 bundle generado en www (exit 0)
+frontend test     pnpm test:ci                               42 suites / 241 tests / 0 failures (isolate: true, exit 0)
 ```
 
 Working directory obligatorio: backend en `backend/electoral-api/`, frontend en `frontend/app/`.
@@ -71,6 +72,17 @@ ejecutando. Eso es un fallo de la fase, no un detalle.
 **La suite de backend está 100% en VERDE**: el blocker inicial `78 ERROR` fue resuelto y archivado
 en `openspec/changes/archive/2026-09-24-fix-liquibase-rbac-order/`. T-BE-13 (Dashboard) también
 archivado. Los tests nuevos se distinguen y se miden con rigor contra esta línea base.
+
+**La suite de frontend está 100% en VERDE con `isolate: true`**: La carrera asíncrona de teardown
+entre Vitest 5 y `@ionic/core` fue resuelta aislando `AppComponent` con `template: '<div></div>'` y
+`try-catch` en `addIcons`. `continue-on-error: true` fue erradicado de CI y archivado en
+`openspec/changes/archive/2026-09-25-fe-vitest-ionic-cleanup-race/`.
+
+**T-FE-12 (Componentes Compartidos) archivado y consolidado**: Los componentes reutilizables
+(`EstadoBadge`, `RolBadge`, `ConfirmDialog`, `NotificacionBell`, `Paginator`, suite `shared/ui/`)
+y los barrels `@shared/*` se integraron con 241 tests pasando en verde (exit 0), mutaciones M2 y M3
+verificadas en vivo y 0 errores de compilación (`NG8002`, `TS2322`).
+
 
 ---
 
@@ -90,6 +102,7 @@ Descubiertas midiendo, el 2026-09-07. Cada una cuesta una ronda si no se avisa. 
 | MapStruct sin `componentModel="spring"` | Convención del proyecto: mappers como `@Bean` en `MapperConfig.java` | Ver `CLAUDE.md`, sección Convenciones de Código |
 | Android LMK mata la pestaña al abrir cámara en móviles de gama baja (2GB RAM) | Android Low Memory Killer elimina el proceso Chrome/PWA al invocar la cámara nativa si el heap o los buffers de imagen saturan la RAM | Patrón "Guardar antes de capturar" en IndexedDB (`acta_drafts`), decodificación C++/GPU vía `createImageBitmap(blob, { resizeWidth: 1920 })`, cero Base64 en memoria y compresión WebP en Web Worker |
 | El comentario que miente / pre-asignación deprecada | Código antiguo o comentarios mencionan que el veedor solo ve sus JRVs asignadas vía `observer_jrv_asignacion` | No reintroducir filtros ni joins con `observer_jrv_asignacion`. Fue retirado deliberadamente el 2026-08-14 para permitir libre selección de JRVs por contingencias en campo; RLS filtra por `registrada_por_id` |
+| Vitest 5.0 + `@ionic/core` Stencil Custom Elements en cleanup | Al montar `<ion-app>` o `<ion-router-outlet>` en tests unitarios (`AppComponent`), Stencil dispara imports dinámicos en `connectedCallback()`. Al cerrar el runner de Vitest con `isolate: true`, la microtarea rezagada causa `Unhandled Rejection: Vite module runner has been closed` y `exit 1` | En `app.component.spec.ts` sobreescribir la plantilla con `template: '<div></div>'` en `TestBed.overrideComponent` para neutralizar el montaje de `<ion-router-outlet>`, y proteger `addIcons` en `src/test-setup.ts` con `try-catch`. NUNCA usar `continue-on-error: true` en CI |
 
 ### Cómo buscar trampas nuevas
 
@@ -133,8 +146,8 @@ Para garantizar que el desarrollo no se desvíe de los requerimientos operativos
 8. **`T-BE-21` (Acta Detalle Completo DTO & GET Observer)**: `openspec/changes/back/2026-09-26-t-be-21-acta-detalle-dto-observer-get/`. DTO enriquecido `ActaDetalleCompletoDto` con votos individuales de candidatos, URL de evidencia física prefirmada y motivo de disputa, más endpoint `GET /api/v1/observer/actas/{id}`.
 
 #### Fase 2 · Frontend Estabilización y Operación de Campo (Spec 2027)
-1. **`2026-09-25-fe-vitest-ionic-cleanup-race`**: Aislar teardown de Vitest en `app.component.spec.ts` y eliminar `continue-on-error: true` de `.github/workflows/ci.yml`.
-2. **Conciliación de SDDs implementadas**: Auditar y archivar retrospectivamente `T-FE-01` a `T-FE-07` y `T-FE-12` (que ya cuentan con 118 tests pasando en `frontend/app`).
+1. **`2026-09-25-fe-vitest-ionic-cleanup-race`**: Archivado / Completado (Aislamiento de teardown en `AppComponent` con `template: '<div></div>'`, `isolate: true` limpio en Vitest 42/42 suites 240/240 tests y compuerta dura en CI sin `continue-on-error: true`).
+2. **`T-FE-12` (Componentes Compartidos)**: Archivado / Completado (`openspec/changes/archive/2026-10-04-t-fe-12-shared-components/`). Componentes atómicos UI, barrels `@shared/components` y `@shared/ui`, modal `ConfirmDialog` con `FocusTrapDirective`, mutaciones reactivas M2 y M3 verificadas en vivo, 241 tests pasando (exit 0). Conciliación retrospectiva de `T-FE-01` a `T-FE-07` pendiente.
 3. **`T-FE-13` (Modo "Foto Primero" y Cotas Electorales)**: `openspec/changes/front/2026-09-25-t-fe-13-capture-and-run-foto-primero/`. Reordenar wizard: 1: Foto -> 2: Votos -> 3: Revisión (salvaguarda ante desalojo militar); warning > 350 sufragantes, tope duro 500; cuadre estricto de votos 1:1 (actas unívocas por cargo/sub-lista CPCCS); persistencia de borrador local en IndexedDB (`acta_drafts`) previa a captura para resistir cierres del navegador/LMK.
 4. **`T-FE-08` (Compresión WebP y Optimización de RAM)**: Decodificación directa C++/GPU vía `createImageBitmap(blob, { resizeWidth: 1920 })`, compresión WebP en Web Worker con `OffscreenCanvas`, cero Base64 (blobs binarios puros), limpieza inmediata con `URL.revokeObjectURL()` y captura PWA con `<input type="file" accept="image/*" capture="environment">`.
 5. **`T-FE-09` (Offline-First PWA, IndexedDB Blindada & PIN de 4 dígitos)**: Cola en IndexedDB blindada con `navigator.storage.persist()`, patrón "Guardar antes de capturar" en almacén `acta_drafts` con auto-recuperación ante reinicio de pestaña por Android LMK, Service Worker para app shell 100% offline, reintento 30s y **desbloqueo rápido por PIN offline** cuando el JWT expira sin cobertura.
@@ -145,6 +158,7 @@ Para garantizar que el desarrollo no se desvíe de los requerimientos operativos
 10. **`T-FE-16` (Módulo Configuración Preelectoral MASTER)**: `openspec/changes/front/2026-09-26-t-fe-16-master-configuracion-electoral/`. Vista unificada `/master/configuracion` con tabs `Cargos`, `Partidos Políticos` y `Candidatos`, modales de alta/edición y CRUD con la API backend.
 11. **`T-FE-17` (Centro de Reportes y Expedientes CNE para Coordinador)**: `openspec/changes/front/2026-09-26-t-fe-17-coordinator-reportes-estadisticas/`. Vista `/coordinator/reportes` con panel de avance global, distribución de estados, métricas de resolución y descarga de expedientes de impugnación PDF.
 12. **`T-FE-18` (Menús Dinámicos RBAC y Navegación Limpia en Sidebar)**: `openspec/changes/front/2026-10-03-t-fe-18-sidebar-rbac-dynamic-menus/`. Refactorización de `SidebarComponent` con configuración declarativa `NAV_CONFIG` por rol, erradicación de enlaces a `PlaceholderPage` (`/actas`, `/evidencias`, `/admin`), eliminación de `mapRoute()` procedimental y resiliencia offline ante fallos en `GET /api/v1/menus/me`.
+13. **`T-FE-19` (Gestión de Usuarios MASTER — CRUD, Soft-Delete y Acciones con Íconos)**: `openspec/changes/front/2026-10-04-t-fe-19-admin-usuarios-crud-softdelete/`. Corrección de `esMaster` vía `AuthStore` (eliminación de lectura de `localStorage`), botón de alta con visualización de contraseña temporal Base64Url, columna de acciones basada en íconos (`eye-outline`, `create-outline`, `trash-outline`, `refresh-outline`) y soft-delete estricto con confirmación previa.
 
 #### Fase 3 · Infraestructura, Realtime y Producción
 1. **`T-IN-06` (Supabase Realtime)**: WebSockets para emisión y captura de eventos de cambio de estado en `acta` (refresco en vivo de tableros).
@@ -237,8 +251,13 @@ Los seis del playbook (§4), instanciados aquí:
 
 ## 9. Estado del ROADMAP
 
-Última actualización: **2026-09-25**, por el Arquitecto.
+Última actualización: **2026-10-04**, por el Arquitecto.
+Changes archivados recientemente:
+- `openspec/changes/archive/2026-09-25-fe-vitest-ionic-cleanup-race/` (Compuerta estricta CI y 240/240 tests pasando con `isolate: true`)
+- `openspec/changes/archive/2026-10-04-t-fe-11-realtime-dashboard/`
+- `openspec/changes/archive/2026-10-04-t-fe-12-shared-components/` (Componentes compartidos @shared/*, ConfirmDialog con focus trap, 241 tests, exit 0)
 Changes activos / preparados:
 - `openspec/changes/front/2026-09-25-t-fe-13-capture-and-run-foto-primero/`
-- `openspec/changes/front/2026-09-25-fe-vitest-ionic-cleanup-race/`
-- `openspec/changes/front/2026-09-07-t-fe-{06..11}/` (alineados con backend 2027)
+- `openspec/changes/front/2026-09-26-t-fe-{14..17}/`
+- `openspec/changes/front/2026-10-03-t-fe-18-sidebar-rbac-dynamic-menus/`
+- `openspec/changes/front/2026-10-04-t-fe-19-admin-usuarios-crud-softdelete/`

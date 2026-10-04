@@ -229,13 +229,6 @@ export class ActasListaPage implements OnInit, OnDestroy {
       this.error = 'El motivo de anulación es obligatorio.';
       return;
     }
-    if (
-      !confirm(
-        `¿Anular el acta aprobada con motivo "${motivo}"? Esta acción es irreversible y queda auditada.`,
-      )
-    ) {
-      return;
-    }
     this.loading = true;
     this.coordinatorService.anularActa(actaId, motivo.trim()).subscribe({
       next: () => this.cargarActas(),
