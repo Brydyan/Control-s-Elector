@@ -13,6 +13,7 @@ import {
   SkeletonComponent,
 } from '../../../../shared/ui';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
+import { mapError } from '../../../../shared/errors/error-handler';
 import {
   ActaFiltros,
   ActaItem,
@@ -220,20 +221,35 @@ export class ActasListaPage implements OnInit, OnDestroy {
   }
 
   anular(actaId: number): void {
+    const motivo = prompt(
+      'Motivo de anulación (obligatorio):',
+      'Datos verificados como fraudulentos',
+    );
+    if (!motivo || !motivo.trim()) {
+      this.error = 'El motivo de anulación es obligatorio.';
+      return;
+    }
     if (
       !confirm(
-        '¿Anular el acta aprobada? Esta acción es irreversible y queda auditada.',
+        `¿Anular el acta aprobada con motivo "${motivo}"? Esta acción es irreversible y queda auditada.`,
       )
     ) {
       return;
     }
     this.loading = true;
-    this.coordinatorService.anularActa(actaId).subscribe({
+    this.coordinatorService.anularActa(actaId, motivo.trim()).subscribe({
       next: () => this.cargarActas(),
       error: (err) => {
-        this.error =
-          err?.error?.message || 'No se pudo anular el acta seleccionada.';
+        const mapped = mapError(err);
+        this.error = mapped.message;
         this.loading = false;
+
+        // W4 FIX (S7): 409 Conflict — auto-reload like dispute/correct actions
+        // When another session annuls the acta concurrently, reload the list
+        // to reflect the current state and prevent stale data display.
+        if (mapped.type === 'conflict') {
+          this.cargarActas();
+        }
       },
     });
   }

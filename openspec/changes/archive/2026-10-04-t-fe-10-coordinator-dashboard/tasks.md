@@ -36,10 +36,10 @@
 
 ## Fase E: Alineación de Contratos (T-BE-18, T-BE-20, T-BE-21)
 
-- [ ] **E.1** — En `CoordinatorService.anularActa`: actualizar firma a `anularActa(id: number, motivo: string)` y enviar `{ motivo }` en el cuerpo de `http.delete()` (`AnulacionDto`).
-- [ ] **E.2** — En `CoordinatorService.getActaDetalleCompleto`: mapear los votos reales de candidatos desde `data.detalles` (`T-BE-21`) eliminando el valor hardcodeado `votos: 0`.
-- [ ] **E.3** — En `ActaDetallePage`: enlazar el visor de imagen a `data?.acta?.urlEvidencia` (URL prefirmada S3) en reemplazo del campo eliminado `storageUrl`.
-- [ ] **E.4** — En `ActaDetallePage`: incorporar botón de subida de foto de contingencia (`POST /api/v1/coordinator/actas/{id}/imagen`, `T-BE-18`) y botón de descarga de expediente CNE en PDF (`GET /api/v1/coordinator/actas/{id}/expediente-pdf`, `T-BE-20`).
+- [x] **E.1** — En `CoordinatorService.anularActa`: actualizar firma a `anularActa(id: number, motivo: string)` y enviar `{ motivo }` en el cuerpo de `http.delete()` (`AnulacionDto`).
+- [x] **E.2** — En `CoordinatorService.getActaDetalleCompleto`: mapear los votos reales de candidatos desde `data.detalles` (`T-BE-21`) eliminando el valor hardcodeado `votos: 0`.
+- [x] **E.3** — En `ActaDetallePage`: enlazar el visor de imagen a `data?.acta?.urlEvidencia` (URL prefirmada S3) en reemplazo del campo eliminado `storageUrl`.
+- [x] **E.4** — En `ActaDetallePage`: incorporar botón de subida de foto de contingencia (`POST /api/v1/coordinator/actas/{id}/imagen`, `T-BE-18`) y botón de descarga de expediente CNE en PDF (`GET /api/v1/coordinator/actas/{id}/expediente-pdf`, `T-BE-20`).
 
 ## Verificación por Mutación
 

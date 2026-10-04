@@ -75,6 +75,10 @@ export class ActaDetallePage implements OnInit, OnDestroy {
   // Image modal preview
   imagenZoomAbierto = false;
 
+  // T-FE-10 E.4: estado de subida contingencia + descarga PDF
+  uploadingContingencia = false;
+  downloadingPdf = false;
+
   ngOnDestroy(): void {
     if (this.successTimer != null) {
       clearTimeout(this.successTimer);
@@ -316,8 +320,8 @@ export class ActaDetallePage implements OnInit, OnDestroy {
     });
 
     checks.push({
-      ok: !!acta.storageUrl,
-      texto: acta.storageUrl
+      ok: !!acta.urlEvidencia,
+      texto: acta.urlEvidencia
         ? 'Evidencia fotográfica adjunta.'
         : 'Sin evidencia fotográfica. Solicitá al OBSERVER subir el respaldo.',
     });
@@ -358,5 +362,55 @@ export class ActaDetallePage implements OnInit, OnDestroy {
 
   mapBadgeVariant(estado: EstadoActa): BadgeVariant {
     return estado;
+  }
+
+  // T-FE-10 E.4: handlers de subida contingencia y descarga PDF.
+
+  /**
+   * Maneja selección de archivo de contingencia: sube la imagen al backend
+   * y recarga el detalle para reflejar el nuevo `urlEvidencia`.
+   */
+  onContingenciaImagenSeleccionada(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (!file) return;
+    this.uploadingContingencia = true;
+    this.coordinatorService
+      .subirImagenContingencia(this.actaId, file)
+      .subscribe({
+        next: () => {
+          this.uploadingContingencia = false;
+          this.actionSuccessMessage = 'Foto de contingencia subida.';
+          this.cargarDetalle();
+        },
+        error: (err) => {
+          this.uploadingContingencia = false;
+          this.handleActionError(err, 'main', false);
+        },
+      });
+    target.value = ''; // permite re-subir el mismo archivo
+  }
+
+  /**
+   * Descarga el expediente de impugnación CNE como PDF (T-BE-20).
+   * Dispara descarga en navegador via Blob URL temporal.
+   */
+  descargarExpedientePdf(): void {
+    this.downloadingPdf = true;
+    this.coordinatorService.descargarExpedientePdf(this.actaId).subscribe({
+      next: (blob) => {
+        this.downloadingPdf = false;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `expediente-acta-${this.actaId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        this.downloadingPdf = false;
+        this.handleActionError(err, 'main', false);
+      },
+    });
   }
 }
