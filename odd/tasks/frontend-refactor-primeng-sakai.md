@@ -36,6 +36,7 @@ Cada fase debe dejar el build (`pnpm build`) y la suite (`pnpm test:ci`) en verd
 | T2 | S3, S7 | Auditar compatibilidad de versiones (PrimeNG ↔ Angular 22 ↔ @primeuix/themes ↔ Tailwind 4) y fijar el conjunto de dependencias | inline | done |
 | T3 | S4, S6 | Preset de PrimeNG derivado de `tokens.scss` + wiring de `providePrimeNG` + test de humo del tema | inline | done |
 | T4 | S4 | Shell de aplicación Sakai (sidebar, topbar, configurador de tema) sobre `layout/` existente | pending | pending |
+| T4a | S4, S6 | Prerrequisitos del shell: Tailwind 4 + `tailwindcss-primeui` + variante `dark` + `ThemeService` que activa el modo oscuro | inline | done |
 | T5 | S3, S4 | Migrar primitivas propias de `shared/ui` a componentes PrimeNG | pending | pending |
 | T6 | S3, S4 | Migrar features por rol (dashboard, admin, coordinator, observer, auth) a PrimeNG | pending | pending |
 | T7 | S3 | Retirar Ionic y Capacitor: `ion-icon`→PrimeIcons, `ion-router-outlet`→`router-outlet`, `ion-app`→host, `ionic-theme.scss`→preset | pending | pending |
@@ -99,5 +100,24 @@ Evidencia observada:
 Hallazgo relevante: la rampa institucional de `tokens.scss` **es la rampa Tailwind blue con un offset de un paso** (su `--primitive-blue-500` = `#2563eb` = Tailwind `blue-600`). Por eso el preset mapea `primary.500 → blue.600` y `primary.600 → blue.700`, conservando `--color-brand-primary` y `--color-brand-primary-strong` exactos.
 
 ## Pending / Next
-- T4: shell Sakai (sidebar, topbar, App Configurator con `updatePreset`/`updateSurfacePalette` en runtime) sobre `layout/`; requiere Tailwind 4 + `tailwindcss-primeui` + `postcss.config.json`.
+- T4: shell Sakai (sidebar, topbar, App Configurator con `updatePreset`/`updateSurfacePalette` en runtime) sobre `layout/`; los prerrequisitos (Tailwind 4, variante `dark`, `ThemeService`) ya están listos.
 - T7 requiere decidir el destino de `frontend/app/android/` y `capacitor.config.ts` (boilerplate sin usar).
+
+### L9 — T4a ejecutado: prerrequisitos del shell (2026-10-20)
+Archivos nuevos:
+- `frontend/app/src/theme/tailwind.css` — entry de Tailwind v4 con `@plugin 'tailwindcss-primeui'`, `@custom-variant dark` ligada a `app-dark` y la capa base de compatibilidad de `border-color` (misma config que Sakai).
+- `frontend/app/src/theme/theme.service.ts` — servicio de tema: signal `darkMode`, persistencia en `localStorage`, y aplicación **síncrona** de la clase `app-dark` en `<html>`.
+
+Archivos modificados:
+- `frontend/app/angular.json` — `src/theme/tailwind.css` añadido **último** en `styles` (orden de Sakai: las utilidades deben ganar al CSS global legacy).
+- `frontend/app/pnpm-workspace.yaml` — `'@tailwindcss/oxide': true` (pnpm había insertado un placeholder; el binario nativo es requisito de Tailwind v4).
+- `frontend/app/package.json` — `tailwindcss@4.1.11`, `@tailwindcss/postcss@4.1.11`, `tailwindcss-primeui@0.6.1`.
+
+Evidencia observada:
+- RED real: `npx vitest run src/theme/theme.service.spec.ts` → `Failed to resolve import "./theme.service"`.
+- Primer GREEN: 4/6. Los 2 fallos eran reales: `effect()` es asíncrono y la clase no llegaba antes del primer render (flash de tema incorrecto al boot). **Corrección de producto, no del test**: se eliminó el `effect` y la clase se aplica de forma sincrónica en el constructor y en `setDarkMode`. → 6/6 verde.
+- `pnpm test:ci` → **44 archivos, 255 tests, 0 fallos**.
+- `pnpm build` → bundle generado; CSS principal 85.7 kB con `@import 'tailwindcss'` **resuelto** (0 residuos), preflight aplicado (`box-sizing:border-box`), `--color-gray-200` presente y variante `app-dark` presente. Tailwind v4 es JIT: aún no emite `.flex` porque ningún template usa utilidades todavía.
+- `pnpm peers check` → los mismos 3 avisos preexistentes; Tailwind no introduce ninguno.
+
+Nota de orden de cascada: el CSS de PrimeNG se inyecta **sin capa** (`cssLayer: false`, el default de PrimeNG 22, igual que Sakai). El CSS de la app legacy también es sin capa, así que conserva prioridad sobre las utilidades de Tailwind — la UI actual no cambia visualmente mientras el shell nuevo entra en T4.
