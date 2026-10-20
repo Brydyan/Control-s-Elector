@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>ec.twintailcs</groupId>
+	<artifactId>electoral-contract-tests</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>electoral-contract-tests</name>
+	<description>
+		Suite de tests de regresión por contrato del backend electoral-api. Agnóstica del framework:
+		habla únicamente HTTP contra una URL base, sin Spring, sin Hibernate y sin dependencia del
+		artefacto electoral-api. Es el gate de paridad de la migración Spring Boot -> Quarkus
+		(issue #113): la misma suite valida el backend Spring hoy y el backend Quarkus mañana.
+	</description>
+
+	<!--
+		DELIBERADAMENTE sin <parent> y sin BOM de Spring Boot.
+
+		Este módulo no declara spring-boot*, spring-*, hibernate* ni el artefacto electoral-api.
+		Esa ausencia ES el diseño: si mañana el proyecto Spring se apaga, esta suite sobrevive
+		intacta y es la que valida el backend Quarkus. Un gate de paridad que depende del
+		framework que se está reemplazando no es un gate.
+
+		Revisar con: mvn dependency:tree
+	-->
+
+	<properties>
+		<maven.compiler.release>21</maven.compiler.release>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<!-- Alineados con el BOM de spring-boot-dependencies 4.1.0 que usa electoral-api:
+		     JUnit Jupiter 6.x, Jackson 3.x (tools.jackson), AssertJ 3.27.x. -->
+		<junit.version>6.0.3</junit.version>
+		<rest-assured.version>6.0.1</rest-assured.version>
+		<jackson.version>3.1.4</jackson.version>
+		<assertj.version>3.27.7</assertj.version>
+
+		<maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
+		<maven-surefire-plugin.version>3.5.6</maven-surefire-plugin.version>
+		<maven-failsafe-plugin.version>3.5.6</maven-failsafe-plugin.version>
+
+		<!--
+			URL del backend vivo contra el que corre la suite. Se resuelve en tiempo de ejecucion
+			con esta precedencia:
+			  1. -Dcontract.baseUrl=...   (linea de comandos)
+			  2. variable de entorno CONTRACT_BASE_URL  (CI)
+			  3. http://localhost:8083   (stack de desarrollo local)
+			El valor por defecto de esta propiedad es solo la documentacion del default; la
+			resolucion real vive en ContractTestSupport.
+		-->
+		<contract.baseUrl>http://localhost:8083</contract.baseUrl>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Cliente HTTP black-box. Trae json-path + groovy; el mapeo de respuestas no usa Jackson. -->
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>rest-assured</artifactId>
+			<version>${rest-assured.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Jackson 3 (tools.jackson) para serializar request bodies. Misma version que usa
+		     electoral-api, asi que los bodies se forman con las mismas reglas de formato. -->
+		<dependency>
+			<groupId>tools.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>${assertj.version}</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+			</plugin>
+
+			<!-- Surefire queda sin tests que correr: toda la suite usa sufijo *IT y corre en
+			     la fase verify via Failsafe. Se deja declarado para que la fase `test` no
+			    wege un "no tests to run" ambiguo. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire-plugin.version}</version>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
+			</plugin>
+
+			<!-- Failsafe corre los *IT en la fase verify. La suite necesita un backend vivo,
+			     asi que el arranque del backend NO es responsabilidad de este modulo: se le
+			     pasa la URL por -Dcontract.baseUrl (o CONTRACT_BASE_URL). -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${maven-failsafe-plugin.version}</version>
+				<configuration>
+					<includes>
+						<include>**/*IT.java</include>
+					</includes>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>integration-test</goal>
+							<goal>verify</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
