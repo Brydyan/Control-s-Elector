@@ -14,19 +14,29 @@ import Aura from '@primeuix/themes/aura';
  * institutional blue.
  */
 
-/** `--primitive-blue-*` from tokens.scss, with the ramp gaps filled from the same family. */
+/**
+ * `--primitive-blue-*` from tokens.scss.
+ *
+ * After the visual rebalance (odd/tasks/frontend-visual-rebalance.md, S1) the
+ * "blue" ramp is no longer the Tailwind blue-600: it is the institutional
+ * navy. Each step here is the literal copy of `--primitive-blue-<step>` in
+ * `tokens.scss`, kept as plain hex so the preset can be asserted in unit
+ * tests without a CSS-variable runtime. The 950 stops at `--primitive-slate-
+ * 950` because the navy ramp does not need a deeper step; PrimeNG's surface
+ * tokens (which are layered on top of this primitive) own the darkest step.
+ */
 const BRAND_BLUE = {
-  50: '#eff6ff', // --primitive-blue-50
-  100: '#dbeafe', // --primitive-blue-100
-  200: '#bfdbfe', // --primitive-blue-200
-  300: '#93c5fd',
-  400: '#60a5fa',
-  500: '#2563eb', // --primitive-blue-500 -> brand primary
-  600: '#1d4ed8', // --primitive-blue-600 -> brand primary strong
-  700: '#1e40af', // --primitive-blue-700
-  800: '#1e3a8a', // --primitive-blue-900
-  900: '#172554',
-  950: '#0f172a', // --primitive-slate-900 -> deepest institutional neutral
+  50: '#e8eef7', // --primitive-blue-50
+  100: '#d6e0ee', // --primitive-blue-100
+  200: '#b1c4dd', // --primitive-blue-200
+  300: '#7c9cc4', // --primitive-blue-300
+  400: '#4d75a8', // --primitive-blue-400
+  500: '#1c4a8e', // --primitive-blue-500 -> brand primary
+  600: '#15366b', // --primitive-blue-600 -> brand primary strong
+  700: '#0f2a4d', // --primitive-blue-700 -> brand primary active
+  800: '#0a213f', // --primitive-blue-800
+  900: '#061730', // --primitive-blue-900
+  950: '#020617', // --primitive-slate-950 -> deepest institutional neutral
 } as const;
 
 /** `--radius-*` from tokens.scss, mapped onto PrimeUI's borderRadius stops. */
@@ -87,6 +97,10 @@ export const APP_FONT_FAMILY =
  * coexisted (`--p-*`, `--color-*` and a legacy set nobody declared), so the
  * token contract was unenforceable. The direction is the cheap one: the app's
  * own layer owns the vocabulary and the component library is fed from it.
+ *
+ * The visual rebalance (`odd/tasks/frontend-visual-rebalance.md`) moved the
+ * hex behind each name, but kept the names themselves unchanged: the bridge
+ * is name-only, so it survives the rebalance untouched.
  *
  * Every name below resolves to the *same value* it had before the bridge, in
  * both schemes, so the bridge moves names around and nothing else:
@@ -152,19 +166,7 @@ export const electoralPreset = definePreset(Aura, {
   },
   semantic: {
     fontFamily: APP_FONT_FAMILY,
-    primary: {
-      50: BRAND_BLUE[50],
-      100: BRAND_BLUE[100],
-      200: BRAND_BLUE[200],
-      300: BRAND_BLUE[300],
-      400: BRAND_BLUE[400],
-      500: BRAND_BLUE[500],
-      600: BRAND_BLUE[600],
-      700: BRAND_BLUE[700],
-      800: BRAND_BLUE[800],
-      900: BRAND_BLUE[900],
-      950: BRAND_BLUE[950],
-    },
+    primary: BRAND_BLUE,
     colorScheme: {
       light: LIGHT_BRIDGE,
       dark: {
