@@ -1,85 +1,57 @@
-import { CommonModule } from '@angular/common';
-import {
-  Component,
-  EventEmitter,
-  Input,
-  Output,
-  ViewChild,
-  ElementRef,
-  inject,
-} from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Dialog } from 'primeng/dialog';
 import { ButtonComponent } from '../../ui/button/button.component';
-import { FocusTrapDirective } from '../../a11y/focus-trap.directive';
 
 /**
- * T-FE-12 S3: modal de confirmación reutilizable.
+ * T-FE-12 S3: reusable confirmation dialog.
  *
- * Reemplaza `window.confirm()` con un modal Ionic-style que:
- * - emite (confirm) / (cancel) en vez de retornar boolean
- * - aplica FocusTrapDirective para accesibilidad
- * - soporta variant 'danger' para acciones irreversibles (anular, aprobar con fraude)
+ * Replaces `window.confirm()` with a dialog that:
+ * - emits (confirm) / (cancel) instead of returning a boolean
+ * - supports the 'danger' variant for irreversible actions
+ *
+ * The dialog is a `p-dialog`, which brings the focus trap, the escape
+ * handling and the overlay behaviour.
  */
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
-  imports: [CommonModule, ButtonComponent, FocusTrapDirective],
+  imports: [Dialog, ButtonComponent],
   template: `
-    @if (visible) {
-      <div
-        class="modal-backdrop"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-title"
-      >
-        <div class="modal-card" [appFocusTrap]="true">
-          <h2 id="confirm-title">{{ title }}</h2>
-          @if (message) {
-            <p class="message">{{ message }}</p>
-          }
-          <div class="actions">
-            <app-button
-              variant="secondary"
-              (click)="onCancel()"
-              data-testid="confirm-cancel"
-              >{{ cancelLabel }}</app-button
-            >
-            <app-button
-              [variant]="variant"
-              (click)="onConfirm()"
-              data-testid="confirm-accept"
-              >{{ confirmLabel }}</app-button
-            >
-          </div>
-        </div>
-      </div>
+    <p-dialog
+      [visible]="visible"
+      (visibleChange)="onVisibleChange($event)"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [closable]="true"
+      [style]="{ width: '26rem' }"
+      [header]="title"
+    >
+      @if (message) {
+      <p class="message">{{ message }}</p>
+      }
+      <ng-template #footer>
+        <app-button
+          variant="secondary"
+          (clicked)="onCancel()"
+          data-testid="confirm-cancel"
+          >{{ cancelLabel }}</app-button
+        >
+        <app-button
+          [variant]="variant"
+          (clicked)="onConfirm()"
+          data-testid="confirm-accept"
+          >{{ confirmLabel }}</app-button
+        >
+      </ng-template>
+    </p-dialog>
+  `,
+  styles: `
+    .message {
+      margin: 0;
+      color: var(--p-text-muted-color);
     }
   `,
-  styles: [
-    `
-      .modal-backdrop {
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.6);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-      }
-      .modal-card {
-        background: #fff;
-        padding: 24px;
-        border-radius: 12px;
-        max-width: 400px;
-        width: 90%;
-      }
-      .actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-        margin-top: 16px;
-      }
-    `,
-  ],
 })
 export class ConfirmDialogComponent {
   @Input() visible = false;
@@ -92,6 +64,12 @@ export class ConfirmDialogComponent {
   @Output() confirm$ = new EventEmitter<void>();
   @Output() cancel$ = new EventEmitter<void>();
 
+  /**
+   * Set while the dialog closes because it was confirmed, so the resulting
+   * `visibleChange` does not also report a cancellation.
+   */
+  private confirmed = false;
+
   /** Programmatic API — spec S3: `ref.open({title, message})`. */
   open(opts: {
     title: string;
@@ -101,6 +79,7 @@ export class ConfirmDialogComponent {
     this.title = opts.title;
     this.message = opts.message ?? null;
     if (opts.variant) this.variant = opts.variant;
+    this.confirmed = false;
     this.visible = true;
   }
 
@@ -109,12 +88,24 @@ export class ConfirmDialogComponent {
   }
 
   onConfirm(): void {
+    this.confirmed = true;
     this.confirm$.emit();
     this.close();
   }
 
   onCancel(): void {
+    if (this.confirmed) {
+      this.confirmed = false;
+      return;
+    }
     this.cancel$.emit();
     this.close();
+  }
+
+  onVisibleChange(next: boolean): void {
+    this.visible = next;
+    if (!next) {
+      this.onCancel();
+    }
   }
 }

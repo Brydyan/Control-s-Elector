@@ -1,12 +1,19 @@
-import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Paginator } from 'primeng/paginator';
+import { PaginatorState } from 'primeng/types/paginator';
 import { PAGE_DEFAULTS } from '../../models/page.model';
-import { ButtonComponent } from '../../ui';
 
+/**
+ * Pagination control backed by PrimeNG.
+ *
+ * The public API is unchanged so the pages that consume it keep working: the
+ * component owns the `p-paginator` and translates its events into the
+ * `pageChange` and `sizeChange` outputs the pages already listen to.
+ */
 @Component({
   selector: 'app-paginator',
   standalone: true,
-  imports: [CommonModule, ButtonComponent],
+  imports: [Paginator],
   templateUrl: './paginator.component.html',
 })
 export class PaginatorComponent {
@@ -25,22 +32,24 @@ export class PaginatorComponent {
     return Math.ceil(this.totalElements / this.size);
   }
 
-  previous(): void {
-    if (this.page <= 0) {
-      return;
-    }
-    this.pageChange.emit(this.page - 1);
+  /**
+   * PrimeNG's `first` is the index of the first record, not the page number:
+   * the second page of twenty rows starts at index 20. The component's `page`
+   * is a page number, so the two are translated here.
+   */
+  get firstRecordIndex(): number {
+    return this.page * this.size;
   }
 
-  next(): void {
-    if (this.page + 1 >= this.totalPages) {
-      return;
+  /**
+   * The paginator reports the page and the page size in the same event, so
+   * the size change is translated here as well.
+   */
+  onPageChange(event: PaginatorState): void {
+    const rows = event.rows ?? this.size;
+    this.pageChange.emit(Math.floor((event.first ?? 0) / rows));
+    if (rows !== this.size) {
+      this.sizeChange.emit(rows);
     }
-    this.pageChange.emit(this.page + 1);
-  }
-
-  changeSize(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.sizeChange.emit(Number(select.value) || PAGE_DEFAULTS.SIZE);
   }
 }
