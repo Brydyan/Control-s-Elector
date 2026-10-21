@@ -12,14 +12,14 @@ Dejar el frontend migrado a PrimeNG 21 + Sakai en condiciones deservir un conteo
   └─ #141  fix/role-and-locale
        └─ #142  fix/offline-queue-safety
             └─ #143  fix/observer-form
-                 └─ #144  feat/dark-scheme
-                      └─ #145  feat/typography
-                           └─ #146  refactor/design-system-cleanup
-                                └─ #147  feat/responsive-shell
-                                     └─ #148  feat/a11y-hardening
-                                          └─ #149  feat/clarify-copy
-                                               └─ #150  perf/offline-and-bundle
-                                                    └─ #151  docs/design-system
+                 └─ #145  feat/dark-scheme
+                      └─ #146  feat/typography
+                           └─ #147  refactor/design-system-cleanup
+                                └─ #148  feat/responsive-shell
+                                     └─ #149  feat/a11y-hardening
+                                          └─ #150  feat/clarify-copy
+                                               └─ #151  perf/offline-and-bundle
+                                                    └─ #152  docs/design-system
 ```
 
 **Test runner:** `pnpm test:ci` (vitest) · `pnpm lint` · `pnpm build` — los tres deben quedar verdes en cada fase.
@@ -199,9 +199,9 @@ Los cuatro enlaces del menú tienen que quedar deshabilitados de forma explícit
 | T1 | **#141** `fix/role-and-locale` | S1, S2, S15 (admin) | delegated | `core/auth/**`, `features/admin/**`, `features/coordinator/pages/actas-lista/**`, `main.ts` | ✅ `2b1e449` |
 | T2 | **#142** `fix/offline-queue-safety` | S3 | delegated | `core/offline/**`, `app/layout/topbar/**` | ✅ `9bb265b` |
 | T3 | **#143** `fix/observer-form` | S4, S5, S6 | delegated | `features/observer/pages/registrar-acta/**`, `features/observer/services/**` | ✅ `a4f816f` |
-| T4 | #144 `feat/dark-scheme` | S7, S8 | inline | `theme/**`, `features/coordinator/pages/acta-detalle/**`, `features/placeholder/**` | ⏳ |
-| T5 | #145 `feat/typography` | S9, S10 | inline | `theme/**`, `features/**` (cifras) | ⏳ |
-| T6 | #146 `refactor/design-system-cleanup` | S11 | inline | `theme/**`, `shared/ui/**`, `shared/components/**`, `features/**` (css muerto) | ⏳ |
+| T4 | **#145** `feat/dark-scheme` | S7, S8 | delegated | `theme/**`, `features/coordinator/pages/acta-detalle/**`, `features/placeholder/**` | ✅ `d354e92` |
+| T5 | #146 `feat/typography` | S9, S10 | delegated | `theme/**`, `features/**` (cifras), `index.html` | ⏳ |
+| T6 | #147 `refactor/design-system-cleanup` | S11 | delegated | `theme/**`, `shared/ui/**`, `shared/components/**`, `features/**` (css muerto) | ⏳ |
 | T7 | #147 `feat/responsive-shell` | S12, S13 | inline | `app/layout/**`, `features/observer/pages/registrar-acta/**`, `features/coordinator/**` | ⏳ |
 | T8 | #148 `feat/a11y-hardening` | S14 | inline | `shared/ui/**`, `shared/components/**`, `app/layout/**`, `features/**` | ⏳ |
 | T9 | #149 `feat/clarify-copy` | S15, S16 | inline | `features/**`, `app.routes.ts`, `core/menu/**` | ⏳ |
@@ -222,3 +222,8 @@ Las tareas T1-T3 tienen superficies disjuntas y se ejecutan en paralelo. S4 (el 
 - **L7 (2026-10-21):** Hallazgo colateral de T2 que no estaba en el spec: el token `ACTA_TRANSMITTER` solo estaba bound en un test unitario, asi que **la cola offline nunca corria en la app** y toda garantia de S3 era inalcanzable. Se agrego un transmisor HTTP por defecto con los mismos endpoints y cuerpos.
 - **L8 (2026-10-21):** T2 dejo la deduplicacion del lado del servidor incompleta: `electoral-api` no honra el header `Idempotency-Key`. La garantia que se sostiene sola es el tracking local `actaEnviada`. El backend queda fuera de este PR; queda anotado en el cuerpo del PR #142.
 - **L9 (2026-10-21):** Nota sobre la numeracion: #139 y #140 son de la cadena `feat/backend-quarkus-migration` sobre `develop`, no de esta. Esta cadena arranca en #141 sobre `fix/service-worker-signal-state` (#138).
+
+- **L10 (2026-10-21):** T4 (modo oscuro) implementada. La medicion del padre con su propio arnes, contra el bundle reconstruido: **25/25 pares pasan, 13/13 en claro y 12/12 en oscuro** (antes: 11/11 en claro y 0/10 en oscuro). El contraste se verifica sin browser: el spec parsea el SCSS, resuelve la cadena de `var()` y compone las superficies translucidas, que es lo que el browser pinta.
+- **L11 (2026-10-21):** T4 dejo dos desviaciones deliberadas documentadas en el PR #145: `--color-text-on-brand` es slate-950 y no blanco (blanco sobre `blue-400` da 2.54:1; slate-950 da 7.93:1 — cuando la marca se aclara, la tinta encima tiene que oscurecerse), y `--color-brand-border` subio de alfa 0.45 a 0.65 porque es el anillo de foco del login y a 0.45 media 2.43:1.
+- **L12 (2026-10-21):** T4 dejo dos cosas para fases siguientes, ambas anotadas en el PR: `.banner-head p` queda en 3.89:1 en claro porque `dashboard.page.scss:37` aplica `opacity: 0.8` y ningun token lo deshace (archivo de T5/T7), y dos primitivas se remapean dentro de `.app-dark` como parche hasta que T6 reemplace esas referencias directas por tokens semanticos.
+- **L13 (2026-10-21):** Verificado para T5: **no hay ninguna fuente cargada**. `index.html` no tiene link de webfont ni preconnect, el preset no declara el token `fontFamily` y el `font-family` solo aparece en tres lugares del codigo propio (`inherit` y dos `monospace`). Todo renderiza en la del user agent. El "Inter del chrome de PrimeNG" que在校 se asumia en la auditoria era una inferencia no verificada: el nombre aparece en el bundle por `setInterval`, no por una fuente.
