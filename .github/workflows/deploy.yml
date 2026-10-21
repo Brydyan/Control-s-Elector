@@ -32,8 +32,8 @@ jobs:
       - name: Build and push Backend image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend/electoral-api
-          file: ./backend/electoral-api/Dockerfile
+          context: ./backend/electoral-api-quarkus
+          file: ./backend/electoral-api-quarkus/Dockerfile
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/control-electoral-backend:latest
