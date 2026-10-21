@@ -104,6 +104,15 @@
 			<version>0.4</version>
 		</dependency>
 
+		<!-- OpenPDF: genera el PDF del expediente de impugnacion CNE (modulo de actas).
+		     Misma libreria y misma version que usa el backend Spring, para que el documento
+		     sea indistinguible entre las dos implementaciones. -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>2.0.3</version>
+		</dependency>
+
 		<!-- Observabilidad: el health va en /actuator/health para no romper el contrato
 		     con el backend Spring ni el job de CI. -->
 		<dependency>
