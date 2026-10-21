@@ -120,7 +120,7 @@ curl -X POST http://localhost:8081/api/v1/auth/register \
 **Email generado automáticamente:** `juaperobs@control.ttcs` (Juan + Pérez + OBSERVER)
 
 Roles disponibles y su matriz de permisos:
-`backend/electoral-api/src/main/resources/database/changelog/002-rbac-seed.sql`.
+`backend/electoral-api-quarkus/src/main/resources/database/changelog/002-rbac-seed.sql`.
 
 Endpoints útiles para smoke test con cada rol:
 
@@ -152,16 +152,11 @@ Endpoints útiles para smoke test con cada rol:
 
 ## 📝 Notas operativas
 
-- **Reiniciar el backend**: `pkill -9 -f "spring-boot:run" && cd backend/electoral-api && nohup ./mvnw spring-boot:run > /tmp/boot.log 2>&1 &`
+- **Reiniciar el backend**: `pkill -9 -f "quarkus:dev" && cd backend/electoral-api-quarkus && nohup mvn quarkus:dev > /tmp/boot.log 2>&1 &`
 - **Resetear password del admin**: borrar el row de la tabla `usuario` con su email y reiniciar la app — el seeder la recrea con la password de `.env`.
 - **Recrear schema desde cero** (destructivo): ver opciones en `openspec/` o correr `docker compose down -v && docker compose --profile dev up -d` y dejar que Hibernate + Liquibase repueblen.
-- **Correr migrations Liquibase a mano** (sin levantar el backend):
-
-  ```bash
-  ./mvnw liquibase:changelogSync \
-      -Dliquibase.url="jdbc:postgresql://localhost:5432/electoral_db" \
-      -Dliquibase.username="electoral_user" \
-      -Dliquibase.password="electoral_pass" \
-      -Dliquibase.changeLogFile="src/main/resources/database/db.changelog-master.yaml" \
-      -Dliquibase.driver="org.postgresql.Driver"
-  ```
+- **Correr migrations Liquibase a mano** (sin levantar el backend): ya no hace falta. En Spring
+  era `spring.liquibase.enabled=true` y ademas un goal aparte para sincronizar checksums. En
+  Quarkus las migraciones se aplican **al arrancar el backend**
+  (`quarkus.liquibase.migrate-at-start`, ON por default) y el estado se lee de la tabla
+  `DATABASECHANGELOG` de la base.
