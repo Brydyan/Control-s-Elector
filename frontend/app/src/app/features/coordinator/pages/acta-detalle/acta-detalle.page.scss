@@ -260,6 +260,14 @@
     text-align: right;
   }
 
+  /*
+   * La columna de votos se lee en vertical: las cifras tienen que alinearse
+   * dígito a dígito para que el operador compare de un vistazo.
+   */
+  .td-votos {
+    font-variant-numeric: tabular-nums;
+  }
+
   .row-subtotal {
     background: var(--color-surface-page);
     color: var(--color-text-muted);

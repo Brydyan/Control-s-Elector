@@ -23,6 +23,23 @@
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="assets/icon/favicon.png" />
 
+    <!--
+      The face of the app: IBM Plex Sans, self-hosted and subsetted. It is
+      the render blocking resource of the first paint, so it is preloaded.
+      `crossorigin` is mandatory: fonts are always fetched in CORS mode.
+      The href is absolute and identical to the `url()` of the `@font-face`
+      in `src/theme/fonts.scss`: with a relative href the browser does not
+      match the preloaded resource with the one the stylesheet asks for and
+      downloads the file twice on every deep route.
+    -->
+    <link
+      rel="preload"
+      href="/assets/fonts/ibm-plex-sans-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black" />

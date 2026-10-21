@@ -64,11 +64,28 @@ const BRAND_DARK_SURFACE = {
 } as const;
 
 /**
+ * The face of the app, declared for the component library.
+ *
+ * Source of truth: `src/theme/tokens.scss`. The values below are a literal
+ * copy of the CSS custom properties declared there, kept as plain values so
+ * the preset can be asserted in unit tests without a CSS-variable runtime.
+ *
+ * S9 of `odd/tasks/frontend-design-system-hardening.md`: the app had no
+ * typeface at all, so everything rendered in the user agent's default serif.
+ * PrimeNG's components inherit the family from the body
+ * (`font-family: inherit`), and this token is what the theme publishes as
+ * `--p-font-family`: the chrome and the content are the same voice by
+ * declaration, not by accident.
+ */
+export const APP_FONT_FAMILY =
+  '"IBM Plex Sans", "IBM Plex Sans Fallback", Arial, "Helvetica Neue", system-ui, sans-serif';
+
+/**
  * PrimeNG preset derived from Aura.
  *
  * Only the layers the institutional identity depends on are overridden: the
- * primary ramp (brand), the blue primitive it references, the radius scale and
- * the dark surfaces. Everything else (typography, component tokens, light
+ * primary ramp (brand), the blue primitive it references, the radius scale,
+ * the dark surfaces and the family. Everything else (component tokens, light
  * surfaces) is inherited from Aura and stays themeable through the same token
  * mechanism.
  */
@@ -78,6 +95,7 @@ export const electoralPreset = definePreset(Aura, {
     borderRadius: BRAND_RADIUS,
   },
   semantic: {
+    fontFamily: APP_FONT_FAMILY,
     primary: {
       50: BRAND_BLUE[50],
       100: BRAND_BLUE[100],

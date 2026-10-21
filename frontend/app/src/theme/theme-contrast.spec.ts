@@ -1,14 +1,17 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   parseScssBlocks,
+  parseNestedScssRules,
   parseThemeTokens,
   ThemeResolver,
   ratioOf,
   relativeLuminance,
   parseColor,
+  composite,
+  contrastRatio,
 } from './tokens.parser';
 
 /**
@@ -26,6 +29,7 @@ import {
  */
 
 const THEME_DIR = dirname(fileURLToPath(import.meta.url));
+const SOURCE_DIR = resolve(THEME_DIR, '..');
 
 const tokensSource = readFileSync(join(THEME_DIR, 'tokens.scss'), 'utf8');
 const typographySource = readFileSync(
@@ -247,4 +251,65 @@ describe('global typography', () => {
       expect(declared).toBe(true);
     }
   });
+});
+
+/**
+ * The caption of the dashboard banner sat at 3.89:1 in the light scheme: the
+ * rule painted it with `opacity: 0.8` on top of the brand blue, and no token
+ * can undo an opacity. The caption has to carry a token for its colour and
+ * reach AA (4.5:1) in both schemes.
+ */
+describe('the dashboard banner caption', () => {
+  const dashboardSource = readFileSync(
+    join(SOURCE_DIR, 'app/features/dashboard/dashboard.page.scss'),
+    'utf8',
+  );
+
+  const rules = parseNestedScssRules(dashboardSource);
+  const caption = rules.find((rule) => rule.selector === '.banner-head p');
+
+  it('should declare the caption with a colour token', () => {
+    expect(caption).toBeDefined();
+
+    const colorToken = caption!.body.match(
+      /color\s*:\s*var\(\s*(--[\w-]+)\s*\)/,
+    )?.[1];
+
+    expect(
+      colorToken,
+      'the caption has to carry a colour token, not an opacity',
+    ).toBeDefined();
+  });
+
+  it.each(['light', 'dark'] as const)(
+    'should keep the caption readable in the %s scheme',
+    (scheme) => {
+      const colorToken = caption!.body.match(
+        /color\s*:\s*var\(\s*(--[\w-]+)\s*\)/,
+      )?.[1];
+      expect(colorToken).toBeDefined();
+
+      const opacity = Number(
+        caption!.body.match(/opacity\s*:\s*([\d.]+)/)?.[1] ?? '1',
+      );
+
+      const foreground = parseColor(resolver.resolve(colorToken!, scheme));
+      const background = parseColor(
+        resolver.resolve('--color-brand-primary', scheme),
+      );
+      expect(foreground).not.toBeNull();
+      expect(background).not.toBeNull();
+
+      // What the browser paints: the colour of the token, dimmed by the
+      // opacity of the rule, over the blue of the banner.
+      const painted = composite(
+        { ...foreground!, alpha: foreground!.alpha * opacity },
+        background!.rgb,
+      );
+
+      expect(contrastRatio(painted, background!.rgb)).toBeGreaterThanOrEqual(
+        AA_TEXT,
+      );
+    },
+  );
 });
