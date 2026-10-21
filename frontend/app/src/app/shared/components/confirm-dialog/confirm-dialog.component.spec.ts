@@ -36,7 +36,9 @@ describe('ConfirmDialogComponent (T-FE-12 S3)', () => {
     fixture.detectChanges();
     const dialog = fixture.nativeElement.querySelector('[role="dialog"]');
     expect(dialog).toBeTruthy();
-    expect(dialog.querySelector('h2').textContent).toContain('¿Confirma?');
+    expect(dialog.querySelector('.p-dialog-title').textContent).toContain(
+      '¿Confirma?',
+    );
   });
 
   it('should open() with custom title + message + variant', () => {
@@ -77,6 +79,29 @@ describe('ConfirmDialogComponent (T-FE-12 S3)', () => {
     cancel.click();
     expect(emitted).toBe(true);
     expect(component.visible).toBe(false);
+  });
+
+  it('should emit cancel$ when the dialog is dismissed', () => {
+    component.visible = true;
+    let emitted = false;
+    component.cancel$.subscribe(() => (emitted = true));
+    fixture.detectChanges();
+
+    component.onVisibleChange(false);
+
+    expect(emitted).toBe(true);
+    expect(component.visible).toBe(false);
+  });
+
+  it('should not emit cancel$ when the dialog closes after a confirm', () => {
+    component.visible = true;
+    let cancelled = false;
+    component.cancel$.subscribe(() => (cancelled = true));
+    fixture.detectChanges();
+
+    component.onConfirm();
+
+    expect(cancelled).toBe(false);
   });
 
   it('should render message when provided', () => {
