@@ -112,15 +112,16 @@ public class GlobalExceptionHandler {
 
   /** Parámetro requerido ausente → 400 BAD REQUEST. Mismo motivo que {@link #missingPart}. */
   @ExceptionHandler(MissingServletRequestParameterException.class)
-  public ResponseEntity<Map<String, Object>> missingParam(MissingServletRequestParameterException ex) {
+  public ResponseEntity<Map<String, Object>> missingParam(
+      MissingServletRequestParameterException ex) {
     return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
   }
 
   /**
    * Ruta inexistente → 404 NOT FOUND.
    *
-   * <p>Sin este handler la excepción caía en el catch-all genérico y una ruta inexistente
-   * respondía 500 "internal error".
+   * <p>Sin este handler la excepción caía en el catch-all genérico y una ruta inexistente respondía
+   * 500 "internal error".
    */
   @ExceptionHandler(NoResourceFoundException.class)
   public ResponseEntity<Map<String, Object>> noResource(NoResourceFoundException ex) {
