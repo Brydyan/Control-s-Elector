@@ -33,7 +33,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ./backend/electoral-api-quarkus
-          file: ./backend/electoral-api-quarkus/Dockerfile
+          file: ./backend/electoral-api-quarkus/Dockerfile.native
           push: true
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/control-electoral-backend:latest

@@ -13,8 +13,12 @@
 #
 # El binario nativo de GraalVM queda reservado para deploy en Railway
 # (donde el proceso de build corre fuera del desktop y tiene más memoria).
-# A día de hoy el build nativo del backend completo sigue bloqueado (#114):
-# el servicio `electoral-api` de más abajo corre Quarkus sobre la JVM.
+# El build nativo exige 6-8 GB de RAM, que es justamente lo que el desktop no
+# tiene. Ver `backend/electoral-api-quarkus/Dockerfile.native`.
+#
+# Para correr el backend nativo desde el host (sin Docker), hace falta
+# GraalVM/Mandrel y `mvn package -Dnative`; con la RAM que tiene esta maquina
+# el AOT no entra. Para desarrollo, `mvn quarkus:dev` sobre la JVM.
 #
 # Uso (desarrollo local):
 #   docker compose --profile dev up -d   # Postgres + Backend + RustFS
@@ -75,12 +79,15 @@ services:
           memory: ${POSTGRES_MEM_LIMIT:-512M}
 
   # ---------------------------------------------------------------------------
-  # Electoral API — Backend Quarkus
+  # Electoral API — Backend Quarkus (ejecutable nativo, sin JVM)
   # ---------------------------------------------------------------------------
+  # La imagen es la NATIVA (Dockerfile.native): no lleva JVM. La de JVM
+  # (Dockerfile) sigue existiendo para el job de CI que corre la suite de
+  # contrato rapido; produccion corre el binario.
   electoral-api:
     build:
       context: ./backend/electoral-api-quarkus
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.native
     container_name: electoral-api-${APP_ENV:-dev}
     profiles: ["dev"]
     environment:
