@@ -88,8 +88,8 @@ La suite debe ser **agnóstica del framework**. Es la única forma de que sirva 
 | T8 | Contrato de configuración: partidos, cargos, candidatos, cantones | S2 | inline | `1bc23eb` |
 | T9 | Contrato de dashboard: resumen, resultados, progreso, novedades | S2 | inline | `1bc23eb` |
 | T10 | Contrato de errores y OpenAPI: shapes 400/401/403/404 y no-regresión del spec | S2 | inline | `1bc23eb` |
-| T11 | Job de CI: build de imagen → boot con Postgres → health → suite contra el contenedor | S1,S5 | inline | (commit final) |
-| T12 | Docs: cómo correr la suite contra Spring hoy y contra Quarkus mañana | S1,S3 | inline | (commit final) |
+| T11 | Job de CI: build de imagen → boot con Postgres → health → suite contra el contenedor | S1,S5 | inline | `ce97870` |
+| T12 | Docs: cómo correr la suite contra Spring hoy y contra Quarkus mañana | S1,S3 | inline | `ce97870` |
 
 **Estrategia de entrega:** `auto-chain`. Los work-units T3–T10 son unidades independientes con superficies de edición disjuntas y se lanzan en paralelo una vez que T1+T2 fijan el patrón. T11 y T12 cierran la feature.
 
