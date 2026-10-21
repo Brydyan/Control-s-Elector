@@ -62,9 +62,12 @@ export class ActaDetallePage implements OnInit, OnDestroy {
   readonly data = signal<ActaDetalleCompleto | null>(null);
 
   /**
-     * The loaded detail. The template only reads it inside the guard that
-     * checks the signal, so the assertion holds.
-     */
+   * The loaded detail.
+   *
+   * Only read it inside a `data()` guard: the detail is null while the
+   * request is in flight, and the assertion would take the screen down.
+   * Outside a guard, read the signal with the optional chaining instead.
+   */
     get detalle(): ActaDetalleCompleto {
       return this.data()!;
     }
