@@ -88,7 +88,11 @@ public class GuardarBorradorActaUseCase {
     Acta actaGuardada = actaRepository.save(acta);
 
     if (!esNuevo) {
+      // El flush entre el delete y el insert es obligatorio: Hibernate ejecuta los INSERT de
+      // ActaDetalle antes que los DELETE en el mismo flush (orden del ActionQueue) y el UNIQUE
+      // (acta_id, candidato_id) revienta con duplicate key. Mismo patrón que CorregirActaUseCase.
       actaDetalleRepository.deleteByActa(actaGuardada);
+      actaDetalleRepository.flush();
     }
     persistirDetalles(actaGuardada, dto.getDetalles());
 
