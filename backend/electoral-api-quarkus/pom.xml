@@ -22,6 +22,7 @@
 		<quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
 		<quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
 		<quarkus.platform.version>3.40.1</quarkus.platform.version>
+		<quarkus-openpdf.version>3.3.3</quarkus-openpdf.version>
 
 		<compiler-plugin.version>3.16.0</compiler-plugin.version>
 		<surefire-plugin.version>3.5.6</surefire-plugin.version>
@@ -109,10 +110,15 @@
 		<!-- OpenPDF: genera el PDF del expediente de impugnacion CNE (modulo de actas).
 		     Misma libreria y misma version que usa el backend Spring, para que el documento
 		     sea indistinguible entre las dos implementaciones. -->
+		<!-- PDF del expediente de impugnacion. Entra por la extension de Quarkus y
+		     no por el artifact suelto: la extension existe justamente para que
+		     OpenPDF funcione en un ejecutable nativo, y su metadata de
+		     reachability es lo que cierra el bloqueo de #114.
+		     Issue #114. -->
 		<dependency>
-			<groupId>com.github.librepdf</groupId>
-			<artifactId>openpdf</artifactId>
-			<version>2.0.3</version>
+			<groupId>io.quarkiverse.openpdf</groupId>
+			<artifactId>quarkus-openpdf</artifactId>
+			<version>${quarkus-openpdf.version}</version>
 		</dependency>
 
 		<!-- Observabilidad: el health va en /actuator/health para no romper el contrato
