@@ -11,6 +11,42 @@
     </app-button>
   </div>
 
+  <!-- Confirmación de salida: hay votos escritos que no se han enviado. -->
+  @if (confirmarSalida()) {
+  <div
+    #panelConfirmacion
+    class="confirm-panel"
+    role="alertdialog"
+    aria-labelledby="confirmar-salida-titulo"
+    aria-describedby="confirmar-salida-texto"
+    tabindex="-1"
+  >
+    <p id="confirmar-salida-titulo" class="confirm-panel__title">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      El acta no se ha enviado
+    </p>
+    <p id="confirmar-salida-texto" class="confirm-panel__text">
+      @if (totalVotosComputados > 0) {
+      Escribiste {{ totalVotosComputados }} votos que todavía no se han enviado
+      al servidor.
+      } @else {
+      Todavía no has enviado el acta de esta dignidad.
+      } Si vuelves ahora queda como borrador en este dispositivo, para
+      retomarlo cuando regreses.
+    </p>
+    <div class="confirm-panel__actions">
+      <app-button variant="ghost" size="md" (clicked)="seguirEscribiendo()">
+        <i class="pi pi-pencil" aria-hidden="true"></i>
+        Seguir escribiendo
+      </app-button>
+      <app-button variant="primary" size="md" (clicked)="salirDelFormulario()">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Volver sin enviar
+      </app-button>
+    </div>
+  </div>
+  }
+
   <header class="page-header">
     <div class="header-titles">
       <h1 class="page-title">Registro de Acta de Escrutinio</h1>
@@ -32,23 +68,28 @@
     message="Cargando candidatos y papeleta..."
   ></app-loading-state>
 
-  <!-- Notificación de guardado automático / borrador -->
-  @if (draftSavedMessage) {
-  <p-message
-    class="draft-pill-notification"
-    severity="info"
-    [text]="draftSavedMessage"
-  />
-  }
-
-  <!-- Notificaciones de éxito o error() -->
-  @if (submitSuccess) {
-  <p-message
-    class="success-banner"
-    severity="success"
-    text="¡Acta procesada exitosamente! Redirigiendo a las dignidades de la mesa..."
-  />
-  }
+  <!--
+    Región de estado no urgente (role="status"): avisos de borrador y
+    mensajes de éxito. La región vive siempre en el DOM y sólo cambia su
+    texto, para que el lector de pantalla la anuncie. El error vive en
+    app-error-state, con role="alert": un éxito no se pinta como error.
+  -->
+  <div
+    class="status-region"
+    role="status"
+    aria-live="polite"
+    [class.status-region--vacio]="!draftSavedMessage() && !success()"
+  >
+    @if (draftSavedMessage(); as aviso) {
+    <p class="draft-pill-notification">{{ aviso }}</p>
+    }
+    @if (success(); as exito) {
+    <p class="success-banner">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <span>{{ exito }}</span>
+    </p>
+    }
+  </div>
 
   <app-error-state
     *ngIf="error() && !loading()"
@@ -59,7 +100,7 @@
   <!-- ==================== PASO 1: VOTOS ==================== -->
   <div
     class="step-content"
-    *ngIf="!loading() && !submitSuccess && currentStep === 'VOTOS'"
+    *ngIf="!loading() && !submitSuccess() && currentStep() === 'VOTOS'"
   >
     <app-card [elevated]="true" headerTitle="Totales de Mesa">
       <div class="form-grid">
@@ -73,8 +114,11 @@
             type="number"
             inputmode="numeric"
             min="0"
-            [(ngModel)]="totalSufragantes"
-            (ngModelChange)="onSufragantesChange()"
+            step="1"
+            [max]="maxSufragantes"
+            [value]="totalSufragantes"
+            (input)="onTotalSufragantesChange($event)"
+            aria-describedby="explicacion-checksum"
             placeholder="0"
           />
         </div>
@@ -98,11 +142,15 @@
               type="number"
               inputmode="numeric"
               min="0"
+              step="1"
+              [max]="maxVotos"
               class="form-input--center"
               [value]="getVoto(c.id)"
               (input)="setVoto(c.id, $event)"
               placeholder="0"
               [attr.aria-label]="'Votos para ' + c.nombre"
+              aria-describedby="explicacion-checksum"
+              [attr.aria-invalid]="votoFueraDeRango(c.id) ? 'true' : null"
             />
           </div>
         </div>
@@ -120,8 +168,11 @@
             type="number"
             inputmode="numeric"
             min="0"
-            [(ngModel)]="votosBlancos"
-            (ngModelChange)="onSufragantesChange()"
+            step="1"
+            [max]="maxVotos"
+            [value]="votosBlancos"
+            (input)="onVotosBlancosChange($event)"
+            aria-describedby="explicacion-checksum"
             placeholder="0"
           />
         </div>
@@ -133,8 +184,11 @@
             type="number"
             inputmode="numeric"
             min="0"
-            [(ngModel)]="votosNulos"
-            (ngModelChange)="onSufragantesChange()"
+            step="1"
+            [max]="maxVotos"
+            [value]="votosNulos"
+            (input)="onVotosNulosChange($event)"
+            aria-describedby="explicacion-checksum"
             placeholder="0"
           />
         </div>
@@ -143,48 +197,48 @@
 
     <!-- Balance Checksum en vivo -->
     <div
+      #explicacionChecksum
+      id="explicacion-checksum"
       class="checksum-banner"
+      tabindex="-1"
       [class.checksum-banner--valid]="isChecksumValid"
       [class.checksum-banner--invalid]="!isChecksumValid"
     >
       <div class="checksum-info">
         <strong>Suma de Votos: {{ totalVotosComputados }}</strong> /
         <span>Total Sufragantes: {{ totalSufragantes }}</span>
-        @if (totalSufragantes > 0 && !isChecksumValid) {
-        <span class="checksum-delta">
-          (Diferencia: {{ diferenciaChecksum > 0 ? '+' : '' }}{{
-          diferenciaChecksum }})
-        </span>
-        }
       </div>
       <div class="checksum-status">
         @if (isChecksumValid) {
         <i class="pi pi-check" aria-hidden="true"></i> Balance electoral exacto
         } @else {
-        <i class="pi pi-times" aria-hidden="true"></i> La suma no coincide con el
-        total
+        <i class="pi pi-times" aria-hidden="true"></i>
+        <span class="checksum-difference">{{ descripcionDiferencia }}</span>
         }
       </div>
     </div>
 
+    <!-- Razón del bloqueo: el botón principal no se apaga en silencio. -->
+    @if (motivoBloqueo(); as motivo) {
+    <p class="form-hint form-hint--error" role="alert">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      {{ motivo }}
+    </p>
+    }
+
     <div class="step-actions">
-      @if (!isChecksumValid && totalVotosComputados > 0) {
+      @if (!isChecksumValid) {
       <app-button
         variant="secondary"
         size="lg"
-        (clicked)="irAPasoImagen()"
+        (clicked)="continuarConInconsistencia()"
       >
         <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
         Continuar con Inconsistencia (Foto Requerida)
         <i class="pi pi-arrow-right" aria-hidden="true"></i>
       </app-button>
       }
-      <app-button
-        variant="primary"
-        size="lg"
-        [disabled]="!isChecksumValid"
-        (clicked)="irAPasoImagen()"
-      >
+      <app-button variant="primary" size="lg" (clicked)="continuarAEvidencia()">
         Continuar a Evidencia Fotográfica
         <i class="pi pi-arrow-right" aria-hidden="true"></i>
       </app-button>
@@ -194,7 +248,7 @@
   <!-- ==================== PASO 2: EVIDENCIA DE IMAGEN ==================== -->
   <div
     class="step-content"
-    *ngIf="!loading() && !submitSuccess && currentStep === 'IMAGEN'"
+    *ngIf="!loading() && !submitSuccess() && currentStep() === 'IMAGEN'"
   >
     <app-card [elevated]="true" headerTitle="Captura de Acta Física">
       <div class="image-upload-zone">
@@ -248,7 +302,7 @@
   <!-- ==================== PASO 3: REVISIÓN Y ENVÍO ==================== -->
   <div
     class="step-content"
-    *ngIf="!loading() && !submitSuccess && currentStep === 'REVISION'"
+    *ngIf="!loading() && !submitSuccess() && currentStep() === 'REVISION'"
   >
     <app-card [elevated]="true" headerTitle="Resumen de Escrutinio">
       <div class="review-table">
@@ -272,6 +326,19 @@
           <strong>{{ getVoto(c.id) }}</strong>
         </div>
         }
+        <div
+          class="review-row"
+          [class.review-row--invalid]="!isChecksumValid"
+        >
+          <span>Balance electoral:</span>
+          <strong>
+            @if (isChecksumValid) {
+            Cuadra ({{ totalVotosComputados }} de {{ totalSufragantes }})
+            } @else {
+            {{ descripcionDiferencia }}
+            }
+          </strong>
+        </div>
         <div class="review-row review-row--highlight">
           <span>Evidencia adjunta:</span>
           <strong
@@ -280,6 +347,15 @@
           >
         </div>
       </div>
+
+      @if (!isChecksumValid) {
+      <p class="form-hint form-hint--error" role="alert">
+        <i class="pi pi-info-circle" aria-hidden="true"></i>
+        {{ descripcionDiferencia }}. El acta no se puede transmitir al servidor
+        todavía: se puede guardar como borrador para que la coordinación la
+        revise con la evidencia fotográfica.
+      </p>
+      }
     </app-card>
 
     <app-loading-state
@@ -297,6 +373,7 @@
         <app-button
           variant="secondary"
           size="md"
+          [disabled]="actaEncolada()"
           (clicked)="guardarComoBorrador()"
         >
           <i class="pi pi-save" aria-hidden="true"></i>
@@ -305,11 +382,11 @@
         <app-button
           variant="primary"
           size="lg"
-          [disabled]="!isChecksumValid"
+          [disabled]="actaEncolada()"
           (clicked)="enviarActaFinal()"
         >
           <i class="pi pi-send" aria-hidden="true"></i>
-          Transmitir Acta
+          {{ actaEncolada() ? 'Acta en cola' : 'Transmitir Acta' }}
         </app-button>
       </div>
     </div>

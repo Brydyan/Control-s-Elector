@@ -87,6 +87,28 @@ describe('ObserverService', () => {
     req.flush({ id: 123, ...payload, estado: 'ENVIADA' });
   });
 
+  it('should forward the idempotency header on the acta POST', () => {
+    const payload = {
+      jrvId: 1,
+      cargoId: 2,
+      totalSufragantes: 100,
+      votosBlancos: 5,
+      votosNulos: 5,
+      detalles: [{ candidatoId: 1, votos: 90 }],
+    };
+
+    service
+      .enviarActaDirecta(payload, {
+        headers: { 'Idempotency-Key': 'acta-1-2' },
+      })
+      .subscribe();
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/observer/actas`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.headers.get('Idempotency-Key')).toBe('acta-1-2');
+    req.flush({ id: 123, ...payload, estado: 'ENVIADA' });
+  });
+
   it('should post image with multipart key "imagen" (V.2 contract)', () => {
     const file = new File(['x'], 'acta.webp', { type: 'image/webp' });
 
