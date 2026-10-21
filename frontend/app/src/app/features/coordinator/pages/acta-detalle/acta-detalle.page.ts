@@ -2,7 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { IonIcon } from '@ionic/angular/standalone';
+import { Dialog } from 'primeng/dialog';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
+import { TableModule } from 'primeng/table';
+import { Textarea } from 'primeng/textarea';
 import {
   BadgeComponent,
   BadgeVariant,
@@ -12,7 +16,6 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { mapError } from '../../../../shared/errors/error-handler';
-import { FocusTrapDirective } from '@shared/a11y/focus-trap.directive';
 import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
 import {
   ActaDetalleCompleto,
@@ -32,14 +35,17 @@ type ErrorTarget = 'main' | 'disputa' | 'corregir';
   imports: [
     CommonModule,
     FormsModule,
-    IonIcon,
     BadgeComponent,
     ButtonComponent,
     CardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
-    FocusTrapDirective,
     ConfirmDialogComponent,
+    Dialog,
+    InputText,
+    Message,
+    TableModule,
+    Textarea,
   ],
   templateUrl: './acta-detalle.page.html',
   styleUrls: ['./acta-detalle.page.scss'],
