@@ -244,6 +244,12 @@
 
 /* Sidebar ---------------------------------------------------------------- */
 
+/*
+ * The sidebar follows the theme: Sakai paints it with a surface variable, so
+ * it is light in the light scheme and dark in the dark one. The institutional
+ * `--color-surface-sidebar` (a fixed slate-900) is kept for the case where
+ * the sidebar must stay dark in both schemes.
+ */
 .layout-sidebar {
   position: fixed;
   top: 5rem;
@@ -251,9 +257,9 @@
   width: 20rem;
   height: calc(100vh - 5rem);
   overflow-y: auto;
-  background: var(--color-surface-sidebar);
-  color: var(--sidebar-text);
-  border-right: 1px solid rgb(255 255 255 / 8%);
+  background: var(--p-content-background);
+  color: var(--p-text-color);
+  border-right: 1px solid var(--p-content-border-color);
   transition: transform 0.2s ease, width 0.2s ease;
   z-index: 997;
 }
@@ -268,7 +274,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--sidebar-text-muted);
+  color: var(--p-text-muted-color);
 }
 
 .layout-sidebar a {
@@ -278,14 +284,14 @@
   padding: 0.625rem 0.75rem;
   margin-bottom: 0.125rem;
   border-radius: var(--p-border-radius-md);
-  color: var(--sidebar-text);
+  color: var(--p-text-color);
   text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .layout-sidebar a:hover {
-  background: rgb(255 255 255 / 8%);
-  color: var(--color-surface-card);
+  background: var(--p-content-hover-background);
+  color: var(--p-text-color);
 }
 
 .layout-sidebar a.active {

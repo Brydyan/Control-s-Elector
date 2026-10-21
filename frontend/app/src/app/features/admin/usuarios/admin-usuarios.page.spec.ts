@@ -33,8 +33,8 @@ describe('AdminUsuariosPage', () => {
   });
   it('ngOnInit_cargaUsuariosYCargos', () => {
     page.ngOnInit();
-    expect(page.loading).toBe(false);
-    expect(page.usuarios).toEqual([]);
+    expect(page.loading()).toBe(false);
+    expect(page.usuarios()).toEqual([]);
   });
   it('limpiarFiltros_reseteaEstado', () => {
     page.terminoBusqueda = 'x';

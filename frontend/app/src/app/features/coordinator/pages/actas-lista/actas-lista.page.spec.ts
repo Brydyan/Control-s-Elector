@@ -81,10 +81,10 @@ describe('ActasListaPage', () => {
   it('should load actas envelope and cargos on init', () => {
     expect(coordinatorServiceMock.getActas).toHaveBeenCalled();
     expect(coordinatorServiceMock.getCargos).toHaveBeenCalled();
-    expect(component.actas.length).toBe(2);
-    expect(component.cargos.length).toBe(2);
-    expect(component.totalElements).toBe(2);
-    expect(component.totalPages).toBe(1);
+    expect(component.actas().length).toBe(2);
+    expect(component.cargos().length).toBe(2);
+    expect(component.totalElements()).toBe(2);
+    expect(component.totalPages()).toBe(1);
   });
 
   it('should send search server-side on reload', () => {
@@ -106,7 +106,7 @@ describe('ActasListaPage', () => {
 
   it('should use meta total for the active tab badge', () => {
     component.estadoSeleccionado = 'TODAS';
-    component.totalElements = 42;
+    component.totalElements.set(42);
     expect(component.conteoTab('TODAS')).toBe(42);
   });
 

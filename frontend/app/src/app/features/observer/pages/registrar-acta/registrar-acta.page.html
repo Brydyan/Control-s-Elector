@@ -4,7 +4,7 @@
       variant="ghost"
       size="sm"
       (clicked)="cancelar()"
-      [disabled]="submitting"
+      [disabled]="submitting()"
     >
       <i class="pi pi-arrow-left" aria-hidden="true"></i>
       Cancelar y volver
@@ -28,7 +28,7 @@
 
   <!-- Estado de carga inicial -->
   <app-loading-state
-    *ngIf="loading"
+    *ngIf="loading()"
     message="Cargando candidatos y papeleta..."
   ></app-loading-state>
 
@@ -41,7 +41,7 @@
   />
   }
 
-  <!-- Notificaciones de éxito o error -->
+  <!-- Notificaciones de éxito o error() -->
   @if (submitSuccess) {
   <p-message
     class="success-banner"
@@ -51,15 +51,15 @@
   }
 
   <app-error-state
-    *ngIf="error && !loading"
+    *ngIf="error() && !loading()"
     title="Atención"
-    [message]="error"
+    [message]="error() ?? undefined"
   ></app-error-state>
 
   <!-- ==================== PASO 1: VOTOS ==================== -->
   <div
     class="step-content"
-    *ngIf="!loading && !submitSuccess && currentStep === 'VOTOS'"
+    *ngIf="!loading() && !submitSuccess && currentStep === 'VOTOS'"
   >
     <app-card [elevated]="true" headerTitle="Totales de Mesa">
       <div class="form-grid">
@@ -194,7 +194,7 @@
   <!-- ==================== PASO 2: EVIDENCIA DE IMAGEN ==================== -->
   <div
     class="step-content"
-    *ngIf="!loading && !submitSuccess && currentStep === 'IMAGEN'"
+    *ngIf="!loading() && !submitSuccess && currentStep === 'IMAGEN'"
   >
     <app-card [elevated]="true" headerTitle="Captura de Acta Física">
       <div class="image-upload-zone">
@@ -248,7 +248,7 @@
   <!-- ==================== PASO 3: REVISIÓN Y ENVÍO ==================== -->
   <div
     class="step-content"
-    *ngIf="!loading && !submitSuccess && currentStep === 'REVISION'"
+    *ngIf="!loading() && !submitSuccess && currentStep === 'REVISION'"
   >
     <app-card [elevated]="true" headerTitle="Resumen de Escrutinio">
       <div class="review-table">
@@ -283,11 +283,11 @@
     </app-card>
 
     <app-loading-state
-      *ngIf="submitting"
+      *ngIf="submitting()"
       message="Transmitiendo acta y evidencia al servidor..."
     ></app-loading-state>
 
-    <div class="step-actions step-actions--between" *ngIf="!submitting">
+    <div class="step-actions step-actions--between" *ngIf="!submitting()">
       <app-button variant="ghost" size="md" (clicked)="volverAImagen()">
         <i class="pi pi-arrow-left" aria-hidden="true"></i>
         Volver

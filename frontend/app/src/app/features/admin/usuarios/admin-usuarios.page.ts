@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
@@ -45,17 +45,17 @@ import {
 })
 export class AdminUsuariosPage implements OnInit {
   private readonly service = inject(AdminService);
-  usuarios: UsuarioResponseDto[] = [];
-  loading = true;
-  submitting = false;
-  error: string | null = null;
+  readonly usuarios = signal<UsuarioResponseDto[]>([]);
+  readonly loading = signal(true);
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
   esMaster = false;
   terminoBusqueda = '';
   rolSeleccionado: RolUsuario | '' = '';
   habilitadoSeleccionado: 'TODOS' | 'HABILITADOS' | 'DESHABILITADOS' = 'TODOS';
   page = 0;
   size = 20;
-  totalElements = 0;
+  readonly totalElements = signal(0);
   modalAbierto = false;
   modalDetalles = false;
   modoEdicion = false;
@@ -88,8 +88,8 @@ export class AdminUsuariosPage implements OnInit {
   }
 
   cargarUsuarios(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
     const filtros: UsuarioFiltros = {
       search: this.terminoBusqueda.trim() || undefined,
       rol: this.rolSeleccionado || undefined,
@@ -102,13 +102,13 @@ export class AdminUsuariosPage implements OnInit {
     };
     this.service.listarUsuarios(filtros).subscribe({
       next: (res) => {
-        this.usuarios = res.data;
-        this.totalElements = res.meta.totalElements;
-        this.loading = false;
+        this.usuarios.set(res.data);
+        this.totalElements.set(res.meta.totalElements);
+        this.loading.set(false);
       },
       error: (err) => {
-        this.error = err?.message || 'No se pudieron cargar los usuarios.';
-        this.loading = false;
+        this.error.set(err?.message || 'No se pudieron cargar los usuarios.');
+        this.loading.set(false);
       },
     });
   }
@@ -165,7 +165,7 @@ export class AdminUsuariosPage implements OnInit {
     this.apellido = '';
     this.rol = 'OBSERVER';
     this.passwordTemporal = null;
-    this.error = null;
+    this.error.set(null);
     this.modalAbierto = true;
   }
   abrirEditar(usuario: UsuarioResponseDto): void {
@@ -176,22 +176,22 @@ export class AdminUsuariosPage implements OnInit {
     this.apellido = usuario.apellido;
     this.rol = usuario.rolNombre as RolUsuario;
     this.passwordTemporal = null;
-    this.error = null;
+    this.error.set(null);
     this.modalAbierto = true;
   }
   cerrarModal(): void {
-    if (!this.submitting) this.modalAbierto = false;
+    if (!this.submitting()) this.modalAbierto = false;
   }
   cerrarDetalles(): void {
     this.modalDetalles = false;
   }
   guardar(): void {
     if (!this.nombre.trim() || !this.apellido.trim()) {
-      this.error = 'Nombre y apellido son obligatorios.';
+      this.error.set('Nombre y apellido son obligatorios.');
       return;
     }
-    this.submitting = true;
-    this.error = null;
+    this.submitting.set(true);
+    this.error.set(null);
     const payload = {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
@@ -206,7 +206,7 @@ export class AdminUsuariosPage implements OnInit {
         : this.service.crearUsuario(payload);
     request.subscribe({
       next: (usuario) => {
-        this.submitting = false;
+        this.submitting.set(false);
         if (!this.modoEdicion)
           this.passwordTemporal =
             (usuario as UsuarioConPasswordTemporal).passwordTemporal ?? null;
@@ -214,8 +214,8 @@ export class AdminUsuariosPage implements OnInit {
         if (this.modoEdicion) this.modalAbierto = false;
       },
       error: (err) => {
-        this.submitting = false;
-        this.error = err?.message || 'No se pudo guardar el usuario.';
+        this.submitting.set(false);
+        this.error.set(err?.message || 'No se pudo guardar el usuario.');
       },
     });
   }
@@ -225,12 +225,12 @@ export class AdminUsuariosPage implements OnInit {
       !confirm(`¿Deshabilitar a ${usuario.email}?`)
     )
       return;
-    this.submitting = true;
+    this.submitting.set(true);
     this.service.deshabilitarUsuario(usuario.publicId).subscribe({
       next: () => this.cargarUsuarios(),
       error: (err) => {
-        this.submitting = false;
-        this.error = err?.message || 'No se pudo deshabilitar el usuario.';
+        this.submitting.set(false);
+        this.error.set(err?.message || 'No se pudo deshabilitar el usuario.');
       },
     });
   }
@@ -251,7 +251,7 @@ export class AdminUsuariosPage implements OnInit {
       .subscribe({
         next: () => this.cargarUsuarios(),
         error: (err) =>
-          (this.error = err?.message || 'No se pudo re-habilitar el usuario.'),
+          (this.error.set(err?.message || 'No se pudo re-habilitar el usuario.')),
       });
   }
 }

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IconField } from 'primeng/iconfield';
@@ -60,11 +60,11 @@ export class ActasListaPage implements OnInit, OnDestroy {
   private readonly busqueda$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
-  actas: ActaItem[] = [];
-  cargos: CargoResumen[] = [];
-  cantones: CantonResumen[] = [];
-  loading = true;
-  error: string | null = null;
+  readonly actas = signal<ActaItem[]>([]);
+  readonly cargos = signal<CargoResumen[]>([]);
+  readonly cantones = signal<CantonResumen[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
 
   esMaster = false;
   estadoSeleccionado: EstadoActa | 'TODAS' = 'TODAS';
@@ -74,8 +74,8 @@ export class ActasListaPage implements OnInit, OnDestroy {
 
   page = 0;
   size = 20;
-  totalElements = 0;
-  totalPages = 0;
+  readonly totalElements = signal(0);
+  readonly totalPages = signal(0);
 
   readonly tabsEstado: Array<{
     estado: EstadoActa | 'TODAS';
@@ -109,7 +109,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   cargarCargos(): void {
     this.coordinatorService.getCargos().subscribe({
       next: (cargos) => {
-        this.cargos = cargos;
+        this.cargos.set(cargos);
       },
       error: (err) => {
         console.error('Error cargando cargos:', err);
@@ -120,7 +120,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   cargarCantones(): void {
     this.coordinatorService.getCantones().subscribe({
       next: (cantones) => {
-        this.cantones = cantones;
+        this.cantones.set(cantones);
       },
       error: (err) => {
         console.error('Error cargando cantones:', err);
@@ -148,8 +148,8 @@ export class ActasListaPage implements OnInit, OnDestroy {
   }
 
   cargarActas(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
 
     const filtros: ActaFiltros = {
       estado: this.estadoSeleccionado,
@@ -167,16 +167,16 @@ export class ActasListaPage implements OnInit, OnDestroy {
 
     this.coordinatorService.getActas(filtros).subscribe({
       next: (paged) => {
-        this.actas = paged.data;
-        this.totalElements = paged.meta.totalElements;
-        this.totalPages = paged.meta.totalPages;
-        this.loading = false;
+        this.actas.set(paged.data);
+        this.totalElements.set(paged.meta.totalElements);
+        this.totalPages.set(paged.meta.totalPages);
+        this.loading.set(false);
       },
       error: (err) => {
-        this.error =
+        this.error.set(
           err?.error?.message ||
-          'No se pudieron cargar las actas para supervisión.';
-        this.loading = false;
+          'No se pudieron cargar las actas para supervisión.');
+        this.loading.set(false);
       },
     });
   }
@@ -210,7 +210,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   get cargoOptions(): Array<{ label: string; value: number | null }> {
     return [
       { label: 'Todas las Dignidades', value: null },
-      ...this.cargos.map((c) => ({
+      ...this.cargos().map((c) => ({
         label: `${c.nombre} (${c.nivel})`,
         value: c.id,
       })),
@@ -221,7 +221,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   get cantonOptions(): Array<{ label: string; value: number | null }> {
     return [
       { label: 'Todos los Cantones', value: null },
-      ...this.cantones.map((c) => ({
+      ...this.cantones().map((c) => ({
         label: `${c.nombre} (${c.codigo})`,
         value: c.id,
       })),
@@ -266,16 +266,16 @@ export class ActasListaPage implements OnInit, OnDestroy {
       'Datos verificados como fraudulentos',
     );
     if (!motivo || !motivo.trim()) {
-      this.error = 'El motivo de anulación es obligatorio.';
+      this.error.set('El motivo de anulación es obligatorio.');
       return;
     }
-    this.loading = true;
+    this.loading.set(true);
     this.coordinatorService.anularActa(actaId, motivo.trim()).subscribe({
       next: () => this.cargarActas(),
       error: (err) => {
         const mapped = mapError(err);
-        this.error = mapped.message;
-        this.loading = false;
+        this.error.set(mapped.message);
+        this.loading.set(false);
 
         // W4 FIX (S7): 409 Conflict — auto-reload like dispute/correct actions
         // When another session annuls the acta concurrently, reload the list
@@ -300,20 +300,20 @@ export class ActasListaPage implements OnInit, OnDestroy {
 
   get actasFiltradas(): ActaItem[] {
     // Server-side filtering: the backend already applied estado/cargo/search.
-    return this.actas;
+    return this.actas();
   }
 
   contarPorEstado(estado: EstadoActa): number {
     // Page-local count only. Exact global per-tab counts need a counts
     // endpoint (follow-up); see conteoTab for the active-tab total.
-    return this.actas.filter((a) => a.estado === estado).length;
+    return this.actas().filter((a) => a.estado === estado).length;
   }
 
   conteoTab(tab: EstadoActa | 'TODAS'): number {
     // The active filter's badge is exact (meta.totalElements of the current
     // query). Inactive tabs fall back to the page-local count.
-    if (tab === this.estadoSeleccionado) return this.totalElements;
-    if (tab === 'TODAS') return this.actas.length;
+    if (tab === this.estadoSeleccionado) return this.totalElements();
+    if (tab === 'TODAS') return this.actas().length;
     return this.contarPorEstado(tab);
   }
 
@@ -324,7 +324,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   obtenerNombreCargo(acta: ActaItem): string {
     // Prefer the backend-provided denominative (no per-row lookup needed).
     if (acta.nombreCargo) return acta.nombreCargo;
-    const cargo = this.cargos.find((c) => c.id === acta.cargoId);
+    const cargo = this.cargos().find((c) => c.id === acta.cargoId);
     return cargo ? cargo.nombre : `Cargo #${acta.cargoId}`;
   }
 

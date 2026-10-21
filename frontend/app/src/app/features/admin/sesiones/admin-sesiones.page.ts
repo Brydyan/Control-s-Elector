@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
@@ -36,14 +36,14 @@ import { SesionFiltros, SesionResponseDto } from '../models/admin.model';
 })
 export class AdminSesionesPage implements OnInit {
   private readonly service = inject(AdminService);
-  sesiones: SesionResponseDto[] = [];
-  loading = true;
-  error: string | null = null;
+  readonly sesiones = signal<SesionResponseDto[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
   esMaster = false;
   terminoBusqueda = '';
   page = 0;
   size = 20;
-  totalElements = 0;
+  readonly totalElements = signal(0);
   modalAbierto = false;
   sesionSeleccionada: SesionResponseDto | null = null;
   ngOnInit(): void {
@@ -65,8 +65,8 @@ export class AdminSesionesPage implements OnInit {
     }
   }
   cargarSesiones(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
     const filtros: SesionFiltros = {
       search: this.terminoBusqueda.trim() || undefined,
       page: this.page,
@@ -74,13 +74,13 @@ export class AdminSesionesPage implements OnInit {
     };
     this.service.listarSesiones(filtros).subscribe({
       next: (res) => {
-        this.sesiones = res.data;
-        this.totalElements = res.meta.totalElements;
-        this.loading = false;
+        this.sesiones.set(res.data);
+        this.totalElements.set(res.meta.totalElements);
+        this.loading.set(false);
       },
       error: (err) => {
-        this.error = err?.message || 'No se pudieron cargar las sesiones.';
-        this.loading = false;
+        this.error.set(err?.message || 'No se pudieron cargar las sesiones.');
+        this.loading.set(false);
       },
     });
   }
@@ -103,7 +103,7 @@ export class AdminSesionesPage implements OnInit {
     this.service.revocarSesion(sesion.id).subscribe({
       next: () => this.cargarSesiones(),
       error: (err) =>
-        (this.error = err?.message || 'No se pudo revocar la sesión.'),
+        (this.error.set(err?.message || 'No se pudo revocar la sesión.')),
     });
   }
   onPageChange(page: number): void {
