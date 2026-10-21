@@ -39,7 +39,8 @@
               "src/global.scss",
               "src/theme/variables.scss",
               "node_modules/primeicons/primeicons.css",
-              "src/theme/tailwind.css"
+              "src/theme/tailwind.css",
+              "src/app/layout/layout.scss"
             ],
             "scripts": [],
             "browser": "src/main.ts"

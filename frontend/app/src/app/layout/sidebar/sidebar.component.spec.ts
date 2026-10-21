@@ -105,13 +105,22 @@ describe('SidebarComponent', () => {
     expect(hasOperacion).toBe(false);
   });
 
-  it('should reflect desktop collapsed state on sidebar element', () => {
-    const aside = fixture.nativeElement.querySelector('aside.sidebar');
+  it('should render the shell sidebar with a link per menu item', () => {
+    const aside = fixture.nativeElement.querySelector('aside.layout-sidebar');
     expect(aside).toBeTruthy();
-    expect(aside.classList.contains('collapsed')).toBe(false);
 
-    component.layout.toggleDesktopCollapse();
-    fixture.detectChanges();
-    expect(aside.classList.contains('collapsed')).toBe(true);
+    const links = fixture.nativeElement.querySelectorAll('aside.layout-sidebar a');
+    expect(links.length).toBeGreaterThan(0);
+  });
+
+  it('should map the catalog icon keys to PrimeIcons', () => {
+    const icons = component
+      .sections()
+      .flatMap((section) => section.items)
+      .map((item) => item.icon);
+
+    expect(icons.every((icon) => icon.startsWith('pi pi-'))).toBe(true);
+    expect(icons).toContain('pi pi-home');
+    expect(icons).toContain('pi pi-plus-circle');
   });
 });

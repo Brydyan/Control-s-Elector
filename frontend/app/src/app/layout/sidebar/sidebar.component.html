@@ -1,87 +1,19 @@
-<aside
-  class="sidebar"
-  [class.open]="layout.sidebarOpen()"
-  [class.collapsed]="layout.desktopCollapsed()"
->
-  <div class="sidebar-brand">
-    <div class="sidebar-brand-row">
-      <div class="sidebar-logo">🗳️</div>
-      <div class="sidebar-brand-text">
-        <div class="sidebar-brand-name">Control Electoral</div>
-        <div class="sidebar-brand-sub">Santa Elena 2027</div>
-      </div>
-      <button
-        class="sidebar-close-btn"
-        type="button"
-        (click)="layout.closeSidebar()"
-        aria-label="Cerrar menú lateral"
-      >
-        <ion-icon name="close-outline" aria-hidden="true"></ion-icon>
-      </button>
-    </div>
-  </div>
-
-  <nav class="sidebar-nav">
+<aside class="layout-sidebar">
+  <nav aria-label="Navegación principal">
     @for (section of sections(); track section.label) {
-      <div class="nav-section-label">{{ section.label }}</div>
-
-      @for (item of section.items; track item.label) {
-        @if (item.disabled || !item.route) {
-          <div
-            class="nav-item disabled"
-            aria-disabled="true"
-            [attr.title]="item.label"
-          >
-            <ion-icon
-              class="nav-icon"
-              [name]="item.icon"
-              aria-hidden="true"
-            ></ion-icon>
-            <span class="nav-label">{{ item.label }}</span>
-            @if (item.tag) {
-              <span class="nav-tag">{{ item.tag }}</span>
-            }
-          </div>
-        } @else {
-          <a
-            class="nav-item"
-            [routerLink]="item.route"
-            routerLinkActive="active"
-            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
-            (click)="layout.closeSidebar()"
-            [attr.title]="item.label"
-          >
-            <ion-icon
-              class="nav-icon"
-              [name]="item.icon"
-              aria-hidden="true"
-            ></ion-icon>
-            <span class="nav-label">{{ item.label }}</span>
-          </a>
-        }
+      <div class="layout-nav-section">{{ section.label }}</div>
+      @for (item of section.items; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: false }"
+          [class.disabled]="item.disabled"
+          [attr.aria-disabled]="item.disabled ? 'true' : null"
+        >
+          <i [class]="item.icon" aria-hidden="true"></i>
+          <span>{{ item.label }}</span>
+        </a>
       }
     }
   </nav>
-
-  <div class="sidebar-footer">
-    <div
-      class="user-card"
-      [attr.title]="displayName() + ' (' + roleLabel() + ')'"
-    >
-      <div class="user-avatar">{{ initials() }}</div>
-      <div class="user-info">
-        <div class="user-name">{{ displayName() }}</div>
-        <div class="user-rol">{{ roleLabel() }}</div>
-      </div>
-      <button
-        class="user-exit"
-        type="button"
-        (click)="logout()"
-        aria-label="Cerrar sesión"
-        title="Cerrar sesión"
-      >
-        <ion-icon name="log-out-outline" aria-hidden="true"></ion-icon>
-      </button>
-    </div>
-  </div>
 </aside>

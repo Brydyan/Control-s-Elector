@@ -1,4 +1,5 @@
-import { Component, afterNextRender, inject, signal } from '@angular/core';
+import { Component, afterNextRender, computed, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs';
@@ -14,15 +15,15 @@ interface RouteMeta {
 }
 
 /**
- * Authenticated app shell: sidebar + topbar + routed content.
+ * Authenticated app shell: topbar + sidebar + routed content.
+ *
  * The topbar title/subtitle come from the active child route's `data`.
  */
 @Component({
   selector: 'app-main-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, TopbarComponent],
+  imports: [CommonModule, RouterOutlet, SidebarComponent, TopbarComponent],
   templateUrl: './main-layout.component.html',
-  styleUrl: './main-layout.component.scss',
 })
 export class MainLayoutComponent {
   private readonly router = inject(Router);
@@ -32,6 +33,21 @@ export class MainLayoutComponent {
     title: '',
     subtitle: '',
     notifications: 0,
+  });
+
+  /** Layout geometry classes derived from the shell state. */
+  readonly containerClass = computed(() => {
+    const overlay = this.layout.menuMode() === 'overlay';
+    const open = this.layout.sidebarOpen();
+
+    return {
+      'layout-static': !overlay,
+      'layout-overlay': overlay,
+      'layout-static-inactive':
+        !overlay && this.layout.desktopCollapsed() && this.layout.isDesktop(),
+      'layout-overlay-active': overlay && open,
+      'layout-mobile-active': !this.layout.isDesktop() && open,
+    };
   });
 
   constructor() {
