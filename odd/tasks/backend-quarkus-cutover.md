@@ -41,10 +41,13 @@ operador pidió preservar al decir "migrar todo". Cada una es una regresión si 
 | T6 | `k8s/`: `APP_JWT_SECRET`, `APP_JWT_REFRESH_PEPPER` y `migrate-at-start` en el ConfigMap | S5,S10 | inline | `7691a36` |
 | T7 | Docs: `README.md`, README del módulo, `.claude/skills/`, y los seis runbooks de `documents/` | S5 | inline | `6ec0876`, `6b16a6e` |
 | T8 | Borrar `backend/electoral-api/` completo | S5 | inline | `357cdd4` |
-| T9 | Verificación end-to-end con Spring ya borrado | S9,S11 | inline | — |
-| T10 | PR encadenado sobre `test/backend-quarkus-coverage` + entrada L16 | S1,S2 | inline | — |
+| T9 | Verificación end-to-end con Spring ya borrado | S9,S11 | inline | ver L6 |
+| T10 | PR encadenado sobre `test/backend-quarkus-coverage` + entrada L16 | S1,S2 | inline | **#150** |
 
-**Estado:** T1-T9 hechas. T10 en curso.
+**Entrega:** PR **#150**, base `test/backend-quarkus-coverage`, 9 commits. La cadena queda
+`develop → #139 → #140 → #150`.
+
+**Estado:** completo. PR #150 abierto, esperando CI.
 
 ### T9 — Verificación ejecutada (no declarada)
 
@@ -176,3 +179,26 @@ migraciones corren al arrancar). Los runbooks seguian mandando a correrlos.
 - **`backend/electoral-api/build/`** sigue en disco: son 494 archivos gitignorados propiedad de
   otro usuario (de un build en contenedor), asi que `rm -rf` da "permiso denegado". Git no los
   trackea y el PR es correcto; se borran con `sudo rm -rf` cuando quiera el operador.
+### L16 — 2026-10-21 — Entrega
+
+PR **#150**, base `test/backend-quarkus-coverage` (la punta de #140), 9 commits:
+
+```
+0e2324b  el módulo es el dueño del changelog de Liquibase
+ec679fb  adoptar spotless para no perder el gate de formato
+3a076d4  que compose levante Quarkus
+7691a36  que CI, CD y k8s apunten a Quarkus
+6ec0876  que la documentación describa el backend que existe
+6b16a6e  que los runbooks apunten al backend que existe
+357cdd4  borrar el backend Spring Boot
+e32402e  registrar la verificación
+```
+
+La cadena completa queda `develop → #139 → #140 → #150`. Los tres PRs llevan `(backend)` en el
+título para distinguirlos de la cadena de frontend que tiene abierta la otra sesión.
+
+**Lo que el operador tiene que hacer antes de dejar que la cadena aterrice en `develop`:**
+`deploy.yml` dispara en cualquier push a `develop` que toque `backend/**` y publica la imagen sin
+gate. Si el servicio de Railway define `JWT_SECRET`, hay que renombrarlo a `APP_JWT_SECRET` y
+agregar `APP_JWT_REFRESH_PEPPER`: con el nombre viejo el backend arranca igual pero firma con el
+default de desarrollo embebido en el código, y todas las sesiones activas se invalidan.
