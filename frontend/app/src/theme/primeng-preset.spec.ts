@@ -1,10 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import Aura from '@primeuix/themes/aura';
-import {
-  electoralPreset,
-  BRAND_BLUE,
-  BRAND_RADIUS,
-} from './primeng-preset';
+import { electoralPreset, BRAND_BLUE, BRAND_RADIUS } from './primeng-preset';
 import { primengTheme, DARK_MODE_CLASS } from './primeng-theme';
 
 /**
@@ -13,10 +9,7 @@ import { primengTheme, DARK_MODE_CLASS } from './primeng-theme';
  */
 describe('electoralPreset', () => {
   it('should map the primary ramp to the institutional blue scale', () => {
-    const primary = electoralPreset.semantic.primary as Record<
-      string,
-      string
-    >;
+    const primary = electoralPreset.semantic.primary as Record<string, string>;
 
     expect(primary['50']).toBe('#eff6ff');
     expect(primary['100']).toBe('#dbeafe');
@@ -29,10 +22,7 @@ describe('electoralPreset', () => {
   });
 
   it('should not ship the Aura default emerald primary', () => {
-    const primary = electoralPreset.semantic.primary as Record<
-      string,
-      string
-    >;
+    const primary = electoralPreset.semantic.primary as Record<string, string>;
 
     expect(primary['500']).not.toBe(
       (Aura.semantic.primary as Record<string, string>)['500'],
