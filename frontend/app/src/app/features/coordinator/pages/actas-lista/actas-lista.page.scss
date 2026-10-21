@@ -100,7 +100,7 @@
  */
 :host ::ng-deep .actas-table {
   thead th {
-    background: var(--p-surface-50);
+    background: var(--p-content-hover-background);
     color: var(--p-text-muted-color);
     font-size: 12px;
     font-weight: 700;
@@ -111,7 +111,7 @@
   }
 
   tbody tr {
-    border-bottom: 1px solid var(--p-surface-100);
+    border-bottom: 1px solid var(--p-content-border-color);
     transition: background-color 0.15s ease-in-out;
   }
 
@@ -237,7 +237,7 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 8px;
-    border-top: 1px solid var(--p-surface-100);
+    border-top: 1px solid var(--p-content-border-color);
 
     .fecha-text {
       font-size: 12px;
@@ -247,7 +247,7 @@
     .review-link {
       font-size: 12px;
       font-weight: 700;
-      color: var(--p-brand-primary, var(--color-brand-primary));
+      color: var(--color-brand-primary);
     }
   }
 }

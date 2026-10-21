@@ -179,15 +179,15 @@
 }
 
 .layout-status-pill.status-online {
-  color: var(--p-green-600);
+  color: var(--color-status-success);
 }
 
 .layout-status-pill.status-reconnecting {
-  color: var(--p-amber-600);
+  color: var(--color-status-warning);
 }
 
 .layout-status-pill.status-offline {
-  color: var(--p-red-600);
+  color: var(--color-status-danger);
 }
 
 .layout-readonly-badge {
@@ -251,8 +251,8 @@
   width: 20rem;
   height: calc(100vh - 5rem);
   overflow-y: auto;
-  background: var(--p-surface-900);
-  color: var(--p-surface-200);
+  background: var(--color-surface-sidebar);
+  color: var(--sidebar-text);
   border-right: 1px solid rgb(255 255 255 / 8%);
   transition: transform 0.2s ease, width 0.2s ease;
   z-index: 997;
@@ -268,7 +268,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--p-surface-400);
+  color: var(--sidebar-text-muted);
 }
 
 .layout-sidebar a {
@@ -278,14 +278,14 @@
   padding: 0.625rem 0.75rem;
   margin-bottom: 0.125rem;
   border-radius: var(--p-border-radius-md);
-  color: var(--p-surface-200);
+  color: var(--sidebar-text);
   text-decoration: none;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .layout-sidebar a:hover {
   background: rgb(255 255 255 / 8%);
-  color: var(--p-surface-0);
+  color: var(--color-surface-card);
 }
 
 .layout-sidebar a.active {
