@@ -16,9 +16,9 @@
   justify-content: center;
   width: 3.5rem;
   height: 3.5rem;
-  border-radius: var(--p-border-radius-lg);
-  background: var(--p-content-hover-background);
-  color: var(--p-text-muted-color);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted-on-surface);
 }
 
 .empty-state__icon {
@@ -29,13 +29,13 @@
   margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
-  color: var(--p-text-color);
+  color: var(--color-text-on-surface);
 }
 
 .empty-state__description {
   margin: 0;
   max-width: 32rem;
-  color: var(--p-text-muted-color);
+  color: var(--color-text-muted-on-surface);
 }
 
 .empty-state__actions {

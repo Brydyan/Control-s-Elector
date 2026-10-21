@@ -5,7 +5,6 @@
  * `import { X } from '../../shared/components'`.
  */
 
-export { EstadoBadgeComponent } from './estado-badge/estado-badge.component';
 export { RolBadgeComponent } from './rol-badge/rol-badge.component';
 export { ConfirmDialogComponent } from './confirm-dialog/confirm-dialog.component';
 export { PaginatorComponent } from './paginator/paginator.component';

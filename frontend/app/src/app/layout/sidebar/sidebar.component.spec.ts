@@ -123,4 +123,21 @@ describe('SidebarComponent', () => {
     expect(icons).toContain('pi pi-home');
     expect(icons).toContain('pi pi-plus-circle');
   });
+
+  /*
+   * S11: the sidebar used to carry its own switch of eleven backend keys and
+   * the app carried a second table of sixty Ionic names. There is one table
+   * now, keyed by what the API sends.
+   */
+  it('should resolve the icons of the backend catalog through the one table', () => {
+    const byLabel = new Map(
+      component
+        .sections()
+        .flatMap((section) => section.items)
+        .map((item) => [item.label, item.icon]),
+    );
+
+    expect(byLabel.get('Dashboard')).toBe('pi pi-home');
+    expect(byLabel.get('Registrar acta')).toBe('pi pi-plus-circle');
+  });
 });

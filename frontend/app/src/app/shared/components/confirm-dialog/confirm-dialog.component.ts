@@ -49,7 +49,7 @@ import { ButtonComponent } from '../../ui/button/button.component';
   styles: `
     .message {
       margin: 0;
-      color: var(--p-text-muted-color);
+      color: var(--color-text-muted-on-surface);
     }
   `,
 })

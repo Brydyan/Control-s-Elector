@@ -546,4 +546,17 @@ describe('RegistrarActaPage', () => {
     const texto = fixture.nativeElement.textContent as string;
     expect(texto).toContain('suma 12 ≠ padrón 10 — sobran 2');
   });
+
+  /*
+   * S11: the stepper is PrimeNG's `p-steps`. The hand-rolled step, number and
+   * label that used to live in the stylesheet were never rendered, and the
+   * app's own labels ran together as "VotosEvidenciaRevisión".
+   */
+  it('S11: el stepper muestra los tres pasos con etiquetas separadas', () => {
+    const labels = Array.from(
+      fixture.nativeElement.querySelectorAll('.p-steps-item-label'),
+    ).map((element) => (element.textContent ?? '').trim());
+
+    expect(labels).toEqual(['Votos', 'Evidencia', 'Revisión']);
+  });
 });

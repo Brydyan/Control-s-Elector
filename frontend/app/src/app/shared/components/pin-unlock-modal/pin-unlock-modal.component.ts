@@ -67,7 +67,7 @@ import { PinAuthService } from '../../../core/auth/pin-auth.service';
   styles: `
     .description {
       margin: 0 0 1rem;
-      color: var(--p-text-muted-color);
+      color: var(--color-text-muted-on-surface);
     }
     .pin-input {
       display: flex;
