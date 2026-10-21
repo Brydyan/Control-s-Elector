@@ -89,7 +89,10 @@ services:
       DB_USER: ${DB_USER:-electoral_user}
       DB_PASSWORD: ${DB_PASSWORD:-electoral_pass}
       # Server
-      SERVER_PORT: 8080
+      # The API listens on 80 inside the container so that the frontend's
+      # nginx can reach it as `electoral-api:80`, the same shape the k8s
+      # Service exposes (port 80 -> targetPort 8081).
+      SERVER_PORT: 80
       SPRING_PROFILES_ACTIVE: dev,docker
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       # S3 / RustFS
@@ -106,12 +109,12 @@ services:
       APP_SEED_ADMIN_EMAIL: ${APP_SEED_ADMIN_EMAIL:-admin@control-elector.local}
       APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD:-admin12345}
     ports:
-      - "8083:8080"
+      - "8083:80"
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:80/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 5
