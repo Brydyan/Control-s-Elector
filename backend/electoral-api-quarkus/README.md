@@ -146,6 +146,26 @@ La respuesta de la propia app lo dice: `Consider annotating the class with '@Reg
 Por eso `AuthResponse`, `AuthResponse.UsuarioActual` y `LoginRequest` llevan la anotación. **Todo
 DTO que cruce el cable en nativo la necesita.**
 
+## Estado del build nativo
+
+| | Estado |
+|---|---|
+| Slice de autenticación | ✅ compila nativo, 295 ms de arranque, 136 MB RSS |
+| Backend completo | ❌ bloqueado por el OpenPDF (ver abajo) |
+
+El bloqueo: `com.lowagie.text.pdf.FopGlyphProcessor` (de OpenPDF) referencia
+`org.apache.fop.complexscripts.util.GlyphSequence`, de la dependencia **opcional** de FOP. Sin FOP en el
+classpath el build falla con *"Discovered unresolved type during parsing"*. Con FOP aparece la cadena de
+`commons-logging` (que tampoco cierra). El detalle y las tres salidas posibles están en la
+[issue #114](https://github.com/Brydyan/Control-s-Elector/issues/114).
+
+Dos `--initialize-at-run-time` **sí** hacen falta y ya están en `application.properties` (sin ellos el
+build falla con *"Detected an instance of Random/SplittableRandom class in the image heap"*):
+`org.apache.http.impl.auth.NTLMEngineImpl` (el cliente HTTP de Apache del AWS SDK v2 crea un
+`SecureRandom` en el inicializador de clase) y
+`ec.twintailcs.electoral.auth.application.UsuarioAdminService` (tiene un `SecureRandom` estático para
+la password temporal).
+
 ## Lo que falta
 
 - `refresh`, `logout` y `register` del módulo de auth (incremento 1.1)

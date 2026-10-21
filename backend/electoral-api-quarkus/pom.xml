@@ -97,6 +97,8 @@
 			<version>2.30.0</version>
 		</dependency>
 
+
+
 		<!-- BCrypt: mismo algoritmo que usa el backend Spring. -->
 		<dependency>
 			<groupId>org.mindrot</groupId>
