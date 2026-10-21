@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package ec.cne.controlelectoral;
 
 import com.getcapacitor.BridgeActivity;
 
