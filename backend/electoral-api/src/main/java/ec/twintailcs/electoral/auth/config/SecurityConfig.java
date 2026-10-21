@@ -48,7 +48,11 @@ public class SecurityConfig {
                         "/actuator/info",
                         "/api/v1/auth/login",
                         "/api/v1/auth/refresh",
-                        "/api/v1/auth/logout")
+                        "/api/v1/auth/logout",
+                        // Dispatch de error de Spring. Sin esto, cualquier error que termine en
+                        // sendError() (por ejemplo un body JSON malformado) se re-dispatcha a
+                        // /error sin token y el cliente ve 401 en vez del status real.
+                        "/error")
                     .permitAll()
                     // OpenAPI / Swagger UI — publicos para que devs y consumers
                     // puedan descubrir el contrato sin JWT. En prod restringir
