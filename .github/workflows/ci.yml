@@ -216,7 +216,7 @@ jobs:
       # El contexto de build es backend/ porque el changelog de Liquibase vive
       # en el modulo hermano y el pom lo copia desde ahi.
       - name: Build the Quarkus image
-        run: docker build -f electoral-api-quarkus/Dockerfile -t electoral-api-quarkus ./backend
+        run: docker build -f backend/electoral-api-quarkus/Dockerfile -t electoral-api-quarkus ./backend
 
       - name: Run the Quarkus backend
         run: |

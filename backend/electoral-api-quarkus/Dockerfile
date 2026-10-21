@@ -1,7 +1,7 @@
 # Contexto de build: el directorio `backend/` (no el modulo), porque el changelog de
 # Liquibase vive en el modulo hermano y el pom lo copia desde ahi.
 #
-#   docker build -f electoral-api-quarkus/Dockerfile -t electoral-api-quarkus .
+#   docker build -f backend/electoral-api-quarkus/Dockerfile -t electoral-api-quarkus ./backend
 #
 # El contexto wider es lo que hace que el schema tenga un solo dueno: no hay una
 # segunda copia del changelog que pueda divergir.
