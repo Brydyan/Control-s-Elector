@@ -34,16 +34,15 @@ del strangler es **copiar el archivo y cambiar los imports**, no reescribirlo.
 
 ### Mismo schema, un solo dueño
 
-El changelog de Liquibase **no está duplicado**: el `pom.xml` lo copia desde
-`../electoral-api/src/main/resources/database` en la fase `generate-resources`. El schema tiene un
-único dueño y las dos implementaciones no pueden divergir.
+El changelog de Liquibase **no está duplicado**: vive en
+`src/main/resources/database`, dentro de este módulo. Cuando había dos implementaciones, el
+`pom.xml` lo copiaba desde el módulo Spring para que el schema no pudiera divergir; con una sola
+implementación, la copia desapareció y el dueño es este módulo.
 
-```xml
-<plugin>
-  <groupId>org.apache.maven.plugins</groupId>
-  <artifactId>maven-resources-plugin</artifactId>
-  <!-- copia el changelog al classpath -->
-</plugin>
+```
+backend/electoral-api-quarkus/src/main/resources/database/
+├── db.changelog-master.yaml
+└── changelog/*.sql
 ```
 
 ### Nombres de columna explícitos
@@ -168,12 +167,13 @@ la password temporal).
 
 ## Lo que falta
 
-- `refresh`, `logout` y `register` del módulo de auth (incremento 1.1)
-- El resto de módulos del API: `observer`, `coordinator`, `evidencias`, `configuracion`,
-  `dashboard`, `menus`, `admin`
-- El `DataSeeder` (el usuario MASTER inicial), que hoy vive en el backend Spring
-- S3 (`quarkus-amazon-s3`) y la evidencia fotográfica
-- El mecanismo de autorización por permiso: aca es un filtro propio que replica el
+- El build nativo del backend completo (issue #114): el OpenPDF referencia FOP.
+- El mecanismo de autorización por permiso: aca es un filtro propio que replicaba el
   `JwtAuthFilter` de Spring. Cuando el módulo esté completo conviene adoptar Quarkus Security
   (`quarkus-smallrye-jwt` + `SecurityIdentityAugmentor` para mapear el claim `perms` a roles),
   que es la forma idiomática y la que va a survive mejor al resto de la migración.
+
+> **Nota de estado**: este módulo ya no tiene módulos pendientes de migrar — los 13 recursos del
+> backend están portados y la suite de contrato da verde contra esta implementación. La sección
+> ↑
+>	listaba los módulos que faltaban durante el strangler; quedó como registro de esa etapa.

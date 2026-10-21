@@ -213,10 +213,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # El contexto de build es backend/ porque el changelog de Liquibase vive
-      # en el modulo hermano y el pom lo copia desde ahi.
+      # El contexto de build es el modulo: el changelog de Liquibase vive en su
+      # src/main/resources/database, asi que la imagen no depende de un hermano.
       - name: Build the Quarkus image
-        run: docker build -f backend/electoral-api-quarkus/Dockerfile -t electoral-api-quarkus ./backend
+        run: docker build -t electoral-api-quarkus backend/electoral-api-quarkus
 
       # El backend Quarkus se arranca DOS veces a proposito.
       #

@@ -198,33 +198,7 @@
 				<version>${compiler-plugin.version}</version>
 			</plugin>
 
-			<!--
-				El changelog de Liquibase tiene un solo dueño: backend/electoral-api/src/main/resources/database.
-				Se copia al classpath de este módulo en vez de duplicar el archivo, para que el
-				schema no pueda divergir entre las dos implementaciones durante el strangler.
-			-->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-resources-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copiar-changelog-liquibase</id>
-						<phase>generate-resources</phase>
-						<goals>
-							<goal>copy-resources</goal>
-						</goals>
-						<configuration>
-							<outputDirectory>${project.build.outputDirectory}/database</outputDirectory>
-							<resources>
-								<resource>
-									<directory>${project.basedir}/../electoral-api/src/main/resources/database</directory>
-									<filtering>false</filtering>
-								</resource>
-							</resources>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
+			
 
 			<!--
 				Surefire corre tambien los *IT: los tests de RLS son de integracion (Testcontainers
