@@ -40,33 +40,22 @@ jobs:
         run: git fetch origin develop:refs/remotes/origin/develop || true
 
       - name: Check Java formatting
-        working-directory: backend/electoral-api
-        run: ./mvnw -B spotless:check
+        working-directory: backend/electoral-api-quarkus
+        run: mvn -B spotless:check
 
-  backend-test:
-    name: Backend Tests & Coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Verify Backend
-        working-directory: backend/electoral-api
-        run: ./mvnw -B clean verify -Dspotless.check.skip=true
+  # El backend es UNO solo. Antes estos dos jobs eran `backend-format` (Spring)
+  # y `backend-test` (Spring), y `backend-quarkus-test` corria los tests del
+  # modulo Quarkus. Con el corte, `backend-quarkus-test` es el unico que
+  # verifica y formatea el backend: no hay segundo modulo que testear.
 
   # ===========================================================================
   # BACKEND CONTRACT TESTS
   # ===========================================================================
-  # Suite de regresion por contrato (backend/contract-tests). Es el gate de
-  # paridad de la migracion a Quarkus (issue #113): la suite es black-box y
-  # habla solo HTTP, asi que el mismo artefacto valida el backend Spring hoy y
-  # el backend Quarkus manana. Solo cambia la URL.
+  # Suite de regresion por contrato (backend/contract-tests). El artefacto es
+  # agnosticodel framework: habla solo HTTP, asi que el mismo test que validaba
+  # la paridad entre Spring y Quarkus sigue siendo valido — lo que cambio fue
+  # contra quien corre. Cuando quede una sola implementacion, esta suite es el
+  # gate de contrato del backend.
   backend-contract:
     name: Backend Contract Tests
     runs-on: ubuntu-latest
@@ -130,7 +119,7 @@ jobs:
             s3api create-bucket --bucket electoral-evidences
 
       - name: Build the backend image
-        run: docker build -t electoral-api:contract ./backend/electoral-api
+        run: docker build -t electoral-api:contract backend/electoral-api-quarkus
 
       # --network host para que el contenedor alcance los services de GitHub
       # Actions por los puertos publicados en el host (5432 y 9000). Asi no
@@ -178,14 +167,12 @@ jobs:
         run: docker logs electoral-api
 
   # ===========================================================================
-  # BACKEND QUARKUS (fase 1 de la migracion, issue #113)
+  # BACKEND QUARKUS
   # ===========================================================================
-  # El backend destino del strangler. Por ahora el job valida que la imagen
-  # levanta y que el health responde con el mismo contrato que el backend
-  # Spring (mismo path, mismo puerto, misma forma de body). La paridad
-  # FUNCIONAL la afirma la suite de contrato: cuando el modulo de auth este
-  # completo, `backend-contract` correra contra esta imagen y no contra la de
-  # Spring, sin cambiar el test.
+  # El unico backend. Este job afirma dos cosas que la suite de contrato no
+  # puede ver: que la imagen levanta contra una base VACIA (arrancando dos
+  # veces, porque en Quarkus Hibernate valida antes de que Liquibase cree el
+  # schema) y que el health responde en /actuator/health del puerto principal.
   backend-quarkus:
     name: Backend Quarkus
     runs-on: ubuntu-latest
@@ -218,15 +205,19 @@ jobs:
       - name: Build the Quarkus image
         run: docker build -t electoral-api-quarkus backend/electoral-api-quarkus
 
-      # El backend Quarkus se arranca DOS veces a proposito.
+      # El backend arranca DOS veces a proposito.
       #
       # 1. Contra la base VACIA del service, con la migracion activada y la validacion de
       #    Hibernate apagada. Liquibase crea el schema, pero corre DESPUES de la validacion de
       #    Hibernate: contra una base vacia el arranque con `validate` (el default) revienta
-      #    con "Schema validation: missing table [acta]".
+      #    con "Schema validation: missing table [acta]". En Spring el orden era al reves, por
+      #    eso nunca hizo falta y por eso esta fase no es obvia.
       # 2. Contra el schema ya creado, con los defaults: el backend tiene que levantar Y
       #    validar que el schema coincide con las entidades. Si alguien cambia una entidad sin
       #    cambiar el changelog, esta fase lo detecta en el CI y no en produccion.
+      #
+      # Esta fase 2 es el control de drift del backend: en compose el arranque corre con
+      # `none` para que una base nueva levante, asi que el `validate` vive acá.
       - name: Run the Quarkus backend
         run: |
           boot_quarkus() {
