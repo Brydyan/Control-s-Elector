@@ -37,7 +37,7 @@ Cada fase debe dejar el build (`pnpm build`) y la suite (`pnpm test:ci`) en verd
 | T3 | S4, S6 | Preset de PrimeNG derivado de `tokens.scss` + wiring de `providePrimeNG` + test de humo del tema | inline | done |
 | T4 | S4 | Shell de aplicación Sakai (sidebar, topbar, configurador de tema) sobre `layout/` existente | inline | done |
 | T4a | S4, S6 | Prerrequisitos del shell: Tailwind 4 + `tailwindcss-primeui` + variante `dark` + `ThemeService` que activa el modo oscuro | inline | done |
-| T5 | S3, S4 | Migrar primitivas propias de `shared/ui` a componentes PrimeNG | inline | done (#122) |
+| T5 | S3, S4 | Migrar primitivas propias de `shared/ui` y `shared/components` a componentes PrimeNG | inline | done (#122, #129) |
 | T6 | S3, S4 | Migrar features por rol (dashboard, admin, coordinator, observer, auth) a PrimeNG | inline | done (#123-#127) |
 | T7 | S3, S4 | Retirar Ionic del runtime, identidad real de Android y habilitante PWA | inline | done (#127, #128) |
 | T8 | S3, S4 | Mapear `Menu.icono` del backend (claves estables) a iconos PrimeNG | inline | done (#122) |
@@ -60,6 +60,7 @@ develop
                                      └── refactor/frontend-sakai-08-observer → #126 (T6) observer
                                           └── refactor/frontend-sakai-09-login-ionic → #127 (T6,T7) login + retiro de Ionic
                                                └── refactor/frontend-sakai-10-android-pwa → #128 (T7) Android + PWA
+                                                    └── refactor/frontend-sakai-11-shared-components → #129 (T5) shared/components → PrimeNG
 ```
 
 | PR | Rama | Unidades | Alcance | Diff |
@@ -74,6 +75,7 @@ develop
 | #126 | `...-08-observer` | T6 | Observer: JRVs, cargos y registro de acta → PrimeNG | 216 (neto +38) |
 | #127 | `...-09-login-ionic` | T6, T7 | Login → PrimeNG y **retiro de Ionic** del runtime | 534 (neto −334) |
 | #128 | `...-10-android-pwa` | T7 | Identidad real de Android + service worker (PWA) | 107 |
+| #129 | `...-11-shared-components` | T5 | `shared/components` → PrimeNG (paginator, confirm-dialog, pin-unlock) | 761 (neto −295) |
 
 El lockfile generado es la única parte que no se puede partir sin romper la instalación: por eso #117 pide `size:exception` (5.266 líneas de lockfile de 5.803).
 
@@ -193,7 +195,7 @@ Evidencia observada:
 Hallazgo relevante: la rampa institucional de `tokens.scss` **es la rampa Tailwind blue con un offset de un paso** (su `--primitive-blue-500` = `#2563eb` = Tailwind `blue-600`). Por eso el preset mapea `primary.500 → blue.600` y `primary.600 → blue.700`, conservando `--color-brand-primary` y `--color-brand-primary-strong` exactos.
 
 ## Pending / Next
-- La cadena está completa: #117 → #128, cada PR con su unidad de trabajo y su evidencia.
+- La cadena está completa: #117 → #129, cada PR con su unidad de trabajo y su evidencia. No queda ningún componente de UI propio: las primitivas de `shared/ui` y los componentes de `shared/components` corren sobre PrimeNG.
 - Pendiente de verificación en un entorno con Android SDK: el build del APK (el `appId` y el paquete ya están cambiados de forma mecánica, pero el Gradle no se puede correr acá).
 - Pendiente de decisión del equipo: si el frontend ya tiene consumers, cada PR se mergea a `develop` en orden y el siguiente se retargetea a `develop` (`gh pr edit <n> --base develop`).
 
@@ -319,3 +321,17 @@ Evidencia observada (en cada PR):
 - `grep -rn "ion-icon\|ionicons\|io.ionic.starter" src/ android/` → sin resultados (salvo la tabla de mapeo de iconos, que conserva a proposito los nombres legacy para que el catalogo del backend siga funcionando).
 
 **Limite honesto**: el APK no se compilo ni verifico. No hay Android SDK en la maquina (`ANDROID_HOME` y `ANDROID_SDK_ROOT` sin definir, `~/Android/Sdk` inexistente); JDK 21 si esta. El cambio de identidad (`appId`, namespace, applicationId, paquete de la activity, deep-link scheme, nombre visible) es mecanico y completo, pero el build de Gradle necesita un entorno con el SDK.
+
+### L14 — T5 cerrado: `shared/components` sobre PrimeNG (2026-10-20)
+PR **#129** (commit `6fcebec`).
+
+- `app-paginator` → `p-paginator` (con números de página, primero/último y selector de tamaño)
+- `app-confirm-dialog` → `p-dialog` (el focus trap y el Escape los trae el componente)
+- `app-pin-unlock-modal` → `p-dialog` + `p-inputotp` para los 4 dígitos
+- **Eliminados**: `app-notificacion-bell` (ningún template lo usaba desde que el topbar paso a `p-badge`) y `focus-trap.directive` (solo lo necesitaba el confirm-dialog custom)
+
+**Bug de integracion que la suite atrapo**: el `first` de `p-paginator` es el indice del primer registro, NO el numero de pagina. Con `page=1` y 20 filas, `first` debe ser 20. Sin la conversion (`first = page * size`, y `page = floor(first / rows)` al volver) el control reportaba "Pagina 1" mientras la tabla ya servia la segunda.
+
+Evidencia: **42 archivos, 267 tests, 0 fallos**; build verde; lint limpio.
+
+Con este PR queda **cero UI propia** en el frontend: todo lo que se ve lo dibuja PrimeNG. Lo que queda de CSS propio (1.925 lineas en las paginas + 370 en el shell) es geometria — grids, banners, listas — que PrimeNG no cubre y no debe cubrir.
