@@ -349,3 +349,25 @@ Follow-ups trackeados como issues:
 | #132 | Migrar el CSS propio (~2.774 lineas) a los tokens del sistema de diseno |
 | #133 | Compilar y verificar el APK de Android (requiere un entorno con Android SDK) |
 | #134 | Pistas de la API de PrimeNG 21: las trampas ya encontradas, con su evidencia |
+
+### L16 — PR #135 y #138: el service worker rompia el repintado de las paginas (2026-10-21)
+Hallazgo reportado por el usuario: "en el frontend no cargan tablas ni nada quedan cargando" y "en modo blanco no cambia el side bar se queda oscuro".
+
+**Diagnostico (con evidencia, no con suposiciones):**
+1. Los access logs de nginx y del API probaron que **todas las requests del browser llegaban y devolvian 200 con datos**. La API no era el problema.
+2. Un test DOM con datos sincronos renderizaba la tabla bien, asi que el problema no era el renderizado en si.
+3. Instrumentando la pagina: `next() data len= 9` y `loading=false` — **el componente tenia los 9 usuarios, pero el DOM seguia vacio**. O sea: la vista no se repintaba.
+4. El dashboard, que ya usaba **signals**, nunca fallo. La diferencia: **una respuesta servida por el service worker no notifica a zone.js**, y por lo tanto no hay ciclo de deteccion de cambios. Las paginas con estado en propiedades planas nunca se repintaban.
+
+**Correcciones (PR #138):**
+- El estado de carga de las 7 paginas con propiedades planas paso a **signals**.
+- `provideServiceWorker()` se agrego a `main.ts`: el worker se generaba pero **nunca se registro**, asi que el offline no existia.
+- `navigationRequestStrategy: 'freshness'`: las navegaciones van network-first, para que un deploy se tome de inmediato y el navegador no quede en un shell viejo.
+- Se **elimino el data group de la API**: el cache del worker es por URL, asi que la respuesta cacheada de una sesion podia servirse a otra.
+- El sidebar paso a pintarse con las superficies del tema (como hace Sakai) en vez de `var(--color-surface-sidebar)` fijo.
+
+**Verificacion en Chromium con el worker registrado:** login, dashboard (4 tarjetas), admin/usuarios (20 filas), admin/sesiones (20), coordinator/actas (20), detalle del acta, observer/mis-jrvs (6), jrv/1/cargos (3) y registro de acta renderizan datos. Sidebar `rgb(255,255,255)` en claro y `rgb(15,23,42)` en oscuro. Cero errores de pagina.
+
+**Tests de regresion agregados:** `admin-usuarios.rendering.spec.ts` y `dashboard.rendering.spec.ts` — afirman lo que llega al DOM, que es donde se ve una tabla vacia o un loading colgado. Los specs unitarios de las paginas solo afirmaban el estado del componente y por eso no lo detectaron.
+
+Ademas, **PR #135**: el compose tenia roto el `/api` desde el 2026-09-27 (commit `c464b53`): nginx proxea a `electoral-api:80` (la forma del Service de k8s) pero en compose no hay Service y el API escuchaba en 8080 -> todo `/api` daba 502. Ahora el API escucha en 80 dentro del contenedor, la misma forma que usa k8s.
