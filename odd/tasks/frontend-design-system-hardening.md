@@ -9,17 +9,17 @@ Dejar el frontend migrado a PrimeNG 21 + Sakai en condiciones deservir un conteo
 
 ```
 #138  fix/service-worker-signal-state
-  └─ #139  fix/role-and-locale
-       └─ #140  fix/offline-queue-safety
-            └─ #141  fix/observer-form
-                 └─ #142  feat/dark-scheme
-                      └─ #143  feat/typography
-                           └─ #144  refactor/design-system-cleanup
-                                └─ #145  feat/responsive-shell
-                                     └─ #146  feat/a11y-hardening
-                                          └─ #147  feat/clarify-copy
-                                               └─ #148  perf/offline-and-bundle
-                                                    └─ #149  docs/design-system
+  └─ #141  fix/role-and-locale
+       └─ #142  fix/offline-queue-safety
+            └─ #143  fix/observer-form
+                 └─ #144  feat/dark-scheme
+                      └─ #145  feat/typography
+                           └─ #146  refactor/design-system-cleanup
+                                └─ #147  feat/responsive-shell
+                                     └─ #148  feat/a11y-hardening
+                                          └─ #149  feat/clarify-copy
+                                               └─ #150  perf/offline-and-bundle
+                                                    └─ #151  docs/design-system
 ```
 
 **Test runner:** `pnpm test:ci` (vitest) · `pnpm lint` · `pnpm build` — los tres deben quedar verdes en cada fase.
@@ -196,17 +196,17 @@ Los cuatro enlaces del menú tienen que quedar deshabilitados de forma explícit
 
 | ID | PR | S# | Route | Superficie |
 |---|---|---|---|---|
-| T1 | #139 `fix/role-and-locale` | S1, S2, S15 (admin) | delegated | `core/auth/**`, `features/admin/**`, `features/coordinator/pages/actas-lista/**`, `main.ts` |
-| T2 | #140 `fix/offline-queue-safety` | S3 | delegated | `core/offline/**`, `app/layout/topbar/**` |
-| T3 | #141 `fix/observer-form` | S4, S5, S6 | delegated | `features/observer/pages/registrar-acta/**` |
-| T4 | #142 `feat/dark-scheme` | S7, S8 | inline | `theme/**`, `features/coordinator/pages/acta-detalle/**`, `features/placeholder/**` |
-| T5 | #143 `feat/typography` | S9, S10 | inline | `theme/**`, `features/**` (cifras) |
-| T6 | #144 `refactor/design-system-cleanup` | S11 | inline | `theme/**`, `shared/ui/**`, `shared/components/**`, `features/**` (css muerto) |
-| T7 | #145 `feat/responsive-shell` | S12, S13 | inline | `app/layout/**`, `features/observer/pages/registrar-acta/**`, `features/coordinator/**` |
-| T8 | #146 `feat/a11y-hardening` | S14 | inline | `shared/ui/**`, `shared/components/**`, `app/layout/**`, `features/**` |
-| T9 | #147 `feat/clarify-copy` | S15, S16 | inline | `features/**`, `app.routes.ts`, `core/menu/**` |
-| T10 | #148 `perf/offline-and-bundle` | S3 (SW) | inline | `main.ts`, `ngsw-config.json`, `app.routes.ts` |
-| T11 | #149 `docs/design-system` | S11 (guard) | inline | `DESIGN.md`, `theme/**`, script de build |
+| T1 | **#141** `fix/role-and-locale` | S1, S2, S15 (admin) | delegated | `core/auth/**`, `features/admin/**`, `features/coordinator/pages/actas-lista/**`, `main.ts` | ✅ `2b1e449` |
+| T2 | **#142** `fix/offline-queue-safety` | S3 | delegated | `core/offline/**`, `app/layout/topbar/**` | ✅ `9bb265b` |
+| T3 | **#143** `fix/observer-form` | S4, S5, S6 | delegated | `features/observer/pages/registrar-acta/**`, `features/observer/services/**` | ✅ `a4f816f` |
+| T4 | #144 `feat/dark-scheme` | S7, S8 | inline | `theme/**`, `features/coordinator/pages/acta-detalle/**`, `features/placeholder/**` | ⏳ |
+| T5 | #145 `feat/typography` | S9, S10 | inline | `theme/**`, `features/**` (cifras) | ⏳ |
+| T6 | #146 `refactor/design-system-cleanup` | S11 | inline | `theme/**`, `shared/ui/**`, `shared/components/**`, `features/**` (css muerto) | ⏳ |
+| T7 | #147 `feat/responsive-shell` | S12, S13 | inline | `app/layout/**`, `features/observer/pages/registrar-acta/**`, `features/coordinator/**` | ⏳ |
+| T8 | #148 `feat/a11y-hardening` | S14 | inline | `shared/ui/**`, `shared/components/**`, `app/layout/**`, `features/**` | ⏳ |
+| T9 | #149 `feat/clarify-copy` | S15, S16 | inline | `features/**`, `app.routes.ts`, `core/menu/**` | ⏳ |
+| T10 | #150 `perf/offline-and-bundle` | S3 (SW) | inline | `main.ts`, `ngsw-config.json`, `app.routes.ts` | ⏳ |
+| T11 | #151 `docs/design-system` | S11 (guard) | inline | `DESIGN.md`, `theme/**`, script de build | ⏳ |
 
 Las tareas T1-T3 tienen superficies disjuntas y se ejecutan en paralelo. S4 (el mensaje de success que se renderiza como error) vive en `registrar-acta`, asi que es de T3. T4-T11 son secuenciales: tocan `theme/**` y las features, y cada una depende de que la anterior haya aterrizado.
 
@@ -217,3 +217,8 @@ Las tareas T1-T3 tienen superficies disjuntas y se ejecutan en paralelo. S4 (el 
 - **L3 (2026-10-21):** P0 corregido en el camino: el PR #138 había introducido un crash en `acta-detalle` (el getter `detalle()` leía el signal fuera del guard y tiraba `TypeError` en cada visita). Fix `7051d96` + spec de regresión que carga el detalle de forma asíncrona, como la app real. 277 tests verdes.
 - **L4 (2026-10-21):** Decisiones tomadas por el usuario: un PR por fase apilado sobre el stack abierto; "arreglar todo". Dos decisiones de producto sin respuesta explícita, resueltas por defecto y reversibles en un PR cada una: (a) el sidebar se queda con la superficie del tema —lo que ya está implementado y verificado— y `DESIGN.md` se actualiza para documentarlo; (b) los seis módulos placeholder se deshabilitan de forma honesta en vez de construirse, porque construirlos es producto nuevo y no un defecto.
 - **L5 (2026-10-21):** El mirror de Engram de este documento queda pendiente: el runtime de `execute` se degradó a mitad de sesión y rejects todo el código por un error de parseo. Los hallazgos de la auditoría sí quedaron persistidos (obs 1870 y 1907).
+
+- **L6 (2026-10-21):** T1, T2 y T3 implementadas y verificadas. Seam check del padre: 49 archivos / 325 tests verdes, build verde, lint limpio. RED observado antes de cada fix: 12 tests en T1 (el rol de MASTER nunca renderizaba: `expected [ 'Ver detalles', 'Ver detalles' ] to include 'Revocar'`), 9 en T2 (el acta y su blob se borraban: `expected +0 to be 1`; y se duplicaba: `expected "vi.fn()" to be called 1 times, but got 2 times`), 9 en T3 (el DOM conservaba el `-5` que el modelo no tenía: `expected '-5' to be '0'`).
+- **L7 (2026-10-21):** Hallazgo colateral de T2 que no estaba en el spec: el token `ACTA_TRANSMITTER` solo estaba bound en un test unitario, asi que **la cola offline nunca corria en la app** y toda garantia de S3 era inalcanzable. Se agrego un transmisor HTTP por defecto con los mismos endpoints y cuerpos.
+- **L8 (2026-10-21):** T2 dejo la deduplicacion del lado del servidor incompleta: `electoral-api` no honra el header `Idempotency-Key`. La garantia que se sostiene sola es el tracking local `actaEnviada`. El backend queda fuera de este PR; queda anotado en el cuerpo del PR #142.
+- **L9 (2026-10-21):** Nota sobre la numeracion: #139 y #140 son de la cadena `feat/backend-quarkus-migration` sobre `develop`, no de esta. Esta cadena arranca en #141 sobre `fix/service-worker-signal-state` (#138).
