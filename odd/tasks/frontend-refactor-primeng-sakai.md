@@ -38,49 +38,49 @@ Cada fase debe dejar el build (`pnpm build`) y la suite (`pnpm test:ci`) en verd
 | T4 | S4 | Shell de aplicación Sakai (sidebar, topbar, configurador de tema) sobre `layout/` existente | inline | done |
 | T4a | S4, S6 | Prerrequisitos del shell: Tailwind 4 + `tailwindcss-primeui` + variante `dark` + `ThemeService` que activa el modo oscuro | inline | done |
 | T5 | S3, S4 | Migrar primitivas propias de `shared/ui` a componentes PrimeNG | inline | done (#122) |
-| T6 | S3, S4 | Migrar features por rol (dashboard, admin, coordinator, observer, auth) a PrimeNG | pending | pending |
-| T7 | S3 | Retirar Ionic y Capacitor: `ion-icon`→PrimeIcons, `ion-router-outlet`→`router-outlet`, `ion-app`→host, `ionic-theme.scss`→preset | pending | pending |
-| T8 | S3, S4 | Mapear `Menu.icono` del backend (nombres Ionic) a iconos PrimeNG | pending | pending |
+| T6 | S3, S4 | Migrar features por rol (dashboard, admin, coordinator, observer, auth) a PrimeNG | inline | done (#123-#127) |
+| T7 | S3, S4 | Retirar Ionic del runtime, identidad real de Android y habilitante PWA | inline | done (#127, #128) |
+| T8 | S3, S4 | Mapear `Menu.icono` del backend (claves estables) a iconos PrimeNG | inline | done (#122) |
 
 ## Delivery — cadena de PRs
 
-Estrategia: **Feature Branch Chain** con PR tracker. No "stacked to main" porque los slices de shell/primitivas/features son estados intermedios de una migración visual: aterrizarlos en `develop` por separado dejaría `develop` con una UI inconsistente durante toda la cadena. El tracker mantiene `develop` limpio hasta que la migración es coherente.
+Estrategia: **stacked PRs sobre `develop`**. Se construye apilado (cada PR base es el branch del anterior) y se aterriza de a uno: cuando un PR se mergea, el siguiente se retargetea a `develop` con `gh pr edit <n> --base develop`. No se uso PR tracker porque GitHub no permite crearlo sin diff, y porque los slices son estados intermedios de una migracion visual: conviene revisarlos en orden, no aterrizarlos de a uno en `develop`.
+
+El trabajo **no espera merges**: cada slice se construye sobre el branch del PR anterior, mergeado o no.
 
 ```text
 develop
-  └── refactor/frontend-sakai-01-theme         ← 29dc8a9  (PR1, base develop)
-       ↑ PR2 base: PR1
-       └── refactor/frontend-sakai-02-tailwind      ← 109f130
-            ↑ PR3 base: PR2
-            └── refactor/frontend-sakai-03-shell        ← c8934ce
-                 ↑ PR4 base: PR3
-                 └── refactor/frontend-sakai-04-primitives  ← T5
-                      ↑ PR5 base: PR4
-                      └── refactor/frontend-sakai-05-features  ← T6
-                           ↑ PR6 base: PR5
-                           └── refactor/frontend-sakai-06-android   ← T7 + T8
+  └── refactor/frontend-sakai-01-theme          → #117  (T3)  Stack MIT
+       └── refactor/frontend-sakai-02-tailwind   → #118  (T4a) Tailwind 4 + ThemeService
+            └── refactor/frontend-sakai-03-shell → #119  (T4)  Shell Sakai
+                 └── refactor/frontend-sakai-04-primitives      → #122 (T5) shared/ui → PrimeNG
+                      └── refactor/frontend-sakai-05-dashboard-admin → #123 (T6) dashboard + admin
+                           └── refactor/frontend-sakai-06-coordinator → #124 (T6) coordinator inbox
+                                └── refactor/frontend-sakai-07-acta-detalle → #125 (T6) acta detalle
+                                     └── refactor/frontend-sakai-08-observer → #126 (T6) observer
+                                          └── refactor/frontend-sakai-09-login-ionic → #127 (T6,T7) login + retiro de Ionic
+                                               └── refactor/frontend-sakai-10-android-pwa → #128 (T7) Android + PWA
 ```
 
-| PR | Rama | Unidades | Alcance |
-|----|------|----------|---------|
-| PR1 | `refactor/frontend-sakai-01-theme` → **#117** | T3 | Stack MIT: Angular 21 + PrimeNG 21 + preset institucional + wiring. Sin cambio visual |
-| PR2 | `refactor/frontend-sakai-02-tailwind` → **#118** | T4a | Pipeline Tailwind 4 + `ThemeService` (modo oscuro funcional) |
-| PR3 | `refactor/frontend-sakai-03-shell` → **#119** | T4 | Shell Sakai: `layout.service` por signals, wrapper, topbar, sidebar |
-| PR4 | `refactor/frontend-sakai-04-primitives` → **#122** | T5 | `shared/ui` (8 primitivas propias) → componentes PrimeNG |
-| PR5 | `refactor/frontend-sakai-05-features` | T6 | Features por rol → PrimeNG (dashboard, admin, coordinator, observer, auth) |
-| PR6 | `refactor/frontend-sakai-06-android` | T7, T8 | Retirar Ionic, mapear `Menu.icono` → PrimeIcons, PWA + Capacitor Android |
+| PR | Rama | Unidades | Alcance | Diff |
+|----|------|----------|---------|------|
+| #117 | `...-01-theme` | T3 | Stack MIT: Angular 21 + PrimeNG 21 + preset institucional | 5.803 (537 authored) |
+| #118 | `...-02-tailwind` | T4a | Tailwind 4 + `ThemeService` (modo oscuro funcional) | 521 (197 authored) |
+| #119 | `...-03-shell` | T4 | Shell Sakai: `layout.service` por signals, wrapper, topbar, sidebar | 1.516 (neto +76) |
+| #122 | `...-04-primitives` | T5 | `shared/ui` (8 primitivas propias) → componentes PrimeNG | 1.237 (neto −49) |
+| #123 | `...-05-dashboard-admin` | T6 | Dashboard + admin (usuarios, sesiones) → PrimeNG | 1.048 (neto +24) |
+| #124 | `...-06-coordinator` | T6 | Bandeja de actas (coordinator) → PrimeNG | 658 (neto −136) |
+| #125 | `...-07-acta-detalle` | T6 | Detalle de acta (coordinator) → PrimeNG | 866 (neto −186) |
+| #126 | `...-08-observer` | T6 | Observer: JRVs, cargos y registro de acta → PrimeNG | 216 (neto +38) |
+| #127 | `...-09-login-ionic` | T6, T7 | Login → PrimeNG y **retiro de Ionic** del runtime | 534 (neto −334) |
+| #128 | `...-10-android-pwa` | T7 | Identidad real de Android + service worker (PWA) | 107 |
+
+El lockfile generado es la única parte que no se puede partir sin romper la instalación: por eso #117 pide `size:exception` (5.266 líneas de lockfile de 5.803).
 
 PR #115 y #116 (la primera cadena, sobre PrimeNG 22) quedaron cerrados y superados: ver L11.
 
-Presupuesto de revisión (adiciones + eliminaciones, tal como lo reporta GitHub):
+Presupuesto de revision por PR: ver la columna Diff de la tabla anterior. El unico PR que pide `size:exception` es el #117, y solo por el lockfile generado.
 
-| PR | Cambiadas | Autoradas | Generado | Nota |
-|----|-----------|-----------|----------|------|
-| PR1 | ~3.100 | ~310 | ~2.800 (lockfile) | `size:exception`: el lockfile se regenera entero por el cambio Angular 22→21 |
-| PR2 | ~540 | ~200 | ~324 (lockfile) | `size:exception` solo por el lockfile generado |
-| PR3 | ~790 | ~790 | 0 | Overage honesto: el shell no parte de forma cohesionada sin dejar el shell roto a mitad |
-
-El lockfile es diff generado y no revisable a mano: no se puede partir sin romper la instalación. El contenido autoral de PR1 y PR2 está bajo 400; PR3 se reporta como overage de un slice cohesivo e indivisible, con la recomendación de `size:exception`.
 
 ## Decisions
 
@@ -193,9 +193,9 @@ Evidencia observada:
 Hallazgo relevante: la rampa institucional de `tokens.scss` **es la rampa Tailwind blue con un offset de un paso** (su `--primitive-blue-500` = `#2563eb` = Tailwind `blue-600`). Por eso el preset mapea `primary.500 → blue.600` y `primary.600 → blue.700`, conservando `--color-brand-primary` y `--color-brand-primary-strong` exactos.
 
 ## Pending / Next
-- D2 resuelto (Angular 21 + PrimeNG 21 MIT). PR1 a PR4 listos para revisión.
-- T6 (features por rol → PrimeNG) es el siguiente slice: dashboard, admin, coordinator, observer, auth.
-- T7 requiere corregir `appId`/`appName` de Capacitor y resolver el habilitante PWA (service worker + manifest).
+- La cadena está completa: #117 → #128, cada PR con su unidad de trabajo y su evidencia.
+- Pendiente de verificación en un entorno con Android SDK: el build del APK (el `appId` y el paquete ya están cambiados de forma mecánica, pero el Gradle no se puede correr acá).
+- Pendiente de decisión del equipo: si el frontend ya tiene consumers, cada PR se mergea a `develop` en orden y el siguiente se retargetea a `develop` (`gh pr edit <n> --base develop`).
 
 ### L12 — T5 ejecutado: primitivas de `shared/ui` sobre PrimeNG (2026-10-20)
 Commit `b695117`, PR **#122** (base: PR3).
@@ -287,3 +287,35 @@ Evidencia observada:
 - `pnpm peers check` → los mismos 3 avisos preexistentes; Tailwind no introduce ninguno.
 
 Nota de orden de cascada: el CSS de PrimeNG se inyecta **sin capa** (`cssLayer: false`, el default de PrimeNG 22, igual que Sakai). El CSS de la app legacy también es sin capa, así que conserva prioridad sobre las utilidades de Tailwind — la UI actual no cambia visualmente mientras el shell nuevo entra en T4.
+
+### L13 — T6 y T7 ejecutados: features, retiro de Ionic, Android y PWA (2026-10-20)
+PRs **#123 a #128**.
+
+Commits:
+- `6eac0fe` + `cd3af27` — dashboard y admin a PrimeNG (PR #123), con el fix de los inputs
+- `c52cf4c` — bandeja de actas (PR #124)
+- `8c41ddf` — detalle de acta (PR #125)
+- `9af0dcd` — observer (PR #126)
+- `4758d7f` — login + retiro de Ionic del runtime (PR #127)
+- `3e4ec50` — identidad real de Android + service worker (PR #128)
+
+Aprendizajes que cambiaron la forma de trabajar:
+
+1. **`p-inputtext` NO registra value accessor** en PrimeNG 21. `[(ngModel)]` sobre `<p-inputtext>` explota en runtime con NG01203. La forma correcta es `<input pInputText [(ngModel)]>`: el componente tiene el selector `[pInputText]`, se aplica sobre el input nativo y conserva el accessor de Angular. Lo mismo con `<textarea pTextarea>`.
+2. **Los specs de admin no renderizaban el template** (no llamaban `fixture.detectChanges()`), por eso el bug de los inputs pasó verde. Corregido: ahora los specs crean la vista.
+3. **El build es la puerta real**: en JIT los tests no fallan con un elemento desconocido (`NG8001`) ni con un tipo de binding incompatible; el compilador AOT sí. Por eso `pnpm build` va siempre junto a la suite.
+4. **El `content query` de p-card no ve un `<ng-template>` envuelto en `@if`**: hay que declarar el template siempre y poner la condición DENTRO, más una regla `:empty` para que el contenedor vacío no deje padding.
+5. **p-button aplica la severidad por variables de tema, no por clase** (no existe `p-button-danger`): para afirmar el mapeo hay que leer los getters del componente, no el DOM.
+6. **p-steps se suscribe a `router.events`**: el mock del Router del spec necesita el stream aunque la página no navegue desde la tira.
+7. **La app ya usaba build de Vite solo para Vitest**; el build real es esbuild. En este refactor eso no cambió, pero quedó documentado.
+8. **Los tokens institucionales existen, pero las páginas los esquivaban**: los SCSS usaban `var(--text-muted, #64748b)` con fallbacks que el design system nunca define, asi que renderizaban el hex hardcodeado. Migrarlos a los tokens reales fue parte del trabajo de cada pagina.
+9. **`Table` es el unico componente de PrimeNG 21 que no es standalone**: se importa `TableModule`, no `Table`.
+
+Evidencia observada (en cada PR):
+- `pnpm test:ci` → **44 archivos, 271 tests, 0 fallos**
+- `pnpm build` → bundle generado
+- `pnpm lint` → todos los archivos pasan
+- `npx ng build --configuration production` → genera `ngsw.json`, `safety-worker.js` y `worker-basic.min.js`; el `ngsw.json` fue inspeccionado (app shell prefetch con 39 URLs, assets lazy, grupo `api-reads` con estrategia `freshness`, timeout 10 s).
+- `grep -rn "ion-icon\|ionicons\|io.ionic.starter" src/ android/` → sin resultados (salvo la tabla de mapeo de iconos, que conserva a proposito los nombres legacy para que el catalogo del backend siga funcionando).
+
+**Limite honesto**: el APK no se compilo ni verifico. No hay Android SDK en la maquina (`ANDROID_HOME` y `ANDROID_SDK_ROOT` sin definir, `~/Android/Sdk` inexistente); JDK 21 si esta. El cambio de identidad (`appId`, namespace, applicationId, paquete de la activity, deep-link scheme, nombre visible) es mecanico y completo, pero el build de Gradle necesita un entorno con el SDK.
