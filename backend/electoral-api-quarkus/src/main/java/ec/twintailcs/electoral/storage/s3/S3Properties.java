@@ -8,20 +8,20 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * Configuracion del bucket S3 (RustFS local / Supabase Storage en prod).
  *
  * <p>Port exacto de las {@code S3Properties} del backend Spring: mismas claves de configuracion
- * ({@code aws.s3.*}) y mismos nombres de variable de entorno ({@code AWS_S3_BUCKET},
- * {@code AWS_S3_REGION}, {@code AWS_S3_ENDPOINT}, {@code AWS_S3_PATH_STYLE},
- * {@code AWS_S3_PRESIGN_EXPIRY}).
+ * ({@code aws.s3.*}) y mismos nombres de variable de entorno ({@code AWS_S3_BUCKET}, {@code
+ * AWS_S3_REGION}, {@code AWS_S3_ENDPOINT}, {@code AWS_S3_PATH_STYLE}, {@code
+ * AWS_S3_PRESIGN_EXPIRY}).
  *
- * <p>Los defaults son los mismos que trae el {@code application.properties} del backend Spring, para
- * que las dos implementaciones apunten al mismo bucket con la misma configuracion aunque no se
+ * <p>Los defaults son los mismos que trae el {@code application.properties} del backend Spring,
+ * para que las dos implementaciones apunten al mismo bucket con la misma configuracion aunque no se
  * pase ninguna variable de entorno.
  *
  * <p><b>Por que {@code AWS_S3_PATH_STYLE} se lee a mano.</b> El binding de MicroProfile Config
- * traduce el nombre de la propiedad a variable de entorno reemplazando puntos y guiones por
- * guiones bajos ({@code aws.s3.path-style-access-enabled} ->
- * {@code AWS_S3_PATH_STYLE_ACCESS_ENABLED}), asi que la variable corta que usa el backend Spring
- * ({@code AWS_S3_PATH_STYLE}) no llega por el binding. Se lee del entorno explicitamente, igual que
- * Spring la resuelve por placeholder en su {@code application.properties}.
+ * traduce el nombre de la propiedad a variable de entorno reemplazando puntos y guiones por guiones
+ * bajos ({@code aws.s3.path-style-access-enabled} -> {@code AWS_S3_PATH_STYLE_ACCESS_ENABLED}), asi
+ * que la variable corta que usa el backend Spring ({@code AWS_S3_PATH_STYLE}) no llega por el
+ * binding. Se lee del entorno explicitamente, igual que Spring la resuelve por placeholder en su
+ * {@code application.properties}.
  */
 @ApplicationScoped
 public class S3Properties {
@@ -47,12 +47,12 @@ public class S3Properties {
   public S3Properties(
       @ConfigProperty(name = "aws.s3.bucket", defaultValue = "electoral-evidences") String bucket,
       @ConfigProperty(name = "aws.s3.region", defaultValue = "us-east-1") String region,
-      @ConfigProperty(name = "aws.s3.endpoint", defaultValue = "http://localhost:9000") String endpoint,
-      @ConfigProperty(
-              name = "aws.s3.path-style-access-enabled",
-              defaultValue = "true")
+      @ConfigProperty(name = "aws.s3.endpoint", defaultValue = "http://localhost:9000")
+          String endpoint,
+      @ConfigProperty(name = "aws.s3.path-style-access-enabled", defaultValue = "true")
           boolean pathStyleAccessEnabled,
-      @ConfigProperty(name = "aws.s3.presign-expiry", defaultValue = "PT15M") Duration presignExpiry) {
+      @ConfigProperty(name = "aws.s3.presign-expiry", defaultValue = "PT15M")
+          Duration presignExpiry) {
     this.bucket = bucket;
     this.region = region;
     this.endpoint = endpoint;

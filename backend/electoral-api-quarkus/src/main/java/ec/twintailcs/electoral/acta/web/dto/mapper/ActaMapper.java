@@ -11,8 +11,8 @@ import jakarta.enterprise.context.ApplicationScoped;
  *
  * <p>En el backend Spring esto lo hace MapStruct (mapeo por nombre) con un parche explicito para el
  * subtotal de votos: el listado plano deja {@code totalVotosCandidatos} en {@code null} y solo las
- * respuestas del coordinator (y el listado paginado) lo rellenan. Aca el mapeo es a mano, como en el
- * modulo de auth y en el de electoral.
+ * respuestas del coordinator (y el listado paginado) lo rellenan. Aca el mapeo es a mano, como en
+ * el modulo de auth y en el de electoral.
  */
 @ApplicationScoped
 public class ActaMapper {
@@ -77,9 +77,10 @@ public class ActaMapper {
   public HistorialActaDto toHistorialDto(ActaRepository.FilaHistorial fila) {
     String nombre = null;
     if (fila.nombreUsuario() != null || fila.apellidoUsuario() != null) {
-      nombre = (fila.nombreUsuario() == null ? "" : fila.nombreUsuario())
-          + " "
-          + (fila.apellidoUsuario() == null ? "" : fila.apellidoUsuario());
+      nombre =
+          (fila.nombreUsuario() == null ? "" : fila.nombreUsuario())
+              + " "
+              + (fila.apellidoUsuario() == null ? "" : fila.apellidoUsuario());
     }
     return new HistorialActaDto(
         fila.id(),

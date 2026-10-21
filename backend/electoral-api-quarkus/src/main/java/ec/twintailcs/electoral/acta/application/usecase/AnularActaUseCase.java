@@ -48,8 +48,7 @@ public class AnularActaUseCase {
         actaId,
         "Tu acta (JRV " + acta.getJrvId() + ") fue anulada. Motivo: " + motivo);
 
-    audit.registrarConIp(
-        masterId, "ACTA_ANULADA", "acta", actaId, "Motivo: " + motivo, ipAddress);
+    audit.registrarConIp(masterId, "ACTA_ANULADA", "acta", actaId, "Motivo: " + motivo, ipAddress);
     return acta;
   }
 }

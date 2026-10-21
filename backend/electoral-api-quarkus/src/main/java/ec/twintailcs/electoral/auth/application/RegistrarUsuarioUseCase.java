@@ -11,12 +11,13 @@ import jakarta.transaction.Transactional;
  * Alta de un usuario con rol, para que un MASTER lo registre desde el panel de administracion.
  *
  * <p>Port exacto del {@code RegistrarUsuarioUseCase} del backend Spring: el email se genera a
- * partir de nombre, apellido y rol, la password se hashea con BCrypt y el usuario queda
- * habilitado. No es auto-registro: el endpoint exige permisos elevados.
+ * partir de nombre, apellido y rol, la password se hashea con BCrypt y el usuario queda habilitado.
+ * No es auto-registro: el endpoint exige permisos elevados.
  */
 @ApplicationScoped
 // El binding a nivel de CLASE es lo que hace que ArC seleccione el interceptor para esta clase
-// (el binding a nivel de metodo no lo selecciona). El valor es el default: el metodo lo sobreescribe.
+// (el binding a nivel de metodo no lo selecciona). El valor es el default: el metodo lo
+// sobreescribe.
 public class RegistrarUsuarioUseCase {
 
   @Inject PasswordHasher hasher;

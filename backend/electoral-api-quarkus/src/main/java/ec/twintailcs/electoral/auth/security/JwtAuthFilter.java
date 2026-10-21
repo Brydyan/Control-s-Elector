@@ -15,10 +15,10 @@ import jakarta.ws.rs.ext.Provider;
 /**
  * Filtro de autenticacion.
  *
- * <p>Equivalente funcional del {@code JwtAuthFilter} del backend Spring: valida el access token
- * y deja el usuario en el {@link CurrentUser} del request. Lo que no hace es autorizar: eso lo
- * hace el {@link RequiereInterceptor}, que corre despues de la validacion del body para poder
- * reproducir el orden de Spring (400 de validacion antes que 403 de autorizacion).
+ * <p>Equivalente funcional del {@code JwtAuthFilter} del backend Spring: valida el access token y
+ * deja el usuario en el {@link CurrentUser} del request. Lo que no hace es autorizar: eso lo hace
+ * el {@link RequiereInterceptor}, que corre despues de la validacion del body para poder reproducir
+ * el orden de Spring (400 de validacion antes que 403 de autorizacion).
  *
  * <p>La validacion del token se hace con Nimbus, igual que en Spring, para que los tokens de las
  * dos implementaciones sean intercambiables.
@@ -100,7 +100,8 @@ public class JwtAuthFilter implements ContainerRequestFilter {
     return token.isEmpty() ? null : token;
   }
 
-  private static void abort(ContainerRequestContext ctx, int status, String reason, String message) {
+  private static void abort(
+      ContainerRequestContext ctx, int status, String reason, String message) {
     ctx.abortWith(
         Response.status(status)
             .type("application/json")

@@ -29,8 +29,8 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
  * <p>Los dos se producen como singletons: se construyen UNA vez al arrancar y se reutilizan en
  * todos los requests. El cierre es limpio al apagar la aplicacion.
  *
- * <p>Credenciales: {@code AWS_ACCESS_KEY_ID} / {@code AWS_SECRET_ACCESS_KEY} (defaults
- * {@code rustfsadmin} / {@code rustfsadmin123}, los mismos que el backend Spring). En prod se
+ * <p>Credenciales: {@code AWS_ACCESS_KEY_ID} / {@code AWS_SECRET_ACCESS_KEY} (defaults {@code
+ * rustfsadmin} / {@code rustfsadmin123}, los mismos que el backend Spring). En prod se
  * sobreescriben con los secrets reales.
  */
 @ApplicationScoped
@@ -97,8 +97,8 @@ public class S3Config {
 
   /**
    * Credencial de acceso. Se lee del entorno porque el binding de configuracion de MicroProfile no
-   * traduce {@code aws.access-key-id} al nombre corto que usa el backend Spring en su
-   * {@code application.properties}; el fallback cubre los dos caminos.
+   * traduce {@code aws.access-key-id} al nombre corto que usa el backend Spring en su {@code
+   * application.properties}; el fallback cubre los dos caminos.
    */
   private String accessKey() {
     String env = System.getenv("AWS_ACCESS_KEY_ID");

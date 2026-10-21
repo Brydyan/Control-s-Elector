@@ -4,11 +4,11 @@ import ec.twintailcs.electoral.auth.domain.RecursoNoEncontradoException;
 import ec.twintailcs.electoral.auth.domain.Rol;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.web.dto.CreateUsuarioRequest;
-import ec.twintailcs.electoral.shared.web.pagination.PageSpec;
-import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import ec.twintailcs.electoral.auth.web.dto.UpdateUsuarioRequest;
 import ec.twintailcs.electoral.auth.web.dto.UsuarioResponseDto;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import ec.twintailcs.electoral.shared.web.pagination.PageSpec;
+import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -38,7 +38,8 @@ import java.util.UUID;
 @ApplicationScoped
 public class UsuarioAdminService {
 
-  private static final Set<String> SORTABLE_FIELDS = Set.of("creadoEn", "email", "apellido", "nombre");
+  private static final Set<String> SORTABLE_FIELDS =
+      Set.of("creadoEn", "email", "apellido", "nombre");
 
   private static final SecureRandom RANDOM = new SecureRandom();
 
@@ -103,7 +104,8 @@ public class UsuarioAdminService {
     Usuario usuario = new Usuario();
     usuario.setNombre(request.nombre());
     usuario.setApellido(request.apellido());
-    usuario.setEmail(emailGenerator.generar(request.nombre(), request.apellido(), request.rolNombre()));
+    usuario.setEmail(
+        emailGenerator.generar(request.nombre(), request.apellido(), request.rolNombre()));
     usuario.setPasswordHash(passwordHasher.hash(password));
     usuario.setRol(rol);
     usuario.setHabilitado(true);

@@ -10,5 +10,4 @@ import jakarta.validation.constraints.Size;
 // record del body de la request.
 @RegisterForReflection
 public record LoginRequest(
-    @NotBlank @Email String email,
-    @NotBlank @Size(min = 8, max = 100) String password) {}
+    @NotBlank @Email String email, @NotBlank @Size(min = 8, max = 100) String password) {}

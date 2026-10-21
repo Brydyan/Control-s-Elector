@@ -21,12 +21,12 @@ import java.util.Optional;
  * modulos que todavia no estan portados, y mapear una segunda entidad sobre las mismas tablas
  * obligaria a mantener dos mapeos en paralelo.
  *
- * <p>El bloqueo pesimista se pide con {@link LockModeType#PESSIMISTIC_WRITE}, que Hibernate
- * traduce a {@code SELECT ... FOR UPDATE}: es el invariante de concurrencia del modulo (dos
- * transiciones simultaneas sobre la misma acta se serializan).
+ * <p>El bloqueo pesimista se pide con {@link LockModeType#PESSIMISTIC_WRITE}, que Hibernate traduce
+ * a {@code SELECT ... FOR UPDATE}: es el invariante de concurrencia del modulo (dos transiciones
+ * simultaneas sobre la misma acta se serializan).
  *
- * <p>Todas las consultas respetan el RLS de Postgres: la tabla {@code acta} solo es visible para
- * el COORDINATOR, el MASTER y el ADMIN, y para el OBSERVER solo las actas que el mismo registro.
+ * <p>Todas las consultas respetan el RLS de Postgres: la tabla {@code acta} solo es visible para el
+ * COORDINATOR, el MASTER y el ADMIN, y para el OBSERVER solo las actas que el mismo registro.
  */
 @ApplicationScoped
 public class ActaRepository {
@@ -86,10 +86,14 @@ public class ActaRepository {
       String ipAddress,
       String detalle) {}
 
-  /** Linea del acta con el cargo del candidato (para validar que el candidato pertenece al cargo). */
+  /**
+   * Linea del acta con el cargo del candidato (para validar que el candidato pertenece al cargo).
+   */
   public record FilaDetalle(Long candidatoId, Long cargoId, Integer votos) {}
 
-  /** Linea del acta con el nombre del candidato y las siglas del partido (para el expediente PDF). */
+  /**
+   * Linea del acta con el nombre del candidato y las siglas del partido (para el expediente PDF).
+   */
   public record FilaVoto(
       Long candidatoId, String candidatoNombre, String partidoSiglas, Integer votos) {}
 
@@ -198,7 +202,8 @@ public class ActaRepository {
 
   /** Borra las lineas del acta. Es un borrado masivo: no deja las entidades en el contexto. */
   public void borrarDetalles(Long actaId) {
-    entityManager.createQuery("delete from ActaDetalle d where d.actaId = :actaId")
+    entityManager
+        .createQuery("delete from ActaDetalle d where d.actaId = :actaId")
         .setParameter("actaId", actaId)
         .executeUpdate();
   }
@@ -228,7 +233,8 @@ public class ActaRepository {
     }
     List<Object[]> filas =
         entityManager
-            .createNativeQuery("select id, cargo_id from candidato where id in (:ids)", Object[].class)
+            .createNativeQuery(
+                "select id, cargo_id from candidato where id in (:ids)", Object[].class)
             .setParameter("ids", ids)
             .getResultList();
     for (Object[] fila : filas) {
@@ -259,8 +265,7 @@ public class ActaRepository {
    * @param limit cantidad maxima de filas; {@code null} las devuelve todas
    * @param offset cantidad de filas a saltar; {@code null} no salta ninguna
    */
-  public List<ProyeccionActa> listar(
-      Filtros filtros, String orden, Long limit, Long offset) {
+  public List<ProyeccionActa> listar(Filtros filtros, String orden, Long limit, Long offset) {
     Map<String, Object> params = new LinkedHashMap<>();
     String where = where(filtros, params);
     StringBuilder sql = new StringBuilder(SQL_PROYECCION).append(where);
@@ -315,8 +320,8 @@ public class ActaRepository {
   /**
    * Arma la clause {@code WHERE} y sus parametros.
    *
-   * <p>Las condiciones se agregan solo cuando el filtro viene: nunca se binds un parametro nulo, que
-   * es lo que hace que Postgres no pueda inferir el tipo del placeholder y la consulta entera
+   * <p>Las condiciones se agregan solo cuando el filtro viene: nunca se binds un parametro nulo,
+   * que es lo que hace que Postgres no pueda inferir el tipo del placeholder y la consulta entera
    * reviente.
    */
   private String where(Filtros filtros, Map<String, Object> params) {

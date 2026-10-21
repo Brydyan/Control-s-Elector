@@ -62,7 +62,8 @@ public class EnviarActaUseCase {
     Set<Long> ids = new HashSet<>();
     for (ActaRepository.FilaDetalle detalle : repository.detallesDe(acta.getId())) {
       if (!ids.add(detalle.candidatoId())) {
-        throw new ActaInvalidaException("Candidato repetido en el detalle: " + detalle.candidatoId());
+        throw new ActaInvalidaException(
+            "Candidato repetido en el detalle: " + detalle.candidatoId());
       }
       if (!detalle.cargoId().equals(acta.getCargoId())) {
         throw new ActaInvalidaException(

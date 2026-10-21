@@ -90,8 +90,7 @@ public class ConfiguracionService {
     return crearCandidatoUseCase.execute(dto, masterId, ipAddress);
   }
 
-  public Candidato updateCandidato(
-      Long id, CandidatoRequest dto, Long masterId, String ipAddress) {
+  public Candidato updateCandidato(Long id, CandidatoRequest dto, Long masterId, String ipAddress) {
     return actualizarCandidatoUseCase.execute(id, dto, masterId, ipAddress);
   }
 
