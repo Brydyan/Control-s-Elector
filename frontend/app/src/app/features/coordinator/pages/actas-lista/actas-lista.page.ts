@@ -20,6 +20,7 @@ import {
 } from '../../../../shared/ui';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { mapError } from '../../../../shared/errors/error-handler';
+import { AuthStore } from '../../../../core/auth/auth.store';
 import {
   ActaFiltros,
   ActaItem,
@@ -57,6 +58,7 @@ import { CoordinatorService } from '../../services/coordinator.service';
 export class ActasListaPage implements OnInit, OnDestroy {
   private readonly coordinatorService = inject(CoordinatorService);
   private readonly router = inject(Router);
+  private readonly authStore = inject(AuthStore);
   private readonly busqueda$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
@@ -66,7 +68,16 @@ export class ActasListaPage implements OnInit, OnDestroy {
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
 
-  esMaster = false;
+  /**
+   * MASTER-only controls ("Anular" in the tray). The role comes from the
+   * in-memory session, so a session restored after a reload lights the
+   * controls up on its own.
+   *
+   * La autoridad real la aplica el backend con
+   * @PreAuthorize("hasAuthority('acta:anular')"); esto sólo controla la
+   * visibilidad en la UI y nunca es un control de seguridad.
+   */
+  readonly esMaster = this.authStore.isMaster;
   estadoSeleccionado: EstadoActa | 'TODAS' = 'TODAS';
   cargoSeleccionado: number | null = null;
   cantonSeleccionado: number | null = null;
@@ -89,7 +100,6 @@ export class ActasListaPage implements OnInit, OnDestroy {
   ];
 
   ngOnInit(): void {
-    this.esMaster = this.detectarRolMaster();
     this.cargarCargos();
     this.cargarCantones();
     this.busqueda$
@@ -126,25 +136,6 @@ export class ActasListaPage implements OnInit, OnDestroy {
         console.error('Error cargando cantones:', err);
       },
     });
-  }
-
-  /**
-   * Determina si el usuario actual tiene rol MASTER para mostrar la acción
-   * "Anular" en la bandeja. La autoridad real la aplica el backend con
-   * @PreAuthorize("hasAuthority('acta:anular')"); este método sólo controla
-   * la visibilidad en la UI y nunca es un control de seguridad.
-   */
-  private detectarRolMaster(): boolean {
-    try {
-      const sources = [
-        sessionStorage.getItem('app.user.roles'),
-        localStorage.getItem('app.user.roles'),
-      ];
-      const joined = sources.filter(Boolean).join(',').toUpperCase();
-      return joined.includes('MASTER');
-    } catch {
-      return false;
-    }
   }
 
   cargarActas(): void {
@@ -257,7 +248,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   }
 
   puedeAnular(acta: ActaItem): boolean {
-    return this.esMaster && acta.estado === 'APROBADA';
+    return this.esMaster() && acta.estado === 'APROBADA';
   }
 
   anular(actaId: number): void {

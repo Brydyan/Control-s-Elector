@@ -12,6 +12,7 @@ import {
   SkeletonComponent,
 } from '../../../shared/ui';
 import { PaginatorComponent } from '../../../shared/components/paginator/paginator.component';
+import { AuthStore } from '../../../core/auth/auth.store';
 import { AdminService } from '../services/admin.service';
 import { SesionFiltros, SesionResponseDto } from '../models/admin.model';
 
@@ -36,10 +37,15 @@ import { SesionFiltros, SesionResponseDto } from '../models/admin.model';
 })
 export class AdminSesionesPage implements OnInit {
   private readonly service = inject(AdminService);
+  private readonly authStore = inject(AuthStore);
   readonly sesiones = signal<SesionResponseDto[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
-  esMaster = false;
+  /**
+   * MASTER-only controls. The role comes from the in-memory session, so a
+   * session restored after a reload lights the controls up on its own.
+   */
+  readonly esMaster = this.authStore.isMaster;
   terminoBusqueda = '';
   page = 0;
   size = 20;
@@ -47,22 +53,7 @@ export class AdminSesionesPage implements OnInit {
   modalAbierto = false;
   sesionSeleccionada: SesionResponseDto | null = null;
   ngOnInit(): void {
-    this.esMaster = this.detectarRolMaster();
     this.cargarSesiones();
-  }
-  private detectarRolMaster(): boolean {
-    try {
-      return [
-        sessionStorage.getItem('app.user.roles'),
-        localStorage.getItem('app.user.roles'),
-      ]
-        .filter(Boolean)
-        .join(',')
-        .toUpperCase()
-        .includes('MASTER');
-    } catch {
-      return false;
-    }
   }
   cargarSesiones(): void {
     this.loading.set(true);
@@ -85,7 +76,7 @@ export class AdminSesionesPage implements OnInit {
     });
   }
   puedeRevocar(): boolean {
-    return this.esMaster;
+    return this.esMaster();
   }
   verDetalles(sesion: SesionResponseDto): void {
     this.sesionSeleccionada = sesion;
