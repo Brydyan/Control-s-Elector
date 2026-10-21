@@ -193,12 +193,18 @@ label {
   color: var(--color-text-muted);
 }
 
+/*
+ * The wrapper draws the frame, so the PrimeNG input inside only carries the
+ * text.
+ */
 .input-wrap input {
   border: none;
   outline: none;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
   font-size: 15px;
   color: var(--color-text-primary);
-  background: transparent;
   width: 100%;
 }
 
@@ -240,36 +246,13 @@ label {
   margin-bottom: var(--space-4);
 }
 
+/*
+ * The button is a p-button, which brings the institutional gradient and the
+ * loading state; only the placement is local.
+ */
 .btn-login {
-  width: 100%;
-  padding: var(--space-3) var(--space-4);
-  min-height: 46px;
-  background: linear-gradient(
-    135deg,
-    var(--color-brand-primary),
-    var(--color-brand-primary-strong)
-  );
-  color: var(--color-text-on-brand);
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 15px;
-  font-weight: var(--font-weight-semibold);
-  cursor: pointer;
+  display: block;
   margin-top: var(--space-2);
-  letter-spacing: 0.3px;
-  box-shadow: var(--shadow-sm);
-  transition:
-    opacity 0.2s,
-    transform 0.1s;
-
-  &:hover:not(:disabled) {
-    box-shadow: var(--shadow-md);
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
 }
 
 .security-badge {
