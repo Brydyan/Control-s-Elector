@@ -6,6 +6,7 @@ import { AuthService } from '../../core/auth/services/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { MenuNode } from '../../core/menu/menu.model';
 import { MenuService } from '../../core/menu/menu.service';
+import { toPrimeIcon } from '../../shared/ui/icon-map';
 import { LayoutService } from '../layout.service';
 
 export interface DynamicNavSection {
@@ -151,31 +152,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
    *
    * The backend stores stable icon keys ("home", "document", "people", …), not
    * a library-specific name, so the mapping lives in the frontend and the
-   * catalog needs no change when the icon library does.
+   * catalog needs no change when the icon library does. The table is the one
+   * of `shared/ui/icon-map.ts`.
    */
   private mapIcon(icono?: string): string {
-    switch (icono) {
-      case 'home':
-        return 'pi pi-home';
-      case 'document':
-        return 'pi pi-file';
-      case 'add-circle':
-        return 'pi pi-plus-circle';
-      case 'checkmark':
-        return 'pi pi-check-circle';
-      case 'image':
-        return 'pi pi-image';
-      case 'cloud-upload':
-        return 'pi pi-cloud-upload';
-      case 'settings':
-        return 'pi pi-cog';
-      case 'people':
-        return 'pi pi-users';
-      case 'pulse':
-        return 'pi pi-chart-line';
-      default:
-        return 'pi pi-file';
-    }
+    return toPrimeIcon(icono);
   }
 
   private getFallbackSections(): DynamicNavSection[] {

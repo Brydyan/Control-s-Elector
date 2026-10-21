@@ -238,10 +238,24 @@ describe('the type ladder', () => {
     );
   });
 
-  it('should not tie the legacy 2xl stop with the title stop', () => {
-    // `--font-size-2xl` used to be 24px, the same value as the card title,
-    // so the page title of three screens tied with the cards under it.
-    expect(pixels('--font-size-2xl')).not.toBe(pixels('--font-size-title'));
+  it('should retire the legacy 2xl stop', () => {
+    // `--font-size-2xl` was an alias of the display stop that only survived
+    // for `jrv-cargos`: the page title of three screens used to tie with the
+    // card title under it. The page reads the display stop now and the alias
+    // is gone.
+    expect(Object.keys(light)).not.toContain('--font-size-2xl');
+    expect(Object.keys(dark)).not.toContain('--font-size-2xl');
+
+    const cargos = readFileSync(
+      join(
+        SOURCE_DIR,
+        'app/features/observer/pages/jrv-cargos/jrv-cargos.page.scss',
+      ),
+      'utf8',
+    );
+
+    expect(cargos).toContain('var(--font-size-display)');
+    expect(cargos).not.toContain('--font-size-2xl');
   });
 
   it('should map every role to its stop', () => {

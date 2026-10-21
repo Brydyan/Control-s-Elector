@@ -20,7 +20,7 @@ describe('EmptyStateComponent', () => {
   });
 
   it('should translate the Ionic icon name to a PrimeIcons class', () => {
-    fixture.componentRef.setInput('icon', 'document-text-outline');
+    fixture.componentRef.setInput('icon', 'document');
     fixture.detectChanges();
 
     const icon = fixture.nativeElement.querySelector('.empty-state__icon');

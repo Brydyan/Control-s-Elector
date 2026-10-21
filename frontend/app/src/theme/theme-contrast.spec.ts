@@ -66,13 +66,13 @@ const CARD_PAIRS: ContrastPair[] = [
   },
   {
     name: 'form label on its card',
-    fg: '--text-primary',
+    fg: '--color-text-primary',
     bg: '--color-surface-card',
     min: AA_TEXT,
   },
   {
     name: 'candidate name on its card',
-    fg: '--text-primary',
+    fg: '--color-text-primary',
     bg: '--color-surface-card',
     min: AA_TEXT,
   },
@@ -114,7 +114,7 @@ const CARD_PAIRS: ContrastPair[] = [
   },
   {
     name: 'corrected stat value',
-    fg: '--primitive-purple-800',
+    fg: '--color-status-corrected',
     bg: '--color-surface-card',
     min: AA_LARGE,
   },

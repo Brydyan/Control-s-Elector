@@ -81,13 +81,69 @@ export const APP_FONT_FAMILY =
   '"IBM Plex Sans", "IBM Plex Sans Fallback", Arial, "Helvetica Neue", system-ui, sans-serif';
 
 /**
+ * The bridge: the app's vocabulary feeds the names PrimeNG publishes.
+ *
+ * S11 of `odd/tasks/frontend-design-system-hardening.md`: three vocabularies
+ * coexisted (`--p-*`, `--color-*` and a legacy set nobody declared), so the
+ * token contract was unenforceable. The direction is the cheap one: the app's
+ * own layer owns the vocabulary and the component library is fed from it.
+ *
+ * Every name below resolves to the *same value* it had before the bridge, in
+ * both schemes, so the bridge moves names around and nothing else:
+ *
+ * | PrimeNG name            | app token                        |
+ * |-------------------------|----------------------------------|
+ * | `--p-text-color`        | `--color-text-on-surface`        |
+ * | `--p-text-muted-color`  | `--color-text-muted-on-surface`  |
+ * | `--p-content-background`| `--color-surface-card`           |
+ * | `--p-content-hover-background` | `--color-surface-raised`  |
+ * | `--p-content-border-color` | `--color-border-on-surface`  |
+ * | `--p-primary-color`     | `--color-brand-primary`          |
+ * | `--p-primary-contrast-color` | `--color-text-on-brand`      |
+ *
+ * The bridge lives in the preset and not in a stylesheet on purpose: the
+ * styled engine emits the theme at runtime, *after* the app's stylesheet, so
+ * a `:root` block in the app's CSS would lose the cascade.
+ */
+const LIGHT_BRIDGE = {
+  text: {
+    color: 'var(--color-text-on-surface)',
+    mutedColor: 'var(--color-text-muted-on-surface)',
+  },
+  content: {
+    background: 'var(--color-surface-card)',
+    hoverBackground: 'var(--color-surface-raised)',
+    borderColor: 'var(--color-border-on-surface)',
+  },
+  primary: {
+    color: 'var(--color-brand-primary)',
+    contrastColor: 'var(--color-text-on-brand)',
+    hoverColor: 'var(--color-brand-primary-strong)',
+    activeColor: 'var(--color-brand-primary-active)',
+  },
+} as const;
+
+const DARK_BRIDGE = {
+  ...LIGHT_BRIDGE,
+  primary: {
+    ...LIGHT_BRIDGE.primary,
+    /*
+     * The ink of a brand button in the dark scheme is the surface-900 of the
+     * ramp. The app's `--color-text-on-brand` is one step darker because it
+     * sits on the banner's gradient, not on a button.
+     */
+    contrastColor: 'var(--primitive-slate-900)',
+  },
+} as const;
+
+/**
  * PrimeNG preset derived from Aura.
  *
  * Only the layers the institutional identity depends on are overridden: the
  * primary ramp (brand), the blue primitive it references, the radius scale,
- * the dark surfaces and the family. Everything else (component tokens, light
- * surfaces) is inherited from Aura and stays themeable through the same token
- * mechanism.
+ * the dark surfaces, the family and the colour bridge. Everything else
+ * (component tokens, light surfaces) is inherited from Aura and stays
+ * themeable through the same token mechanism.
  */
 export const electoralPreset = definePreset(Aura, {
   primitive: {
@@ -110,11 +166,19 @@ export const electoralPreset = definePreset(Aura, {
       950: BRAND_BLUE[950],
     },
     colorScheme: {
+      light: LIGHT_BRIDGE,
       dark: {
         surface: BRAND_DARK_SURFACE,
+        ...DARK_BRIDGE,
       },
     },
   },
 });
 
-export { BRAND_BLUE, BRAND_RADIUS, BRAND_DARK_SURFACE };
+export {
+  BRAND_BLUE,
+  BRAND_RADIUS,
+  BRAND_DARK_SURFACE,
+  LIGHT_BRIDGE,
+  DARK_BRIDGE,
+};

@@ -31,15 +31,59 @@ describe('electoralPreset', () => {
 
   it('should keep the derived colour scheme tokens inherited from Aura', () => {
     const colorScheme = electoralPreset.semantic.colorScheme as {
-      light: { primary: Record<string, string> };
-      dark: { primary: Record<string, string> };
+      light: { primary: Record<string, string>; text: Record<string, string> };
+      dark: { primary: Record<string, string>; text: Record<string, string> };
     };
 
     // definePreset merges: the derived light/dark primary tokens must survive
     // the override of the numeric shades.
-    expect(colorScheme.light.primary['color']).toBe('{primary.500}');
-    expect(colorScheme.light.primary['contrastColor']).toBe('#ffffff');
-    expect(colorScheme.dark.primary['color']).toBe('{primary.400}');
+    expect(colorScheme.light.primary['hoverColor']).toBe(
+      'var(--color-brand-primary-strong)',
+    );
+    expect(colorScheme.light.primary['activeColor']).toBe(
+      'var(--color-brand-primary-active)',
+    );
+    // The tokens the bridge does not own keep Aura's value.
+    expect(colorScheme.light.text['hoverColor']).toBe('{surface.800}');
+    expect(colorScheme.dark.text['hoverColor']).toBe('{surface.0}');
+  });
+
+  it('should feed the app tokens into the names PrimeNG publishes', () => {
+    const colorScheme = electoralPreset.semantic.colorScheme as {
+      light: Record<string, Record<string, string>>;
+      dark: Record<string, Record<string, string>>;
+    };
+
+    // The bridge: the app's layer owns the vocabulary.
+    expect(colorScheme.light['text']['color']).toBe(
+      'var(--color-text-on-surface)',
+    );
+    expect(colorScheme.light['text']['mutedColor']).toBe(
+      'var(--color-text-muted-on-surface)',
+    );
+    expect(colorScheme.light['content']['background']).toBe(
+      'var(--color-surface-card)',
+    );
+    expect(colorScheme.light['content']['hoverBackground']).toBe(
+      'var(--color-surface-raised)',
+    );
+    expect(colorScheme.light['content']['borderColor']).toBe(
+      'var(--color-border-on-surface)',
+    );
+    expect(colorScheme.light['primary']['color']).toBe(
+      'var(--color-brand-primary)',
+    );
+    expect(colorScheme.light['primary']['contrastColor']).toBe(
+      'var(--color-text-on-brand)',
+    );
+
+    // The dark scheme declares the same names.
+    expect(colorScheme.dark['text']['color']).toBe(
+      'var(--color-text-on-surface)',
+    );
+    expect(colorScheme.dark['primary']['color']).toBe(
+      'var(--color-brand-primary)',
+    );
   });
 
   it('should override the blue primitive with the same institutional ramp', () => {
