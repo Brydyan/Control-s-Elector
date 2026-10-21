@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { providePrimeNG } from 'primeng/config';
 import { LoadingStateComponent } from './loading-state.component';
 
 describe('LoadingStateComponent', () => {
@@ -8,6 +9,7 @@ describe('LoadingStateComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [LoadingStateComponent],
+      providers: [providePrimeNG()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoadingStateComponent);

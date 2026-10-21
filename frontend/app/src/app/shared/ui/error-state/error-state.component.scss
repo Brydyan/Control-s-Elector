@@ -1,70 +1,47 @@
+/* Page-level error state. */
+
 .error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1.5rem;
   text-align: center;
-  padding: var(--space-8) var(--space-6);
-  background-color: var(--color-danger-subtle);
-  border: 1px solid var(--border-danger);
-  border-radius: var(--radius-md);
+}
 
-  &__icon-wrapper {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-full);
-    background-color: var(--color-danger);
-    color: var(--primitive-white);
-    margin-bottom: var(--space-3);
-  }
+.error-state__icon-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--p-border-radius-lg);
+  background: var(--p-content-hover-background);
+  color: var(--p-red-500);
+}
 
-  &__icon {
-    width: 24px;
-    height: 24px;
-  }
+.error-state__icon {
+  font-size: 1.5rem;
+}
 
-  &__title {
-    margin: 0 0 var(--space-1);
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-danger-emphasis);
-  }
+.error-state__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--p-text-color);
+}
 
-  &__message {
-    margin: 0 0 var(--space-4);
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-    max-width: 420px;
-    line-height: var(--line-height-relaxed);
-  }
+.error-state__message {
+  margin: 0;
+  max-width: 32rem;
+  color: var(--p-text-muted-color);
+}
 
-  &__actions {
-    display: flex;
-    gap: var(--space-3);
-  }
-
-  &__retry-btn {
-    appearance: none;
-    background-color: var(--color-danger);
-    color: var(--primitive-white);
-    border: none;
-    border-radius: var(--radius-sm);
-    padding: var(--space-2) var(--space-4);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    transition: opacity var(--transition-fast);
-
-    &:hover {
-      opacity: 0.9;
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--color-danger);
-      outline-offset: 2px;
-    }
-  }
+.error-state__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }

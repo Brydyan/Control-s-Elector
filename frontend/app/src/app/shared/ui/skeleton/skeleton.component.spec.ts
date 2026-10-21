@@ -1,5 +1,6 @@
 import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { providePrimeNG } from 'primeng/config';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SkeletonComponent } from './skeleton.component';
 
@@ -23,6 +24,7 @@ describe('SkeletonComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SkeletonComponent, LoadingBoundaryHostComponent],
+      providers: [providePrimeNG()],
     }).compileComponents();
     fixture = TestBed.createComponent(SkeletonComponent);
     component = fixture.componentInstance;
@@ -32,7 +34,7 @@ describe('SkeletonComponent', () => {
   it('renders a single rect skeleton by default', () => {
     expect(component.variant).toBe('rect');
     expect(component.lines).toBe(1);
-    expect(fixture.nativeElement.querySelector('.skeleton--rect')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('p-skeleton').length).toBe(1);
   });
 
   it('renders a circle when variant=circle', () => {
@@ -40,7 +42,9 @@ describe('SkeletonComponent', () => {
     fixture.componentRef.setInput('width', '48px');
     fixture.componentRef.setInput('height', '48px');
     fixture.detectChanges();
-    const circle = fixture.nativeElement.querySelector('.skeleton--circle');
+
+    expect(component.shape).toBe('circle');
+    const circle = fixture.nativeElement.querySelector('.p-skeleton-circle');
     expect(circle).toBeTruthy();
     expect(circle.style.width).toBe('48px');
   });
@@ -50,7 +54,8 @@ describe('SkeletonComponent', () => {
     fixture.componentRef.setInput('lines', 4);
     fixture.componentRef.setInput('height', '0.9em');
     fixture.detectChanges();
-    const lines = fixture.nativeElement.querySelectorAll('.skeleton--text');
+
+    const lines = fixture.nativeElement.querySelectorAll('p-skeleton');
     expect(lines.length).toBe(4);
     expect(lines[lines.length - 1].style.width).toBe('60%');
   });
@@ -62,11 +67,17 @@ describe('SkeletonComponent', () => {
     expect(component.lineArray.length).toBe(1);
   });
 
-  it('disables shimmer when animate is none', () => {
+  it('disables the animation when animate is none', () => {
     fixture.componentRef.setInput('animate', 'none');
     fixture.detectChanges();
-    const skeleton = fixture.nativeElement.querySelector('.skeleton');
-    expect(skeleton.classList).toContain('skeleton--no-animation');
+
+    expect(component.animation).toBe('none');
+    const skeleton = fixture.nativeElement.querySelector('.p-skeleton');
+    expect(skeleton.classList).toContain('p-skeleton-animation-none');
+  });
+
+  it('uses the wave animation for the shimmer', () => {
+    expect(component.animation).toBe('wave');
   });
 
   it('gates projected loading content on loading', async () => {
@@ -86,6 +97,6 @@ describe('SkeletonComponent', () => {
   it('does not render loading content when loading is false', () => {
     fixture.componentRef.setInput('loading', false);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.skeleton')).toBeNull();
+    expect(fixture.nativeElement.querySelector('p-skeleton')).toBeNull();
   });
 });

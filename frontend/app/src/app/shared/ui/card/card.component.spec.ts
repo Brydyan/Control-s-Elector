@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { providePrimeNG } from 'primeng/config';
 import { CardComponent } from './card.component';
 
 describe('CardComponent', () => {
@@ -8,6 +9,7 @@ describe('CardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CardComponent],
+      providers: [providePrimeNG()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CardComponent);
