@@ -2,6 +2,9 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
+import { Steps } from 'primeng/steps';
 import {
   ButtonComponent,
   CardComponent,
@@ -21,6 +24,19 @@ import { ObserverService } from '../../services/observer.service';
 
 type Step = 'VOTOS' | 'IMAGEN' | 'REVISION';
 
+/** The steps of the form, in the order they are shown. */
+const STEP_LABELS: Array<{ label: string }> = [
+  { label: 'Votos' },
+  { label: 'Evidencia' },
+  { label: 'Revisión' },
+];
+
+const STEP_INDEX: Record<Step, number> = {
+  VOTOS: 0,
+  IMAGEN: 1,
+  REVISION: 2,
+};
+
 @Component({
   selector: 'app-registrar-acta',
   standalone: true,
@@ -31,6 +47,9 @@ type Step = 'VOTOS' | 'IMAGEN' | 'REVISION';
     ButtonComponent,
     LoadingStateComponent,
     ErrorStateComponent,
+    InputText,
+    Message,
+    Steps,
   ],
   templateUrl: './registrar-acta.page.html',
   styleUrls: ['./registrar-acta.page.scss'],
@@ -47,6 +66,14 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   cargoId!: number;
 
   currentStep: Step = 'VOTOS';
+
+  /** The model of the step strip, shown read-only above the form. */
+  readonly stepModel = STEP_LABELS;
+
+  /** Index of the active step in the strip. */
+  get stepIndex(): number {
+    return STEP_INDEX[this.currentStep];
+  }
   loading = true;
   submitting = false;
   error: string | null = null;

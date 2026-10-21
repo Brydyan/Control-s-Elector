@@ -6,7 +6,8 @@
       (clicked)="cancelar()"
       [disabled]="submitting"
     >
-      ← Cancelar y volver
+      <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      Cancelar y volver
     </app-button>
   </div>
 
@@ -17,31 +18,12 @@
     </div>
 
     <!-- Stepper visual -->
-    <div class="stepper">
-      <div
-        class="step-item"
-        [class.step-item--active]="currentStep === 'VOTOS'"
-      >
-        <span class="step-number">1</span>
-        <span class="step-label">Votos</span>
-      </div>
-      <div class="step-divider"></div>
-      <div
-        class="step-item"
-        [class.step-item--active]="currentStep === 'IMAGEN'"
-      >
-        <span class="step-number">2</span>
-        <span class="step-label">Evidencia</span>
-      </div>
-      <div class="step-divider"></div>
-      <div
-        class="step-item"
-        [class.step-item--active]="currentStep === 'REVISION'"
-      >
-        <span class="step-number">3</span>
-        <span class="step-label">Revisión</span>
-      </div>
-    </div>
+    <p-steps
+      class="stepper"
+      [model]="stepModel"
+      [activeIndex]="stepIndex"
+      [readonly]="true"
+    />
   </header>
 
   <!-- Estado de carga inicial -->
@@ -51,20 +33,22 @@
   ></app-loading-state>
 
   <!-- Notificación de guardado automático / borrador -->
-  <div
+  @if (draftSavedMessage) {
+  <p-message
     class="draft-pill-notification"
-    *ngIf="draftSavedMessage"
-    role="status"
-    aria-live="polite"
-  >
-    <span>💾 {{ draftSavedMessage }}</span>
-  </div>
+    severity="info"
+    [text]="draftSavedMessage"
+  />
+  }
 
   <!-- Notificaciones de éxito o error -->
-  <div class="success-banner" *ngIf="submitSuccess">
-    <h3>✅ ¡Acta procesada exitosamente!</h3>
-    <p>Redirigiendo a las dignidades de la mesa...</p>
-  </div>
+  @if (submitSuccess) {
+  <p-message
+    class="success-banner"
+    severity="success"
+    text="¡Acta procesada exitosamente! Redirigiendo a las dignidades de la mesa..."
+  />
+  }
 
   <app-error-state
     *ngIf="error && !loading"
@@ -85,10 +69,10 @@
           >
           <input
             id="totalSufragantes"
+            pInputText
             type="number"
             inputmode="numeric"
             min="0"
-            class="form-input"
             [(ngModel)]="totalSufragantes"
             (ngModelChange)="onSufragantesChange()"
             placeholder="0"
@@ -99,7 +83,8 @@
 
     <app-card [elevated]="true" headerTitle="Votos por Candidato">
       <div class="candidates-list">
-        <div class="candidate-row" *ngFor="let c of candidatos">
+        @for (c of candidatos; track c.id) {
+        <div class="candidate-row">
           <div class="candidate-info">
             <span class="candidate-name">{{ c.nombre }}</span>
             <span class="candidate-party"
@@ -109,10 +94,11 @@
           </div>
           <div class="candidate-input">
             <input
+              pInputText
               type="number"
               inputmode="numeric"
               min="0"
-              class="form-input form-input--center"
+              class="form-input--center"
               [value]="getVoto(c.id)"
               (input)="setVoto(c.id, $event)"
               placeholder="0"
@@ -120,6 +106,7 @@
             />
           </div>
         </div>
+        }
       </div>
     </app-card>
 
@@ -129,10 +116,10 @@
           <label class="form-label" for="votosBlancos">Votos en Blanco:</label>
           <input
             id="votosBlancos"
+            pInputText
             type="number"
             inputmode="numeric"
             min="0"
-            class="form-input"
             [(ngModel)]="votosBlancos"
             (ngModelChange)="onSufragantesChange()"
             placeholder="0"
@@ -142,10 +129,10 @@
           <label class="form-label" for="votosNulos">Votos Nulos:</label>
           <input
             id="votosNulos"
+            pInputText
             type="number"
             inputmode="numeric"
             min="0"
-            class="form-input"
             [(ngModel)]="votosNulos"
             (ngModelChange)="onSufragantesChange()"
             placeholder="0"
@@ -163,36 +150,43 @@
       <div class="checksum-info">
         <strong>Suma de Votos: {{ totalVotosComputados }}</strong> /
         <span>Total Sufragantes: {{ totalSufragantes }}</span>
-        <span
-          class="checksum-delta"
-          *ngIf="totalSufragantes > 0 && !isChecksumValid"
-        >
+        @if (totalSufragantes > 0 && !isChecksumValid) {
+        <span class="checksum-delta">
           (Diferencia: {{ diferenciaChecksum > 0 ? '+' : '' }}{{
           diferenciaChecksum }})
         </span>
+        }
       </div>
       <div class="checksum-status">
-        {{ isChecksumValid ? '✓ Balance electoral exacto' : '✗ La suma no
-        coincide con el total' }}
+        @if (isChecksumValid) {
+        <i class="pi pi-check" aria-hidden="true"></i> Balance electoral exacto
+        } @else {
+        <i class="pi pi-times" aria-hidden="true"></i> La suma no coincide con el
+        total
+        }
       </div>
     </div>
 
     <div class="step-actions">
+      @if (!isChecksumValid && totalVotosComputados > 0) {
       <app-button
-        *ngIf="!isChecksumValid && totalVotosComputados > 0"
         variant="secondary"
         size="lg"
         (clicked)="irAPasoImagen()"
       >
-        ⚠️ Continuar con Inconsistencia (Foto Requerida) →
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        Continuar con Inconsistencia (Foto Requerida)
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
       </app-button>
+      }
       <app-button
         variant="primary"
         size="lg"
         [disabled]="!isChecksumValid"
         (clicked)="irAPasoImagen()"
       >
-        Continuar a Evidencia Fotográfica →
+        Continuar a Evidencia Fotográfica
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
       </app-button>
     </div>
   </div>
@@ -204,13 +198,15 @@
   >
     <app-card [elevated]="true" headerTitle="Captura de Acta Física">
       <div class="image-upload-zone">
-        <div class="image-preview" *ngIf="imagePreviewUrl">
+        @if (imagePreviewUrl) {
+        <div class="image-preview">
           <img
             [src]="imagePreviewUrl"
             alt="Previsualización de acta física"
             class="preview-img"
           />
         </div>
+        }
 
         <div class="upload-controls">
           <input
@@ -226,8 +222,9 @@
             size="md"
             (clicked)="fileInput.click()"
           >
-            📷 {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o
-            subir archivo' }}
+            <i class="pi pi-camera" aria-hidden="true"></i>
+            {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o subir
+            archivo' }}
           </app-button>
           <p class="upload-tip">
             Asegúrate de que los números y firmas sean claramente legibles.
@@ -238,10 +235,12 @@
 
     <div class="step-actions step-actions--between">
       <app-button variant="ghost" size="md" (clicked)="volverAVotos()">
-        ← Volver a Votos
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Volver a Votos
       </app-button>
       <app-button variant="primary" size="lg" (clicked)="irARevision()">
-        Ir a Revisión Final →
+        Ir a Revisión Final
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
       </app-button>
     </div>
   </div>
@@ -265,12 +264,14 @@
           <span>Votos Nulos:</span>
           <strong>{{ votosNulos }}</strong>
         </div>
-        <div class="review-row" *ngFor="let c of candidatos">
+        @for (c of candidatos; track c.id) {
+        <div class="review-row">
           <span
             >{{ c.nombre }} ({{ c.partidoSiglas || 'Independiente' }}):</span
           >
           <strong>{{ getVoto(c.id) }}</strong>
         </div>
+        }
         <div class="review-row review-row--highlight">
           <span>Evidencia adjunta:</span>
           <strong
@@ -288,7 +289,8 @@
 
     <div class="step-actions step-actions--between" *ngIf="!submitting">
       <app-button variant="ghost" size="md" (clicked)="volverAImagen()">
-        ← Volver
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Volver
       </app-button>
 
       <div class="submit-buttons">
@@ -297,7 +299,8 @@
           size="md"
           (clicked)="guardarComoBorrador()"
         >
-          💾 Guardar Borrador
+          <i class="pi pi-save" aria-hidden="true"></i>
+          Guardar Borrador
         </app-button>
         <app-button
           variant="primary"
@@ -305,7 +308,8 @@
           [disabled]="!isChecksumValid"
           (clicked)="enviarActaFinal()"
         >
-          🚀 Transmitir Acta
+          <i class="pi pi-send" aria-hidden="true"></i>
+          Transmitir Acta
         </app-button>
       </div>
     </div>

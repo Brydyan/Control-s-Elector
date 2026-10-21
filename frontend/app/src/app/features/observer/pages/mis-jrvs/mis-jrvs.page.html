@@ -8,32 +8,27 @@
     </div>
 
     <!-- Barra de filtros -->
-    <div class="filter-tabs" *ngIf="!loading && !error && jrvs.length > 0">
-      <button
-        type="button"
-        class="filter-tab"
-        [class.filter-tab--active]="activeFilter === 'TODAS'"
-        (click)="applyFilter('TODAS')"
-      >
-        Todas ({{ totalJrvs }})
-      </button>
-      <button
-        type="button"
-        class="filter-tab"
-        [class.filter-tab--active]="activeFilter === 'PENDIENTES'"
-        (click)="applyFilter('PENDIENTES')"
-      >
-        Pendientes ({{ totalPendientes }})
-      </button>
-      <button
-        type="button"
-        class="filter-tab"
-        [class.filter-tab--active]="activeFilter === 'COMPLETADAS'"
-        (click)="applyFilter('COMPLETADAS')"
-      >
-        Completadas ({{ totalCompletadas }})
-      </button>
-    </div>
+    <p-tabs
+      class="filter-tabs"
+      *ngIf="!loading && !error && jrvs.length > 0"
+      [value]="activeFilter"
+      (valueChange)="onFilterTabChange($event)"
+    >
+      <p-tablist>
+        <p-tab value="TODAS">
+          Todas
+          <span class="filter-count">({{ totalJrvs }})</span>
+        </p-tab>
+        <p-tab value="PENDIENTES">
+          Pendientes
+          <span class="filter-count">({{ totalPendientes }})</span>
+        </p-tab>
+        <p-tab value="COMPLETADAS">
+          Completadas
+          <span class="filter-count">({{ totalCompletadas }})</span>
+        </p-tab>
+      </p-tablist>
+    </p-tabs>
   </header>
 
   <!-- Estado de carga -->
@@ -78,7 +73,7 @@
             </app-badge>
           </div>
           <p class="jrv-location">
-            📍 {{ jrv.parroquia || 'Parroquia no asignada' }}
+            <i class="pi pi-map-marker" aria-hidden="true"></i> {{ jrv.parroquia || 'Parroquia no asignada' }}
           </p>
           <div class="jrv-stats">
             <span
