@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { Tab, TabList, Tabs } from 'primeng/tabs';
 import {
   BadgeComponent,
   ButtonComponent,
@@ -25,6 +26,9 @@ type FilterTab = 'TODAS' | 'PENDIENTES' | 'COMPLETADAS';
     LoadingStateComponent,
     EmptyStateComponent,
     ErrorStateComponent,
+    Tab,
+    TabList,
+    Tabs,
   ],
   templateUrl: './mis-jrvs.page.html',
   styleUrls: ['./mis-jrvs.page.scss'],
@@ -36,6 +40,11 @@ export class MisJrvsPage implements OnInit {
   jrvs: JrvConEstado[] = [];
   filteredJrvs: JrvConEstado[] = [];
   activeFilter: FilterTab = 'TODAS';
+
+  /** The tab strip reports a loose value; narrow it back. */
+  onFilterTabChange(value: string | number | undefined): void {
+    this.applyFilter(String(value ?? 'TODAS') as FilterTab);
+  }
   loading = true;
   error: string | null = null;
 

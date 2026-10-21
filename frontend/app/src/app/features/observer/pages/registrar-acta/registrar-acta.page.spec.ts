@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 import { vi } from 'vitest';
 import { RegistrarActaPage } from './registrar-acta.page';
 import { ObserverService } from '../../services/observer.service';
@@ -20,7 +20,10 @@ describe('RegistrarActaPage', () => {
       'enviarActaDirecta',
       'subirImagenActa',
     ]);
+    // `p-steps` subscribes to the router events on init, so the mock needs
+    // the stream even though the page never navigates from the strip.
     routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    routerSpy.events = of(EMPTY);
     offlineStorageSpy = jasmine.createSpyObj('OfflineStorageService', [
       'guardarBorrador',
       'obtenerBorrador',
