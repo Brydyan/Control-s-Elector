@@ -119,6 +119,33 @@ mvn -B verify -Dcontract.baseUrl=http://localhost:8080
 
 Contra el backend Spring hoy, contra el backend Quarkus mañana. Mismo artefacto de test.
 
+## Mediciones (2026-10-20, misma máquina, misma base)
+
+| Implementación | Arranque hasta health OK | RSS en reposo | Imagen |
+|---|---|---|---|
+| **Quarkus nativo** | **295 ms** (Quarkus reporta 188 ms) | 136 MB | 120 MB (131 MB de imagen) |
+| **Spring Boot (JVM)** | **12,72 s** | 142 MiB | ~200 MB (JRE + jar) |
+
+**67× más rápido en arrancar.** Ese es el número que motivó la migración (#113).
+
+El RSS todavía no es una diferencia: el módulo de Quarkus es una rebanada fina (solo auth) y el
+contenedor de Spring todavía no ha invertido su heap. La diferencia de memoria aparece cuando la
+aplicación crece y el JVM tiene que expandir el heap, que es justo lo que el heap fijo de la imagen
+nativa evita.
+
+El build nativo tarda **3m09s** y usa el builder de Mandrel en un contenedor: necesita 6–8 GB de
+memoria. En una máquina chica, `-Dquarkus.native.native-image-xmx=4g` lo baja.
+
+### Trampa del native image: DTOs
+
+Jackson no encuentra serializador para un `record` en native image si no hay metadatos de reflexión.
+Como el resource devuelve `Response` (y no el DTO), Quarkus no puede deducir el tipo que tiene que
+registrar, y el login responde **500** con `No serializer found for class AuthResponse`.
+
+La respuesta de la propia app lo dice: `Consider annotating the class with '@RegisterForReflection'`.
+Por eso `AuthResponse`, `AuthResponse.UsuarioActual` y `LoginRequest` llevan la anotación. **Todo
+DTO que cruce el cable en nativo la necesita.**
+
 ## Lo que falta
 
 - `refresh`, `logout` y `register` del módulo de auth (incremento 1.1)

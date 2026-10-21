@@ -198,3 +198,20 @@ Decisiones que importan:
 Dos desvíos de port que hubo que resolver: `audit_log.detalle` es JSONB y necesita `@JdbcTypeCode(SqlTypes.JSON)` (si no, Postgres rechaza el INSERT con "column detalle is of type jsonb but expression is of type character varying"), y el `ExceptionMapper<Throwable>` se tragaba también el 404 de JAX-RS, así que el error de ruta inexistente salía como 500.
 
 Estado: `POST /api/v1/auth/login` y `GET /api/v1/auth/me` devuelven exactamente el mismo body y la misma cookie que Spring. `refresh`, `logout` y `register` devuelven 404 con el shape estándar, que es lo honesto: la suite marca en rojo lo que todavía no está migrado. **Arranca en 1,9 s en modo JVM**, contra los ~8 s del backend Spring.
+
+### L13 — 2026-10-20 — El binario nativo funciona: 295 ms de arranque
+
+El build nativo del backend Quarkus se generó bien a la primera (2m59s, imagen de 131 MB) y el binario **arrancó**, pero el login devolvía 500: `No serializer found for class AuthResponse`. Es la trampa clásica del native image — Jackson no encuentra serializador para un `record` sin metadatos de reflexión, y como el resource devuelve `Response` en vez del DTO, Quarkus no puede deducir qué tipo registrar. La respuesta de la propia app lo decía: `Consider annotating the class with '@RegisterForReflection'`. Con la anotación en `AuthResponse`, `AuthResponse.UsuarioActual` y `LoginRequest`, el login en nativo devuelve 200 y el body es idéntico al de Spring.
+
+**Mediciones (misma máquina, misma base):**
+
+| Implementación | Arranque hasta health OK | RSS en reposo |
+|---|---|---|
+| Quarkus nativo | **295 ms** (188 ms según Quarkus) | 136 MB |
+| Spring Boot (JVM) | **12,72 s** | 142 MiB |
+
+67× más rápido en arrancar. El RSS todavía no difiere porque el módulo de Quarkus es una rebanada fina y el heap del contenedor de Spring todavía no creció; la diferencia de memoria aparece cuando la app crece, que es justo lo que evita el heap fijo de la imagen nativa.
+
+La suite de contrato contra el binario nativo: 2 de 11 tests de auth verdes (los que solo usan login) y 9 en rojo por los endpoints de auth que todavía no están migrados (`register`, `refresh`, `logout`), que devuelven 404 con el shape estándar. Es el estado honesto del incremento 1: la suite marca en rojo lo que falta, que es para lo que sirve.
+
+El detalle operativo: el perfil de Maven `native` se activa con `-Pnative`. Con `-Dnative` el build pasa por la JVM sin que se note, y parece que el nativo funcionó.
