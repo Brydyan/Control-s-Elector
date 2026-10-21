@@ -16,3 +16,36 @@
 body {
   background-color: var(--color-surface-canvas);
 }
+
+/*
+ * El card global.
+ *
+ * S2 de `odd/tasks/frontend-visual-rebalance.md`: la página y la card vivían
+ * en slate-50 y blanco, dos tonos separados por 5 unidades de luminosidad.
+ * El borde de la card es la pieza que separa superficie de tarjeta: slate-50
+ * contra blanco es invisible, slate-100 contra blanco con un trazo de 1px
+ * slate-200 sí lo es.
+ *
+ * El `!important` está localizado a esta regla y existe por una razón
+ * concreta: `variables.scss` carga `base.scss` antes de que el styled engine
+ * de PrimeNG emita los tokens de `.p-card`, así que la regla que llega
+ * primero pierde la batalla de cascada. Subirla al final de `layout.scss`
+ * (cargado al final por `angular.json`) obligaría a mover reglas globales
+ * a un archivo del shell; declarar `components.card` en el preset exige
+ * inspeccionar el contrato de Aura — que vive en `node_modules` y puede
+ * cambiar con cada bump. El `!important` localizado es la decisión más
+ * chica y la más determinista: cuando se retire, la card sigue leyendo el
+ * mismo token que el resto del chrome.
+ *
+ * El selector apunta a `.p-card` y NO a `.app-card`: el componente `app-card`
+ * sólo es el wrapper que las páginas usan; la superficie que se despega es
+ * la del `p-card` interno. Los stat cards del dashboard definen
+ * `border-top: 3px solid transparent` (luego coloreado por estado) justo
+ * encima — propiedad por propiedad, ese overridea el `border-top` y deja
+ * los otros tres lados en 1px slate-200, que es lo que queremos para que el
+ * "filo de color" siga siendo un filo, no una caja cerrada.
+ */
+.p-card {
+  border: 1px solid var(--color-border-on-surface) !important;
+  border-radius: var(--radius-lg) !important;
+}
