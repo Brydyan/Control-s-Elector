@@ -226,6 +226,21 @@
 						<include>**/*Tests.java</include>
 						<include>**/*IT.java</include>
 					</includes>
+					<!--
+						La suite corre contra una base con SOLO el esquema, sin el seed de
+						datos de referencia (contexto Liquibase "seed"). Los fixtures de los
+						tests construyen su propia geografía con códigos fijos (provincia
+						'24', cantón '2401'), afirman una base vacía y esperan que el
+						primer partido sea el que crean: con el seed aplicado, el setup
+						revienta por colisión de índices únicos.
+
+						Una system property tiene más precedencia que application.properties,
+						así que esto pisa el `spring.liquibase.contexts=seed` de la app sin
+						tocar ningún archivo de properties de test.
+					-->
+					<systemPropertyVariables>
+						<spring.liquibase.contexts>schema-only</spring.liquibase.contexts>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 

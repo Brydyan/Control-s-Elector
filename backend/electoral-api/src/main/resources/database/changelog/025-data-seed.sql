@@ -1,8 +1,21 @@
 --liquibase formatted sql
 
--- changeset electoral:025-01-data-seed-dev
+-- changeset electoral:025-01-data-seed-dev context:seed
 -- Datos de desarrollo: geografía mínima, configuración preelectoral,
 -- usuarios de cada rol, JRVs, candidatos y actas en distintos estados.
+--
+-- CONTEXTO LIQUIBASE "seed": este changeset es DATO de referencia, no esquema.
+-- La app lo corre porque `spring.liquibase.contexts=seed`; la suite de tests
+-- NO lo corre (el pom le pasa `spring.liquibase.contexts=schema-only`).
+--
+-- Por qué: la suite del backend está diseñada contra una base con solo el
+-- esquema. Afirma "base vacía" (DashboardControllerTest.RNF_DASH_01), espera
+-- que el primer partido sea el que crea el test, espera una sola sesión, y
+-- construye su propia geografía con códigos fijos (provincia '24', cantón
+-- '2401'). Con el seed aplicado en la base de test, esas aserciones no se
+-- pueden cumplir y el setup revienta por colisión de índices únicos.
+-- Separar esquema de dato de referencia es la razón de que el seed tenga
+-- contexto propio.
 --
 -- Convenciones:
 --   * Solo se insertan filas si la tabla está vacía (idempotente).
