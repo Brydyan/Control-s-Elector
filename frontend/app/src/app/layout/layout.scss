@@ -203,6 +203,80 @@
   white-space: nowrap;
 }
 
+/* Cola offline ------------------------------------------------------------- */
+
+/*
+ * Estado de la cola de actas. Vive junto al indicador de conexión para que
+ * el veedor vea que el acta encolada sigue a salvo y a la espera.
+ */
+
+.layout-queue-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.layout-queue-count,
+.layout-queue-syncing,
+.layout-queue-failed,
+.layout-queue-confirm {
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.layout-queue-count {
+  padding: 0.25rem 0.625rem;
+  border-radius: var(--p-border-radius-md);
+  color: var(--p-text-muted-color);
+  background: var(--p-content-hover-background);
+}
+
+.layout-queue-syncing {
+  color: var(--p-text-muted-color);
+}
+
+.layout-queue-failed {
+  color: var(--color-status-danger);
+  font-weight: 600;
+}
+
+.layout-queue-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.layout-queue-confirm {
+  color: var(--p-text-color);
+}
+
+.layout-queue-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--p-border-radius-md);
+  background: transparent;
+  color: var(--p-text-color);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.layout-queue-action:hover {
+  background: var(--p-content-hover-background);
+}
+
+.layout-queue-action--danger {
+  color: var(--color-status-danger);
+  border-color: var(--color-status-danger-border);
+}
+
 .layout-notification-badge {
   position: absolute;
   top: 0.25rem;

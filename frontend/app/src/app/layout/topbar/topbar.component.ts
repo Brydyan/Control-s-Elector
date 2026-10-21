@@ -1,4 +1,11 @@
-import { Component, computed, inject, input, viewChild } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { Avatar } from 'primeng/avatar';
 import { Badge } from 'primeng/badge';
@@ -8,6 +15,7 @@ import { AuthService } from '../../core/auth/services/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { Role } from '../../core/auth/domain/user.model';
 import { NetworkStatusService } from '../../core/network/network-status.service';
+import { SyncService } from '../../core/offline/sync.service';
 import { LayoutService } from '../layout.service';
 import { ThemeService } from '../../../theme/theme.service';
 
@@ -27,6 +35,15 @@ export class TopbarComponent {
   readonly layout = inject(LayoutService);
   readonly network = inject(NetworkStatusService);
   readonly theme = inject(ThemeService);
+
+  /**
+   * Cola offline. Se muestra para que el veedor que encoló un acta vea que
+   * el registro está a salvo y a la espera, en vez de creer que se perdió.
+   */
+  readonly sync = inject(SyncService);
+
+  /** Confirmación explícita antes de descartar actas con error. */
+  readonly confirmandoDescarte = signal(false);
 
   readonly title = input('');
   readonly subtitle = input('');
@@ -66,6 +83,27 @@ export class TopbarComponent {
 
   toggleDarkMode(): void {
     this.theme.toggle();
+  }
+
+  /** Reintenta las actas que el servidor rechazó de forma permanente. */
+  reintentarFallidos(): void {
+    this.confirmandoDescarte.set(false);
+    void this.sync.reintentarFallidos();
+  }
+
+  /** Pide confirmación: descartar un acta borra su foto y no tiene vuelta atrás. */
+  pedirDescarte(): void {
+    this.confirmandoDescarte.set(true);
+  }
+
+  cancelarDescarte(): void {
+    this.confirmandoDescarte.set(false);
+  }
+
+  /** Descarta las actas con error, con la confirmación explícita ya dada. */
+  descartarFallidos(): void {
+    this.confirmandoDescarte.set(false);
+    void this.sync.descartarFallidos();
   }
 
   logout(): void {

@@ -44,6 +44,65 @@
       {{ network.statusLabel() }}
     </div>
 
+    <!--
+      Cola offline: el operador tiene que ver que el acta que encoló sigue
+      a salvo. `role="status"` anuncia el cambio sin robar el foco.
+    -->
+    <div class="layout-queue-status" role="status" aria-live="polite">
+      @if (sync.pendientes() > 0) {
+        <span class="layout-queue-count">
+          {{ sync.pendientes() }}
+          {{ sync.pendientes() === 1 ? 'acta en cola' : 'actas en cola' }}
+        </span>
+        @if (sync.sincronizando()) {
+          <span class="layout-queue-syncing">· enviando…</span>
+        }
+        @if (sync.fallidos() > 0) {
+          <span class="layout-queue-failed">· {{ sync.fallidos() }} con error</span>
+        }
+      }
+    </div>
+
+    @if (sync.fallidos() > 0) {
+      <div class="layout-queue-actions">
+        @if (confirmandoDescarte()) {
+          <span class="layout-queue-confirm">
+            ¿Descartar {{ sync.fallidos() }}
+            {{ sync.fallidos() === 1 ? 'acta' : 'actas' }} con error?
+          </span>
+          <button
+            type="button"
+            class="layout-queue-action layout-queue-action--danger"
+            (click)="descartarFallidos()"
+          >
+            Sí, descartar
+          </button>
+          <button
+            type="button"
+            class="layout-queue-action"
+            (click)="cancelarDescarte()"
+          >
+            Cancelar
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="layout-queue-action"
+            (click)="reintentarFallidos()"
+          >
+            Reintentar
+          </button>
+          <button
+            type="button"
+            class="layout-queue-action layout-queue-action--danger"
+            (click)="pedirDescarte()"
+          >
+            Descartar
+          </button>
+        }
+      </div>
+    }
+
     @if (isReadOnly()) {
       <span class="layout-readonly-badge">
         <i class="pi pi-eye" aria-hidden="true"></i>

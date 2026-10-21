@@ -97,6 +97,76 @@ describe('OfflineStorageService', () => {
     expect(item.lastError).toBe('Network timeout');
   });
 
+  it('S3: should keep a pending acta in queued state with its blob by default', async () => {
+    const blob = new Blob(['foto'], { type: 'image/webp' });
+    const id = await service.encolarActa({
+      jrvId: 1,
+      cargoId: 1,
+      payload: {},
+      imageBlob: blob,
+    });
+    const [item] = await service.obtenerPendientes();
+    expect(item.estado).toBe('queued');
+    expect(item.actaEnviada).toBe(false);
+    expect(item.actaIdRemota).toBeNull();
+    expect(item.proximoIntentoAt).toBeNull();
+    expect(item.imageBlob).not.toBeNull();
+    expect(item.id).toBe(id);
+  });
+
+  it('S3: should remember that the acta was already posted (anti-duplicate)', async () => {
+    const id = await service.encolarActa({
+      jrvId: 1,
+      cargoId: 1,
+      payload: {},
+      imageBlob: null,
+    });
+    await service.marcarActaEnviada(id, 77);
+    const [item] = await service.obtenerPendientes();
+    expect(item.actaEnviada).toBe(true);
+    expect(item.actaIdRemota).toBe(77);
+  });
+
+  it('S3: should mark an acta as failed without deleting it', async () => {
+    const id = await service.encolarActa({
+      jrvId: 1,
+      cargoId: 1,
+      payload: {},
+      imageBlob: null,
+    });
+    await service.marcarFallida(id, '422: Acta inconsistente');
+    const cola = await service.obtenerPendientes();
+    expect(cola.length).toBe(1);
+    expect(cola[0].estado).toBe('failed');
+    expect(cola[0].lastError).toBe('422: Acta inconsistente');
+  });
+
+  it('S3: should put a failed acta back in the queue on retry', async () => {
+    const id = await service.encolarActa({
+      jrvId: 1,
+      cargoId: 1,
+      payload: {},
+      imageBlob: null,
+    });
+    await service.marcarFallida(id, '422: Acta inconsistente');
+    await service.marcarEnCola(id);
+    const [item] = await service.obtenerPendientes();
+    expect(item.estado).toBe('queued');
+  });
+
+  it('S3: should bump the queue version on every mutation', async () => {
+    const antes = service.colaVersion();
+    const id = await service.encolarActa({
+      jrvId: 1,
+      cargoId: 1,
+      payload: {},
+      imageBlob: null,
+    });
+    expect(service.colaVersion()).toBeGreaterThan(antes);
+    await service.eliminarPendiente(id);
+    expect(service.colaVersion()).toBeGreaterThan(antes + 1);
+  });
+
   it('should compose draftId from jrvId + cargoId (D5)', () => {
     expect(OfflineStorageService.draftId(101, 2)).toBe('draft_101_2');
     expect(OfflineStorageService.draftId(1, 1)).toBe('draft_1_1');
