@@ -34,4 +34,19 @@ public class CurrentUser {
     this.perms = perms;
     this.sesionId = sesionId;
   }
+
+  /**
+   * Roles efectivos del usuario: su rol y sus permisos atomicos.
+   *
+   * <p>Es lo que evalua {@link Requiere}. En Spring, {@code hasRole('MASTER')} busca la authority
+   * {@code ROLE_MASTER} y {@code hasAuthority('acta:aprobar')} busca la propia: aca los dos viven
+   * en el mismo conjunto, con el rol tal cual y los permisos en su forma {@code recurso:accion}.
+   */
+  public java.util.Set<String> rolesEfectivos() {
+    java.util.Set<String> roles = new java.util.HashSet<>(perms);
+    if (rol != null) {
+      roles.add(rol);
+    }
+    return roles;
+  }
 }

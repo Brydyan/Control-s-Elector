@@ -1,5 +1,7 @@
 package ec.twintailcs.electoral.auth.domain;
 
+import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
+
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.UuidGenerator;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +25,7 @@ public class RolPermiso extends PanacheEntityBase {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
 
+  @UuidGenerator(algorithm = UuidV7Generator.class)
   @Column(name = "public_id", nullable = false, unique = true, columnDefinition = "UUID")
   UUID publicId;
 

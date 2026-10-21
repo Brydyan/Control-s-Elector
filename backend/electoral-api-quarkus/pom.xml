@@ -79,6 +79,14 @@
 			<version>9.40</version>
 		</dependency>
 
+		<!-- UUIDv7 (RFC 9562): mismo generador que el backend Spring, para que los
+		     public_id de las dos implementaciones se comporten igual. -->
+		<dependency>
+			<groupId>com.github.f4b6a3</groupId>
+			<artifactId>uuid-creator</artifactId>
+			<version>6.1.1</version>
+		</dependency>
+
 		<!-- BCrypt: mismo algoritmo que usa el backend Spring. -->
 		<dependency>
 			<groupId>org.mindrot</groupId>

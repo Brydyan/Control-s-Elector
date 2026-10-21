@@ -1,5 +1,7 @@
 package ec.twintailcs.electoral.auth.domain;
 
+import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
+
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -10,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.UuidGenerator;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -22,6 +25,7 @@ public class Usuario extends PanacheEntityBase {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
 
+  @UuidGenerator(algorithm = UuidV7Generator.class)
   @Column(
       name = "public_id",
       nullable = false,
@@ -86,5 +90,29 @@ public class Usuario extends PanacheEntityBase {
 
   public String getRolNombre() {
     return rol != null ? rol.getNombre() : null;
+  }
+
+  public void setNombre(String nombre) {
+    this.nombre = nombre;
+  }
+
+  public void setApellido(String apellido) {
+    this.apellido = apellido;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
+  }
+
+  public void setPasswordHash(String passwordHash) {
+    this.passwordHash = passwordHash;
+  }
+
+  public void setRol(Rol rol) {
+    this.rol = rol;
+  }
+
+  public void setHabilitado(boolean habilitado) {
+    this.habilitado = habilitado;
   }
 }

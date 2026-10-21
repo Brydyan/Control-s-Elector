@@ -7,19 +7,29 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.ResourceInfo;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Set;
 
 /**
- * Filtro de autenticacion: valida el access token y deja el usuario en el
- * {@link CurrentUser} del request.
+ * Filtro de autenticacion y autorizacion.
  *
- * <p>Es el equivalente funcional del {@code JwtAuthFilter} + {@code SecurityConfig} del backend
- * Spring, con la misma lista de rutas publicas y el mismo 401.
+ * <p>Equivalente funcional del {@code JwtAuthFilter} + {@code SecurityConfig} del backend Spring:
+ * valida el access token, deja el usuario en el {@link CurrentUser} del request y evalua la
+ * anotacion {@link Requiere} del endpoint (o de la clase) para decidir si deja pasar la request.
+ *
+ * <p>La validacion del token y la autorizacion se hacen con Nimbus, igual que en Spring, para que
+ * los tokens de las dos implementaciones sean intercambiables. La autorizacion, en cambio, es
+ * propia: evalua la anotacion {@link Requiere} en vez de usar SpEL, porque SpEL es de Spring y
+ * no existe aca. El mapeo entre ambas sintaxis esta documentado en {@link Requiere}.
  */
 @Provider
-@Priority(Priorities.AUTHENTICATION)
+@Priority(Priorities.AUTHORIZATION)
 public class JwtAuthFilter implements ContainerRequestFilter {
 
   /** Rutas que no exigen token. Misma lista que el permitAll del backend Spring. */
@@ -30,7 +40,6 @@ public class JwtAuthFilter implements ContainerRequestFilter {
     "/api/v1/auth/refresh",
     "/api/v1/auth/logout",
     "/v3/api-docs",
-    "/v3/api-docs/",
     "/swagger-ui",
     "/swagger-ui.html",
     "/webjars",
@@ -41,23 +50,73 @@ public class JwtAuthFilter implements ContainerRequestFilter {
 
   @Inject CurrentUser currentUser;
 
+  /** Metodo y clase del endpoint que se esta sirviendo: de ahi sale la anotacion Requiere. */
+  @Context ResourceInfo resourceInfo;
+
   @Override
   public void filter(ContainerRequestContext ctx) {
     String path = ctx.getUriInfo().getPath();
-    if (esPublica(path)) {
-      return;
-    }
+    boolean publica = esPublica(path);
+
     String token = bearer(ctx.getHeaderString(HttpHeaders.AUTHORIZATION));
-    if (token == null) {
-      abort(ctx);
+    if (token != null) {
+      try {
+        JwtService.ParsedJwt parsed = jwt.parseAccess(token);
+        currentUser.set(parsed.email(), parsed.rol(), parsed.perms(), parsed.sesionId());
+      } catch (RuntimeException e) {
+        if (!publica) {
+          abort(ctx, 401, "Unauthorized", "No autenticado o token invalido");
+          return;
+        }
+      }
+    } else if (!publica) {
+      abort(ctx, 401, "Unauthorized", "No autenticado o token invalido");
       return;
     }
-    try {
-      JwtService.ParsedJwt parsed = jwt.parseAccess(token);
-      currentUser.set(parsed.email(), parsed.rol(), parsed.perms(), parsed.sesionId());
-    } catch (RuntimeException e) {
-      abort(ctx);
+
+    if (publica) {
+      return;
     }
+    if (currentUser.email() == null) {
+      abort(ctx, 401, "Unauthorized", "No autenticado o token invalido");
+      return;
+    }
+    if (!autorizado(ctx)) {
+      abort(ctx, 403, "Forbidden", "Access Denied");
+    }
+  }
+
+  /**
+   * Evalua la anotacion {@link Requiere} del endpoint. Si el metodo no la tiene, se usa la de la
+   * clase: el metodo reemplaza al de la clase, igual que en Spring Security.
+   */
+  private boolean autorizado(ContainerRequestContext ctx) {
+    Requiere requiere = null;
+    if (resourceInfo != null) {
+      Method metodo = resourceInfo.getResourceMethod();
+      if (metodo != null) {
+        requiere = metodo.getAnnotation(Requiere.class);
+      }
+      if (requiere == null) {
+        Class<?> clase = resourceInfo.getResourceClass();
+        if (clase != null) {
+          requiere = clase.getAnnotation(Requiere.class);
+        }
+      }
+    }
+    if (requiere == null) {
+      // Sin anotacion, el unico requisito es estar autenticado (ya se verifico arriba).
+      return true;
+    }
+    Set<String> roles = currentUser.rolesEfectivos();
+    boolean cumplePermisos =
+        Arrays.stream(requiere.permisos()).anyMatch(permiso -> roles.contains(permiso));
+    boolean cumpleRoles = Arrays.stream(requiere.roles()).anyMatch(role -> roles.contains(role));
+    if (requiere.permisos().length == 0 && requiere.roles().length == 0) {
+      return requiere.autenticado() || currentUser.email() != null;
+    }
+    // Entre los dos grupos el criterio es OR, como en el "or" de Spring.
+    return cumplePermisos || cumpleRoles;
   }
 
   private static boolean esPublica(String path) {
@@ -80,13 +139,11 @@ public class JwtAuthFilter implements ContainerRequestFilter {
     return token.isEmpty() ? null : token;
   }
 
-  private static void abort(ContainerRequestContext ctx) {
+  private static void abort(ContainerRequestContext ctx, int status, String reason, String message) {
     ctx.abortWith(
-        Response.status(401)
+        Response.status(status)
             .type("application/json")
-            .entity(
-                ApiErrorResponse.body(
-                    401, "Unauthorized", "No autenticado o token invalido"))
+            .entity(ApiErrorResponse.body(status, reason, message))
             .build());
   }
 }
