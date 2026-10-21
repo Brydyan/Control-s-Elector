@@ -32,18 +32,43 @@ operador pidió preservar al decir "migrar todo". Cada una es una regresión si 
 
 | ID | Qué | Specs | Ruta | Commit |
 |---|---|---|---|---|
-| T1 | Mover `database/` al módulo Quarkus; sacar el `copy-resources` del pom, el `COPY` del Dockerfile y volver el contexto de build al módulo | S6,S7 | inline | — |
-| T2 | `compose.yaml`: build del módulo, variables `QUARKUS_*`, `migrate-at-start` y arranque en dos fases | S5,S10,S11 | inline | — |
-| T3 | `.env` y `.env.example`: las variables de Spring que ya no aplican, las de Quarkus que sí | S5 | inline | — |
-| T4 | `ci.yml`: borrar los jobs de Spring (líneas 43, 60, 133-178) y ajustar el contexto del build Quarkus | S5,S6 | inline | — |
-| T5 | `deploy.yml` y `railway.json`: que se construya y publique la imagen de Quarkus | S5,S6 | inline | — |
-| T6 | `k8s/`: `SERVER_PORT` del probe y `migrate-at-start` en el ConfigMap | S5,S10 | inline | — |
-| T7 | Docs: `README.md` (líneas 36, 117, 119, 143), README del módulo (sección "Lo que falta" desactualizada), `.claude/skills/control-electoral-review/SKILL.md` | S5 | inline | — |
-| T8 | Borrar `backend/electoral-api/` completo | S5 | inline | — |
-| T9 | Verificación end-to-end con Spring ya borrado: suite de contrato contra la imagen Quarkus, base limpia en dos fases, `mvn verify` del módulo | S9,S11 | inline | — |
-| T10 | PR encadenado sobre `test/backend-quarkus-coverage` + entrada L16 en este documento | S1,S2 | inline | — |
+| T+ | Adoptar `spotless` en el módulo Quarkus para no perder el gate de formato | S5 | inline | `ec679fb` |
+| T1 | Mover `database/` al módulo Quarkus; sacar el `copy-resources` del pom, el `COPY` del Dockerfile y volver el contexto de build al módulo | S6,S7 | inline | `0e2324b` |
+| T2 | `compose.yaml`: build del módulo, variables `QUARKUS_*`, `migrate-at-start` y arranque en dos fases | S5,S10,S11 | inline | `3a076d4` |
+| T3 | `.env` y `.env.example`: las variables de Spring que ya no aplican, las de Quarkus que sí | S5 | inline | `3a076d4` |
+| T4 | `ci.yml`: borrar los jobs de Spring y ajustar el contexto del build Quarkus | S5,S6 | inline | `7691a36` |
+| T5 | `deploy.yml` y `railway.json`: que se construya y publique la imagen de Quarkus | S5,S6 | inline | `7691a36` |
+| T6 | `k8s/`: `APP_JWT_SECRET`, `APP_JWT_REFRESH_PEPPER` y `migrate-at-start` en el ConfigMap | S5,S10 | inline | `7691a36` |
+| T7 | Docs: `README.md`, README del módulo, `.claude/skills/`, y los seis runbooks de `documents/` | S5 | inline | `6ec0876`, `6b16a6e` |
+| T8 | Borrar `backend/electoral-api/` completo | S5 | inline | `357cdd4` |
+| T9 | Verificación end-to-end con Spring ya borrado | S9,S11 | inline | — |
+| T10 | PR encadenado sobre `test/backend-quarkus-coverage` + entrada L16 | S1,S2 | inline | — |
 
-**Estado:** sin empezar.
+**Estado:** T1-T9 hechas. T10 en curso.
+
+### T9 — Verificación ejecutada (no declarada)
+
+| Qué | Resultado |
+|---|---|
+| `mvn -B clean verify` en el módulo Quarkus | **BUILD SUCCESS** — 4/4 tests, spotless limpio en 174 archivos. Es el comando exacto del job `Backend Quarkus Tests`. |
+| `docker build backend/electoral-api-quarkus` (contexto = módulo) | **SUCCESS**. El changelog viaja dentro de la imagen: 33 entradas en `database/` del jar de la app. |
+| Arranque en dos fases contra base VACIA | 0 tablas → arrancada con `none` → **25 tablas, 64 changesets**, saludable → segunda fase con `validate` (los defaults, sin tocar nada): **OK**. Health `UP`. |
+| Suite de contrato contra esa imagen | **122/122, BUILD SUCCESS**. Con `backend/electoral-api/` ya borrado del repo. |
+| `docker compose config` + YAML de CI/CD/k8s | Parsean. |
+
+**Dos corridas del harness con S3 roto, y por qué no cuentan como fallo del PR.** Los primeros
+dos intentos dieron 22/122 en rojo: los 22 eran de evidencia (`subirEvidenciaValida` → 500) porque
+el script no habia creado el bucket de RustFS. Ninguno era de otro modulo. La causa se confirmo
+antes de tocar nada: la 22ava falla era la unica de `CoordinatorActasContractIT`, y todas las de
+`EvidenciasContractIT` + `RbacContractIT` pasaban por la misma subida. Corregido el harness (bucket
+con el mismo metodo que usa el job de CI, `amazon/aws-cli s3api create-bucket`), 122/122.
+
+### Frontera de la rebanada
+
+El guard de commits mide el diff contra `origin/develop`, que para esta rama es el diff de
+toda la cadena (#139 + #140 + este PR) — de ahi el aviso de "17000 lineas". **El diff de este
+PR es contra su base, `test/backend-quarkus-coverage`**: 8 commits. La cadena se revisa por
+PR, no por rama, y cada PR se mira contra el suyo.
 
 ---
 
@@ -96,3 +121,58 @@ define `JWT_SECRET` y `CORS_ALLOWED_ORIGINS`, y ninguno de los dos backends lee 
 (Spring leía `app.jwt.secret`, Quarkus `APP_JWT_SECRET`; ninguno de los dos declara CORS). Se anotan
 como observación, no como tarea: arreglarlo acá mezclaría el corte con una corrección de despliegue
 que ya estaba rota antes.
+
+### L4 — 2026-10-21 — Tres cosas que aparecieron al ejecutar, y no estaban en el plan
+
+**1. El gate de formato se perdía en silencio (commit `ec679fb`).** `backend-format` corría
+`spotless:check` con `working-directory: backend/electoral-api`. Borrar ese directorio no rompe el
+job: lo deja apuntando a un path inexistente. Sin `spotless` en el pom de Quarkus, el backend se
+quedaba sin control de formato y nadie lo notaba hasta que alguien metiera un archivo con el
+formato mal.
+
+El módulo Quarkus **no** estaba formateado: 83 archivos con violaciones, 343 líneas. Va en su
+propio commit porque mezclado con el corte el diff deja de poder revisarse de un vistazo. El
+primer conteo dio 4 archivos porque Maven trunca la salida de error del plugin; el número real
+salió al ejecutar `spotless:apply`.
+
+**2. El nombre de la variable del JWT en k8s era un agujero de seguridad (commit `7691a36`).** No
+era un rename. Spring leía `app.jwt.secret=${JWT_SECRET:...}` y el ConfigMap de k8s definía
+`JWT_SECRET`. Quarkus lee `app.jwt.secret=${APP_JWT_SECRET:dev-only-change-in-prod-32chars-min-jwt-hmac-key}`.
+Con el nombre viejo, el backend **no habría fallado al arrancar**: habría firmado con la clave de
+desarrollo embebida en el código. Una clave conocida, publicada en el repositorio, con la que
+cualquiera que lo lea puede forjar tokens. `APP_JWT_REFRESH_PEPPER` faltaba en el ConfigMap y
+tampoco lo leía Spring.
+
+Esto generaliza: **el backend tiene un solo `application.properties`, sin perfil de prod**, así
+que los defaults de desarrollo siguen disponibles en cualquier ambiente. En Spring el perfil
+`prod` al menos exigía `DATABASE_URL` sin default. Queda anotado en `.env.example` y como
+follow-up; no se arregla acá porque es endurecimiento de configuración, no corte de runtime.
+
+**3. Tres comandos de los runbooks no existen en Quarkus (commit `6b16a6e`).** Un rename de rutas
+no alcanzaba: `jacoco` (el pom de Quarkus no instrumenta cobertura), `dependency-check:check` (no
+está configurado) y `mvn liquibase:changelogSync` (el goal no existe; en Quarkus las
+migraciones corren al arrancar). Los runbooks seguian mandando a correrlos.
+
+### L5 — 2026-10-21 — Lo que NO se tocó, y por qué
+
+- **`documents/task-control/`** (8 archivos): son el registro de trabajos completados, con las
+  rutas que tenían cuando se hicieron. Reescribirlos sería falsear el historial. Some ejemplos
+  obsoletos que se van a quedar: `documents/PLAN.md`, `documents/diagram/README.md`,
+  `documents/DOCKER.md:16` (menciona "JRE Alpine + JAR ejecutable" en un párrafo que sí se
+  actualizó), `backend/contract-tests/README.md:108` ("que se portará al proyecto Quarkus" — ya
+  se portó, en #140).
+- **`validate-on-migrate` sigue en `false`**: el `DATABASECHANGELOG` de los ambientes existentes lo
+  escribió el cliente Liquibase del backend Spring (5.0.3). La imagen de Quarkus trae
+  `org.liquibase.liquibase-core-4.33.0` — no es el mismo cliente ni de la misma major. Encender la
+  validación en el mismo PR que cambia el runtime le pediría a producción verificar checksums
+  contra un cliente que nunca los escribió. Se enciende después, cuando el schema esté re-baselined
+  por Quarkus.
+- **El `HEALTHCHECK` del Dockerfile sigue apuntando a `:8080`** mientras el ConfigMap de k8s pone
+  `SERVER_PORT: "8081"`. Preexistente: k8s no usa el `HEALTHCHECK` de la imagen (no hay
+  `readinessProbe` ni `livenessProbe`, solo el Service). Se deja como está.
+- **`CORS_ALLOWED_ORIGINS` en el ConfigMap**: ni Spring ni Quarkus lo leen. Preexistente.
+- **`backend-quarkus` y `backend-contract` construyen la misma imagen** en dos jobs distintos. Es
+  trabajo duplicado de CI (~2 min), no un error. Consolidarlos es otro PR.
+- **`backend/electoral-api/build/`** sigue en disco: son 494 archivos gitignorados propiedad de
+  otro usuario (de un build en contenedor), asi que `rm -rf` da "permiso denegado". Git no los
+  trackea y el PR es correcto; se borran con `sudo rm -rf` cuando quiera el operador.
