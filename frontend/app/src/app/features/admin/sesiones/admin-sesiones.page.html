@@ -7,12 +7,12 @@
   </header>
 
   <div class="filters">
-    <p-inputtext
+    <input type="text"
       [(ngModel)]="terminoBusqueda"
       (ngModelChange)="page = 0; cargarSesiones()"
       placeholder="Buscar por email de usuario"
       aria-label="Buscar sesiones"
-    />
+     pInputText />
   </div>
 
   <app-skeleton

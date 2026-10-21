@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { providePrimeNG } from 'primeng/config';
 import { of } from 'rxjs';
 import { AdminService } from '../services/admin.service';
 import { AdminSesionesPage } from './admin-sesiones.page';
@@ -17,10 +18,16 @@ describe('AdminSesionesPage', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [AdminSesionesPage],
-      providers: [{ provide: AdminService, useValue: service }],
+      providers: [
+        { provide: AdminService, useValue: service },
+        providePrimeNG(),
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(AdminSesionesPage);
     page = fixture.componentInstance;
+    // Renders the template: the PrimeNG components and their bindings are
+    // only exercised when the view is actually created.
+    fixture.detectChanges();
   });
   it('ngOnInit_cargaSesiones', () => {
     page.ngOnInit();

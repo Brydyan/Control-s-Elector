@@ -10,12 +10,12 @@
   </header>
 
   <div class="filters">
-    <p-inputtext
+    <input type="text"
       [(ngModel)]="terminoBusqueda"
       (ngModelChange)="page = 0; cargarUsuarios()"
       placeholder="Buscar por nombre, email o ID"
       aria-label="Buscar usuarios"
-    />
+     pInputText />
     <p-select
       [options]="rolFilterOptions"
       optionLabel="label"
@@ -175,11 +175,11 @@
 >
   <label class="field">
     <span>Nombre</span>
-    <p-inputtext [(ngModel)]="nombre" fluid />
+    <input type="text" [(ngModel)]="nombre"  pInputText />
   </label>
   <label class="field">
     <span>Apellido</span>
-    <p-inputtext [(ngModel)]="apellido" fluid />
+    <input type="text" [(ngModel)]="apellido"  pInputText />
   </label>
   <label class="field">
     <span>Rol</span>
