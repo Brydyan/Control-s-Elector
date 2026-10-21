@@ -178,6 +178,79 @@ jobs:
         run: docker logs electoral-api
 
   # ===========================================================================
+  # BACKEND QUARKUS (fase 1 de la migracion, issue #113)
+  # ===========================================================================
+  # El backend destino del strangler. Por ahora el job valida que la imagen
+  # levanta y que el health responde con el mismo contrato que el backend
+  # Spring (mismo path, mismo puerto, misma forma de body). La paridad
+  # FUNCIONAL la afirma la suite de contrato: cuando el modulo de auth este
+  # completo, `backend-contract` correra contra esta imagen y no contra la de
+  # Spring, sin cambiar el test.
+  backend-quarkus:
+    name: Backend Quarkus
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: electoral_db
+          POSTGRES_USER: electoral_user
+          POSTGRES_PASSWORD: electoral_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U electoral_user -d electoral_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # El contexto de build es backend/ porque el changelog de Liquibase vive
+      # en el modulo hermano y el pom lo copia desde ahi.
+      - name: Build the Quarkus image
+        run: docker build -f electoral-api-quarkus/Dockerfile -t electoral-api-quarkus ./backend
+
+      - name: Run the Quarkus backend
+        run: |
+          docker run -d --name electoral-api-quarkus --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=electoral_db \
+            -e DB_USER=electoral_user \
+            -e DB_PASSWORD=electoral_pass \
+            -e SERVER_PORT=8080 \
+            -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+            -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+            electoral-api-quarkus
+
+      - name: Wait for the health endpoint
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+              echo "Health del backend Quarkus:"
+              curl -s http://localhost:8080/actuator/health
+              echo
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "El backend Quarkus no llego a estar saludable"
+          docker logs electoral-api-quarkus
+          exit 1
+
+      - name: Quarkus logs on failure
+        if: failure()
+        run: docker logs electoral-api-quarkus
+
+  # ===========================================================================
   # FRONTEND JOBS (Separados: format, lint, test, build)
   # ===========================================================================
   frontend-format:

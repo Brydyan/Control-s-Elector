@@ -89,9 +89,14 @@ mvn package -DskipTests
 java -jar target/quarkus-app/quarkus-run.jar
 
 # Modo nativo (fase 2 de #113)
-mvn package -Dnative -Dquarkus.native.container-build=true
+mvn package -Pnative -DskipTests
 ./target/*-runner
 ```
+
+El perfil `native` del `pom.xml` activa `quarkus.native.enabled`, `quarkus.package.type=native` y
+`quarkus.native.container-build=true` (el build nativo corre dentro de una imagen de Mandrel, que
+necesita más memoria y toolchain de la que tiene un runner normal). Ojo: el perfil se activa con
+`-Pnative`; `-Dnative` solo define una variable del sistema y no hace nada.
 
 Con las mismas variables que el backend Spring:
 

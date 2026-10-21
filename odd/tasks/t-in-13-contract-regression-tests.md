@@ -90,10 +90,12 @@ La suite debe ser **agnóstica del framework**. Es la única forma de que sirva 
 | T10 | Contrato de errores y OpenAPI: shapes 400/401/403/404 y no-regresión del spec | S2 | inline | `1bc23eb` |
 | T11 | Job de CI: build de imagen → boot con Postgres → health → suite contra el contenedor | S1,S5 | inline | `ce97870` |
 | T12 | Docs: cómo correr la suite contra Spring hoy y contra Quarkus mañana | S1,S3 | inline | `ce97870` |
+| T13 | Cerrar el agujero de autorización del módulo de coordinación (issue #121) | S2,S4 | inline | `49f5eb8` |
+| T14 | Backend destino del strangler en Quarkus: auth parcial + health + pipeline nativo | S1,S2 | inline | `c82cb46` |
 
 **Estrategia de entrega:** `auto-chain`. Los work-units T3–T10 son unidades independientes con superficies de edición disjuntas y se lanzan en paralelo una vez que T1+T2 fijan el patrón. T11 y T12 cierran la feature.
 
-**Estado:** 120 tests verdes. Todos los módulos de la API con contrato. Job de CI validado end-to-end contra base recién creada.
+**Estado:** 120 tests verdes. Todos los módulos de la API con contrato. Job de CI validado end-to-end contra base recién creada. Issue #121 cerrada. Backend Quarkus con el módulo de auth parcial arrancando y con el build nativo en curso.
 
 ---
 
@@ -170,3 +172,29 @@ Verificado: suite del backend **318/318 verdes** y suite de contrato **120/120 v
 Lección: cuando un seed de referencia entra en el esquema, la primera pregunta no es "qué datos mete" sino "**quién los necesita**". La app los necesita; los tests no, y de hecho los estorban.
 
 Nota operativa: al cambiar el contenido de `025-data-seed.sql` (agregar el contexto), el checksum del changeset cambia y una base donde ya se aplicó la versión anterior se niega a arrancar con "changeset check sum ... was ... but is now ...". Se resolvió con `liquibase:clearCheckSums` sobre la base de dev. En una base nueva (CI, despliegue limpio) no hace falta. Alternativa para un despliegue ya migrado: `docker compose down -v`.
+
+### L11 — 2026-10-20 — Issue #121 cerrada: el agujero de autorización
+
+El guard de clase de `CoordinatorController` incluía `acta:read` (lo tienen OBSERVER y ADMIN) y `disputar`/`corregir`/`aprobar` no tenían guard de método: un OBSERVER podía disputar, corregir y aprobar actas ajenas.
+
+La decisión pendiente de la issue —si ADMIN debía conservar el buzón de coordinación— la resolvió el **propio frontend**: `app.routes.ts` ya restringía `/coordinator/actas` y `/coordinator/actas/:id` a `['COORDINATOR', 'MASTER']`, y el sidebar solo muestra "Aprobar Actas" a esos dos roles. El backend era más permisivo que su propio front, así que el fix no le saca nada a nadie.
+
+Fix en dos capas: guard de clase a `hasAnyRole('COORDINATOR','MASTER')` y guard de método propio en los tres endpoints mutantes (un endpoint mutante que depende del guard de clase es justamente el patrón que produjo el agujero).
+
+La suite pasó de **afirmar** el agujero a **afirmar** el comportamiento correcto: 7 tests reescritos (403 + el acta no cambia de estado) y los tres endpoints mutantes agregados al barrido de que el ADMIN nunca escribe. Suite del backend: 318/318 verdes.
+
+### L12 — 2026-10-20 — Backend Quarkus: el esqueleto del strangler
+
+Nuevo módulo `backend/electoral-api-quarkus` (Quarkus 3.40.1). Es el backend destino del strangler y comparte schema, contratos y variables de entorno con el Spring.
+
+Decisiones que importan:
+
+- **Mismo paquete Java** (`ec.twintailcs.electoral`) que el backend Spring: mover un módulo es copiar el archivo, no reescribirlo.
+- **El changelog de Liquibase no está duplicado**: el `pom.xml` lo copia desde el módulo hermano en `generate-resources`. El schema tiene un solo dueño.
+- **Nombres de columna explícitos** en cada entidad. Spring mapea `publicId` → `public_id` con `CamelCaseToUnderscoresNamingStrategy`; Quarkus no aplica conversión por defecto y su 3.40 **no expone la estrategia de naming como propiedad** (la clave no existe y Quarkus lo avisa por log). Confiar en la convención hacía que Hibernate buscara `publicId` donde el schema tiene `public_id`, y el arranque moría con `Schema validation: missing column`.
+- **El health se expone en el puerto principal** (`/actuator/health`, mismo shape que Spring) porque el management interface de Quarkus corre en un puerto propio y **no monta sus rutas en el servidor principal aunque se le configure el mismo número de puerto**. Así el probe de k8s y el proxy no cambian entre implementaciones.
+- **El JWT se firma con Nimbus**, igual que Spring, con los mismos claims: los tokens de una implementación los acepta la otra.
+
+Dos desvíos de port que hubo que resolver: `audit_log.detalle` es JSONB y necesita `@JdbcTypeCode(SqlTypes.JSON)` (si no, Postgres rechaza el INSERT con "column detalle is of type jsonb but expression is of type character varying"), y el `ExceptionMapper<Throwable>` se tragaba también el 404 de JAX-RS, así que el error de ruta inexistente salía como 500.
+
+Estado: `POST /api/v1/auth/login` y `GET /api/v1/auth/me` devuelven exactamente el mismo body y la misma cookie que Spring. `refresh`, `logout` y `register` devuelven 404 con el shape estándar, que es lo honesto: la suite marca en rojo lo que todavía no está migrado. **Arranca en 1,9 s en modo JVM**, contra los ~8 s del backend Spring.
