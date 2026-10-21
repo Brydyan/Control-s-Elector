@@ -1,6 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Dialog } from 'primeng/dialog';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
+import { Select } from 'primeng/select';
+import { Skeleton } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
 import {
   ButtonComponent,
   EmptyStateComponent,
@@ -8,7 +14,6 @@ import {
   SkeletonComponent,
 } from '../../../shared/ui';
 import { PaginatorComponent } from '../../../shared/components/paginator/paginator.component';
-import { FocusTrapDirective } from '../../../shared/a11y/focus-trap.directive';
 import { AdminService } from '../services/admin.service';
 import {
   RolUsuario,
@@ -28,7 +33,12 @@ import {
     ErrorStateComponent,
     SkeletonComponent,
     PaginatorComponent,
-    FocusTrapDirective,
+    Dialog,
+    InputText,
+    Message,
+    Select,
+    Skeleton,
+    TableModule,
   ],
   templateUrl: './admin-usuarios.page.html',
   styleUrls: ['./admin-usuarios.page.scss'],
@@ -55,6 +65,22 @@ export class AdminUsuariosPage implements OnInit {
   rol: RolUsuario = 'OBSERVER';
   passwordTemporal: string | null = null;
   readonly roles: RolUsuario[] = ['MASTER', 'COORDINATOR', 'OBSERVER', 'ADMIN'];
+
+  /** Filter options for the enabled state. */
+  readonly estadoOptions: Array<{ label: string; value: string }> = [
+    { label: 'Todos', value: 'TODOS' },
+    { label: 'Habilitados', value: 'HABILITADOS' },
+    { label: 'Deshabilitados', value: 'DESHABILITADOS' },
+  ];
+
+  /** Filter options for the role, with the "all roles" entry first. */
+  readonly rolFilterOptions: Array<{ label: string; value: RolUsuario | '' }> = [
+    { label: 'Todos los roles', value: '' },
+    { label: 'MASTER', value: 'MASTER' },
+    { label: 'COORDINATOR', value: 'COORDINATOR' },
+    { label: 'OBSERVER', value: 'OBSERVER' },
+    { label: 'ADMIN', value: 'ADMIN' },
+  ];
 
   ngOnInit(): void {
     this.esMaster = this.detectarRolMaster();

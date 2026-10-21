@@ -1,6 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Dialog } from 'primeng/dialog';
+import { InputText } from 'primeng/inputtext';
+import { Skeleton } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
 import {
   ButtonComponent,
   EmptyStateComponent,
@@ -8,7 +12,6 @@ import {
   SkeletonComponent,
 } from '../../../shared/ui';
 import { PaginatorComponent } from '../../../shared/components/paginator/paginator.component';
-import { FocusTrapDirective } from '../../../shared/a11y/focus-trap.directive';
 import { AdminService } from '../services/admin.service';
 import { SesionFiltros, SesionResponseDto } from '../models/admin.model';
 
@@ -23,7 +26,10 @@ import { SesionFiltros, SesionResponseDto } from '../models/admin.model';
     ErrorStateComponent,
     SkeletonComponent,
     PaginatorComponent,
-    FocusTrapDirective,
+    Dialog,
+    InputText,
+    Skeleton,
+    TableModule,
   ],
   templateUrl: './admin-sesiones.page.html',
   styleUrls: ['./admin-sesiones.page.scss'],

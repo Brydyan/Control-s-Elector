@@ -1,9 +1,9 @@
 :host {
   display: block;
-  font-family: inherit;
 }
 
-/* Progress banner */
+/* Progress banner -------------------------------------------------------- */
+
 .progress-banner {
   background: linear-gradient(
     135deg,
@@ -38,21 +38,19 @@
   }
 }
 
-.progress-bar-banner {
+/*
+ * The banner bar sits on a brand gradient, so its track is a translucent
+ * white instead of the theme's surface.
+ */
+:host ::ng-deep .progress-bar-banner.p-progressbar {
+  margin-top: var(--space-4);
   height: var(--space-2);
   background: rgba(255, 255, 255, 0.2);
   border-radius: var(--radius-sm);
-  margin-top: var(--space-4);
-  overflow: hidden;
-  width: 100%;
 }
 
-.progress-bar-banner-fill {
-  height: 100%;
-  background: rgba(255, 255, 255, 0.9);
+:host ::ng-deep .progress-bar-banner .p-progressbar-value {
   border-radius: var(--radius-sm);
-  transform-origin: left center;
-  transition: transform 0.4s ease;
 }
 
 .banner-cantons {
@@ -80,20 +78,27 @@
   margin-top: var(--space-1);
 }
 
-/* Stats row */
+/* Stats row ------------------------------------------------------------- */
+
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
 
-.stat-card {
-  background: var(--color-surface-card);
-  border-radius: var(--radius-lg);
-  padding: var(--space-5);
-  box-shadow: var(--shadow-card);
+/*
+ * The stat cards are PrimeNG cards with a coloured top edge, so the card
+ * body padding is replaced by the layout of the card itself.
+ */
+:host ::ng-deep .stat-card.p-card {
   border-top: 3px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+:host ::ng-deep .stat-card .p-card-body {
+  padding: var(--space-5);
 }
 
 .stat-card-label {
@@ -116,62 +121,60 @@
   margin-top: var(--space-1);
 }
 
-.c-total {
-  border-color: var(--primitive-navy-900);
+.stat-card.c-enviada {
+  border-top-color: var(--color-brand-primary);
 }
-.c-enviada {
-  border-color: var(--color-brand-primary);
+.stat-card.c-disputa {
+  border-top-color: var(--color-status-warning);
 }
-.c-disputa {
-  border-color: var(--color-status-warning);
+.stat-card.c-corregida {
+  border-top-color: var(--primitive-purple-600);
 }
-.c-aprobada {
-  border-color: var(--color-status-success);
+.stat-card.c-aprobada {
+  border-top-color: var(--color-status-success);
 }
-.c-anulada {
-  border-color: var(--color-status-danger);
-}
-.v-total {
-  color: var(--color-text-primary);
-}
+
 .v-enviada {
   color: var(--color-brand-primary);
 }
 .v-disputa {
   color: var(--color-status-warning);
 }
+.v-corregida {
+  color: var(--primitive-purple-800);
+}
 .v-aprobada {
   color: var(--color-status-success);
 }
-.v-anulada {
-  color: var(--color-status-danger);
-}
 
-/* Bottom grid */
+/* Bottom grid ------------------------------------------------------------ */
+
 .bottom-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-5);
 }
 
-.card {
-  background: var(--color-surface-card);
-  border-radius: var(--radius-xl);
-  padding: var(--space-6);
-  box-shadow: var(--shadow-card);
-}
-
 .card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   font-size: var(--font-size-body);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin-bottom: var(--space-4);
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
-/* Canton progress */
+.card-title .pi {
+  color: var(--color-brand-primary);
+}
+
+.empty {
+  color: var(--color-text-muted);
+}
+
+/* Canton progress -------------------------------------------------------- */
+
 .canton-row {
   margin-bottom: var(--space-4);
 
@@ -211,35 +214,8 @@
   color: var(--color-status-warning);
 }
 
-.prog-bar {
-  height: var(--space-2);
-  background: var(--color-border-subtle);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
+/* Recent actas ----------------------------------------------------------- */
 
-.prog-fill {
-  height: 100%;
-  border-radius: var(--radius-sm);
-  transform-origin: left center;
-  transition: transform 0.4s ease;
-}
-
-.fill-green {
-  background: linear-gradient(90deg, var(--color-status-success), #0cd16a);
-}
-.fill-blue {
-  background: linear-gradient(
-    90deg,
-    var(--color-brand-primary),
-    var(--color-brand-primary-strong)
-  );
-}
-.fill-amber {
-  background: linear-gradient(90deg, var(--color-status-warning), #ffcc02);
-}
-
-/* Recent actas */
 .acta-row {
   display: flex;
   justify-content: space-between;
@@ -268,38 +244,14 @@
   color: var(--color-text-muted);
 }
 
-.badge {
-  padding: 3px 9px;
-  border-radius: var(--radius-pill);
-  font-size: 11px;
-  font-weight: var(--font-weight-medium);
-  white-space: nowrap;
-}
-
-.badge-ENVIADA {
-  background: #e8edff;
-  color: var(--color-brand-primary);
-}
-.badge-APROBADA {
-  background: rgba(45, 211, 111, 0.12);
-  color: var(--color-status-success);
-}
-.badge-EN_DISPUTA {
-  background: rgba(255, 166, 0, 0.12);
-  color: var(--color-status-warning);
-}
-.badge-CORREGIDA {
-  background: #ede8ff;
-  color: #7b61ff;
-}
-
 .acta-time {
   font-size: 11px;
   color: var(--primitive-gray-500);
   white-space: nowrap;
 }
 
-/* Responsive */
+/* Responsive ------------------------------------------------------------- */
+
 @media (max-width: 1100px) {
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
