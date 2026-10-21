@@ -8,10 +8,15 @@ import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.ThreadLocalRandom;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
@@ -95,6 +100,12 @@ public abstract class ContractTestSupport {
     return JSON.writeValueAsString(body);
   }
 
+  /** Lee una respuesta JSON como lista de objetos. Falla la suite si no vino un 200. */
+  protected static List<Map<String, Object>> listar(Response r) {
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+    return r.jsonPath().getList("$");
+  }
+
   // ---------------------------------------------------------------------------------------------
   // Autenticación
   // ---------------------------------------------------------------------------------------------
@@ -151,6 +162,17 @@ public abstract class ContractTestSupport {
     return TOKENS.computeIfAbsent(rol, k -> login(registerUser(k), TEST_PASSWORD));
   }
 
+  /**
+   * Token de un OBSERVER recién creado, exclusivo de un test.
+   *
+   * <p>A diferencia de {@link #tokenFor(String)}, este NO se memoiza: cada test que necesita un
+   * observer propio (por ejemplo para probar el aislamiento entre dos observers) tiene que tener
+   * uno distinto.
+   */
+  protected static String observerToken() {
+    return login(registerUser("OBSERVER"), TEST_PASSWORD);
+  }
+
   // ---------------------------------------------------------------------------------------------
   // Datos únicos
   // ---------------------------------------------------------------------------------------------
@@ -161,6 +183,254 @@ public abstract class ContractTestSupport {
    */
   protected static String unique(String base) {
     return base + " " + RUN_ID + "-" + UNIQUE_COUNTER.incrementAndGet();
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // Datos electorales: JRVs, cargos, candidatos y ciclo de vida de las actas de prueba
+  // ---------------------------------------------------------------------------------------------
+
+  /** Prefijo del módulo de observador. */
+  protected static final String OBSERVER = "/api/v1/observer";
+
+  /** Prefijo del módulo de coordinación. */
+  protected static final String COORDINATOR = "/api/v1/coordinator";
+
+  /** Pares (JRV, cargo) ya reservados por esta corrida. */
+  private static final Set<String> COMBOS_RESERVADOS = ConcurrentHashMap.newKeySet();
+
+  /** Actas que el test en curso creó, para devolverlas a ANULADA al terminar. */
+  private static final List<ActaCreada> ACTAS_CREADAS = new ArrayList<>();
+
+  /** Acta creada por el test en curso, con lo necesario para poder liberarla. */
+  protected record ActaCreada(long id, String token, Map<String, Object> body) {}
+
+  /**
+   * Reserva el primer par (JRV, cargo) sin acta activa que no haya sido tomado por otro test de
+   * esta corrida.
+   *
+   * <p>Es lo que permite que la suite sea re-ejecutable sobre la misma base: la unicidad de un acta
+   * es (JRV, cargo), así que un acta activa bloquea su par para siempre. Cada test toma un par
+   * distinto y {@link #liberarActasCreadas()} los devuelve al final.
+   */
+  protected static Map<String, Object> comboLibre(String token) {
+    for (Map<String, Object> jrv : listar(as(token).get(OBSERVER + "/jrvs"))) {
+      long jrvId = ((Number) jrv.get("id")).longValue();
+      for (Map<String, Object> cargo :
+          listar(as(token).get(OBSERVER + "/jrv/" + jrvId + "/cargos"))) {
+        if (Boolean.TRUE.equals(cargo.get("registrado"))) {
+          continue;
+        }
+        long cargoId = ((Number) cargo.get("id")).longValue();
+        if (!COMBOS_RESERVADOS.add(jrvId + "-" + cargoId)) {
+          continue;
+        }
+        Map<String, Object> combo = new LinkedHashMap<>();
+        combo.put("jrvId", jrvId);
+        combo.put("cargoId", cargoId);
+        combo.put("cargoNombre", cargo.get("nombre"));
+        combo.put("jrvNumero", jrv.get("numero"));
+        return combo;
+      }
+    }
+    throw new AssertionError(
+        "No queda ningún par JRV+cargo sin acta activa: la base está saturada de actas");
+  }
+
+  /** ID interno de la JRV de un combo reservado. */
+  protected static long jrvId(Map<String, Object> combo) {
+    return ((Number) combo.get("jrvId")).longValue();
+  }
+
+  /** ID interno del cargo de un combo reservado. */
+  protected static long cargoId(Map<String, Object> combo) {
+    return ((Number) combo.get("cargoId")).longValue();
+  }
+
+  /** ID interno de la JRV con ese número. */
+  protected static long jrvIdDe(String numero, String token) {
+    for (Map<String, Object> jrv : listar(as(token).get(OBSERVER + "/jrvs"))) {
+      if (numero.equals(jrv.get("numero"))) {
+        return ((Number) jrv.get("id")).longValue();
+      }
+    }
+    throw new AssertionError("La JRV " + numero + " no existe en el seed del backend");
+  }
+
+  /** IDs de los candidatos de un cargo. */
+  protected static List<Long> candidatosDe(long cargoId, String token) {
+    List<Long> ids = new ArrayList<>();
+    for (Map<String, Object> candidato :
+        listar(as(token).get("/api/v1/configuracion/candidatos?cargoId=" + cargoId))) {
+      ids.add(((Number) candidato.get("id")).longValue());
+    }
+    if (ids.isEmpty()) {
+      throw new AssertionError("El cargo " + cargoId + " no tiene candidatos en el seed del backend");
+    }
+    return ids;
+  }
+
+  /**
+   * Body de un acta. Con {@code cuadrado=false} el total de sufragantes no cierra con la suma de
+   * los votos: sirve para fijar que el borrador no valida la integridad electoral.
+   */
+  protected static Map<String, Object> bodyDeActa(
+      long jrvId, long cargoId, List<Long> candidatos, boolean cuadrado) {
+    List<Map<String, Object>> detalles = new ArrayList<>();
+    int suma = 0;
+    for (int i = 0; i < candidatos.size(); i++) {
+      int votos = 10 * (i + 1);
+      suma += votos;
+      Map<String, Object> detalle = new LinkedHashMap<>();
+      detalle.put("candidatoId", candidatos.get(i));
+      detalle.put("votos", votos);
+      detalles.add(detalle);
+    }
+    int blancos = 2;
+    int nulos = 1;
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("jrvId", jrvId);
+    body.put("cargoId", cargoId);
+    body.put("votosBlancos", blancos);
+    body.put("votosNulos", nulos);
+    body.put("totalSufragantes", cuadrado ? suma + blancos + nulos : suma + blancos + nulos + 999);
+    body.put("detalles", detalles);
+    return body;
+  }
+
+  /** Suma de votos que el body de un acta deja para los candidatos. */
+  protected static long sumaDeVotos(int cantidadDeCandidatos) {
+    long suma = 0;
+    for (int i = 0; i < cantidadDeCandidatos; i++) {
+      suma += 10L * (i + 1);
+    }
+    return suma;
+  }
+
+  /** Registra un acta creada por el test para que la limpieza la libere al terminar. */
+  protected static void registrarActaCreada(long id, String token, Map<String, Object> body) {
+    ACTAS_CREADAS.add(new ActaCreada(id, token, body));
+  }
+
+  /** Estado de un acta tal como lo ve su autor. */
+  protected static String estadoDeActa(String token, long actaId) {
+    Response r = as(token).get(OBSERVER + "/actas/" + actaId);
+    if (r.statusCode() != 200) {
+      return null;
+    }
+    return r.jsonPath().getString("estado");
+  }
+
+  /**
+   * Devuelve a ANULADA las actas que el test creó.
+   *
+   * <p>Un acta activa bloquea su par (JRV, cargo) para siempre: sin esto la suite se puede correr
+   * una sola vez sobre una base dada. La única forma de liberar el par es dejar el acta en {@code
+   * ANULADA}, y para llegar ahí hay que recorrer la máquina de estados.
+   *
+   * <p>No es parte del contrato de ningún módulo: usa endpoints de observer, coordinator y master
+   * sólo como infraestructura, y no afirma nada sobre sus respuestas.
+   */
+  @AfterEach
+  void liberarActasCreadas() {
+    for (ActaCreada acta : ACTAS_CREADAS) {
+      liberar(acta);
+    }
+    ACTAS_CREADAS.clear();
+  }
+
+  private static void liberar(ActaCreada acta) {
+    String estado = estadoDeActa(acta.token(), acta.id());
+    if ("BORRADOR".equals(estado)) {
+      as(acta.token()).post(OBSERVER + "/actas/" + acta.id() + "/enviar");
+      estado = estadoDeActa(acta.token(), acta.id());
+      if ("BORRADOR".equals(estado)) {
+        // Los votos del borrador no cuadran y no hay forma de enviarlos: se reemplazan por un
+        // juego de candidatos disjunto (el backend no admite re-guardar los mismos) y se reintenta.
+        reemplazarDetallesDelBorrador(acta);
+        as(acta.token()).post(OBSERVER + "/actas/" + acta.id() + "/enviar");
+        estado = estadoDeActa(acta.token(), acta.id());
+      }
+    }
+    if ("EN_DISPUTA".equals(estado)) {
+      as(acta.token()).body(json(acta.body())).put(OBSERVER + "/actas/" + acta.id() + "/corregir");
+      estado = estadoDeActa(acta.token(), acta.id());
+    }
+    if ("ENVIADA".equals(estado) || "CORREGIDA".equals(estado)) {
+      as(tokenFor("COORDINATOR")).put(COORDINATOR + "/actas/" + acta.id() + "/aprobar");
+      estado = estadoDeActa(acta.token(), acta.id());
+    }
+    if ("APROBADA".equals(estado)) {
+      as(masterToken())
+          .body(json(Map.of("motivo", unique("limpieza de la suite de contrato"))))
+          .delete(COORDINATOR + "/actas/" + acta.id());
+      estado = estadoDeActa(acta.token(), acta.id());
+    }
+    if ("ANULADA".equals(estado)) {
+      // El acta quedó anulada: el par (JRV, cargo) vuelve al pool. Sin esto el set en memoria
+      // queda más chico que la base y la suite se satura al quinto test con acta.
+      liberarCombo(acta.body());
+    }
+  }
+
+  /**
+   * Devuelve el par (JRV, cargo) al pool de reservas.
+   *
+   * <p>Solo se hace si el acta llegó a ANULADA: un acta que no se pudo liberar sigue bloqueando su
+   * par en la base, así que dejarlo reservado es lo conservative.
+   */
+  private static void liberarCombo(Map<String, Object> body) {
+    if (body == null) {
+      return;
+    }
+    Object jrv = body.get("jrvId");
+    Object cargo = body.get("cargoId");
+    if (jrv == null || cargo == null) {
+      return;
+    }
+    COMBOS_RESERVADOS.remove(jrv + "-" + cargo);
+  }
+
+  /**
+   * Re-guarda el borrador con los candidatos que todavía no tiene, para que sus votos puedan
+   * cuadrar y el acta pueda salir de BORRADOR.
+   */
+  private static void reemplazarDetallesDelBorrador(ActaCreada acta) {
+    Response detalle = as(acta.token()).get(OBSERVER + "/actas/" + acta.id());
+    if (detalle.statusCode() != 200) {
+      return;
+    }
+    long cargoId = detalle.jsonPath().getLong("cargoId");
+    List<Long> actuales = new ArrayList<>();
+    for (Map<String, Object> detalleCandidato : detalle.jsonPath().getList("detalles", Map.class)) {
+      actuales.add(((Number) detalleCandidato.get("candidatoId")).longValue());
+    }
+    List<Long> disponibles = new ArrayList<>();
+    for (Long candidato : candidatosDe(cargoId, acta.token())) {
+      if (!actuales.contains(candidato)) {
+        disponibles.add(candidato);
+      }
+    }
+    if (disponibles.isEmpty()) {
+      return;
+    }
+    List<Map<String, Object>> detalles = new ArrayList<>();
+    int suma = 0;
+    for (int i = 0; i < disponibles.size(); i++) {
+      int votos = 10 * (i + 1);
+      suma += votos;
+      Map<String, Object> detalleCandidato = new LinkedHashMap<>();
+      detalleCandidato.put("candidatoId", disponibles.get(i));
+      detalleCandidato.put("votos", votos);
+      detalles.add(detalleCandidato);
+    }
+    Map<String, Object> body = new LinkedHashMap<>();
+    body.put("jrvId", detalle.jsonPath().getLong("jrvId"));
+    body.put("cargoId", cargoId);
+    body.put("votosBlancos", 0);
+    body.put("votosNulos", 0);
+    body.put("totalSufragantes", suma);
+    body.put("detalles", detalles);
+    as(acta.token()).body(json(body)).post(OBSERVER + "/actas/borrador");
   }
 
   // ---------------------------------------------------------------------------------------------
