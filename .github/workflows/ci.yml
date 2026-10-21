@@ -218,33 +218,53 @@ jobs:
       - name: Build the Quarkus image
         run: docker build -f backend/electoral-api-quarkus/Dockerfile -t electoral-api-quarkus ./backend
 
+      # El backend Quarkus se arranca DOS veces a proposito.
+      #
+      # 1. Contra la base VACIA del service, con la migracion activada y la validacion de
+      #    Hibernate apagada. Liquibase crea el schema, pero corre DESPUES de la validacion de
+      #    Hibernate: contra una base vacia el arranque con `validate` (el default) revienta
+      #    con "Schema validation: missing table [acta]".
+      # 2. Contra el schema ya creado, con los defaults: el backend tiene que levantar Y
+      #    validar que el schema coincide con las entidades. Si alguien cambia una entidad sin
+      #    cambiar el changelog, esta fase lo detecta en el CI y no en produccion.
       - name: Run the Quarkus backend
         run: |
-          docker run -d --name electoral-api-quarkus --network host \
-            -e DB_HOST=localhost \
-            -e DB_PORT=5432 \
-            -e DB_NAME=electoral_db \
-            -e DB_USER=electoral_user \
-            -e DB_PASSWORD=electoral_pass \
-            -e SERVER_PORT=8080 \
-            -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
-            -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
-            electoral-api-quarkus
+          boot_quarkus() {
+            docker run -d --name electoral-api-quarkus --network host \
+              -e DB_HOST=localhost \
+              -e DB_PORT=5432 \
+              -e DB_NAME=electoral_db \
+              -e DB_USER=electoral_user \
+              -e DB_PASSWORD=electoral_pass \
+              -e SERVER_PORT=8080 \
+              -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+              -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+              "$@" \
+              electoral-api-quarkus
+          }
 
-      - name: Wait for the health endpoint
-        run: |
-          for i in $(seq 1 90); do
-            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
-              echo "Health del backend Quarkus:"
-              curl -s http://localhost:8080/actuator/health
-              echo
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "El backend Quarkus no llego a estar saludable"
-          docker logs electoral-api-quarkus
-          exit 1
+          wait_healthy() {
+            for i in $(seq 1 90); do
+              if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "El backend Quarkus no llego a estar saludable"
+            docker logs electoral-api-quarkus
+            return 1
+          }
+
+          boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true -e QUARKUS_HIBERNATE_GENERATION=none
+          wait_healthy || exit 1
+          echo "Primer arranque: el backend creo el schema y quedo saludable"
+
+          docker rm -f electoral-api-quarkus
+          boot_quarkus
+          wait_healthy || exit 1
+          echo "Segundo arranque: el backend valido el schema y quedo saludable"
+          curl -s http://localhost:8080/actuator/health
+          echo
 
       - name: Quarkus logs on failure
         if: failure()
