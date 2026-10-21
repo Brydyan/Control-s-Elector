@@ -128,7 +128,7 @@
   <!-- Error State -->
   <app-error-state
     *ngIf="error() && !loading()"
-    title="Error al cargar actas()"
+    title="Error al cargar actas"
     [message]="error() ?? undefined"
   >
     <app-button variant="primary" (clicked)="cargarActas()">
@@ -140,8 +140,8 @@
   <app-empty-state
     *ngIf="!loading() && !error() && actasFiltradas.length === 0"
     icon="document-text-outline"
-    title="No se encontraron actas()"
-    description="No hay actas() registradas que coincidan con los filtros seleccionados."
+    title="No se encontraron actas"
+    description="No hay actas registradas que coincidan con los filtros seleccionados."
   ></app-empty-state>
 
   <!-- Content List (Mobile Cards + Desktop Table) -->
@@ -263,7 +263,7 @@
 
         <div class="card-footer">
           <span class="fecha-text">
-            {{ acta.fechaRegistro | date: 'short' }}
+            {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
           </span>
           <span class="review-link"> Revisar acta → </span>
         </div>

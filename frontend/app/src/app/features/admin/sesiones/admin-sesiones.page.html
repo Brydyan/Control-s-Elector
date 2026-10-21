@@ -2,7 +2,7 @@
   <header class="page-header">
     <div>
       <h1>Sesiones Activas</h1>
-      <span>{{ totalElements() }} sesiones()</span>
+      <span>{{ totalElements() }} sesiones</span>
     </div>
   </header>
 
@@ -11,7 +11,7 @@
       [(ngModel)]="terminoBusqueda"
       (ngModelChange)="page = 0; cargarSesiones()"
       placeholder="Buscar por email de usuario"
-      aria-label="Buscar sesiones()"
+      aria-label="Buscar sesiones"
      pInputText />
   </div>
 
@@ -31,7 +31,7 @@
 
   <app-error-state
     *ngIf="error() && !loading()"
-    title="Error al cargar sesiones()"
+    title="Error al cargar sesiones"
     [message]="error() ?? undefined"
     ><app-button variant="primary" (clicked)="cargarSesiones()"
       >Reintentar</app-button
@@ -40,8 +40,8 @@
   <app-empty-state
     *ngIf="!loading() && !error() && !sesiones().length"
     icon="pulse-outline"
-    title="No hay sesiones() activas"
-    description="No se encontraron sesiones() que coincidan con la búsqueda."
+    title="No hay sesiones activas"
+    description="No se encontraron sesiones que coincidan con la búsqueda."
   ></app-empty-state>
 
   @if (!loading() && !error() && sesiones().length) {
@@ -85,7 +85,7 @@
     <article>
       <strong>{{ sesion.usuarioEmail }}</strong
       ><span>IP: {{ sesion.ipCliente || '—' }}</span
-      ><span>Último uso: {{ sesion.ultimoUsoEn | date: 'short' }}</span>
+      ><span>Último uso: {{ sesion.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</span>
       <div class="actions">
         <app-button variant="ghost" size="sm" (clicked)="verDetalles(sesion)">
           Ver detalles
@@ -128,9 +128,9 @@
     <dt>User agent</dt>
     <dd>{{ sesionSeleccionada.userAgent || '—' }}</dd>
     <dt>Último uso</dt>
-    <dd>{{ sesionSeleccionada.ultimoUsoEn | date: 'medium' }}</dd>
+    <dd>{{ sesionSeleccionada.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
     <dt>Expira</dt>
-    <dd>{{ sesionSeleccionada.expiraEn | date: 'medium' }}</dd>
+    <dd>{{ sesionSeleccionada.expiraEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
   </dl>
   }
   <ng-template #footer>

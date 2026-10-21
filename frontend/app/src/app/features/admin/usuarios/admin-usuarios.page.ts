@@ -14,6 +14,7 @@ import {
   SkeletonComponent,
 } from '../../../shared/ui';
 import { PaginatorComponent } from '../../../shared/components/paginator/paginator.component';
+import { AuthStore } from '../../../core/auth/auth.store';
 import { AdminService } from '../services/admin.service';
 import {
   RolUsuario,
@@ -45,11 +46,16 @@ import {
 })
 export class AdminUsuariosPage implements OnInit {
   private readonly service = inject(AdminService);
+  private readonly authStore = inject(AuthStore);
   readonly usuarios = signal<UsuarioResponseDto[]>([]);
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
-  esMaster = false;
+  /**
+   * MASTER-only controls. The role comes from the in-memory session, so a
+   * session restored after a reload lights the controls up on its own.
+   */
+  readonly esMaster = this.authStore.isMaster;
   terminoBusqueda = '';
   rolSeleccionado: RolUsuario | '' = '';
   habilitadoSeleccionado: 'TODOS' | 'HABILITADOS' | 'DESHABILITADOS' = 'TODOS';
@@ -83,7 +89,6 @@ export class AdminUsuariosPage implements OnInit {
   ];
 
   ngOnInit(): void {
-    this.esMaster = this.detectarRolMaster();
     this.cargarUsuarios();
   }
 
@@ -113,22 +118,8 @@ export class AdminUsuariosPage implements OnInit {
     });
   }
 
-  private detectarRolMaster(): boolean {
-    try {
-      return [
-        sessionStorage.getItem('app.user.roles'),
-        localStorage.getItem('app.user.roles'),
-      ]
-        .filter(Boolean)
-        .join(',')
-        .toUpperCase()
-        .includes('MASTER');
-    } catch {
-      return false;
-    }
-  }
   puedeAnular(usuario: UsuarioResponseDto): boolean {
-    return this.esMaster && usuario.habilitado;
+    return this.esMaster() && usuario.habilitado;
   }
   tieneFiltrosActivos(): boolean {
     return (
@@ -169,7 +160,7 @@ export class AdminUsuariosPage implements OnInit {
     this.modalAbierto = true;
   }
   abrirEditar(usuario: UsuarioResponseDto): void {
-    if (!this.esMaster) return;
+    if (!this.esMaster()) return;
     this.modoEdicion = true;
     this.usuarioSeleccionado = usuario;
     this.nombre = usuario.nombre;
@@ -236,7 +227,7 @@ export class AdminUsuariosPage implements OnInit {
   }
   rehabilitar(usuario: UsuarioResponseDto): void {
     if (
-      !this.esMaster ||
+      !this.esMaster() ||
       usuario.habilitado ||
       !confirm(`¿Re-habilitar a ${usuario.email}?`)
     )

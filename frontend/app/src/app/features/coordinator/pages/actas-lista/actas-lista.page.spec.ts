@@ -1,11 +1,33 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { LOCALE_ID } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActaItem, CargoResumen } from '../../models/coordinator.model';
 import type { PagedResponse } from '../../../../shared/models/page.model';
 import { CoordinatorService } from '../../services/coordinator.service';
+import { AuthStore } from '../../../../core/auth/auth.store';
+import type { Role } from '../../../../core/auth/domain/user.model';
 import { ActasListaPage } from './actas-lista.page';
+
+/**
+ * The app bootstraps with the Spanish locale (see src/main.ts). The specs
+ * reproduce that configuration so the assertions see the dates the operator
+ * actually reads in the field.
+ */
+registerLocaleData(localeEs);
+
+/** Puts a session of the given role in the in-memory store. */
+function loginAs(role: Role): void {
+  TestBed.inject(AuthStore).setSession('token', {
+    id: 'u-1',
+    email: 'user@cne.gob.ec',
+    role,
+    permissions: [],
+  });
+}
 
 describe('ActasListaPage', () => {
   let component: ActasListaPage;
@@ -157,13 +179,13 @@ describe('ActasListaPage', () => {
   });
 
   it('should only allow MASTER to see the Anular action on APROBADA', () => {
-    component.esMaster = false;
+    loginAs('ADMIN');
     expect(component.puedeAnular(mockActas[0])).toBe(false); // ENVIADA
 
     const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
     expect(component.puedeAnular(aprobada)).toBe(false); // not MASTER yet
 
-    component.esMaster = true;
+    loginAs('MASTER');
     expect(component.puedeAnular(aprobada)).toBe(true);
     expect(component.puedeAnular(mockActas[0])).toBe(false); // not APROBADA
   });
@@ -174,11 +196,11 @@ describe('ActasListaPage', () => {
    * This test verifies the flag is used correctly in puedeAnular() logic.
    */
   it('should only show Anular button when esMaster is true', () => {
-    component.esMaster = false;
+    loginAs('ADMIN');
     const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
     expect(component.puedeAnular(aprobada)).toBe(false);
 
-    component.esMaster = true;
+    loginAs('MASTER');
     expect(component.puedeAnular(aprobada)).toBe(true);
   });
 
@@ -201,7 +223,7 @@ describe('ActasListaPage', () => {
     );
 
     const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
-    component.esMaster = true;
+    loginAs('MASTER');
     const initialCallCount = (coordinatorServiceMock.getActas as any).mock.calls
       .length;
 
@@ -216,5 +238,112 @@ describe('ActasListaPage', () => {
     expect((coordinatorServiceMock.getActas as any).mock.calls.length).toBe(
       initialCallCount + 1,
     );
+  });
+});
+
+/**
+ * Rendering contract of the page: what the coordinator finds in the DOM.
+ *
+ * The unit spec above asserts the state; this one asserts the controls that
+ * the role and the locale decide, because "the flag is true" and "the button
+ * is on screen" are not the same thing.
+ */
+describe('ActasListaPage (rendered contract)', () => {
+  let component: ActasListaPage;
+  let fixture: ComponentFixture<ActasListaPage>;
+  let coordinatorServiceMock: Partial<CoordinatorService>;
+
+  const actaAprobada: ActaItem = {
+    id: 3,
+    jrvId: 103,
+    cargoId: 1,
+    estado: 'APROBADA',
+    totalSufragantes: 200,
+    votosBlancos: 5,
+    votosNulos: 3,
+    // Local noon, so the rendered date is the same whatever the timezone of
+    // the machine that runs the suite is.
+    fechaRegistro: new Date(2026, 9, 21, 12, 45).toISOString(),
+    nombreCargo: 'Prefecto/a',
+    numeroJrv: 'JRV-103-A',
+    totalVotosCandidatos: 192,
+  };
+
+  const mockPaged: PagedResponse<ActaItem> = {
+    data: [actaAprobada],
+    meta: { page: 0, size: 20, totalElements: 1, totalPages: 1 },
+  };
+
+  beforeEach(async () => {
+    coordinatorServiceMock = {
+      getActas: vi.fn().mockReturnValue(of(mockPaged)),
+      getCargos: vi.fn().mockReturnValue(of([])),
+      getCantones: vi.fn().mockReturnValue(of([])),
+      anularActa: vi.fn().mockReturnValue(of(undefined)),
+    };
+
+    await TestBed.configureTestingModule({
+      imports: [ActasListaPage],
+      providers: [
+        { provide: CoordinatorService, useValue: coordinatorServiceMock },
+        { provide: Router, useValue: { navigate: vi.fn() } },
+        { provide: LOCALE_ID, useValue: 'es' },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(ActasListaPage);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  /** Labels of every button the page renders right now. */
+  function buttonLabels(): string[] {
+    return Array.from(
+      fixture.nativeElement.querySelectorAll('button') as NodeListOf<
+        HTMLButtonElement
+      >,
+    ).map((button) => (button.textContent ?? '').trim());
+  }
+
+  it('muestra el botón Anular solo con una sesión MASTER', () => {
+    loginAs('MASTER');
+    fixture.detectChanges();
+
+    expect(buttonLabels()).toContain('Anular');
+
+    loginAs('COORDINATOR');
+    fixture.detectChanges();
+
+    expect(buttonLabels()).not.toContain('Anular');
+  });
+
+  it('muestra las fechas en formato español dd/MM/yyyy HH:mm', () => {
+    const card = fixture.nativeElement.querySelector('.acta-card');
+    expect(card?.textContent).toContain('21/10/2026 12:45');
+  });
+
+  it('no deja interpolaciones rotas en el texto ni en los atributos', () => {
+    // The empty state is the copy that carries the broken interpolation.
+    (coordinatorServiceMock.getActas as any).mockReturnValue(
+      of({
+        data: [],
+        meta: { page: 0, size: 20, totalElements: 0, totalPages: 0 },
+      }),
+    );
+    component.cargarActas();
+    fixture.detectChanges();
+
+    const text: string = fixture.nativeElement.textContent;
+    expect(text).not.toContain('()');
+
+    const brokenAttributes = Array.from(
+      fixture.nativeElement.querySelectorAll('*') as NodeListOf<Element>,
+    )
+      .flatMap((element) =>
+        Array.from(element.attributes).map((attribute) => attribute.value),
+      )
+      .filter((value) => value.includes('()'));
+
+    expect(brokenAttributes).toEqual([]);
   });
 });

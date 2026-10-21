@@ -2,9 +2,9 @@
   <header class="page-header">
     <div>
       <h1>Gestión de Usuarios</h1>
-      <span>{{ totalElements() }} usuarios()</span>
+      <span>{{ totalElements() }} usuarios</span>
     </div>
-    @if (esMaster) {
+    @if (esMaster()) {
     <app-button (clicked)="abrirCrear()">Crear usuario</app-button>
     }
   </header>
@@ -14,7 +14,7 @@
       [(ngModel)]="terminoBusqueda"
       (ngModelChange)="page = 0; cargarUsuarios()"
       placeholder="Buscar por nombre, email o ID"
-      aria-label="Buscar usuarios()"
+      aria-label="Buscar usuarios"
      pInputText />
     <p-select
       [options]="rolFilterOptions"
@@ -55,7 +55,7 @@
 
   <app-error-state
     *ngIf="error() && !loading()"
-    title="Error al cargar usuarios()"
+    title="Error al cargar usuarios"
     [message]="error() ?? undefined"
     ><app-button variant="primary" (clicked)="cargarUsuarios()"
       >Reintentar</app-button
@@ -64,8 +64,8 @@
   <app-empty-state
     *ngIf="!loading() && !error() && !usuarios().length"
     icon="people-outline"
-    title="No se encontraron usuarios()"
-    description="No hay usuarios() que coincidan con los filtros."
+    title="No se encontraron usuarios"
+    description="No hay usuarios que coincidan con los filtros."
   ></app-empty-state>
 
   @if (!loading() && !error() && usuarios().length) {
@@ -93,7 +93,7 @@
             <app-button variant="ghost" size="sm" (clicked)="verDetalles(usuario)">
               Ver detalles
             </app-button>
-            @if (esMaster) {
+            @if (esMaster()) {
             <app-button variant="ghost" size="sm" (clicked)="abrirEditar(usuario)">
               Editar
             </app-button>
@@ -107,7 +107,7 @@
               Deshabilitar
             </app-button>
             }
-            @if (esMaster && !usuario.habilitado) {
+            @if (esMaster() && !usuario.habilitado) {
             <app-button
               variant="ghost"
               size="sm"
@@ -135,7 +135,7 @@
         <app-button variant="ghost" size="sm" (clicked)="verDetalles(usuario)">
           Ver detalles
         </app-button>
-        @if (esMaster) {
+        @if (esMaster()) {
         <app-button variant="ghost" size="sm" (clicked)="abrirEditar(usuario)">
           Editar
         </app-button>
@@ -231,7 +231,7 @@
       {{ usuarioSeleccionado.habilitado ? 'Habilitado' : 'Deshabilitado' }}
     </dd>
     <dt>Creado</dt>
-    <dd>{{ usuarioSeleccionado.creadoEn | date: 'medium' }}</dd>
+    <dd>{{ usuarioSeleccionado.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
   </dl>
   }
   <ng-template #footer>
