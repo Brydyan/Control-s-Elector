@@ -3,10 +3,10 @@ package ec.twintailcs.electoral.auth.application;
 import ec.twintailcs.electoral.auth.domain.RecursoNoEncontradoException;
 import ec.twintailcs.electoral.auth.domain.Sesion;
 import ec.twintailcs.electoral.auth.domain.Usuario;
-import ec.twintailcs.electoral.shared.web.pagination.PageSpec;
-import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import ec.twintailcs.electoral.auth.web.dto.SesionResponseDto;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import ec.twintailcs.electoral.shared.web.pagination.PageSpec;
+import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -34,8 +34,7 @@ public class SesionAdminService {
 
   /** Listar sesiones activas (no revocadas y no expiradas). */
   @Transactional
-  public PagedResponse<SesionResponseDto> listar(
-      int page, int size, String sort, Long usuarioId) {
+  public PagedResponse<SesionResponseDto> listar(int page, int size, String sort, Long usuarioId) {
     PageSpec spec = PageSpec.from(page, size, sort, SORTABLE_FIELDS, "ultimoUsoEn");
 
     Map<String, Object> params = new LinkedHashMap<>();

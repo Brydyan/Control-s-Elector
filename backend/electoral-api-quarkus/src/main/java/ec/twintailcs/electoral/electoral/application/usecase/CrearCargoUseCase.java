@@ -20,7 +20,12 @@ public class CrearCargoUseCase {
     cargo.persist();
 
     audit.registrarConIp(
-        masterId, "CREAR_CARGO", "cargo", cargo.getId(), "Cargo creado: " + dto.nombre(), ipAddress);
+        masterId,
+        "CREAR_CARGO",
+        "cargo",
+        cargo.getId(),
+        "Cargo creado: " + dto.nombre(),
+        ipAddress);
     return cargo;
   }
 }

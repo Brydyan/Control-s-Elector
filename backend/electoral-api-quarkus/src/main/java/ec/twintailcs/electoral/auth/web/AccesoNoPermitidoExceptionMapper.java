@@ -9,15 +9,16 @@ import jakarta.ws.rs.ext.Provider;
 /**
  * Permisos insuficientes → 403 FORBIDDEN con el shape estandar de error.
  *
- * <p>Es el equivalente del {@code accessDeniedHandler} del backend Spring, que responde 403 con
- * el mensaje "Permisos insuficientes".
+ * <p>Es el equivalente del {@code accessDeniedHandler} del backend Spring, que responde 403 con el
+ * mensaje "Permisos insuficientes".
  *
  * <p>Este mapper vive en el modulo de auth (y no en el {@code shared/web} compartido) porque es el
  * unico que produce esta excepcion: la lanza el interceptor que evalua la anotacion
  * {@code @Requiere}.
  */
 @Provider
-public class AccesoNoPermitidoExceptionMapper implements ExceptionMapper<AccesoNoPermitidoException> {
+public class AccesoNoPermitidoExceptionMapper
+    implements ExceptionMapper<AccesoNoPermitidoException> {
 
   @Override
   public Response toResponse(AccesoNoPermitidoException ex) {

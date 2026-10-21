@@ -1,12 +1,12 @@
 package ec.twintailcs.electoral.auth.web;
 
 import ec.twintailcs.electoral.auth.application.UsuarioAdminService;
+import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.auth.web.dto.CreateUsuarioRequest;
-import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import ec.twintailcs.electoral.auth.web.dto.UpdateUsuarioRequest;
 import ec.twintailcs.electoral.auth.web.dto.UsuarioResponseDto;
+import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
-import ec.twintailcs.electoral.auth.security.Autorizador;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;

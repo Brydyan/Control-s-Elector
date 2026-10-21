@@ -95,7 +95,8 @@ public class RegistrarActaUseCase {
   /** El cargo tiene que estar habilitado (activo) en la JRV. */
   private void validarCargoHabilitadoEnJrv(Long jrvId, Long cargoId) {
     if (!repository.cargoHabilitadoEnJrv(jrvId, cargoId)) {
-      throw new ActaInvalidaException("El cargo " + cargoId + " no está habilitado en la JRV " + jrvId);
+      throw new ActaInvalidaException(
+          "El cargo " + cargoId + " no está habilitado en la JRV " + jrvId);
     }
   }
 

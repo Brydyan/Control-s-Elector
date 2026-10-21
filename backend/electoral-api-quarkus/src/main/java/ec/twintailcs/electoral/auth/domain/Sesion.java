@@ -145,8 +145,8 @@ public class Sesion extends PanacheEntityBase {
   /**
    * Una sesion esta activa si no fue revocada y su refresh token todavia no expiro.
    *
-   * <p>Es la misma definicion que usa el backend Spring: es lo que decide si un refresh token
-   * puede canjearse por un par nuevo.
+   * <p>Es la misma definicion que usa el backend Spring: es lo que decide si un refresh token puede
+   * canjearse por un par nuevo.
    */
   public boolean activa() {
     return !revocado && expiraEn != null && expiraEn.isAfter(Instant.now());

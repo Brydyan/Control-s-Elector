@@ -9,12 +9,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
  */
 @RegisterForReflection
 public record CargoConEstadoDto(
-    Long id,
-    String nombre,
-    String nivel,
-    boolean registrado,
-    EstadoActa estadoActa,
-    Long actaId) {
+    Long id, String nombre, String nivel, boolean registrado, EstadoActa estadoActa, Long actaId) {
 
   public static CargoConEstadoDto sinRegistrar(Long id, String nombre, String nivel) {
     return new CargoConEstadoDto(id, nombre, nivel, false, null, null);

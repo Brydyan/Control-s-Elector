@@ -1,7 +1,6 @@
 package ec.twintailcs.electoral.auth.domain;
 
 import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
-
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,17 +8,18 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.UuidGenerator;
 import jakarta.persistence.UniqueConstraint;
 import java.util.UUID;
+import org.hibernate.annotations.UuidGenerator;
 
 /** Permiso atomico {@code recurso:accion}. */
 @Entity
 @Table(
     name = "permiso",
-    uniqueConstraints = @UniqueConstraint(
-        name = "uq_permiso_recurso_accion",
-        columnNames = {"recurso", "accion"}))
+    uniqueConstraints =
+        @UniqueConstraint(
+            name = "uq_permiso_recurso_accion",
+            columnNames = {"recurso", "accion"}))
 public class Permiso extends PanacheEntityBase {
 
   @Id

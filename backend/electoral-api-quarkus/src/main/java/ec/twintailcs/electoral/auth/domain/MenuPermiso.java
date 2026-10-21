@@ -1,7 +1,6 @@
 package ec.twintailcs.electoral.auth.domain;
 
 import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
-
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -30,7 +29,9 @@ import org.hibernate.annotations.UuidGenerator;
 @Table(
     name = "menu_permiso",
     uniqueConstraints =
-        @UniqueConstraint(name = "uk_menu_permiso", columnNames = {"menu_id", "permiso_id"}))
+        @UniqueConstraint(
+            name = "uk_menu_permiso",
+            columnNames = {"menu_id", "permiso_id"}))
 public class MenuPermiso extends PanacheEntityBase {
 
   @Id
@@ -38,7 +39,12 @@ public class MenuPermiso extends PanacheEntityBase {
   Long id;
 
   @UuidGenerator(algorithm = UuidV7Generator.class)
-  @Column(name = "public_id", nullable = false, unique = true, updatable = false, columnDefinition = "UUID")
+  @Column(
+      name = "public_id",
+      nullable = false,
+      unique = true,
+      updatable = false,
+      columnDefinition = "UUID")
   UUID publicId;
 
   @Column(name = "menu_id", nullable = false)

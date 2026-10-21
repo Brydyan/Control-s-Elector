@@ -10,9 +10,9 @@ import jakarta.enterprise.context.ApplicationScoped;
 /**
  * Mapeo entre las entidades Panache y los DTOs que cruzan el cable.
  *
- * <p>En el backend Spring esto lo hace MapStruct. Aca el mapper es a mano: el modulo de Quarkus
- * no trae el processor de MapStruct y agregar una dependencia de build solo para tres metodos no
- * vale la pena. La forma de los DTO es la misma que en Spring.
+ * <p>En el backend Spring esto lo hace MapStruct. Aca el mapper es a mano: el modulo de Quarkus no
+ * trae el processor de MapStruct y agregar una dependencia de build solo para tres metodos no vale
+ * la pena. La forma de los DTO es la misma que en Spring.
  *
  * <p>Los permisos atomicos NO viajan en el body: quedan en el claim {@code perms} del JWT.
  */

@@ -8,8 +8,8 @@ import java.util.UUID;
 /**
  * Datos publicos de un usuario del sistema.
  *
- * <p>Mismo shape que el backend Spring: {@code passwordTemporal} solo aparece en la respuesta de
- * la creacion y se omite cuando es null.
+ * <p>Mismo shape que el backend Spring: {@code passwordTemporal} solo aparece en la respuesta de la
+ * creacion y se omite cuando es null.
  */
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_NULL)

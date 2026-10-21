@@ -1,11 +1,11 @@
 package ec.twintailcs.electoral.auth.application;
 
+import ec.twintailcs.electoral.auth.application.MenuResponse.MenuNode;
 import ec.twintailcs.electoral.auth.domain.Menu;
 import ec.twintailcs.electoral.auth.domain.MenuPermiso;
 import ec.twintailcs.electoral.auth.domain.Permiso;
 import ec.twintailcs.electoral.auth.domain.RolPermiso;
 import ec.twintailcs.electoral.auth.domain.Usuario;
-import ec.twintailcs.electoral.auth.application.MenuResponse.MenuNode;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import java.util.ArrayList;
@@ -24,14 +24,14 @@ import java.util.UUID;
  * <p>Reglas:
  *
  * <ol>
- *   <li>Un menu es DIRECTAMENTE visible si: a) Es "publico" (codigo en {@link
- *       #PUBLIC_MENU_CODES}) — ej: Dashboard. b) Tiene al menos un menu_permiso y alguno matchea con
- *       un permiso efectivo del usuario (regla OR entre permisos del menu). c) Es un padre que
- *       aparece via walk-up (regla 2).
- *   <li>Walk-up: si un menu es visible, todos sus ancestros se incluyen para mantener la
- *       estructura visual del sidebar.
- *   <li>Los menus sin menu_permiso y no publicos NO aparecen aunque sean hijos de un padre
- *       visible. Esto evita ruido en el catalogo.
+ *   <li>Un menu es DIRECTAMENTE visible si: a) Es "publico" (codigo en {@link #PUBLIC_MENU_CODES})
+ *       — ej: Dashboard. b) Tiene al menos un menu_permiso y alguno matchea con un permiso efectivo
+ *       del usuario (regla OR entre permisos del menu). c) Es un padre que aparece via walk-up
+ *       (regla 2).
+ *   <li>Walk-up: si un menu es visible, todos sus ancestros se incluyen para mantener la estructura
+ *       visual del sidebar.
+ *   <li>Los menus sin menu_permiso y no publicos NO aparecen aunque sean hijos de un padre visible.
+ *       Esto evita ruido en el catalogo.
  * </ol>
  *
  * <p>Cardinalidad esperada: ~20-50 menus totales. Se carga el catalogo completo y se filtra en
@@ -137,7 +137,9 @@ public class MenuService {
     return requiredAuths.stream().anyMatch(userAuths::contains);
   }
 
-  /** Regla 2: agrega los ancestros de los menus visibles para mantener la estructura del sidebar. */
+  /**
+   * Regla 2: agrega los ancestros de los menus visibles para mantener la estructura del sidebar.
+   */
   private void includeAncestors(Map<Long, Menu> visible, List<Menu> allActive) {
     // Iterativo para evitar recursion infinita en caso de ciclos en parent_id.
     Set<Long> frontier = new HashSet<>(visible.keySet());

@@ -17,9 +17,9 @@ import java.util.Optional;
 /**
  * Guarda o reanuda un borrador de acta (estado BORRADOR).
  *
- * <p>No valida la integridad electoral: el observer puede ir guardando mientras junta los datos. Solo
- * exige que el cargo este habilitado en la JRV y que el par (JRV, cargo) no tenga un acta activa de
- * otro observer.
+ * <p>No valida la integridad electoral: el observer puede ir guardando mientras junta los datos.
+ * Solo exige que el cargo este habilitado en la JRV y que el par (JRV, cargo) no tenga un acta
+ * activa de otro observer.
  */
 @ApplicationScoped
 public class GuardarBorradorActaUseCase {
@@ -101,7 +101,8 @@ public class GuardarBorradorActaUseCase {
   /** El cargo tiene que estar habilitado (activo) en la JRV. */
   private void validarCargoHabilitadoEnJrv(Long jrvId, Long cargoId) {
     if (!repository.cargoHabilitadoEnJrv(jrvId, cargoId)) {
-      throw new ActaInvalidaException("El cargo " + cargoId + " no está habilitado en la JRV " + jrvId);
+      throw new ActaInvalidaException(
+          "El cargo " + cargoId + " no está habilitado en la JRV " + jrvId);
     }
   }
 

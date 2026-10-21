@@ -19,8 +19,8 @@ import java.util.Map;
  * Spring sirve el health en {@code /actuator/health} del puerto principal, este endpoint deja las
  * dos implementaciones intercambiables sin tocar el probe de Kubernetes ni el proxy del strangler.
  *
- * <p>El body tiene la misma forma que el del backend Spring: {@code status} y
- * {@code components.db.status}.
+ * <p>El body tiene la misma forma que el del backend Spring: {@code status} y {@code
+ * components.db.status}.
  */
 @Path("/actuator/health")
 public class HealthAliasResource {

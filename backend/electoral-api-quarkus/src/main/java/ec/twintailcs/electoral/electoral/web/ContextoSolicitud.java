@@ -8,8 +8,8 @@ import jakarta.inject.Inject;
 /**
  * Datos del request en curso que la configuracion necesita: quien lo hace y desde donde.
  *
- * <p>En el backend Spring cada controlador resolvia el usuario y la IP por su cuenta. Aca viven
- * en un solo lugar para que los tres recursos de configuracion repitan la misma logica.
+ * <p>En el backend Spring cada controlador resolvia el usuario y la IP por su cuenta. Aca viven en
+ * un solo lugar para que los tres recursos de configuracion repitan la misma logica.
  */
 @ApplicationScoped
 public class ContextoSolicitud {
@@ -30,8 +30,8 @@ public class ContextoSolicitud {
   }
 
   /**
-   * IP del cliente. Toma el primer valor de {@code X-Forwarded-For} (el que deja el proxy) y, si
-   * no viene, deja {@code sistema}.
+   * IP del cliente. Toma el primer valor de {@code X-Forwarded-For} (el que deja el proxy) y, si no
+   * viene, deja {@code sistema}.
    */
   public String ip(String xForwardedFor) {
     if (xForwardedFor != null && !xForwardedFor.isBlank()) {
