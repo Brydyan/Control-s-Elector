@@ -37,7 +37,7 @@ Cada fase debe dejar el build (`pnpm build`) y la suite (`pnpm test:ci`) en verd
 | T3 | S4, S6 | Preset de PrimeNG derivado de `tokens.scss` + wiring de `providePrimeNG` + test de humo del tema | inline | done |
 | T4 | S4 | Shell de aplicación Sakai (sidebar, topbar, configurador de tema) sobre `layout/` existente | inline | done |
 | T4a | S4, S6 | Prerrequisitos del shell: Tailwind 4 + `tailwindcss-primeui` + variante `dark` + `ThemeService` que activa el modo oscuro | inline | done |
-| T5 | S3, S4 | Migrar primitivas propias de `shared/ui` a componentes PrimeNG | pending | pending |
+| T5 | S3, S4 | Migrar primitivas propias de `shared/ui` a componentes PrimeNG | inline | done (#122) |
 | T6 | S3, S4 | Migrar features por rol (dashboard, admin, coordinator, observer, auth) a PrimeNG | pending | pending |
 | T7 | S3 | Retirar Ionic y Capacitor: `ion-icon`→PrimeIcons, `ion-router-outlet`→`router-outlet`, `ion-app`→host, `ionic-theme.scss`→preset | pending | pending |
 | T8 | S3, S4 | Mapear `Menu.icono` del backend (nombres Ionic) a iconos PrimeNG | pending | pending |
@@ -66,7 +66,7 @@ develop
 | PR1 | `refactor/frontend-sakai-01-theme` → **#117** | T3 | Stack MIT: Angular 21 + PrimeNG 21 + preset institucional + wiring. Sin cambio visual |
 | PR2 | `refactor/frontend-sakai-02-tailwind` → **#118** | T4a | Pipeline Tailwind 4 + `ThemeService` (modo oscuro funcional) |
 | PR3 | `refactor/frontend-sakai-03-shell` → **#119** | T4 | Shell Sakai: `layout.service` por signals, wrapper, topbar, sidebar |
-| PR4 | `refactor/frontend-sakai-04-primitives` | T5 | `shared/ui` (8 primitivas propias) → componentes PrimeNG |
+| PR4 | `refactor/frontend-sakai-04-primitives` → **#122** | T5 | `shared/ui` (8 primitivas propias) → componentes PrimeNG |
 | PR5 | `refactor/frontend-sakai-05-features` | T6 | Features por rol → PrimeNG (dashboard, admin, coordinator, observer, auth) |
 | PR6 | `refactor/frontend-sakai-06-android` | T7, T8 | Retirar Ionic, mapear `Menu.icono` → PrimeIcons, PWA + Capacitor Android |
 
@@ -193,9 +193,40 @@ Evidencia observada:
 Hallazgo relevante: la rampa institucional de `tokens.scss` **es la rampa Tailwind blue con un offset de un paso** (su `--primitive-blue-500` = `#2563eb` = Tailwind `blue-600`). Por eso el preset mapea `primary.500 → blue.600` y `primary.600 → blue.700`, conservando `--color-brand-primary` y `--color-brand-primary-strong` exactos.
 
 ## Pending / Next
-- D2 resuelto (Angular 21 + PrimeNG 21 MIT). PR1, PR2 y PR3 listos para revisión.
-- T5 (primitivas de `shared/ui` → PrimeNG) y T6 (features por rol) son los siguientes slices de la cadena.
+- D2 resuelto (Angular 21 + PrimeNG 21 MIT). PR1 a PR4 listos para revisión.
+- T6 (features por rol → PrimeNG) es el siguiente slice: dashboard, admin, coordinator, observer, auth.
 - T7 requiere corregir `appId`/`appName` de Capacitor y resolver el habilitante PWA (service worker + manifest).
+
+### L12 — T5 ejecutado: primitivas de `shared/ui` sobre PrimeNG (2026-10-20)
+Commit `b695117`, PR **#122** (base: PR3).
+
+Estrategia: **se conserva la API pública** de las 8 primitivas (selector, inputs, outputs) y solo cambia la implementación. Las 9 páginas consumidoras no se tocan en este slice.
+
+Mapeo:
+| Primitiva | Antes | Después |
+|---|---|---|
+| `app-button` | markup `.btn` propio + 120 líneas de SCSS | `p-button`, variantes → severidad, `sm`/`lg` → `small`/`large` |
+| `app-badge` | markup `.badge` propio | `p-tag`, estados electorales → severidades |
+| `app-card` | markup `.app-card` propio | `p-card`, slots de header/title/subtitle/acciones/footer |
+| `app-error-state` | SVG + botón propios | `p-button` para el reintento, tokens de tema para los colores |
+| `app-loading-state` | spinner CSS propio | `p-progressspinner`, conserva el texto para lector de pantalla |
+| `app-skeleton` | markup `.skeleton` propio | `p-skeleton`, `shimmer` → `wave`, `circle` → shape |
+| `app-empty-state` | markup propio + `ion-icon` | mismo layout sobre tokens de tema, icono traducido a PrimeIcons |
+| `app-icon` | wrapper de `ion-icon` | **eliminado** — tenía cero consumidores |
+
+Dos detalles que el revisor debe mirar:
+1. **Los colores electorales sobreviven**: PrimeNG no tiene severidad para `CORREGIDA` (púrpura en el design system). Mapearla a la severidad neutra la habría fusionado visualmente con `BORRADOR`, así que el badge conserva el púrpura institucional con un override acotado. Los otros cinco estados mapean a `success`, `info`, `warn`, `danger` y `secondary`.
+2. **El template del header de la card se declara siempre**: `p-card` resuelve su header con una content query, y una query no ve un template envuelto en un `@if`. La condición va *dentro* del template y una regla `:empty` oculta el contenedor del header cuando la card no tiene título, para no dejar padding vacío.
+
+Nuevo archivo: `frontend/app/src/app/shared/ui/icon-map.ts` — traducción de nombres Ionic a clases PrimeIcons, usada por `empty-state` y reutilizable por las features en T6.
+
+Evidencia observada:
+- `pnpm test:ci` → **44 archivos, 271 tests, 0 fallos** (antes: 45 archivos, 265 tests; se eliminó el spec de `icon` y se agregaron 6 tests de mapeo).
+- `pnpm build` → bundle generado.
+- `pnpm lint` → todos los archivos pasan.
+- Las primitivas pasaron de 1.027 a 947 líneas: **neto −80** aun con la integración de PrimeNG.
+
+Riesgo: **item 3 (contratos que otros consumen)** — la API pública no cambia, pero el markup renderizado sí, así que las reglas que estilaban las clases internas viejas quedan muertas. La única fuera de `shared/ui` es `.badge-*` en `dashboard.page.scss`, que queda inerte porque la severidad ahora viene de PrimeNG; se limpia en T6.
 
 ### L11 — D2 ejecutado: downgrading a Angular 21 + PrimeNG 21 (2026-10-20)
 Reconstrucción de la cadena de commits: el downgrading **se integra dentro del commit de la fundación** (T3) en lugar de quedar como un commit posterior, para que ninguna rama intermedia de la cadena exponga PrimeNG 22.
