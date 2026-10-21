@@ -177,10 +177,92 @@
   color: var(--primitive-blue-900);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   margin-bottom: var(--space-2);
   align-self: flex-start;
   animation: fadeIn 0.2s ease-in-out;
+}
+
+/*
+ * Región de estado no urgente (`role="status"`).
+ *
+ * La región vive siempre en el DOM —sólo cambia su texto— para que el
+ * lector de pantalla la anuncie. Cuando está vacía compensa el `gap` del
+ * contenedor para no dejar un hueco en la maqueta.
+ */
+.status-region {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+
+  &--vacio {
+    margin-top: calc(var(--space-6) * -1);
+    margin-bottom: calc(var(--space-6) * -1);
+  }
+}
+
+.success-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  background-color: var(--color-status-success-bg);
+  border: 1px solid var(--color-status-success-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-status-success);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+/* Confirmación de salida: hay votos escritos que no se han enviado. */
+.confirm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-status-warning-border);
+  border-left: 4px solid var(--color-status-warning);
+  border-radius: var(--radius-md);
+  background-color: var(--color-status-warning-bg);
+  color: var(--text-primary);
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-status-warning);
+  }
+
+  &__text {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+}
+
+/* Razón junto a los campos: el motivo por el que no se puede avanzar. */
+.form-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-sm);
+
+  &--error {
+    color: var(--color-status-danger);
+  }
 }
 
 @keyframes fadeIn {
@@ -205,22 +287,21 @@
   gap: var(--space-2);
 
   &--valid {
-    background-color: var(--color-success-subtle);
-    border: 1px solid var(--border-success);
-    color: var(--color-success-emphasis);
+    background-color: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    color: var(--color-status-success);
   }
 
   &--invalid {
-    background-color: var(--color-danger-subtle);
-    border: 1px solid var(--border-danger);
-    color: var(--color-danger-emphasis);
+    background-color: var(--color-status-danger-bg);
+    border: 1px solid var(--color-status-danger-border);
+    color: var(--color-status-danger);
   }
 
-  .checksum-delta {
+  .checksum-difference {
     display: inline-block;
     margin-left: var(--space-2);
     font-weight: var(--font-weight-bold);
-    color: var(--primitive-red-800);
   }
 }
 
