@@ -31,7 +31,7 @@ describe('AdminSesionesPage', () => {
   });
   it('ngOnInit_cargaSesiones', () => {
     page.ngOnInit();
-    expect(page.loading).toBe(false);
+    expect(page.loading()).toBe(false);
   });
   it('puedeRevocar_soloMaster', () => {
     page.esMaster = false;
@@ -42,6 +42,6 @@ describe('AdminSesionesPage', () => {
   it('revocar_llamaServicioYRecarga', () => {
     page.esMaster = true;
     page.revocar({ id: 1, usuarioEmail: 'a' } as never);
-    expect(page.sesiones).toEqual([]);
+    expect(page.sesiones()).toEqual([]);
   });
 });

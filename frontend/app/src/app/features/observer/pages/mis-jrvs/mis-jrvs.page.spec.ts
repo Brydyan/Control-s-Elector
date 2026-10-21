@@ -51,7 +51,7 @@ describe('MisJrvsPage', () => {
 
   it('should create and load JRVs', () => {
     expect(component).toBeTruthy();
-    expect(component.jrvs.length).toBe(2);
+    expect(component.jrvs().length).toBe(2);
     expect(component.totalPendientes).toBe(1);
     expect(component.totalCompletadas).toBe(1);
   });
@@ -67,7 +67,7 @@ describe('MisJrvsPage', () => {
   });
 
   it('should navigate to jrv cargos on selection', () => {
-    component.seleccionarJrv(component.jrvs[0]);
+    component.seleccionarJrv(component.jrvs()[0]);
     expect(routerSpy.navigate).toHaveBeenCalledWith([
       '/observer/jrv',
       1,
@@ -95,8 +95,8 @@ describe('MisJrvsPage', () => {
     const component2 = fixture2.componentInstance;
     fixture2.detectChanges();
 
-    expect(component2.error).toBeTruthy();
-    expect(component2.loading).toBe(false);
+    expect(component2.error()).toBeTruthy();
+    expect(component2.loading()).toBe(false);
 
     // Retry
     component2.cargarJrvs();

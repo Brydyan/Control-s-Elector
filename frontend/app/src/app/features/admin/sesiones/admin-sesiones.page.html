@@ -2,7 +2,7 @@
   <header class="page-header">
     <div>
       <h1>Sesiones Activas</h1>
-      <span>{{ totalElements }} sesiones</span>
+      <span>{{ totalElements() }} sesiones()</span>
     </div>
   </header>
 
@@ -11,13 +11,13 @@
       [(ngModel)]="terminoBusqueda"
       (ngModelChange)="page = 0; cargarSesiones()"
       placeholder="Buscar por email de usuario"
-      aria-label="Buscar sesiones"
+      aria-label="Buscar sesiones()"
      pInputText />
   </div>
 
   <app-skeleton
     name="admin-sesiones"
-    [loading]="loading"
+    [loading]="loading()"
     animate="shimmer"
     [transition]="true"
     [loadingBoundary]="true"
@@ -30,23 +30,23 @@
   </app-skeleton>
 
   <app-error-state
-    *ngIf="error && !loading"
-    title="Error al cargar sesiones"
-    [message]="error"
+    *ngIf="error() && !loading()"
+    title="Error al cargar sesiones()"
+    [message]="error() ?? undefined"
     ><app-button variant="primary" (clicked)="cargarSesiones()"
       >Reintentar</app-button
     ></app-error-state
   >
   <app-empty-state
-    *ngIf="!loading && !error && !sesiones.length"
+    *ngIf="!loading() && !error() && !sesiones().length"
     icon="pulse-outline"
-    title="No hay sesiones activas"
-    description="No se encontraron sesiones que coincidan con la búsqueda."
+    title="No hay sesiones() activas"
+    description="No se encontraron sesiones() que coincidan con la búsqueda."
   ></app-empty-state>
 
-  @if (!loading && !error && sesiones.length) {
+  @if (!loading() && !error() && sesiones().length) {
   <div class="table-wrap desktop-only">
-    <p-table [value]="sesiones" [rowHover]="true" styleClass="admin-table">
+    <p-table [value]="sesiones()" [rowHover]="true" styleClass="admin-table">
       <ng-template #header>
         <tr>
           <th>Usuario</th>
@@ -81,7 +81,7 @@
   </div>
 
   <div class="cards mobile-only">
-    @for (sesion of sesiones; track sesion.publicId) {
+    @for (sesion of sesiones(); track sesion.publicId) {
     <article>
       <strong>{{ sesion.usuarioEmail }}</strong
       ><span>IP: {{ sesion.ipCliente || '—' }}</span
@@ -103,7 +103,7 @@
   <app-paginator
     [page]="page"
     [size]="size"
-    [totalElements]="totalElements"
+    [totalElements]="totalElements()"
     (pageChange)="onPageChange($event)"
     (sizeChange)="onSizeChange($event)"
   ></app-paginator>

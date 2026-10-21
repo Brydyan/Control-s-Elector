@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
@@ -74,9 +74,9 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   get stepIndex(): number {
     return STEP_INDEX[this.currentStep];
   }
-  loading = true;
-  submitting = false;
-  error: string | null = null;
+  readonly loading = signal(true);
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
   submitSuccess = false;
   draftSavedMessage: string | null = null;
 
@@ -101,14 +101,14 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
       this.cargoId = Number(cargoParam);
       this.cargarCandidatos();
     } else {
-      this.error = 'Parámetros incompletos en la ruta.';
-      this.loading = false;
+      this.error.set('Parámetros incompletos en la ruta.');
+      this.loading.set(false);
     }
   }
 
   cargarCandidatos(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
     this.observerService.getCandidatosPorCargo(this.cargoId).subscribe({
       next: (data) => {
         this.candidatos = data;
@@ -122,11 +122,11 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
         void this.restaurarBorradorOffline();
         // Restaurar borrador local si existe
         this.restaurarBorradorLocal();
-        this.loading = false;
+        this.loading.set(false);
       },
       error: (err) => {
-        this.error = 'No se pudieron cargar los candidatos para esta dignidad.';
-        this.loading = false;
+        this.error.set('No se pudieron cargar los candidatos para esta dignidad.');
+        this.loading.set(false);
         console.error('Error loading candidatos:', err);
       },
     });
@@ -243,7 +243,7 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   }
 
   irAPasoImagen(): void {
-    this.error = null;
+    this.error.set(null);
     // T-FE-09 B.3 / V.4 — patrón "Guardar antes de capturar":
     // persistir el estado actual en IndexedDB antes de abrir la cámara
     // para sobrevivir un eventual LMK de Android.
@@ -278,7 +278,7 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
       const file = target.files[0];
       this.selectedImageFile = file;
       this.captureCancelled = false;
-      this.error = null;
+      this.error.set(null);
 
       // D1 (T-FE-08): usar URL.createObjectURL (Blob binario) en vez de
       // FileReader.readAsDataURL (que produce data:image/... Base64 en heap).
@@ -292,7 +292,7 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     // D7 (T-FE-08 S5): usuario canceló cámara o no seleccionó archivo.
     // Estado informativo; NO resetear datos digitados (currentStep, votos, etc.).
     this.captureCancelled = true;
-    this.error = null;
+    this.error.set(null);
   }
 
   ngOnDestroy(): void {
@@ -303,7 +303,7 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   }
 
   irARevision(): void {
-    this.error = null;
+    this.error.set(null);
     this.currentStep = 'REVISION';
   }
 
@@ -316,8 +316,8 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   }
 
   guardarComoBorrador(): void {
-    this.submitting = true;
-    this.error = null;
+    this.submitting.set(true);
+    this.error.set(null);
 
     const payload = this.buildActaRequest();
     this.observerService.guardarBorrador(payload).subscribe({
@@ -338,21 +338,21 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        this.submitting = false;
-        this.error =
-          'Error al guardar el borrador. ' + (err.error?.message || '');
+        this.submitting.set(false);
+        this.error.set(
+          'Error al guardar el borrador. ' + (err.error?.message || ''));
       },
     });
   }
 
   enviarActaFinal(): void {
     if (!this.isChecksumValid) {
-      this.error = 'Verificación electoral inválida: los votos no cuadran.';
+      this.error.set('Verificación electoral inválida: los votos no cuadran.');
       return;
     }
 
-    this.submitting = true;
-    this.error = null;
+    this.submitting.set(true);
+    this.error.set(null);
 
     const payload = this.buildActaRequest();
     this.observerService.enviarActaDirecta(payload).subscribe({
@@ -384,10 +384,10 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        this.submitting = false;
-        this.error =
+        this.submitting.set(false);
+        this.error.set(
           'Error al enviar el acta: ' +
-          (err.error?.message || 'Revisa la conexión.');
+          (err.error?.message || 'Revisa la conexión.'));
         // T-FE-09 S2 / G1: encolar en IndexedDB para sync posterior.
         void this.encolarActaOffline(payload, err);
       },
@@ -412,8 +412,8 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
       await this.offlineStorage.eliminarBorrador(
         OfflineStorageService.draftId(this.jrvId, this.cargoId),
       );
-      this.error =
-        'Acta guardada en este dispositivo. Se transmitirá en cuanto recupere señal.';
+      this.error.set(
+        'Acta guardada en este dispositivo. Se transmitirá en cuanto recupere señal.');
     } catch (enqueueErr) {
       console.error('Error al encolar acta offline:', enqueueErr);
     }
@@ -438,7 +438,7 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   }
 
   private finalizarEnvio(): void {
-    this.submitting = false;
+    this.submitting.set(false);
     this.submitSuccess = true;
     setTimeout(() => {
       this.router.navigate(['/observer/jrv', this.jrvId, 'cargos']);

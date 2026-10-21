@@ -109,7 +109,7 @@ describe('RegistrarActaPage', () => {
     component.votosNulos = 0;
     component.irAPasoImagen();
     expect(component.currentStep).toBe('IMAGEN');
-    expect(component.error).toBeNull();
+    expect(component.error()).toBeNull();
   });
 
   it('should NOT call enviarActaDirecta when checksum is invalid (D.4)', () => {
@@ -121,7 +121,7 @@ describe('RegistrarActaPage', () => {
 
     component.enviarActaFinal();
 
-    expect(component.error).toContain('votos no cuadran');
+    expect(component.error()).toContain('votos no cuadran');
     expect(observerServiceSpy.enviarActaDirecta).not.toHaveBeenCalled();
   });
 
@@ -228,7 +228,7 @@ describe('RegistrarActaPage', () => {
   it('should mark captureCancelled when user cancels (D7 S5, no file selected)', () => {
     // Estado inicial limpio.
     component.captureCancelled = false;
-    component.error = null;
+    component.error.set(null);
 
     const event = {
       target: { files: [] }, // FileList vacío = cancelación
@@ -237,7 +237,7 @@ describe('RegistrarActaPage', () => {
     component.onFileSelected(event);
 
     expect(component.captureCancelled).toBe(true);
-    expect(component.error).toBeNull(); // No es error de sistema.
+    expect(component.error()).toBeNull(); // No es error de sistema.
     expect(component.selectedImageFile).toBeNull();
     expect(component.imagePreviewUrl).toBeNull();
     // D7: NO se resetean datos digitados.

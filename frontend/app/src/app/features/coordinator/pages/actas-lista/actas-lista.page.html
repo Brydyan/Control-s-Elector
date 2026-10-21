@@ -3,7 +3,7 @@
   <div class="page-topbar">
     <div class="page-title-area">
       <h1 class="page-title">Bandeja de Actas</h1>
-      <span class="total-indicator">{{ totalElements }} total</span>
+      <span class="total-indicator">{{ totalElements() }} total</span>
     </div>
 
     <div class="search-and-filters">
@@ -26,7 +26,7 @@
         }
       </p-iconfield>
 
-      @if (cargos.length > 0) {
+      @if (cargos().length > 0) {
       <p-select
         class="cargo-select"
         [options]="cargoOptions"
@@ -39,7 +39,7 @@
       }
     </div>
 
-    @if (cantones.length > 0) {
+    @if (cantones().length > 0) {
     <p-select
       class="canton-select"
       [options]="cantonOptions"
@@ -84,13 +84,13 @@
   <!-- Skeleton: tabla desktop + cards mobile, con el mismo breakpoint CSS -->
   <app-skeleton
     name="coordinator-actas-lista"
-    [loading]="loading"
+    [loading]="loading()"
     animate="shimmer"
     [transition]="true"
     [loadingBoundary]="true"
   >
     <div>
-      <ng-container *ngIf="loading">
+      <ng-container *ngIf="loading()">
         <!-- Desktop: tabla skeleton con 5 filas fantasma -->
         <div
           class="actas-skeleton-table desktop-only"
@@ -127,9 +127,9 @@
 
   <!-- Error State -->
   <app-error-state
-    *ngIf="error && !loading"
-    title="Error al cargar actas"
-    [message]="error"
+    *ngIf="error() && !loading()"
+    title="Error al cargar actas()"
+    [message]="error() ?? undefined"
   >
     <app-button variant="primary" (clicked)="cargarActas()">
       Reintentar
@@ -138,16 +138,16 @@
 
   <!-- Empty State -->
   <app-empty-state
-    *ngIf="!loading && !error && actasFiltradas.length === 0"
+    *ngIf="!loading() && !error() && actasFiltradas.length === 0"
     icon="document-text-outline"
-    title="No se encontraron actas"
-    description="No hay actas registradas que coincidan con los filtros seleccionados."
+    title="No se encontraron actas()"
+    description="No hay actas() registradas que coincidan con los filtros seleccionados."
   ></app-empty-state>
 
   <!-- Content List (Mobile Cards + Desktop Table) -->
   <div
     class="actas-content"
-    *ngIf="!loading && !error && actasFiltradas.length > 0"
+    *ngIf="!loading() && !error() && actasFiltradas.length > 0"
   >
     <!-- Desktop Table View -->
     <div class="table-container desktop-only">
@@ -275,7 +275,7 @@
     <app-paginator
       [page]="page"
       [size]="size"
-      [totalElements]="totalElements"
+      [totalElements]="totalElements()"
       (pageChange)="onPageChange($event)"
       (sizeChange)="onSizeChange($event)"
     ></app-paginator>

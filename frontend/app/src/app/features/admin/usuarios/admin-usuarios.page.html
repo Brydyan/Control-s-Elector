@@ -2,7 +2,7 @@
   <header class="page-header">
     <div>
       <h1>Gestión de Usuarios</h1>
-      <span>{{ totalElements }} usuarios</span>
+      <span>{{ totalElements() }} usuarios()</span>
     </div>
     @if (esMaster) {
     <app-button (clicked)="abrirCrear()">Crear usuario</app-button>
@@ -14,7 +14,7 @@
       [(ngModel)]="terminoBusqueda"
       (ngModelChange)="page = 0; cargarUsuarios()"
       placeholder="Buscar por nombre, email o ID"
-      aria-label="Buscar usuarios"
+      aria-label="Buscar usuarios()"
      pInputText />
     <p-select
       [options]="rolFilterOptions"
@@ -41,7 +41,7 @@
 
   <app-skeleton
     name="admin-usuarios"
-    [loading]="loading"
+    [loading]="loading()"
     animate="shimmer"
     [transition]="true"
     [loadingBoundary]="true"
@@ -54,23 +54,23 @@
   </app-skeleton>
 
   <app-error-state
-    *ngIf="error && !loading"
-    title="Error al cargar usuarios"
-    [message]="error"
+    *ngIf="error() && !loading()"
+    title="Error al cargar usuarios()"
+    [message]="error() ?? undefined"
     ><app-button variant="primary" (clicked)="cargarUsuarios()"
       >Reintentar</app-button
     ></app-error-state
   >
   <app-empty-state
-    *ngIf="!loading && !error && !usuarios.length"
+    *ngIf="!loading() && !error() && !usuarios().length"
     icon="people-outline"
-    title="No se encontraron usuarios"
-    description="No hay usuarios que coincidan con los filtros."
+    title="No se encontraron usuarios()"
+    description="No hay usuarios() que coincidan con los filtros."
   ></app-empty-state>
 
-  @if (!loading && !error && usuarios.length) {
+  @if (!loading() && !error() && usuarios().length) {
   <div class="table-wrap desktop-only">
-    <p-table [value]="usuarios" [rowHover]="true" styleClass="admin-table">
+    <p-table [value]="usuarios()" [rowHover]="true" styleClass="admin-table">
       <ng-template #header>
         <tr>
           <th>Usuario</th>
@@ -123,7 +123,7 @@
   </div>
 
   <div class="cards mobile-only">
-    @for (usuario of usuarios; track usuario.publicId) {
+    @for (usuario of usuarios(); track usuario.publicId) {
     <article>
       <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong
       ><span>{{ usuario.email }}</span
@@ -157,7 +157,7 @@
   <app-paginator
     [page]="page"
     [size]="size"
-    [totalElements]="totalElements"
+    [totalElements]="totalElements()"
     (pageChange)="onPageChange($event)"
     (sizeChange)="onSizeChange($event)"
   ></app-paginator>
@@ -186,8 +186,8 @@
     <p-select [options]="roles" [(ngModel)]="rol" fluid />
   </label>
 
-  @if (error) {
-  <p-message severity="error" [text]="error" />
+  @if (error()) {
+  <p-message severity="error" [text]="error() ?? ''" />
   }
 
   @if (passwordTemporal) {
@@ -198,11 +198,11 @@
   }
 
   <ng-template #footer>
-    <app-button variant="secondary" [disabled]="submitting" (clicked)="cerrarModal()">
+    <app-button variant="secondary" [disabled]="submitting()" (clicked)="cerrarModal()">
       Cancelar
     </app-button>
-    <app-button [disabled]="submitting" (clicked)="guardar()">
-      {{ submitting ? 'Guardando…' : 'Guardar' }}
+    <app-button [disabled]="submitting()" (clicked)="guardar()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </ng-template>
 </p-dialog>
