@@ -335,3 +335,17 @@ PR **#129** (commit `6fcebec`).
 Evidencia: **42 archivos, 267 tests, 0 fallos**; build verde; lint limpio.
 
 Con este PR queda **cero UI propia** en el frontend: todo lo que se ve lo dibuja PrimeNG. Lo que queda de CSS propio (1.925 lineas en las paginas + 370 en el shell) es geometria — grids, banners, listas — que PrimeNG no cubre y no debe cubrir.
+
+### L15 — Cadena cerrada y follow-ups trackeados (2026-10-20)
+La cadena quedó en **12 PRs: #117 → #130**. Verificacion de integridad: cada PR toca **solo** las areas de su unidad, sin contaminacion entre ramas.
+
+Correccion de una hipotesis propia: se sospecho que PrimeNG emitia los tokens `--p-*` de paleta solo cuando un componente los usaba, lo que habria dejado reglas sin color. **La hipotesis era falsa**: el motor de estilos emite los 568 tokens del preset al cargar el tema. El unico token realmente inexistente era `--p-brand-primary`. El PR #130 unifica de todos modos el CSS propio sobre los tokens institucionales (robustez y coherencia) y agrega `primeng-theme.spec.ts`, que renderiza el tema y afirma que toda variable usada por el CSS propio existe.
+
+Follow-ups trackeados como issues:
+
+| Issue | Tema |
+|---|---|
+| #131 | **Verificacion visual** del refactor (bloqueante del merge): ninguna pagina se abrio en un navegador |
+| #132 | Migrar el CSS propio (~2.774 lineas) a los tokens del sistema de diseno |
+| #133 | Compilar y verificar el APK de Android (requiere un entorno con Android SDK) |
+| #134 | Pistas de la API de PrimeNG 21: las trampas ya encontradas, con su evidencia |
