@@ -113,7 +113,10 @@ class ErroresContractIT extends ContractTestSupport {
   @Test
   @DisplayName("GET /v3/api-docs sirve el spec OpenAPI con las rutas de todos los modulos")
   void elSpecOpenApiDeclaraLasRutasDeTodosLosModulos() {
-    Response r = anon().get(OPENAPI);
+    // Se pide JSON explicitamente: el backend Spring siempre sirve JSON en esta ruta, y el
+    // backend Quarkus negocia por el header Accept (sin el, sirve YAML). El contrato que
+    // importa es que el spec declare las rutas, no el formato por defecto de la negociacion.
+    Response r = anon().accept("application/json").get(OPENAPI);
 
     assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
     assertThat(r.jsonPath().getString("openapi")).startsWith("3.1");
@@ -148,7 +151,7 @@ class ErroresContractIT extends ContractTestSupport {
   @Test
   @DisplayName("el spec OpenAPI es publico: se sirve sin token")
   void elSpecOpenApiEsPublico() {
-    Response r = anon().get(OPENAPI);
+    Response r = anon().accept("application/json").get(OPENAPI);
 
     assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
   }
