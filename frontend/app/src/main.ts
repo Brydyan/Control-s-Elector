@@ -7,6 +7,7 @@ import {
 } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { inject, APP_INITIALIZER } from '@angular/core';
+import { providePrimeNG } from 'primeng/config';
 import {
   IonicRouteStrategy,
   provideIonicAngular,
@@ -37,6 +38,7 @@ import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/core/auth/auth.interceptor';
 import { SyncService } from './app/core/offline/sync.service';
+import { primengTheme } from './theme/primeng-theme';
 
 addIcons({
   'menu-outline': menuOutline,
@@ -65,6 +67,7 @@ bootstrapApplication(AppComponent, {
     provideIonicAngular(),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(routes, withPreloading(PreloadAllModules)),
+    providePrimeNG({ theme: primengTheme, ripple: true }),
     {
       provide: APP_INITIALIZER,
       useFactory: () => {
