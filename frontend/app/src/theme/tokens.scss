@@ -113,6 +113,27 @@
   --text-secondary: var(--color-text-secondary);
   --text-muted: var(--color-text-muted);
 
+  /*
+   * Las familias del sistema.
+   *
+   * La app se dibuja con IBM Plex Sans y su hermano IBM Plex Mono, las dos
+   * auto-alojadas en `src/assets/fonts` (ver `src/theme/fonts.scss`): Plex
+   * fue dibujada para una corporación — neutra, técnica, institucional, el
+   * registro que pide `DESIGN.md` — y trae un juego de cifras tabulares de
+   * verdad, que es lo que `PRODUCT.md` llama sagrado.
+   *
+   * La pila de reserva es métricamente compatible con la cara real (las
+   * métricas están sobrescritas en la reserva), así el texto no salta cuando
+   * la fuente llega. El preset de PrimeNG declara la misma pila, así el
+   * chrome y el contenido hablan con la misma voz.
+   */
+  --font-family-base:
+    "IBM Plex Sans", "IBM Plex Sans Fallback", Arial, "Helvetica Neue",
+    system-ui, sans-serif;
+  --font-family-mono:
+    "IBM Plex Mono", "IBM Plex Mono Fallback", "Liberation Mono",
+    "DejaVu Sans Mono", ui-monospace, monospace;
+
   // Bordes
   --color-border-subtle: var(--primitive-slate-100);
   --color-border-medium: var(--primitive-slate-200);
@@ -163,7 +184,21 @@
   --font-size-md: 16px;
   --font-size-lg: 18px;
   --font-size-xl: 20px;
-  --font-size-2xl: 24px;
+  /*
+   * La escala tiene cuatro peldaños y ninguno se ata con otro:
+   *
+   *   display  36px  el `<h1>` de la página
+   *   title    24px  el título de la card (`h2`, `h3`)
+   *   body     14px  el texto
+   *   meta     12px  el metadato
+   *
+   * `--font-size-2xl` era 24px, el mismo valor que `--font-size-title`, así
+   * que el `<h1>` de página se ataba con el `<h3>` de las cards de abajo. Es
+   * el alias del peldaño de display: lo conserva `jrv-cargos.page.scss`, que
+   * está fuera de la superficie de esta fase, y lo retira la limpieza del
+   * vocabulario.
+   */
+  --font-size-2xl: var(--font-size-display);
   --font-size-title: 24px;
   --font-size-display: 36px;
   --font-size-body: var(--font-size-sm);

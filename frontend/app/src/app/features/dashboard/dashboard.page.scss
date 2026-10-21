@@ -32,9 +32,15 @@
     margin-bottom: var(--space-1);
   }
 
+  /*
+   * El caption del banner estaba en 3.89:1 en el esquema claro: la regla
+   * aplicaba `opacity: 0.8` sobre el azul de la marca, y ningún token
+   * deshace una opacidad. La jerarquía visual la da el tamaño (13px contra
+   * los 22px del encabezado), no el apagado: el color viene del token.
+   */
   p {
     font-size: 13px;
-    opacity: 0.8;
+    color: var(--color-text-on-brand);
   }
 }
 
@@ -59,7 +65,9 @@
   gap: var(--space-6);
   margin-top: var(--space-2);
   font-size: var(--font-size-meta);
-  opacity: 0.8;
+  /* Mismo azul de marca, mismo token: sin opacidad que lo apague. */
+  color: var(--color-text-on-brand);
+  font-variant-numeric: tabular-nums;
 }
 
 .progress-banner-right {
@@ -74,7 +82,7 @@
 
 .big-pct-label {
   font-size: 13px;
-  opacity: 0.7;
+  color: var(--color-text-on-brand);
   margin-top: var(--space-1);
 }
 

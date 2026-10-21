@@ -2,7 +2,17 @@
 // TIPOGRAFÍA GLOBAL
 // ─────────────────────────────────────────────────────────────
 
+/*
+ * La cara de la app.
+ *
+ * La familia se declara en el `body` y de ahí se hereda: el contenido propio
+ * y el chrome de PrimeNG (cuyos componentes usan `font-family: inherit`)
+ * terminan hablando con la misma voz, y ningún elemento tiene que repetirla.
+ * El respaldo es métricamente compatible con la cara real, así el texto no
+ * salta cuando la fuente llega (ver `src/theme/fonts.scss`).
+ */
 body {
+  font-family: var(--font-family-base);
   font-size: var(--font-size-body);
   font-weight: var(--font-weight-regular);
   color: var(--color-text-primary);
@@ -10,13 +20,22 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
-// Números electorales tabulares para evitar desalineaciones
+/*
+ * Números electorales tabulares.
+ *
+ * `PRODUCT.md` llama sagrado al juego de cifras tabulares: una columna de
+ * votos tiene que alinearse dígito a dígito. La regla global alcanza a
+ * cualquier campo numérico — el veedor escribe un número y lo compara con
+ * el padrón — y las cifras que viven en tablas y cards declaran su regla en
+ * la hoja de la página que las contiene.
+ */
 .tabular-nums,
 .stat-card-value,
 .canton-pct,
 .big-pct,
 .jrv-badge-id,
-.badge {
+.badge,
+input[inputmode="numeric"] {
   font-variant-numeric: tabular-nums;
 }
 

@@ -1,0 +1,127 @@
+// ─────────────────────────────────────────────────────────────
+// LAS FACES DEL SISTEMA: IBM PLEX SANS + IBM PLEX MONO
+// ─────────────────────────────────────────────────────────────
+
+/*
+ * IBM Plex Sans, with IBM Plex Mono as its sibling.
+ *
+ * Plex was drawn for a corporation: neutral, technical, institutional — the
+ * register `DESIGN.md` asks for. It ships a real tabular figure set, which is
+ * what `PRODUCT.md` calls sacred, and its Mono sibling resolves the numeric
+ * voice: the cells that used `monospace` stop being an exception and become
+ * part of the system.
+ *
+ * Both faces are under the SIL Open Font License 1.1 (the licence travels
+ * with the files, in `OFL.txt`), so they can be bundled in a public-sector
+ * product without a licensing conversation.
+ *
+ * They are self-hosted on purpose. The app runs in a booth with unstable
+ * connectivity and the service worker caches the shell: a font served by a
+ * CDN would be a second external dependency and a hole in the offline story.
+ *
+ * The shipped subset is the `latin` one of the upstream release: Latin-1
+ * Supplement — which carries the accents the product uses (`á é í ó ú ü ñ`
+ * and their uppercase) — plus the general punctuation (`¿`, `¡`, the dashes
+ * and the quotes). 22 KB per weight.
+ */
+
+/*
+ * The range of the shipped subset. It is declared so the browser knows the
+ * file is not the whole face and does not wait for a second download when a
+ * character outside the range shows up.
+ */
+$plex-latin-range:
+  U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+  U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+  U+FEFF, U+FFFD;
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/ibm-plex-sans-latin-400-normal.woff2") format("woff2");
+  unicode-range: $plex-latin-range;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/assets/fonts/ibm-plex-sans-latin-500-normal.woff2") format("woff2");
+  unicode-range: $plex-latin-range;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/assets/fonts/ibm-plex-sans-latin-600-normal.woff2") format("woff2");
+  unicode-range: $plex-latin-range;
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/assets/fonts/ibm-plex-sans-latin-700-normal.woff2") format("woff2");
+  unicode-range: $plex-latin-range;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/assets/fonts/ibm-plex-mono-latin-400-normal.woff2") format("woff2");
+  unicode-range: $plex-latin-range;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/assets/fonts/ibm-plex-mono-latin-600-normal.woff2") format("woff2");
+  unicode-range: $plex-latin-range;
+}
+
+/*
+ * The metric-compatible fallback.
+ *
+ * `font-display: swap` paints the text with the fallback until the face
+ * arrives, so the fallback has to occupy the same space as the real one or
+ * the layout jumps. The overrides below are the metrics of the shipped face
+ * (ascent 1025, descent 275, line gap 0, on a 1000 unit em) and the size
+ * adjustment is the ratio of the average advance width of Plex Sans
+ * (0.5296 em) over the average advance width of Arial and its metric
+ * compatible clones (0.5335 em), so a line of text keeps its width.
+ */
+@font-face {
+  font-family: "IBM Plex Sans Fallback";
+  src:
+    local("Arial"), local("Helvetica Neue"), local("Liberation Sans"),
+    local("Arimo");
+  ascent-override: 102.5%;
+  descent-override: 27.5%;
+  line-gap-override: 0%;
+  size-adjust: 99.25%;
+}
+
+/*
+ * The same for the sibling: Liberation Mono, DejaVu Sans Mono and Courier
+ * New all advance 0.6 em, the advance of IBM Plex Mono.
+ */
+@font-face {
+  font-family: "IBM Plex Mono Fallback";
+  src:
+    local("Liberation Mono"), local("DejaVu Sans Mono"), local("Courier New"),
+    local("Nimbus Mono PS");
+  ascent-override: 102.5%;
+  descent-override: 27.5%;
+  line-gap-override: 0%;
+  size-adjust: 99.98%;
+}

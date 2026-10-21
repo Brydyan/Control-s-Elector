@@ -59,6 +59,85 @@ export function parseScssBlocks(source: string): ScssBlock[] {
   return blocks;
 }
 
+export interface ScssRule {
+  /** The selector with the ancestor context, e.g. `.banner-head p`. */
+  selector: string;
+  body: string;
+}
+
+/**
+ * Parses the rules of an SCSS file keeping the nesting context.
+ *
+ * `parseScssBlocks` flattens the file: it returns the innermost blocks and
+ * loses the parent selector, so a rule nested in `.banner-head` comes back as
+ * `p`. The contracts of this design system need the whole selector, so this
+ * parser walks the braces and expands every rule against its ancestors.
+ */
+export function parseNestedScssRules(source: string): ScssRule[] {
+  const rules: ScssRule[] = [];
+  collectRules(stripComments(source), [], rules);
+  return rules;
+}
+
+function collectRules(
+  source: string,
+  ancestors: string[],
+  out: ScssRule[],
+): void {
+  let buffer = '';
+  let index = 0;
+  while (index < source.length) {
+    const char = source[index];
+
+    // A declaration ends the pending selector: what precedes it is a
+    // property, not a selector.
+    if (char === ';') {
+      buffer = '';
+      index++;
+      continue;
+    }
+
+    if (char !== '{') {
+      buffer += char;
+      index++;
+      continue;
+    }
+
+    const selector = buffer.trim();
+    buffer = '';
+    const { body, next } = readBlock(source, index + 1);
+    const parts = selector
+      .split(',')
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    for (const part of parts) {
+      out.push({ selector: [...ancestors, part].join(' '), body });
+      collectRules(body, [...ancestors, part], out);
+    }
+
+    index = next;
+  }
+}
+
+function readBlock(
+  source: string,
+  start: number,
+): { body: string; next: number } {
+  let depth = 1;
+  let index = start;
+  while (index < source.length && depth > 0) {
+    if (source[index] === '{') depth++;
+    else if (source[index] === '}') depth--;
+    index++;
+  }
+  const closed = depth === 0;
+  return {
+    body: source.slice(start, closed ? index - 1 : index),
+    next: index,
+  };
+}
+
 /** Extracts the custom property declarations of a block body. */
 export function parseDeclarations(body: string): TokenMap {
   const declarations: TokenMap = {};
