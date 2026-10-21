@@ -63,12 +63,14 @@ develop
 
 | PR | Rama | Unidades | Alcance |
 |----|------|----------|---------|
-| PR1 | `refactor/frontend-sakai-01-theme` | T3 | Stack MIT: Angular 21 + PrimeNG 21 + preset institucional + wiring. Sin cambio visual |
-| PR2 | `refactor/frontend-sakai-02-tailwind` | T4a | Pipeline Tailwind 4 + `ThemeService` (modo oscuro funcional) |
-| PR3 | `refactor/frontend-sakai-03-shell` | T4 | Shell Sakai: `layout.service` por signals, wrapper, topbar, sidebar |
+| PR1 | `refactor/frontend-sakai-01-theme` → **#117** | T3 | Stack MIT: Angular 21 + PrimeNG 21 + preset institucional + wiring. Sin cambio visual |
+| PR2 | `refactor/frontend-sakai-02-tailwind` → **#118** | T4a | Pipeline Tailwind 4 + `ThemeService` (modo oscuro funcional) |
+| PR3 | `refactor/frontend-sakai-03-shell` → **#119** | T4 | Shell Sakai: `layout.service` por signals, wrapper, topbar, sidebar |
 | PR4 | `refactor/frontend-sakai-04-primitives` | T5 | `shared/ui` (8 primitivas propias) → componentes PrimeNG |
 | PR5 | `refactor/frontend-sakai-05-features` | T6 | Features por rol → PrimeNG (dashboard, admin, coordinator, observer, auth) |
 | PR6 | `refactor/frontend-sakai-06-android` | T7, T8 | Retirar Ionic, mapear `Menu.icono` → PrimeIcons, PWA + Capacitor Android |
+
+PR #115 y #116 (la primera cadena, sobre PrimeNG 22) quedaron cerrados y superados: ver L11.
 
 Presupuesto de revisión (adiciones + eliminaciones, tal como lo reporta GitHub):
 
