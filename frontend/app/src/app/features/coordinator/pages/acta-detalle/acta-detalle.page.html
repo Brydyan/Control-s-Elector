@@ -286,12 +286,12 @@
 
   <!-- Historial de transiciones -->
   <app-card [elevated]="true" headerTitle="Historial de Transiciones">
-    @if ((detalle.historial ?? []).length > 0) {
+    @if ((data()?.historial ?? []).length > 0) {
     <ol
       class="historial-list"
       aria-label="Línea de tiempo de transiciones del acta"
     >
-      @for (h of detalle.historial ?? []; track h.timestamp) {
+      @for (h of data()?.historial ?? []; track h.timestamp) {
       <li class="historial-item">
         <div class="historial-row">
           <span class="historial-accion">{{ h.accion }}</span>
@@ -527,7 +527,7 @@
     (onHide)="imagenZoomAbierto = false"
   >
     <img
-      [src]="detalle.acta.urlEvidencia"
+      [src]="data()?.acta?.urlEvidencia"
       alt="Acta de escrutinio ampliada"
       class="full-evidence-img"
     />
