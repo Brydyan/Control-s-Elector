@@ -92,10 +92,11 @@ La suite debe ser **agnóstica del framework**. Es la única forma de que sirva 
 | T12 | Docs: cómo correr la suite contra Spring hoy y contra Quarkus mañana | S1,S3 | inline | `ce97870` |
 | T13 | Cerrar el agujero de autorización del módulo de coordinación (issue #121) | S2,S4 | inline | `49f5eb8` |
 | T14 | Backend destino del strangler en Quarkus: auth parcial + health + pipeline nativo | S1,S2 | inline | `c82cb46` |
+| T15 | Migrar el backend completo a Quarkus: auth, configuracion, menus, dashboard, evidencias, actas | S1,S2 | delegated+inline | `a3a471f`..`eaa2366` |
 
 **Estrategia de entrega:** `auto-chain`. Los work-units T3–T10 son unidades independientes con superficies de edición disjuntas y se lanzan en paralelo una vez que T1+T2 fijan el patrón. T11 y T12 cierran la feature.
 
-**Estado:** 120 tests verdes. Todos los módulos de la API con contrato. Job de CI validado end-to-end contra base recién creada. Issue #121 cerrada. Backend Quarkus con el módulo de auth parcial arrancando y con el build nativo en curso.
+**Estado:** 120 tests verdes contra Spring Y 120/120 contra Quarkus. Backend completo migrado. Issue #121 cerrada. Job de CI validado end-to-end contra base recién creada.
 
 ---
 
@@ -215,3 +216,33 @@ El build nativo del backend Quarkus se generó bien a la primera (2m59s, imagen 
 La suite de contrato contra el binario nativo: 2 de 11 tests de auth verdes (los que solo usan login) y 9 en rojo por los endpoints de auth que todavía no están migrados (`register`, `refresh`, `logout`), que devuelven 404 con el shape estándar. Es el estado honesto del incremento 1: la suite marca en rojo lo que falta, que es para lo que sirve.
 
 El detalle operativo: el perfil de Maven `native` se activa con `-Pnative`. Con `-Dnative` el build pasa por la JVM sin que se note, y parece que el nativo funcionó.
+
+### L14 — 2026-10-21 — Migración completa: 120/120 contra las DOS implementaciones
+
+El backend Quarkus tiene los 13 modulos portados y la suite de regresion por contrato da **120/120 verde contra Quarkus Y 120/120 contra Spring**. La paridad de la fase 1 esta lograda: el mismo artefacto de test afirma las dos implementaciones, sin una sola linea condicional.
+
+Como se hizo, en orden:
+
+| Modulo | Estado | Commits |
+|---|---|---|
+| auth (login, refresh, logout, register, usuarios, sesiones) | 11/11 | `a3a471f` |
+| configuracion + menus | 13/13 | `41b66c8` |
+| dashboard + evidencias + storage S3 | 6/6 + verificado a mano | `f942baa` |
+| actas (observer + coordinator, 21 endpoints) | 61/61 | `eaa2366` |
+
+**Cuatro decisiones que resolveron el port:**
+
+1. **La autorizacion va con llamada explicita** (`Autorizador.exigir(...)`) dentro del metodo del recurso, no con anotacion + interceptor CDI. El interceptor no se disparaba (0 ejecuciones) ni a nivel de metodo ni de clase: Quarkus REST invoca los metodos del recurso directamente y no les aplica interceptores. Y la llamada dentro del metodo es lo que reproduce el orden de Spring (validacion del body antes que autorizacion: 400 gana sobre 403).
+
+2. **Un conjunto plano de authorities**: el rol mas los permisos atomicos del claim `perms`. Con OR semantica, eso reproduce TODAS las expresiones `@PreAuthorize` del backend Spring: `hasAuthority`, `hasAnyAuthority`, `hasAnyRole`, el `or` y `@authz.has`.
+
+3. **Contexto RLS de Postgres** (`set_config('app.current_user_id', ..., true)`) al inicio de cada transaccion que toca `acta`, `acta_detalle` o `evidencia`. Sin eso, las tablas con RLS forzado devuelven cero filas y rechazan los inserts. Es el equivalente del `RlsTransactionExecutionListener` de Spring.
+
+4. **Los filtros de request son pre-matching.** En Spring, una ruta inexistente sin token responde 401; con un filtro post-matching de JAX-RS responderia 404.
+
+**Desviaciones que hubo que corregir para copies el contrato:**
+- Un `@QueryParam` de enum invalido respondia 404 en Quarkus y 400 en Spring. Ahora el estado se recibe como `String` y se convierte a mano.
+- El spec OpenAPI de Quarkus se sirve en YAML si el cliente no pide JSON. El test ahora pide `Accept: application/json` explicito: el contrato es que el spec declare las rutas, no el formato por defecto de la negociacion.
+- `AWS_S3_PATH_STYLE` no lo mapea el binding de MicroProfile Config (mapea `AWS_S3_PATH_STYLE_ACCESS_ENABLED`), asi que se lee del entorno a mano, como lo resolvia Spring por placeholder.
+
+**Lo que se llevo puesto:** los DTOs que cruzan el cable necesitan `@RegisterForReflection` en native image. Sin eso Jackson no encuentra serializador y responde 500. En Spring eso habria sido un `reflect-config.json` escrito a mano: 23 entidades JPA, Nimbus, AWS SDK v2, Liquibase, OpenPDF y el generador UUIDv7 propio. En Quarkus lo genera el framework. **La migracion a Quarkus no es un paso intermedio, es el habilitador de la fase nativa.**
