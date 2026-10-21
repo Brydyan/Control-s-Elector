@@ -197,8 +197,8 @@ Los cuatro enlaces del menú tienen que quedar deshabilitados de forma explícit
 | ID | PR | S# | Route | Superficie |
 |---|---|---|---|---|
 | T1 | #139 `fix/role-and-locale` | S1, S2, S15 (admin) | delegated | `core/auth/**`, `features/admin/**`, `features/coordinator/pages/actas-lista/**`, `main.ts` |
-| T2 | #140 `fix/offline-queue-safety` | S3, S4 | delegated | `core/offline/**`, `app/layout/topbar/**` |
-| T3 | #141 `fix/observer-form` | S5, S6 | delegated | `features/observer/pages/registrar-acta/**` |
+| T2 | #140 `fix/offline-queue-safety` | S3 | delegated | `core/offline/**`, `app/layout/topbar/**` |
+| T3 | #141 `fix/observer-form` | S4, S5, S6 | delegated | `features/observer/pages/registrar-acta/**` |
 | T4 | #142 `feat/dark-scheme` | S7, S8 | inline | `theme/**`, `features/coordinator/pages/acta-detalle/**`, `features/placeholder/**` |
 | T5 | #143 `feat/typography` | S9, S10 | inline | `theme/**`, `features/**` (cifras) |
 | T6 | #144 `refactor/design-system-cleanup` | S11 | inline | `theme/**`, `shared/ui/**`, `shared/components/**`, `features/**` (css muerto) |
@@ -208,7 +208,7 @@ Los cuatro enlaces del menú tienen que quedar deshabilitados de forma explícit
 | T10 | #148 `perf/offline-and-bundle` | S3 (SW) | inline | `main.ts`, `ngsw-config.json`, `app.routes.ts` |
 | T11 | #149 `docs/design-system` | S11 (guard) | inline | `DESIGN.md`, `theme/**`, script de build |
 
-Las tareas T1-T3 tienen superficies disjuntas y se ejecutan en paralelo. T4-T11 son secuenciales: tocan `theme/**` y las features, y cada una depende de que la anterior haya aterrizado.
+Las tareas T1-T3 tienen superficies disjuntas y se ejecutan en paralelo. S4 (el mensaje de success que se renderiza como error) vive en `registrar-acta`, asi que es de T3. T4-T11 son secuenciales: tocan `theme/**` y las features, y cada una depende de que la anterior haya aterrizado.
 
 ## Log
 
