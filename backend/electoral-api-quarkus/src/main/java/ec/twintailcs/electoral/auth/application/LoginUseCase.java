@@ -1,6 +1,5 @@
 package ec.twintailcs.electoral.auth.application;
 
-import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.auth.domain.RolPermiso;
 import ec.twintailcs.electoral.auth.domain.Sesion;
 import ec.twintailcs.electoral.auth.domain.Usuario;
@@ -26,7 +25,8 @@ public class LoginUseCase {
 
   @Inject TokenHasher tokenHasher;
 
-  @Inject AuditLogService auditLog;
+  @Inject AuthAuditService auditLog;
+
 
   @Transactional
   public JwtService.TokenPair execute(
@@ -51,7 +51,6 @@ public class LoginUseCase {
     sesion.setUltimoUsoEn(Instant.now());
     sesion.setExpiraEn(Instant.now().plus(pair.refreshTtl()));
     sesion.persist();
-
     auditLog.recordLogin(u.getId(), ipCliente);
     return pair;
   }

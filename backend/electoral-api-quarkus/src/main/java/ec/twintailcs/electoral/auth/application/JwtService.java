@@ -117,6 +117,15 @@ public class JwtService {
     return parsed;
   }
 
+  /** Valida que el token sea de tipo refresh. Es lo que usa el canje de refresh token. */
+  public ParsedJwt parseRefresh(String token) {
+    ParsedJwt parsed = parse(token);
+    if (!"refresh".equals(parsed.type())) {
+      throw new InvalidJwtException("Token no es de tipo refresh");
+    }
+    return parsed;
+  }
+
   private String sign(UnaryOperator<JWTClaimsSet.Builder> claimsBuilder) {
     try {
       JWTClaimsSet.Builder cb = new JWTClaimsSet.Builder();

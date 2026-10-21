@@ -3,11 +3,18 @@ package ec.twintailcs.electoral.auth.web;
 import ec.twintailcs.electoral.auth.application.AuthException;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.LoginUseCase;
+import ec.twintailcs.electoral.auth.application.LogoutUseCase;
+import ec.twintailcs.electoral.auth.application.RefreshTokenUseCase;
+import ec.twintailcs.electoral.auth.application.RegistrarUsuarioUseCase;
 import ec.twintailcs.electoral.auth.domain.Usuario;
+import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.auth.security.CurrentUser;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
 import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
-import ec.twintailcs.electoral.shared.web.ApiErrorResponse;
+import ec.twintailcs.electoral.auth.web.dto.RefreshRequest;
+import ec.twintailcs.electoral.auth.web.dto.RegisterRequest;
+import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.Consumes;
@@ -20,10 +27,22 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.UUID;
 
 /**
  * Endpoints de autenticacion. Mismo contrato que el {@code AuthController} del backend Spring.
+ *
+ * <p>Convenciones:
+ *
+ * <ul>
+ *   <li>access token: viaja solo en {@code Authorization: Bearer <token>} en cada request
+ *       subsecuente.
+ *   <li>refresh token: viaja en la cookie httpOnly {@code refresh_token} para que no sea accesible
+ *       desde JS. Tambien puede venir en el body para clientes no-browser (app movil). Misma logica
+ *       para ambos: se prueba primero la cookie y despues el body.
+ * </ul>
  */
+@ApplicationScoped
 @Path("/api/v1/auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -37,9 +56,19 @@ public class AuthResource {
 
   @Inject LoginUseCase loginUseCase;
 
+  @Inject RefreshTokenUseCase refreshTokenUseCase;
+
+  @Inject LogoutUseCase logoutUseCase;
+
+  @Inject RegistrarUsuarioUseCase registrarUsuarioUseCase;
+
   @Inject JwtService jwt;
 
   @Inject CurrentUser currentUser;
+
+  @Inject Autorizador autorizador;
+
+  @Inject UsuarioMapper mapper;
 
   @POST
   @Path("/login")
@@ -53,15 +82,51 @@ public class AuthResource {
             "Bearer",
             pair.accessTtl().toSeconds(),
             pair.sesionId(),
-            new AuthResponse.UsuarioActual(
-                usuario.getPublicId(), usuario.getEmail(), usuario.getRolNombre()));
-
+            mapper.toDto(usuario));
     return Response.ok()
         .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(pair.refresh()))
         .entity(payload)
         .build();
   }
 
+  @POST
+  @Path("/refresh")
+  public Response refresh(
+      RefreshRequest body, @CookieParam(REFRESH_COOKIE) String refreshEnCookie) {
+    String refresh = readRefresh(refreshEnCookie, body);
+    JwtService.TokenPair pair = refreshTokenUseCase.execute(refresh);
+
+    // Necesitamos los datos del usuario para construir la respuesta.
+    UUID publicId = UUID.fromString(jwt.parseAccess(pair.access()).subject());
+    Usuario u = Usuario.find("publicId", publicId).firstResult();
+
+    AuthResponse payload =
+        new AuthResponse(
+            pair.access(),
+            "Bearer",
+            pair.accessTtl().toSeconds(),
+            pair.sesionId(),
+            mapper.toDto(u));
+    return Response.ok()
+        .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(pair.refresh()))
+        .entity(payload)
+        .build();
+  }
+
+  @POST
+  @Path("/logout")
+  public Response logout(RefreshRequest body, @CookieParam(REFRESH_COOKIE) String refreshEnCookie) {
+    String refresh = readRefresh(refreshEnCookie, body);
+    logoutUseCase.execute(refresh);
+    // Borrar la cookie (Max-Age=0)
+    return Response.noContent()
+        .header(
+            HttpHeaders.SET_COOKIE,
+            REFRESH_COOKIE + "=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0")
+        .build();
+  }
+
+  /** Informacion del usuario actual (parseado del access token del request). */
   @GET
   @Path("/me")
   public AuthResponse.UsuarioActual me() {
@@ -73,7 +138,44 @@ public class AuthResource {
     if (u == null) {
       throw new AuthException("No autenticado");
     }
-    return new AuthResponse.UsuarioActual(u.getPublicId(), u.getEmail(), u.getRolNombre());
+    return mapper.toDto(u);
+  }
+
+  /**
+   * Solo MASTER (o el permiso {@code usuario:create}) puede crear usuarios. Para esta version es
+   * asi: el FE tiene un panel admin que lista usuarios. Cuando existan auto-registros via invite,
+   * se cambia esta firma.
+   *
+   * <p>El email se genera automaticamente a partir de nombre, apellido y rol.
+   *
+   * <p>El requisito de permisos vive en el caso de uso ({@code RegistrarUsuarioUseCase}), que es
+   * donde el interceptor CDI que evalua {@code @Requiere} puede correr: Quarkus REST invoca los
+   * metodos del recurso directamente y no les aplica interceptores.
+   */
+  @POST
+  @Path("/register")
+  public Response register(@Valid RegisterRequest body) {
+    autorizador.exigir("usuario:create", "MASTER");
+    Usuario u =
+        registrarUsuarioUseCase.execute(
+            body.nombre(), body.apellido(), body.password(), body.rol());
+    return Response.status(201).entity(mapper.toDto(u)).build();
+  }
+
+  // --------- helpers ---------
+
+  /**
+   * Lee el refresh token de la cookie o del body. La cookie tiene prioridad: es el camino que
+   * usan los navegadores.
+   */
+  private static String readRefresh(String refreshEnCookie, RefreshRequest body) {
+    if (refreshEnCookie != null && !refreshEnCookie.isBlank()) {
+      return refreshEnCookie;
+    }
+    if (body != null && body.refreshToken() != null) {
+      return body.refreshToken();
+    }
+    throw new AuthException("No se encontro refresh token");
   }
 
   /**
@@ -81,7 +183,7 @@ public class AuthResource {
    * {@code NewCookie} para que sea byte a byte igual al del backend Spring
    * (JAX-RS no expone SameSite de forma uniforme entre implementaciones).
    */
-  private static String buildRefreshCookie(String value) {
+  public static String buildRefreshCookie(String value) {
     return REFRESH_COOKIE
         + "="
         + value

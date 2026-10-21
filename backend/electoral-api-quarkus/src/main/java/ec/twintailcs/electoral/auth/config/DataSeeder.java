@@ -48,7 +48,10 @@ public class DataSeeder {
 
   @Transactional
   void crearSiFalta() {
-    String email = emailGenerator.generar(adminNombre, adminApellido, "MASTER");
+    // El email del admin es FIJO ({@code admsismas@control.ttcs}): se busca el base, sin el
+    // sufijo numerico que usa el alta de usuarios, para que un reinicio no cree un segundo
+    // administrador con otro email.
+    String email = emailGenerator.generarBase(adminNombre, adminApellido, "MASTER");
     if (Usuario.find("email", email).firstResult() != null) {
       return;
     }

@@ -16,7 +16,16 @@ import org.hibernate.annotations.UuidGenerator;
 import java.time.Instant;
 import java.util.UUID;
 
-/** Usuario del sistema. Mismo schema que la entidad del backend Spring. */
+/**
+ * Usuario del sistema. Mismo schema que la entidad del backend Spring.
+ *
+ * <p>La identidad sigue siendo email + password (BCrypt). {@code rol} es una FK a {@link Rol}.
+ *
+ * <p>Port exacto de la entidad Spring: los setters recortan y normalizan igual que alla (el email
+ * se guarda siempre en minusculas) y {@link #validarDatosObligatorios()} hace las mismas
+ * comprobaciones, para que un usuario creado por cualquiera de las dos implementaciones tenga
+ * exactamente los mismos valores.
+ */
 @Entity
 @Table(name = "usuario")
 public class Usuario extends PanacheEntityBase {
@@ -80,6 +89,10 @@ public class Usuario extends PanacheEntityBase {
     return habilitado;
   }
 
+  public Instant getCreadoEn() {
+    return creadoEn;
+  }
+
   public String getNombre() {
     return nombre;
   }
@@ -93,15 +106,24 @@ public class Usuario extends PanacheEntityBase {
   }
 
   public void setNombre(String nombre) {
-    this.nombre = nombre;
+    if (nombre == null || nombre.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El nombre no puede estar vacío");
+    }
+    this.nombre = nombre.trim();
   }
 
   public void setApellido(String apellido) {
-    this.apellido = apellido;
+    if (apellido == null || apellido.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El apellido no puede estar vacío");
+    }
+    this.apellido = apellido.trim();
   }
 
   public void setEmail(String email) {
-    this.email = email;
+    if (email == null || email.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El email no puede estar vacío");
+    }
+    this.email = email.trim().toLowerCase();
   }
 
   public void setPasswordHash(String passwordHash) {
@@ -114,5 +136,24 @@ public class Usuario extends PanacheEntityBase {
 
   public void setHabilitado(boolean habilitado) {
     this.habilitado = habilitado;
+  }
+
+  /** Invariantes obligatorias del usuario. Mismas comprobaciones que el backend Spring. */
+  public void validarDatosObligatorios() {
+    if (this.email == null || this.email.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El email es obligatorio");
+    }
+    if (this.nombre == null || this.nombre.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El nombre es obligatorio");
+    }
+    if (this.apellido == null || this.apellido.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El apellido es obligatorio");
+    }
+    if (this.passwordHash == null || this.passwordHash.trim().isEmpty()) {
+      throw new UsuarioInvalidoException("El hash del password es obligatorio");
+    }
+    if (this.rol == null) {
+      throw new UsuarioInvalidoException("El rol es obligatorio");
+    }
   }
 }
