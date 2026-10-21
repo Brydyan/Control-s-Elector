@@ -1,20 +1,18 @@
-# Contexto de build: el directorio `backend/` (no el modulo), porque el changelog de
-# Liquibase vive en el modulo hermano y el pom lo copia desde ahi.
+# Contexto de build: el modulo `backend/electoral-api-quarkus/`.
 #
-#   docker build -f backend/electoral-api-quarkus/Dockerfile -t electoral-api-quarkus ./backend
+#   docker build -t electoral-api-quarkus backend/electoral-api-quarkus
 #
-# El contexto wider es lo que hace que el schema tenga un solo dueno: no hay una
-# segunda copia del changelog que pueda divergir.
+# El changelog de Liquibase vive en src/main/resources/database, dentro del
+# modulo. El schema tiene un solo dueno y la imagen no depende de que exista un
+# modulo hermano al lado.
 
 # ─── Build ───────────────────────────────────────────────────────────────────
 FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /app
 
 # Primero el pom, para que la capa de dependencias se cachee sola.
-COPY electoral-api-quarkus/pom.xml ./pom.xml
-# El changelog del backend Spring: el schema es compartido.
-COPY electoral-api/src/main/resources/database /electoral-api/src/main/resources/database
-COPY electoral-api-quarkus/src ./src
+COPY pom.xml ./pom.xml
+COPY src ./src
 
 RUN mvn -B package -DskipTests
 
