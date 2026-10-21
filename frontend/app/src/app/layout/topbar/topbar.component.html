@@ -1,7 +1,7 @@
-<header class="topbar">
-  <div class="topbar-left">
+<header class="layout-topbar">
+  <div class="layout-topbar-start">
     <button
-      class="menu-btn"
+      class="layout-topbar-action"
       type="button"
       (click)="layout.toggleSidebar()"
       [attr.aria-label]="
@@ -15,24 +15,25 @@
           : 'Contraer menú lateral'
       "
     >
-      <ion-icon
-        class="menu-icon"
-        name="menu-outline"
-        aria-hidden="true"
-      ></ion-icon>
+      <i class="pi pi-bars" aria-hidden="true"></i>
     </button>
 
-    <div class="topbar-title">
-      <h1>{{ title() }}</h1>
+    <a class="layout-topbar-brand" routerLink="/dashboard">
+      <i class="pi pi-shield" aria-hidden="true"></i>
+      <span>Control Electoral</span>
+    </a>
+
+    <div class="layout-topbar-title">
+      <span class="title">{{ title() }}</span>
       @if (subtitle()) {
-        <p>{{ subtitle() }}</p>
+        <span class="subtitle">{{ subtitle() }}</span>
       }
     </div>
   </div>
 
-  <div class="topbar-right">
+  <div class="layout-topbar-actions">
     <div
-      class="realtime-pill"
+      class="layout-status-pill"
       [class.status-online]="network.status() === 'ONLINE'"
       [class.status-reconnecting]="network.status() === 'RECONNECTING'"
       [class.status-offline]="network.status() === 'OFFLINE'"
@@ -43,15 +44,64 @@
       {{ network.statusLabel() }}
     </div>
 
-    <button class="bell-btn" type="button" aria-label="Notificaciones">
-      <ion-icon name="notifications-outline" aria-hidden="true"></ion-icon>
+    @if (isReadOnly()) {
+      <span class="layout-readonly-badge">
+        <i class="pi pi-eye" aria-hidden="true"></i>
+        Solo lectura
+      </span>
+    }
+
+    <button
+      class="layout-topbar-action"
+      type="button"
+      aria-label="Notificaciones"
+    >
+      <i class="pi pi-bell" aria-hidden="true"></i>
       @if (notifications() > 0) {
-        <span class="bell-badge">{{ notifications() }}</span>
+        <p-badge [value]="notifications()" severity="danger" class="layout-notification-badge" />
       }
     </button>
 
-    @if (isReadOnly()) {
-      <div class="readonly-badge">👁️ Solo lectura</div>
-    }
+    <button
+      class="layout-topbar-action"
+      type="button"
+      [attr.aria-label]="
+        theme.darkMode() ? 'Activar tema claro' : 'Activar tema oscuro'
+      "
+      [attr.title]="
+        theme.darkMode() ? 'Activar tema claro' : 'Activar tema oscuro'
+      "
+      (click)="toggleDarkMode()"
+    >
+      <i
+        [class]="theme.darkMode() ? 'pi pi-sun' : 'pi pi-moon'"
+        aria-hidden="true"
+      ></i>
+    </button>
+
+    <button
+      class="layout-topbar-user"
+      type="button"
+      aria-label="Menú de usuario"
+      (click)="toggleUserPanel($event)"
+    >
+      <p-avatar [label]="initials()" shape="circle" size="normal" />
+      <span class="label">
+        <span class="name">{{ displayName() }}</span>
+        <span class="role">{{ roleLabel() }}</span>
+      </span>
+      <i class="pi pi-angle-down" aria-hidden="true"></i>
+    </button>
   </div>
 </header>
+
+<p-popover #userPanel>
+  <div class="layout-user-panel">
+    <p class="layout-user-panel-name">{{ displayName() }}</p>
+    <p class="layout-user-panel-role">{{ roleLabel() }}</p>
+    <button class="layout-topbar-action layout-logout" type="button" (click)="logout()">
+      <i class="pi pi-sign-out" aria-hidden="true"></i>
+      <span>Cerrar sesión</span>
+    </button>
+  </div>
+</p-popover>

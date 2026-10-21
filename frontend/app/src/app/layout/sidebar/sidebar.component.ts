@@ -1,14 +1,12 @@
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { NavigationEnd, Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { filter, Subject, takeUntil } from 'rxjs';
 
 import { AuthService } from '../../core/auth/services/auth.service';
 import { AuthStore } from '../../core/auth/auth.store';
 import { MenuNode } from '../../core/menu/menu.model';
 import { MenuService } from '../../core/menu/menu.service';
 import { LayoutService } from '../layout.service';
-
-import { IonIcon } from '@ionic/angular/standalone';
 
 export interface DynamicNavSection {
   label: string;
@@ -17,20 +15,27 @@ export interface DynamicNavSection {
 
 export interface DynamicNavItem {
   label: string;
+  /** PrimeIcons class, e.g. `pi pi-home`. */
   icon: string;
   route: string;
   disabled?: boolean;
   tag?: string;
 }
 
+/**
+ * Navigation sidebar.
+ *
+ * The sections come from the backend menu catalog (`MenuService`), which
+ * already applies the RBAC rules, so the frontend only maps the payload into
+ * the shell. The static fallback is used when the catalog is unreachable.
+ */
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, IonIcon],
+  imports: [RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss',
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent implements OnInit, OnDestroy {
   private readonly store = inject(AuthStore);
   private readonly auth = inject(AuthService);
   private readonly menuService = inject(MenuService);
@@ -42,8 +47,27 @@ export class SidebarComponent implements OnInit {
 
   readonly user = this.store.user;
 
+  private readonly destroy$ = new Subject<void>();
+
   ngOnInit(): void {
     this.cargarMenus();
+
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(() => {
+        // The drawer is mobile-only; navigating closes it.
+        if (!this.layout.isDesktop()) {
+          this.layout.closeSidebar();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   cargarMenus(): void {
@@ -105,7 +129,7 @@ export class SidebarComponent implements OnInit {
         items: [
           {
             label: 'Mis JRVs',
-            icon: 'grid-outline',
+            icon: 'pi pi-th-large',
             route: '/observer/mis-jrvs',
           },
         ],
@@ -122,26 +146,35 @@ export class SidebarComponent implements OnInit {
     return ruta;
   }
 
+  /**
+   * Maps the `menu.icono` catalog values to PrimeIcons.
+   *
+   * The backend stores stable icon keys ("home", "document", "people", …), not
+   * a library-specific name, so the mapping lives in the frontend and the
+   * catalog needs no change when the icon library does.
+   */
   private mapIcon(icono?: string): string {
     switch (icono) {
       case 'home':
-        return 'home-outline';
+        return 'pi pi-home';
       case 'document':
+        return 'pi pi-file';
       case 'add-circle':
-        return 'document-text-outline';
+        return 'pi pi-plus-circle';
       case 'checkmark':
-        return 'checkmark-circle-outline';
+        return 'pi pi-check-circle';
       case 'image':
+        return 'pi pi-image';
       case 'cloud-upload':
-        return 'camera-outline';
+        return 'pi pi-cloud-upload';
       case 'settings':
-        return 'settings-outline';
+        return 'pi pi-cog';
       case 'people':
-        return 'people-outline';
+        return 'pi pi-users';
       case 'pulse':
-        return 'analytics-outline';
+        return 'pi pi-chart-line';
       default:
-        return 'document-text-outline';
+        return 'pi pi-file';
     }
   }
 
@@ -152,7 +185,7 @@ export class SidebarComponent implements OnInit {
         items: [
           {
             label: 'Resumen General',
-            icon: 'home-outline',
+            icon: 'pi pi-home',
             route: '/dashboard',
           },
         ],
@@ -166,7 +199,7 @@ export class SidebarComponent implements OnInit {
         items: [
           {
             label: 'Mis JRVs',
-            icon: 'grid-outline',
+            icon: 'pi pi-th-large',
             route: '/observer/mis-jrvs',
           },
         ],
@@ -179,7 +212,7 @@ export class SidebarComponent implements OnInit {
         items: [
           {
             label: 'Aprobar Actas',
-            icon: 'checkmark-circle-outline',
+            icon: 'pi pi-check-circle',
             route: '/coordinator/actas',
           },
         ],
