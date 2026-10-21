@@ -78,20 +78,22 @@ La suite debe ser **agnóstica del framework**. Es la única forma de que sirva 
 
 | ID | Tarea | S# | Ruta | Commit |
 |---|---|---|---|---|
-| T1 | Bootstrap del módulo `backend/contract-tests`: pom sin Spring, clase base, wiring de `contract.baseUrl`, helpers de auth por rol, guía de ejecución | S1,S2,S3 | inline | — |
-| T2 | Contrato de auth: login, `GET /me`, refresh con rotación, logout, register | S2,S3 | inline | — |
-| T3 | Contrato RBAC: matriz de los 4 roles sobre endpoints representativos de escritura y lectura | S2,S4 | delegated | — |
-| T4 | Contrato de menús: `GET /api/v1/menus/me` (hoy sin cobertura de controller) | S2 | delegated | — |
-| T5 | Contrato del flujo OBSERVER: registrar, borrador, enviar, corregir, `mis-actas`, `correcciones-pendientes` | S2 | delegated | — |
-| T6 | Contrato del flujo COORDINATOR: listar, disputar, corregir, aprobar, anular, historial, incidencias | S2 | delegated | — |
-| T7 | Contrato de evidencias: upload, get, download-url, cambio de estado, delete, observaciones | S2 | delegated | — |
-| T8 | Contrato de configuración: partidos, cargos, candidatos, cantones | S2 | delegated | — |
-| T9 | Contrato de dashboard: resumen, resultados, progreso, novedades | S2 | delegated | — |
-| T10 | Contrato de errores y OpenAPI: shapes 400/401/403/404 y no-regresión del spec | S2 | delegated | — |
-| T11 | Job de CI: build de imagen → boot con Postgres → health → suite contra el contenedor | S1,S5 | inline | — |
-| T12 | Docs: cómo correr la suite contra Spring hoy y contra Quarkus mañana | S1,S3 | inline | — |
+| T1 | Bootstrap del módulo `backend/contract-tests`: pom sin Spring, clase base, wiring de `contract.baseUrl`, helpers de auth por rol, guía de ejecución | S1,S2,S3 | inline | `ec2a47d` |
+| T2 | Contrato de auth: login, `GET /me`, refresh con rotación, logout, register | S2,S3 | inline | `ec2a47d` |
+| T3 | Contrato RBAC: matriz de los 4 roles sobre endpoints representativos de escritura y lectura | S2,S4 | delegated | `c53db64` |
+| T4 | Contrato de menús: `GET /api/v1/menus/me` (hoy sin cobertura de controller) | S2 | inline | `1bc23eb` |
+| T5 | Contrato del flujo OBSERVER: registrar, borrador, enviar, corregir, `mis-actas`, `correcciones-pendientes` | S2 | delegated | `f3301ab` |
+| T6 | Contrato del flujo COORDINATOR: listar, disputar, corregir, aprobar, anular, historial, incidencias | S2 | delegated | `ee7cdfb` |
+| T7 | Contrato de evidencias: upload, get, download-url, cambio de estado, delete, observaciones | S2 | delegated | `6f61024` |
+| T8 | Contrato de configuración: partidos, cargos, candidatos, cantones | S2 | inline | `1bc23eb` |
+| T9 | Contrato de dashboard: resumen, resultados, progreso, novedades | S2 | inline | `1bc23eb` |
+| T10 | Contrato de errores y OpenAPI: shapes 400/401/403/404 y no-regresión del spec | S2 | inline | `1bc23eb` |
+| T11 | Job de CI: build de imagen → boot con Postgres → health → suite contra el contenedor | S1,S5 | inline | (commit final) |
+| T12 | Docs: cómo correr la suite contra Spring hoy y contra Quarkus mañana | S1,S3 | inline | (commit final) |
 
 **Estrategia de entrega:** `auto-chain`. Los work-units T3–T10 son unidades independientes con superficies de edición disjuntas y se lanzan en paralelo una vez que T1+T2 fijan el patrón. T11 y T12 cierran la feature.
+
+**Estado:** 120 tests verdes. Todos los módulos de la API con contrato. Job de CI validado end-to-end contra base recién creada.
 
 ---
 
@@ -122,3 +124,35 @@ Cobertura crítica ya existente y que NO hay que duplicar en la suite de contrat
 Java 21.0.2, Maven 3.9.16, Docker 29.9.1 con Compose 5.6.0 disponibles. Stack de dev ya levantado: `electoral-api-dev` (healthy), `electoral-postgres-dev`, `electoral-rustfs`, `electoral-frontend-dev`. API expuesta en `http://localhost:8083`; `GET /actuator/health` devuelve `{"status":"UP"}`; login MASTER verificado con `curl` (devuelve `accessToken`, cookie httpOnly `refresh_token`, `sesionId` y `usuario{id,email,rol}`).
 
 Nota: el contenedor `electoral-api-dev` corre una imagen previa (`39c4d9ecda5b`). Antes de tomar los resultados de la suite como baseline hay que reconstruirlo desde el HEAD actual, si no el oráculo queda fijado contra código viejo.
+
+### L5 — 2026-10-20 — La suite encontró 5 bugs del backend. Todos corregidos
+
+La suite no es decorativa: en el camino encontró defectos reales del backend, todos verificados de forma independiente (logs del contenedor, lectura del código y reproducción) antes de tocar nada.
+
+1. **`LazyInitializationException` → 500 en las transiciones de acta.** `Acta.jrv/cargo/registradaPor` son LAZY, `findByIdWithLock` no hace fetch join, y el controller mapea el DTO *después* de cerrada la transacción (`open-in-view=false`). Peor: **la escritura ya se había commiteado**, así que el cliente veía 500 y reintentaba. Fix: `ActaAssociations.inicializar()` dentro de la transacción del caso de uso — **no** con fetch join, porque extendería el `FOR UPDATE` a las tablas `jrv` y `cargo` y cambiaría el invariante de concurrencia.
+2. **Duplicate key al reanudar un borrador.** Faltaba el `flush()` entre el `deleteByActa` y el insert. Se copió el patrón que ya usaba `CorregirActaUseCase`.
+3. **`audit_log.accion VARCHAR(32)` desbordado** por `EVIDENCIA_CONTINGENCIA_COORDINADOR` (34 chars) → el upload de evidencia de contingencia devolvía 500. Fix: changeset 024 ensancha la columna a VARCHAR(64). Aditivo, no destructivo.
+4. **El mapeo de errores 4xx estaba roto.** `GlobalExceptionHandler.missingPart` declaraba dos tipos de excepción con un solo parámetro, así que Spring no podía resolver el argumento y la excepción caía al `DefaultHandlerExceptionResolver` → `sendError(400)` → dispatch a `/error` (no estaba en `permitAll`) → el cliente recibía **401 en vez de 400**. Además `NoResourceFoundException` y `HttpRequestMethodNotSupportedException` caían en el catch-all y devolvían 500.
+5. **`POST /observer/actas/borrador` sobre un par con acta de otro observer devolvía 500** en vez de 409: el use case buscaba por `(jrv, cargo, observerId)`, no veía el acta ajena e insertaba, violando el índice parcial `uk_acta_activa`.
+
+### L6 — 2026-10-20 — Bug de despliegue: una base nueva no tenía datos de referencia
+
+`015-data-seed.sql` (46 statements: geografía, configuración preelectoral, usuarios de los 4 roles, JRVs, candidatos y actas en distintos estados) **nunca estuvo incluido** en `db.changelog-master.yaml`, que saltaba de 014 a 016. Y `017-complete-data-seed.sql`, que sí está, solo siembra evidencias y notificaciones.
+
+Verificado empíricamente con `liquibase:update` contra una base vacía: **0 JRVs, 0 cargos, 0 candidatos, 0 usuarios**. El sistema era inutilizable en cualquier despliegue limpio (CI, máquina nueva, staging).
+
+El seed no se podía agregar en el medio del maestro: estaba escrito para un punto del esquema en el que existía `acta.storage_url` (dropeada por 019), y correrlo después de 019 rompía las bases ya migradas. Por eso se renombró a `025` y va al final, que funciona igual en bases nuevas y existentes. Además `025-00` le pone `DEFAULT gen_random_uuid()` a `usuario.public_id`: `004` la dejó NOT NULL sin default (las tablas de `010` sí lo traen) y eso hacía reventar cualquier INSERT en `usuario` que no listara la columna.
+
+### L7 — 2026-10-20 — Issue #121: agujero de autorización
+
+El guard de clase de `CoordinatorController` es `hasAnyAuthority('acta:aprobar','acta:rechazar','acta:disputar','acta:read','acta:anular')`. `acta:read` lo tienen OBSERVER y ADMIN, y `disputar`/`corregir`/`aprobar` no tienen guard de método. Resultado: **un OBSERVER puede disputar, corregir y aprobar actas ajenas** (200, y el estado cambia). Además `acta:disputar` no existe como permiso en la semilla: nadie lo tiene, ni el MASTER.
+
+Se trackea en la issue **#121** con la reproducción y el fix propuesto. **No se corrigió en este work-unit**: cambiar el modelo de autorización es una decisión de producto con blast radius (puede dejar fuera a un rol legítimo de la bandeja del coordinator) y no le corresponde al que escribe el código. `RbacContractIT` afirma el comportamiento real y deja los seis asserts marcados `KNOWN HOLE #121`, para que el gate siga verde y la corrección sea explícita al cambiar el assert.
+
+### L8 — 2026-10-20 — El job de CI se validó end-to-end antes de commitearlo
+
+Un job de CI que nunca corrió es una bomba de relojería. Se simularó localmente: Postgres + RustFS, bucket creado con `amazon/aws-cli`, imagen del backend con `--network host`, espera del health check y `mvn -B verify` contra una **base recién creada**. Resultado: **120/120 verdes**. Eso valida de punta a punta que una base limpia queda con los datos de referencia y que la suite es reproducible desde cero.
+
+### L9 — 2026-10-20 — Interferencia de otra sesión
+
+Una sesión paralela recreó el stack con `docker compose down -v` (base vacía) y un `git reset` concurrente borró un archivo sin trackear del worker. Costó un rato recuperar. Cada work-unit se commiteó apenas quedó verde justamente para que un reset ajeno no se lleve el entregable. Para las próximas iteraciones: work-units en worktrees separados, o commits tempranos.

@@ -61,6 +61,123 @@ jobs:
         run: ./mvnw -B clean verify -Dspotless.check.skip=true
 
   # ===========================================================================
+  # BACKEND CONTRACT TESTS
+  # ===========================================================================
+  # Suite de regresion por contrato (backend/contract-tests). Es el gate de
+  # paridad de la migracion a Quarkus (issue #113): la suite es black-box y
+  # habla solo HTTP, asi que el mismo artefacto valida el backend Spring hoy y
+  # el backend Quarkus manana. Solo cambia la URL.
+  backend-contract:
+    name: Backend Contract Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: electoral_db
+          POSTGRES_USER: electoral_user
+          POSTGRES_PASSWORD: electoral_pass
+          POSTGRES_INITDB_ARGS: >-
+            --encoding=UTF8
+            --locale-provider=icu
+            --icu-locale=es-EC
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U electoral_user -d electoral_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rustfs:
+        image: rustfs/rustfs:latest
+        env:
+          RUSTFS_ACCESS_KEY: rustfsadmin
+          RUSTFS_SECRET_KEY: rustfsadmin123
+          RUSTFS_ADDRESS: "0.0.0.0:9000"
+          RUSTFS_CONSOLE_ENABLE: "true"
+          RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+          RUSTFS_VOLUMES: /data
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/health"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # El backend no crea el bucket: lo crea el compose en dev y aca lo
+      # creamos nosotros. Sin el bucket el S3HealthIndicator queda DOWN y
+      # /actuator/health devuelve 503.
+      - name: Create the evidence bucket
+        run: |
+          docker run --rm --network host \
+            -e AWS_ACCESS_KEY_ID=rustfsadmin \
+            -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+            -e AWS_DEFAULT_REGION=us-east-1 \
+            amazon/aws-cli \
+            --endpoint-url http://localhost:9000 \
+            s3api create-bucket --bucket electoral-evidences
+
+      - name: Build the backend image
+        run: docker build -t electoral-api:contract ./backend/electoral-api
+
+      # --network host para que el contenedor alcance los services de GitHub
+      # Actions por los puertos publicados en el host (5432 y 9000). Asi no
+      # hay que adivinar el nombre de la red de los services.
+      - name: Run the backend
+        run: |
+          docker run -d --name electoral-api --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=electoral_db \
+            -e DB_USER=electoral_user \
+            -e DB_PASSWORD=electoral_pass \
+            -e SERVER_PORT=8080 \
+            -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+            -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+            -e APP_SEED_ADMIN_PASSWORD=admin12345 \
+            -e AWS_ACCESS_KEY_ID=rustfsadmin \
+            -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+            -e AWS_S3_ENDPOINT=http://localhost:9000 \
+            -e AWS_S3_REGION=us-east-1 \
+            -e AWS_S3_BUCKET=electoral-evidences \
+            -e AWS_S3_PATH_STYLE=true \
+            electoral-api:contract
+
+      - name: Wait for the backend to be healthy
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+              echo "Backend saludable"
+              curl -s http://localhost:8080/actuator/health
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "El backend no llego a estar saludable"
+          docker logs electoral-api
+          exit 1
+
+      - name: Run the contract suite
+        working-directory: backend/contract-tests
+        run: mvn -B verify -Dcontract.baseUrl=http://localhost:8080
+
+      - name: Backend logs on failure
+        if: failure()
+        run: docker logs electoral-api
+
+  # ===========================================================================
   # FRONTEND JOBS (Separados: format, lint, test, build)
   # ===========================================================================
   frontend-format:
