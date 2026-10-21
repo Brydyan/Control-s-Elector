@@ -1,11 +1,14 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { providePrimeNG } from 'primeng/config';
+import { afterEach } from 'vitest';
 import { TopbarComponent } from './topbar.component';
 import { AuthStore } from '../../core/auth/auth.store';
 import { LayoutService } from '../layout.service';
 import { NetworkStatusService } from '../../core/network/network-status.service';
 import { ThemeService } from '../../../theme/theme.service';
+import { SyncService } from '../../core/offline/sync.service';
+import { OfflineStorageService } from '../../core/offline/offline-storage.service';
 
 describe('TopbarComponent', () => {
   let component: TopbarComponent;
@@ -26,6 +29,14 @@ describe('TopbarComponent', () => {
     fixture = TestBed.createComponent(TopbarComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(async () => {
+    const storage = TestBed.inject(OfflineStorageService);
+    for (const item of await storage.obtenerPendientes()) {
+      await storage.eliminarPendiente(item.id);
+    }
+    await storage.resetForTesting();
   });
 
   it('should create and render notification bell button and menu toggle', () => {
@@ -55,5 +66,26 @@ describe('TopbarComponent', () => {
 
     expect(theme.darkMode()).toBe(true);
     expect(document.documentElement.classList.contains('app-dark')).toBe(true);
+  });
+
+  it('S3: should render the offline queue in a role="status" region', async () => {
+    const sync = TestBed.inject(SyncService);
+    const storage = TestBed.inject(OfflineStorageService);
+
+    await storage.encolarActa({
+      jrvId: 1,
+      cargoId: 1,
+      payload: {},
+      imageBlob: null,
+    });
+    await sync.refreshCount();
+    sync.sincronizando.set(true);
+    fixture.detectChanges();
+
+    const region = fixture.nativeElement.querySelector('.layout-queue-status');
+    expect(region).toBeTruthy();
+    expect(region.getAttribute('role')).toBe('status');
+    expect(region.textContent).toContain('1 acta en cola');
+    expect(region.textContent).toContain('enviando');
   });
 });
