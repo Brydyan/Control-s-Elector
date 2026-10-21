@@ -275,6 +275,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Spotless corre con `ratchetFrom origin/develop`: compara contra esa
+          # referencia para solo exigir formato en lo que cambio. El checkout por
+          # defecto es depth 1 y deja el repo sin esa referencia, con lo cual el
+          # build muere con "No such reference 'origin/develop'" — que no es un
+          # problema de formato sino de que el baseline no esta.
+          fetch-depth: 0
+
+      - name: Fetch formatting baseline
+        run: git fetch origin develop:refs/remotes/origin/develop || true
 
       - name: Set up Java
         uses: actions/setup-java@v4
