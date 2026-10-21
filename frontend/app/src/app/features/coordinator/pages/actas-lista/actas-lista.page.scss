@@ -57,8 +57,28 @@
 
 /* Status tabs ----------------------------------------------------------- */
 
+/*
+ * S3 — palanca 2: el strip de estados es el filtro más apretado de la página.
+ *
+ * `p-tab` lleva `role="tab"` y `tabindex`: es un target de primera clase y
+ * mide menos de 44px de alto con su padding por defecto. El piso lo pone esta
+ * hoja y no la global de `theme/base.scss` porque sólo esta página (y la de
+ * mis JRVs, que no es parte de esta unidad) tiene strip de estados.
+ *
+ * Los chevrons del propio strip —`.p-tablist-nav-button`, que aparecen sólo
+ * cuando la lista desborda— se quedan en su ancho: son un overlay sobre la
+ * primera y la última tab, y ensancharlos a 44px interceptaría el toque justo
+ * donde el operador quiere tocar.
+ */
+.p-tab {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .tab-badge {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   margin-left: 6px;
   padding: 1px 7px;
   border-radius: var(--radius-md);
@@ -182,6 +202,23 @@
   transition:
     transform 0.1s ease-in-out,
     box-shadow 0.1s ease-in-out;
+
+  /*
+   * S3 — palanca 2: en el teléfono la card ES el target —su `(click)` abre el
+   * detalle del acta— y su superficie de toque depende del padding y del gap
+   * que cada ajuste posterior le cambie. `position: relative` más una banda
+   * `::before` la deja explícita y estable sin mover un pixel del layout
+   * visual: la banda no tiene fondo ni borde y todo lo que hay dentro se
+   * sigue pintando en su sitio.
+   */
+  position: relative;
+  min-height: 44px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
 
   &:active {
     transform: scale(0.99);

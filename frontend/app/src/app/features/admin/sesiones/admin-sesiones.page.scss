@@ -1,5 +1,12 @@
 /*
  * The sessions page shares the admin layout with the users page. Sass `@use`
  * is used instead of the deprecated `@import`.
+ *
+ * S3 de `odd/tasks/frontend-responsive-shell.md`: el piso de toque de las
+ * listas densas de admin —`.filters`, `.cards article .actions` y
+ * `.admin-table`— vive en la hoja de usuarios que este archivo importa, así
+ * que llega aquí por construcción. No hay una segunda regla que mantener en
+ * sincronía: duplicarla aquí sería una copia que se desincroniza en el
+ * próximo cambio de cualquiera de las dos.
  */
 @use "../usuarios/admin-usuarios.page.scss";
