@@ -5,14 +5,27 @@
 /* Progress banner -------------------------------------------------------- */
 
 .progress-banner {
-  background: linear-gradient(
-    135deg,
-    var(--color-brand-primary) 0%,
-    var(--color-brand-primary-strong) 100%
-  );
+  /*
+   * El banner ya no se pinta con el gradiente del azul de marca: cubre media
+   * pantalla con chroma ≈ 90% y se leía como un anuncio, no como un KPI.
+   * S3 de `odd/tasks/frontend-visual-rebalance.md`: la superficie del banner
+   * es la misma del sidebar (`--color-surface-sidebar`, slate-900) y la
+   * jerarquía del porcentaje la dan el tamaño y el contraste contra el
+   * fondo, no el hue. El stat "Enviadas" sigue siendo el único card del
+   * dashboard con la cifra en `--color-brand-primary`, así que el ojo
+   * encuentra la marca en un solo lugar y no en cada fila.
+   *
+   * El texto usa `--color-text-on-brand-panel` (blanco en los dos esquemas)
+   * y NO `--color-text-on-brand`: este último se aclara a slate-950 en el
+   * esquema oscuro porque estaba pensado para texto sobre el antiguo
+   * gradiente azul, no para texto sobre una superficie slate constante.
+   * El banner es un panel de marca como el del login: misma superficie
+   * oscura en los dos esquemas, misma tinta blanca.
+   */
+  background-color: var(--color-surface-sidebar);
   border-radius: var(--radius-xl);
   padding: var(--space-6) var(--space-8);
-  color: var(--color-text-on-brand);
+  color: var(--color-text-on-brand-panel);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -37,10 +50,14 @@
    * aplicaba `opacity: 0.8` sobre el azul de la marca, y ningún token
    * deshace una opacidad. La jerarquía visual la da el tamaño (13px contra
    * los 22px del encabezado), no el apagado: el color viene del token.
+   *
+   * El token es `--color-text-on-brand-panel`, no `--color-text-on-brand`:
+   * el banner es una superficie oscura constante (slate-900 en los dos
+   * esquemas), así que la tinta es blanca en los dos.
    */
   p {
     font-size: 13px;
-    color: var(--color-text-on-brand);
+    color: var(--color-text-on-brand-panel);
   }
 }
 
@@ -65,8 +82,12 @@
   gap: var(--space-6);
   margin-top: var(--space-2);
   font-size: var(--font-size-meta);
-  /* Mismo azul de marca, mismo token: sin opacidad que lo apague. */
-  color: var(--color-text-on-brand);
+  /*
+   * Mismo razonamiento que el caption: el banner es slate-900 en los dos
+   * esquemas, así que la tinta es blanca constante (`--color-text-on-brand-
+   * panel`), no `--color-text-on-brand` (que se oscurece en dark).
+   */
+  color: var(--color-text-on-brand-panel);
   font-variant-numeric: tabular-nums;
 }
 
@@ -82,7 +103,7 @@
 
 .big-pct-label {
   font-size: 13px;
-  color: var(--color-text-on-brand);
+  color: var(--color-text-on-brand-panel);
   margin-top: var(--space-1);
 }
 
