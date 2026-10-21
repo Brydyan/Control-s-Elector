@@ -33,7 +33,7 @@ Una sola aplicación con control de acceso basado en roles (RBAC). Las vistas se
                                      ▼
               ┌──────────────────────────────────────────────────┐
               │     API Backend — api.twintailcs.xyz             │
-              │   Spring Boot · Spring Security · AuditLog       │
+              │   Quarkus · SmallRye JWT · Panache               │
               └──────────┬──────────────────────────┬────────────┘
                          │                          │
           (Persistencia) ▼                          ▼ (Evidencias)
@@ -114,9 +114,12 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 
 ### Backend
 
-- **Java 21** / **Spring Boot 4** (Web, Security, Data JPA)
-- **GraalVM Native Image** — startup ~50ms, RAM ~64MB
-- RBAC con Spring Security + JWT stateless
+- **Java 21** / **Quarkus 3.40** (RESTEasy Reactive, Hibernate ORM, SmallRye)
+- **GraalVM Native Image** — pendiente (#114). Hoy el backend corre sobre la JVM: el
+  build nativo no cierra por una dependencia opcional de OpenPDF. El slice de
+  autenticación sí compila nativo (295 ms de arranque, 136 MB RSS).
+- RBAC por permisos atómicos sobre JWT stateless: el claim `perms` se proyecta a
+  authorities y cada método exige su permiso con una llamada explícita
 - Locking pesimista `SELECT FOR UPDATE` por `jrv_id + cargo_id`
 - AuditLogService con registro completo de operaciones
 
@@ -140,10 +143,10 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 
 | Subdominio | Servicio | Proveedor |
 | ------------ | --------- | ----------- |
-| `api.twintailcs.xyz` | API REST Spring Boot | Railway Pro |
+| `api.twintailcs.xyz` | API REST Quarkus | Railway Pro |
 | `control.twintailcs.xyz` | App Angular+Ionic (todos los roles) | Vercel |
 
-CI/CD automático desde rama `main` de GitHub hacia Railway.
+CI/CD automático desde la rama `develop` de GitHub hacia Railway.
 
 ---
 
