@@ -12,10 +12,10 @@ Ejecutar la suite completa sin pipes para evitar enmascarar errores con el exit 
 
 ```bash
 # 1. Posicionarse en el directorio del backend
-cd backend/electoral-api
+cd backend/electoral-api-quarkus
 
 # 2. Correr la suite completa redirigiendo a log
-./mvnw -B test > /tmp/mvn-backend-test.log 2>&1
+mvn -B test > /tmp/mvn-backend-test.log 2>&1
 echo "Exit code: $?"   # DEBE ser 0
 
 # 3. Contar resultados reales directamente desde los reportes XML de Surefire:
@@ -29,7 +29,7 @@ grep -h -o 'tests="[0-9]*"\|errors="[0-9]*"\|failures="[0-9]*"\|skipped="[0-9]*"
 # - tests >= 281
 
 # 4. Verificar formateo de código Spotless (Google Java Format):
-./mvnw -B spotless:check
+mvn -B spotless:check
 # DEBE retornar BUILD SUCCESS
 ```
 
@@ -47,8 +47,8 @@ docker compose --profile dev up -d
 docker compose ps
 
 # 3. En otra terminal, iniciar el backend en el host:
-cd backend/electoral-api
-./mvnw spring-boot:run
+cd backend/electoral-api-quarkus
+mvn quarkus:dev
 
 # 4. Verificar salud del servicio vía Actuator:
 curl -s http://localhost:8081/actuator/health
