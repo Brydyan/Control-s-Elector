@@ -156,3 +156,15 @@ Un job de CI que nunca corrió es una bomba de relojería. Se simularó localmen
 ### L9 — 2026-10-20 — Interferencia de otra sesión
 
 Una sesión paralela recreó el stack con `docker compose down -v` (base vacía) y un `git reset` concurrente borró un archivo sin trackear del worker. Costó un rato recuperar. Cada work-unit se commiteó apenas quedó verde justamente para que un reset ajeno no se lleve el entregable. Para las próximas iteraciones: work-units en worktrees separados, o commits tempranos.
+
+### L10 — 2026-10-20 — Cablear el seed rompió la suite del backend. Corregido separando esquema de dato
+
+Al cablear `025-data-seed.sql` al changelog maestro, la suite del backend pasó de verde a **318 tests con 10 failures y 58 errors**. Todos por colisión con el seed: 25 en `ix_provincia_codigo` y 3 en `ix_canton_codigo` (los fixtures de los tests construyen su propia geografía con los códigos '24' y '2401', los mismos que siembra el seed), más aserciones que Wait porque el seed mete 5 usuarios, 1 sesión, partidos y candidatos.
+
+La causa de fondo es de diseño: **la suite del backend está escrita contra una base con solo el esquema** (afirma `RNF_DASH_01_baseVacia`, espera que el primer partido sea el que crea el test, espera una sola sesión). El seed es dato de referencia de producción. Mezclarlos no era un bug del test, era un error de separación esquema/dato que el seed cableado destapó.
+
+Fix: el seed pasa a changeset con **contexto Liquibase `seed`**. La app opta por él con `spring.liquibase.contexts=seed` en `application.properties` (dev, docker y prod siguen recibiendo los datos de referencia); la suite opta por no correrlo con `spring.liquibase.contexts=schema-only` como system property del pom — que tiene más precedencia que `application.properties` y así no hace falta tocar ningún properties de test.
+
+Verificado: suite del backend **318/318 verdes** y suite de contrato **120/120 verdes** contra base nueva con el seed aplicado. Las dos caras del contexto, comprobadas.
+
+Lección: cuando un seed de referencia entra en el esquema, la primera pregunta no es "qué datos mete" sino "**quién los necesita**". La app los necesita; los tests no, y de hecho los estorban.
