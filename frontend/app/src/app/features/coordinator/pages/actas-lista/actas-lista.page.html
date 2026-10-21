@@ -7,12 +7,8 @@
     </div>
 
     <div class="search-and-filters">
-      <div class="search-input-wrapper">
-        <ion-icon
-          name="search-outline"
-          class="search-icon"
-          aria-hidden="true"
-        ></ion-icon>
+      <p-iconfield class="search-input-wrapper">
+        <p-inputicon styleClass="pi pi-search" />
         <input
           type="text"
           class="search-input"
@@ -20,74 +16,69 @@
           [(ngModel)]="terminoBusqueda"
           (ngModelChange)="onBusquedaChange()"
           aria-label="Buscar por JRV, ID o estado"
-        />
-        <button
-          *ngIf="terminoBusqueda"
-          class="clear-search-btn"
+         pInputText />
+        @if (terminoBusqueda) {
+        <p-inputicon
+          styleClass="pi pi-times"
           (click)="limpiarBusqueda()"
           aria-label="Limpiar búsqueda"
-        >
-          <ion-icon name="close-circle" aria-hidden="true"></ion-icon>
-        </button>
-      </div>
+        />
+        }
+      </p-iconfield>
 
-      <div class="cargo-select-wrapper" *ngIf="cargos.length > 0">
-        <select
-          class="cargo-select"
-          (change)="cambiarCargo($event)"
-          aria-label="Filtrar por dignidad"
-        >
-          <option value="">Todas las Dignidades</option>
-          <option *ngFor="let c of cargos" [value]="c.id">
-            {{ c.nombre }} ({{ c.nivel }})
-          </option>
-        </select>
-      </div>
+      @if (cargos.length > 0) {
+      <p-select
+        class="cargo-select"
+        [options]="cargoOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="cargoSeleccionado"
+        (ngModelChange)="cambiarCargo($event)"
+        aria-label="Filtrar por dignidad"
+      />
+      }
     </div>
 
-    <div class="canton-select-wrapper" *ngIf="cantones.length > 0">
-      <select
-        class="canton-select"
-        (change)="cambiarCanton($event)"
-        aria-label="Filtrar por cantón"
-      >
-        <option value="">Todos los Cantones</option>
-        <option *ngFor="let c of cantones" [value]="c.id">
-          {{ c.nombre }} ({{ c.codigo }})
-        </option>
-      </select>
-    </div>
+    @if (cantones.length > 0) {
+    <p-select
+      class="canton-select"
+      [options]="cantonOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="cantonSeleccionado"
+      (ngModelChange)="cambiarCanton($event)"
+      aria-label="Filtrar por cantón"
+    />
+    }
 
-    <button
-      *ngIf="tieneFiltrosActivos()"
-      class="clear-filters-btn"
-      type="button"
-      (click)="limpiarFiltros()"
+    @if (tieneFiltrosActivos()) {
+    <app-button
+      variant="ghost"
+      size="sm"
+      (clicked)="limpiarFiltros()"
       aria-label="Limpiar todos los filtros"
     >
-      <ion-icon name="close-circle" aria-hidden="true"></ion-icon>
+      <i class="pi pi-times" aria-hidden="true"></i>
       Limpiar filtros
-    </button>
+    </app-button>
+    }
   </div>
 
   <!-- Tabs de estado -->
-  <div
+  <p-tabs
     class="status-tabs-nav"
-    role="tablist"
-    aria-label="Filtro por estado de acta"
+    [value]="estadoSeleccionado"
+    (valueChange)="onEstadoTabChange($event)"
   >
-    <button
-      *ngFor="let tab of tabsEstado"
-      role="tab"
-      class="status-tab-btn"
-      [class.status-tab-btn--active]="estadoSeleccionado === tab.estado"
-      [attr.aria-selected]="estadoSeleccionado === tab.estado"
-      (click)="cambiarEstado(tab.estado)"
-    >
-      {{ tab.label }}
-      <span class="tab-badge"> {{ conteoTab(tab.estado) }} </span>
-    </button>
-  </div>
+    <p-tablist>
+      @for (tab of tabsEstado; track tab.estado) {
+      <p-tab [value]="tab.estado">
+        {{ tab.label }}
+        <span class="tab-badge">{{ conteoTab(tab.estado) }}</span>
+      </p-tab>
+      }
+    </p-tablist>
+  </p-tabs>
 
   <!-- Loading State -->
   <!-- Skeleton: tabla desktop + cards mobile, con el mismo breakpoint CSS -->
@@ -107,42 +98,28 @@
           aria-live="polite"
         >
           <div class="actas-skeleton-table__header">
-            <span
-              class="skeleton-block skeleton-block--header"
-              aria-hidden="true"
-            ></span>
+            <p-skeleton height="2.5rem" />
           </div>
-          <div
-            class="actas-skeleton-table__row"
-            *ngFor="let _ of [].constructor(5); let i = index"
-          >
-            <span
-              class="skeleton-block skeleton-block--row"
-              aria-hidden="true"
-            ></span>
+          @for (row of [1, 2, 3, 4, 5]; track row) {
+          <div class="actas-skeleton-table__row">
+            <p-skeleton height="2rem" />
           </div>
+          }
         </div>
 
-        <!-- Mobile: cards skeleton (3 cards fantasma) -->
+        <!-- Mobile: cards skeleton -->
         <div
           class="actas-skeleton-cards mobile-only"
           aria-busy="true"
           aria-live="polite"
         >
-          <div class="actas-skeleton-card" *ngFor="let _ of [].constructor(3)">
-            <span
-              class="skeleton-block skeleton-block--card-title"
-              aria-hidden="true"
-            ></span>
-            <span
-              class="skeleton-block skeleton-block--text"
-              aria-hidden="true"
-            ></span>
-            <span
-              class="skeleton-block skeleton-block--card-meta"
-              aria-hidden="true"
-            ></span>
+          @for (card of [1, 2, 3]; track card) {
+          <div class="actas-skeleton-card">
+            <p-skeleton height="1.25rem" />
+            <p-skeleton height="0.875rem" />
+            <p-skeleton height="0.875rem" width="60%" />
           </div>
+          }
         </div>
       </ng-container>
     </div>
@@ -174,8 +151,12 @@
   >
     <!-- Desktop Table View -->
     <div class="table-container desktop-only">
-      <table class="actas-table">
-        <thead>
+      <p-table
+        [value]="actasFiltradas"
+        [rowHover]="true"
+        styleClass="actas-table"
+      >
+        <ng-template #header>
           <tr>
             <th scope="col">ID</th>
             <th scope="col">JRV</th>
@@ -187,12 +168,9 @@
             <th scope="col">Fecha Registro</th>
             <th scope="col" class="th-actions">Acciones</th>
           </tr>
-        </thead>
-        <tbody>
-          <tr
-            *ngFor="let acta of actasFiltradas"
-            [ngClass]="'row-estado-' + acta.estado.toLowerCase()"
-          >
+        </ng-template>
+        <ng-template #body let-acta>
+          <tr [ngClass]="'row-estado-' + acta.estado.toLowerCase()">
             <td class="td-id">#{{ acta.id }}</td>
             <td class="td-jrv font-bold">{{ obtenerNumeroJrv(acta) }}</td>
             <td>{{ obtenerNombreCargo(acta) }}</td>
@@ -206,20 +184,22 @@
               {{ acta.votosBlancos }} / {{ acta.votosNulos }}
             </td>
             <td class="td-muted">
-              <span *ngIf="checksumTexto(acta) as checksum; else sinChecksum">
-                {{ checksum }}
-                <span
-                  *ngIf="checksumValido(acta) === true"
-                  aria-label="Checksum válido"
-                  >✓</span
-                >
-                <span
-                  *ngIf="checksumValido(acta) === false"
-                  aria-label="Checksum inválido"
-                  >⚠</span
-                >
-              </span>
-              <ng-template #sinChecksum>—</ng-template>
+              @if (checksumTexto(acta); as checksum) {
+              {{ checksum }}
+              @if (checksumValido(acta) === true) {
+              <i
+                class="pi pi-check"
+                aria-label="Checksum válido"
+              ></i>
+              } @else if (checksumValido(acta) === false) {
+              <i
+                class="pi pi-exclamation-triangle"
+                aria-label="Checksum inválido"
+              ></i>
+              }
+              } @else {
+              —
+              }
             </td>
             <td class="td-muted">
               {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
@@ -232,8 +212,8 @@
               >
                 Revisar
               </app-button>
+              @if (puedeAnular(acta)) {
               <app-button
-                *ngIf="puedeAnular(acta)"
                 variant="danger"
                 size="sm"
                 class="ml-1"
@@ -242,16 +222,17 @@
               >
                 Anular
               </app-button>
+              }
             </td>
           </tr>
-        </tbody>
-      </table>
+        </ng-template>
+      </p-table>
     </div>
 
     <!-- Mobile Card View -->
     <div class="cards-list mobile-only">
+      @for (acta of actasFiltradas; track acta.id) {
       <div
-        *ngFor="let acta of actasFiltradas"
         class="acta-card"
         [ngClass]="'card-estado-' + acta.estado.toLowerCase()"
         (click)="verDetalle(acta.id)"
@@ -274,9 +255,9 @@
             >
             <span>Blancos: {{ acta.votosBlancos }}</span>
             <span>Nulos: {{ acta.votosNulos }}</span>
-            <span *ngIf="checksumTexto(acta) as checksum"
-              >Checksum: {{ checksum }}</span
-            >
+            @if (checksumTexto(acta); as checksum) {
+            <span>Checksum: {{ checksum }}</span>
+            }
           </div>
         </div>
 
@@ -287,6 +268,7 @@
           <span class="review-link"> Revisar acta → </span>
         </div>
       </div>
+      }
     </div>
 
     <!-- Server-side paginator -->

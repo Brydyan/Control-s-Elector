@@ -2,7 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonIcon } from '@ionic/angular/standalone';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { InputText } from 'primeng/inputtext';
+import { Select } from 'primeng/select';
+import { Skeleton } from 'primeng/skeleton';
+import { Tab, TabList, Tabs } from 'primeng/tabs';
+import { TableModule } from 'primeng/table';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
   BadgeComponent,
@@ -29,13 +35,21 @@ import { CoordinatorService } from '../../services/coordinator.service';
   imports: [
     CommonModule,
     FormsModule,
-    IonIcon,
     BadgeComponent,
     ButtonComponent,
     EmptyStateComponent,
     ErrorStateComponent,
     PaginatorComponent,
     SkeletonComponent,
+    IconField,
+    InputIcon,
+    InputText,
+    Select,
+    Skeleton,
+    Tab,
+    TabList,
+    Tabs,
+    TableModule,
   ],
   templateUrl: './actas-lista.page.html',
   styleUrls: ['./actas-lista.page.scss'],
@@ -174,18 +188,44 @@ export class ActasListaPage implements OnInit, OnDestroy {
     this.cargarActas();
   }
 
-  cambiarCargo(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.cargoSeleccionado = select.value ? Number(select.value) : null;
+  /** The tab strip reports the value as a loose string; narrow it back. */
+  onEstadoTabChange(value: string | number | undefined): void {
+    const estado = String(value ?? 'TODAS') as EstadoActa | 'TODAS';
+    this.cambiarEstado(estado);
+  }
+
+  cambiarCargo(value: number | null): void {
+    this.cargoSeleccionado = value === null ? null : Number(value);
     this.page = 0;
     this.cargarActas();
   }
 
-  cambiarCanton(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.cantonSeleccionado = select.value ? Number(select.value) : null;
+  cambiarCanton(value: number | null): void {
+    this.cantonSeleccionado = value === null ? null : Number(value);
     this.page = 0;
     this.cargarActas();
+  }
+
+  /** Options of the dignity filter, for the PrimeNG select. */
+  get cargoOptions(): Array<{ label: string; value: number | null }> {
+    return [
+      { label: 'Todas las Dignidades', value: null },
+      ...this.cargos.map((c) => ({
+        label: `${c.nombre} (${c.nivel})`,
+        value: c.id,
+      })),
+    ];
+  }
+
+  /** Options of the canton filter, for the PrimeNG select. */
+  get cantonOptions(): Array<{ label: string; value: number | null }> {
+    return [
+      { label: 'Todos los Cantones', value: null },
+      ...this.cantones.map((c) => ({
+        label: `${c.nombre} (${c.codigo})`,
+        value: c.id,
+      })),
+    ];
   }
 
   onBusquedaChange(): void {
