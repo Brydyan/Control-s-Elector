@@ -1,75 +1,51 @@
-.app-card {
-  background-color: var(--surface-card);
-  border-radius: var(--radius-lg);
-  color: var(--text-primary);
+/* Header layout of the PrimeNG card: title group on the left, actions on the right. */
+
+.app-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+}
+
+.app-card__title-group {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--border-subtle);
-  box-shadow: var(--shadow-sm);
-  transition:
-    box-shadow var(--transition-base),
-    border-color var(--transition-base);
+  gap: 0.125rem;
+  min-width: 0;
+}
 
-  &--bordered {
-    border: 1px solid var(--border-default);
-  }
+.app-card__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--p-text-color);
+}
 
-  &--elevated {
-    box-shadow: var(--shadow-card);
+.app-card__subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--p-text-muted-color);
+}
 
-    &:hover {
-      box-shadow: var(--shadow-md);
-    }
-  }
+.app-card__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
 
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
-    padding: var(--space-4) var(--space-6);
-    border-bottom: 1px solid var(--border-subtle);
-  }
+:host ::ng-deep .app-card--elevated {
+  box-shadow:
+    0 4px 12px rgb(15 23 42 / 8%),
+    0 1px 2px rgb(15 23 42 / 4%);
+}
 
-  &__title-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-  }
-
-  &__title {
-    margin: 0;
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
-    line-height: var(--line-height-tight);
-    color: var(--text-primary);
-  }
-
-  &__subtitle {
-    margin: 0;
-    font-size: var(--font-size-sm);
-    color: var(--text-secondary);
-  }
-
-  &__header-actions {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-  }
-
-  &__body {
-    padding: var(--space-6);
-    flex: 1 1 auto;
-  }
-
-  &__footer {
-    padding: var(--space-4) var(--space-6);
-    border-top: 1px solid var(--border-subtle);
-    background-color: var(--surface-subtle);
-
-    &:empty {
-      display: none;
-    }
-  }
+/*
+ * The header template is always declared so PrimeNG can resolve it, but it
+ * renders nothing when the card has no title. Without this the empty header
+ * container would still add its padding.
+ */
+:host ::ng-deep .p-card-header:empty {
+  display: none;
 }

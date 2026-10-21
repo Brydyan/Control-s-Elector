@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { providePrimeNG } from 'primeng/config';
 import { BadgeComponent } from './badge.component';
 
 describe('BadgeComponent', () => {
@@ -8,6 +9,7 @@ describe('BadgeComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BadgeComponent],
+      providers: [providePrimeNG()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(BadgeComponent);
@@ -19,10 +21,29 @@ describe('BadgeComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should apply variant class', () => {
-    fixture.componentRef.setInput('variant', 'APROBADA');
+  it('should map the electoral states to the PrimeNG severities', () => {
+    const cases: Array<[BadgeComponent['variant'], string]> = [
+      ['APROBADA', 'p-tag-success'],
+      ['ENVIADA', 'p-tag-info'],
+      ['EN_DISPUTA', 'p-tag-warn'],
+      ['ANULADA', 'p-tag-danger'],
+      ['BORRADOR', 'p-tag-secondary'],
+    ];
+
+    for (const [variant, expected] of cases) {
+      fixture.componentRef.setInput('variant', variant);
+      fixture.detectChanges();
+
+      const tag = fixture.nativeElement.querySelector('p-tag');
+      expect(tag.classList).toContain(expected);
+    }
+  });
+
+  it('should keep the institutional purple for the CORREGIDA state', () => {
+    fixture.componentRef.setInput('variant', 'CORREGIDA');
     fixture.detectChanges();
-    const span = fixture.nativeElement.querySelector('span');
-    expect(span.classList).toContain('badge-APROBADA');
+
+    const tag = fixture.nativeElement.querySelector('p-tag');
+    expect(tag.classList).toContain('badge-CORREGIDA');
   });
 });
