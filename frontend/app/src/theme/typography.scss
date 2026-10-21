@@ -25,8 +25,20 @@ h1,
   font-size: var(--font-size-display);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
-  color: var(--color-text-primary);
   letter-spacing: -0.02em;
+}
+
+/*
+ * El color del texto se hereda, no se impone.
+ *
+ * Las reglas globales de `h1..h6` y `p` fijaban un color propio, y eso
+ * cancelaba el color del contenedor: el banner azul pintaba su texto en
+ * `--color-text-primary` sobre el azul de la marca, por debajo del umbral de
+ * WCAG AA (también en el esquema claro). Un contenedor con color propio
+ * declara el suyo; un encabezado o un párrafo sin color propio lo hereda.
+ */
+.font-display {
+  color: var(--color-text-primary);
 }
 
 h2,
@@ -35,8 +47,11 @@ h3,
   font-size: var(--font-size-title);
   font-weight: var(--font-weight-semibold);
   line-height: var(--line-height-tight);
-  color: var(--color-text-primary);
   letter-spacing: -0.01em;
+}
+
+.font-title {
+  color: var(--color-text-primary);
 }
 
 p,
@@ -44,6 +59,9 @@ p,
   font-size: var(--font-size-body);
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-normal);
+}
+
+.font-body {
   color: var(--color-text-secondary);
 }
 

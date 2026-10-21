@@ -2,45 +2,74 @@
 // DESIGN SYSTEM: TOKENS PRIMITIVOS Y SEMÁNTICOS
 // ─────────────────────────────────────────────────────────────
 
+/*
+ * Dos capas, un solo vocabulario:
+ *
+ * 1. `:root` — el esquema claro: los primitivos y los valores semánticos del
+ *    esquema claro.
+ * 2. `.app-dark` — el esquema oscuro: el MISMO vocabulario semántico con los
+ *    valores remapeados.
+ *
+ * La regla del esquema oscuro es *el tono es invariante, la claridad y la
+ * opacidad de la superficie no*: el azul sigue siendo azul, el verde sigue
+ * siendo verde, pero un paso más claro y sobre una superficie translúcida.
+ *
+ * `.app-dark` es el `darkModeSelector` de PrimeNG, así que los dos esquemas se
+ * activan con el mismo interruptor y nunca se desincronizan.
+ */
+
 :root {
   // 1. Escala Tonal de Marca (Azul Institucional)
   --primitive-blue-50: #eff6ff;
   --primitive-blue-100: #dbeafe;
   --primitive-blue-200: #bfdbfe;
+  --primitive-blue-300: #93c5fd;
+  --primitive-blue-400: #60a5fa;
   --primitive-blue-500: #2563eb;
   --primitive-blue-600: #1d4ed8;
   --primitive-blue-700: #1e40af;
   --primitive-blue-900: #1e3a8a;
 
   // Navy / Slate profundo para superficies oscuras y textos
+  --primitive-slate-950: #020617;
   --primitive-slate-900: #0f172a;
   --primitive-slate-800: #1e293b;
   --primitive-slate-700: #334155;
   --primitive-slate-600: #475569;
+  --primitive-slate-500: #64748b;
   --primitive-slate-400: #94a3b8;
+  --primitive-slate-300: #cbd5e1;
   --primitive-slate-200: #e2e8f0;
   --primitive-slate-100: #f1f5f9;
   --primitive-slate-50: #f8fafc;
   --primitive-white: #ffffff;
 
+  // Gris neutro: el mismo tono que la rampa slate (nunca un gris desaturado)
+  --primitive-gray-500: #64748b;
+
   // Estados Accesibles (WCAG AA > 4.5:1 sobre fondo claro)
   --primitive-green-50: #ecfdf5;
   --primitive-green-200: #a7f3d0;
+  --primitive-green-300: #6ee7b7;
   --primitive-green-600: #059669;
   --primitive-green-800: #065f46;
 
   --primitive-amber-50: #fffbeb;
   --primitive-amber-200: #fde68a;
+  --primitive-amber-300: #fcd34d;
   --primitive-amber-600: #d97706;
   --primitive-amber-800: #92400e;
 
   --primitive-red-50: #fef2f2;
   --primitive-red-200: #fecaca;
+  --primitive-red-300: #fca5a5;
   --primitive-red-600: #dc2626;
   --primitive-red-800: #991b1b;
 
   --primitive-purple-50: #faf5ff;
   --primitive-purple-200: #e9d5ff;
+  --primitive-purple-300: #d8b4fe;
+  --primitive-purple-400: #c084fc;
   --primitive-purple-600: #9333ea;
   --primitive-purple-800: #6b21a8;
 
@@ -58,11 +87,14 @@
   // Superficies
   --color-surface-page: var(--primitive-slate-50);
   --color-surface-card: var(--primitive-white);
+  --color-surface-raised: var(--primitive-slate-100);
+  --color-surface-canvas: var(--primitive-white);
   --color-surface-sidebar: var(--primitive-slate-900);
   --color-surface-sidebar-hover: var(--primitive-slate-800);
   --color-surface-sidebar-active: var(--primitive-slate-700);
   --surface-card: var(--color-surface-card);
   --surface-page: var(--color-surface-page);
+  --surface-subtle: var(--color-surface-page);
 
   // Elementos de Sidebar Semánticos
   --sidebar-border: rgba(255, 255, 255, 0.08);
@@ -104,6 +136,14 @@
   --color-status-info-bg: var(--primitive-blue-50);
   --color-status-info-border: var(--primitive-blue-200);
 
+  // Alias de estado (S8): la vocabulary que las páginas ya referenciaban
+  --color-success-subtle: var(--color-status-success-bg);
+  --color-success-emphasis: var(--color-status-success);
+  --color-danger-subtle: var(--color-status-danger-bg);
+  --color-danger-emphasis: var(--color-status-danger);
+  --border-success: var(--color-status-success-border);
+  --border-danger: var(--color-status-danger-border);
+
   // 3. Espaciado Global (escala base 4px)
   --space-1: 4px;
   --space-2: 8px;
@@ -123,6 +163,7 @@
   --font-size-md: 16px;
   --font-size-lg: 18px;
   --font-size-xl: 20px;
+  --font-size-2xl: 24px;
   --font-size-title: 24px;
   --font-size-display: 36px;
   --font-size-body: var(--font-size-sm);
@@ -142,6 +183,7 @@
   --radius-lg: 12px;
   --radius-xl: 16px;
   --radius-pill: 999px;
+  --radius-full: var(--radius-pill);
 
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
   --shadow-card:
@@ -152,4 +194,101 @@
     0 8px 10px -6px rgba(15, 23, 42, 0.06);
 
   --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: 0.15s ease;
+}
+
+/*
+ * Esquema oscuro.
+ *
+ * Las superficies son los mismos valores que la rampa oscura de PrimeNG
+ * (`BRAND_DARK_SURFACE` del preset): si la app pintara su propia rampa, la
+ * costura entre el chrome y las páginas se vería.
+ *
+ * El texto nunca es `#fff` puro (vibra sobre oscuro): es blanco roto, con dos
+ * pasos más claros para el secundario y el apagado.
+ */
+.app-dark {
+  /* Superficies — la rampa oscura del preset (`--p-content-background`,
+     `--p-card-background` y `--p-content-hover-background`). */
+  --color-surface-page: var(--primitive-slate-950);
+  --color-surface-card: var(--primitive-slate-900);
+  --color-surface-raised: var(--primitive-slate-800);
+  --color-surface-canvas: var(--primitive-slate-950);
+  --color-surface-sidebar: var(--primitive-slate-900);
+  --color-surface-sidebar-hover: var(--primitive-slate-800);
+  --color-surface-sidebar-active: var(--primitive-slate-700);
+
+  /* Texto — fuera de blanco, nunca `#fff`. */
+  --color-text-primary: var(--primitive-slate-100);
+  --color-text-secondary: var(--primitive-slate-300);
+  --color-text-muted: var(--primitive-slate-400);
+  /* La marca en oscuro es un azul claro: el texto sobre ella es tinta, no
+     blanco. */
+  --color-text-on-brand: var(--primitive-slate-950);
+
+  /* Bordes — mucho más sutiles que en claro. */
+  --color-border-subtle: rgba(148, 163, 184, 0.14);
+  --color-border-medium: rgba(148, 163, 184, 0.24);
+
+  /* Estado — mismo tono, foreground aclarado sobre superficie translúcida. */
+  --color-status-success: var(--primitive-green-300);
+  --color-status-success-bg: rgba(16, 185, 129, 0.14);
+  --color-status-success-border: rgba(16, 185, 129, 0.38);
+
+  --color-status-warning: var(--primitive-amber-300);
+  --color-status-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-status-warning-border: rgba(245, 158, 11, 0.38);
+
+  --color-status-danger: var(--primitive-red-300);
+  --color-status-danger-bg: rgba(239, 68, 68, 0.14);
+  --color-status-danger-border: rgba(239, 68, 68, 0.4);
+
+  --color-status-info: var(--primitive-blue-300);
+  --color-status-info-bg: rgba(37, 99, 235, 0.16);
+  --color-status-info-border: rgba(96, 165, 250, 0.4);
+
+  /* Marca — mismo tono, un paso más claro: sobre fondo oscuro el azul
+     institucional se apaga. */
+  --color-brand-primary: var(--primitive-blue-400);
+  --color-brand-primary-strong: var(--primitive-blue-300);
+  --color-brand-primary-light: var(--primitive-blue-900);
+  --color-brand-border: rgba(96, 165, 250, 0.65);
+
+  /* Alias del vocabulario */
+  --color-primary: var(--color-brand-primary);
+  --color-primary-hover: var(--color-brand-primary-strong);
+  --color-primary-contrast: var(--primitive-slate-950);
+  --surface-card: var(--color-surface-card);
+  --surface-page: var(--color-surface-page);
+  --surface-subtle: var(--color-surface-page);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --text-muted: var(--color-text-muted);
+  --border-subtle: var(--color-border-subtle);
+  --border-default: var(--color-border-medium);
+  --color-success-subtle: var(--color-status-success-bg);
+  --color-success-emphasis: var(--color-status-success);
+  --color-danger-subtle: var(--color-status-danger-bg);
+  --color-danger-emphasis: var(--color-status-danger);
+  --border-success: var(--color-status-success-border);
+  --border-danger: var(--color-status-danger-border);
+
+  /* La barra lateral es oscura en los dos esquemas. */
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text: var(--primitive-slate-200);
+  --sidebar-text-muted: var(--primitive-slate-400);
+  --sidebar-text-subtle: rgba(255, 255, 255, 0.55);
+  --sidebar-item-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-card-bg: rgba(255, 255, 255, 0.05);
+
+  /*
+   * Estas dos primitivas son usadas como color semántico por páginas que
+   * referencian la primitiva directamente (el dashboard). Se remapean al paso
+   * más claro de su propio tono para que el texto siga siendo legible sobre
+   * la superficie oscura; el nombre definitivo lo trae la fase de limpieza
+   * del vocabulario.
+   */
+  --primitive-gray-500: var(--primitive-slate-400);
+  --primitive-purple-600: var(--primitive-purple-400);
+  --primitive-purple-800: var(--primitive-purple-300);
 }
