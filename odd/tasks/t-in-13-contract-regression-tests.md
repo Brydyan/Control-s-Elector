@@ -168,3 +168,5 @@ Fix: el seed pasa a changeset con **contexto Liquibase `seed`**. La app opta por
 Verificado: suite del backend **318/318 verdes** y suite de contrato **120/120 verdes** contra base nueva con el seed aplicado. Las dos caras del contexto, comprobadas.
 
 Lección: cuando un seed de referencia entra en el esquema, la primera pregunta no es "qué datos mete" sino "**quién los necesita**". La app los necesita; los tests no, y de hecho los estorban.
+
+Nota operativa: al cambiar el contenido de `025-data-seed.sql` (agregar el contexto), el checksum del changeset cambia y una base donde ya se aplicó la versión anterior se niega a arrancar con "changeset check sum ... was ... but is now ...". Se resolvió con `liquibase:clearCheckSums` sobre la base de dev. En una base nueva (CI, despliegue limpio) no hace falta. Alternativa para un despliegue ya migrado: `docker compose down -v`.
