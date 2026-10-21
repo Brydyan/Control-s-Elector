@@ -29,19 +29,18 @@ import java.util.UUID;
  * <p>Reglas duras:
  *
  * <ul>
- *   <li>Toda query excluye {@code ANULADA} directamente. Este service <b>nunca</b> filtra
- *       ANULADA «por si acaso»: si lo hiciera, las mutaciones de las pruebas no detectarian la
- *       regresion.
+ *   <li>Toda query excluye {@code ANULADA} directamente. Este service <b>nunca</b> filtra ANULADA
+ *       «por si acaso»: si lo hiciera, las mutaciones de las pruebas no detectarian la regresion.
  *   <li>{@code minutosTranscurridos} se calcula contra {@link Instant#now()} en UTC, sin pasar por
  *       la zona horaria del sistema.
  * </ul>
  *
- * <p><b>Por que consultas nativas y no JPQL.</b> Las tablas que agrega el dashboard ({@code
- * acta}, {@code acta_detalle}, {@code jrv}, {@code parroquia}) son de los modulos de actas y
- * geografia, que todavia no estan portados: mapearlas aca crearia una segunda entidad sobre la
- * misma tabla que habria que mantener en paralelo con la del modulo propietario. La consulta nativa
- * lee exactamente las mismas filas que leeria la JPQL del backend Spring (mismos joins, mismos
- * filtros, mismo orden) y no deja entidad duplicada.
+ * <p><b>Por que consultas nativas y no JPQL.</b> Las tablas que agrega el dashboard ({@code acta},
+ * {@code acta_detalle}, {@code jrv}, {@code parroquia}) son de los modulos de actas y geografia,
+ * que todavia no estan portados: mapearlas aca crearia una segunda entidad sobre la misma tabla que
+ * habria que mantener en paralelo con la del modulo propietario. La consulta nativa lee exactamente
+ * las mismas filas que leeria la JPQL del backend Spring (mismos joins, mismos filtros, mismo
+ * orden) y no deja entidad duplicada.
  */
 @ApplicationScoped
 public class DashboardService {

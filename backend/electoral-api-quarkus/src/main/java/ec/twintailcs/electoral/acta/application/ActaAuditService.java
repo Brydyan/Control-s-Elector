@@ -8,8 +8,8 @@ import jakarta.transaction.Transactional;
  * Registro de auditoria del modulo de actas.
  *
  * <p>Escribe en la misma tabla {@code audit_log} y con el mismo formato de payload que el backend
- * Spring ({@code {"message": ...}}), para que el historial del acta sea indistinguible entre las dos
- * implementaciones.
+ * Spring ({@code {"message": ...}}), para que el historial del acta sea indistinguible entre las
+ * dos implementaciones.
  *
  * <p>La tabla {@code audit_log} tiene RLS: la escritura esta permitida para cualquier rol (la
  * politica de insercion es {@code WITH CHECK (true)}), pero la lectura solo la pueden hacer

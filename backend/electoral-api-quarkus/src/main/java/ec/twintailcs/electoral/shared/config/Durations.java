@@ -4,11 +4,11 @@ import java.time.Duration;
 import java.time.format.DateTimeParseException;
 
 /**
- * Parseo de duraciones en el formato corto que usa el backend Spring
- * ({@code 15m}, {@code 7d}, {@code 30s}) y tambien ISO-8601 ({@code PT15M}).
+ * Parseo de duraciones en el formato corto que usa el backend Spring ({@code 15m}, {@code 7d},
+ * {@code 30s}) y tambien ISO-8601 ({@code PT15M}).
  *
- * <p>Se parsea a mano y no con el binder de SmallRye para que el backend Spring y el
- * backend Quarkus acepten exactamente las mismas variables de entorno.
+ * <p>Se parsea a mano y no con el binder de SmallRye para que el backend Spring y el backend
+ * Quarkus acepten exactamente las mismas variables de entorno.
  */
 public final class Durations {
 

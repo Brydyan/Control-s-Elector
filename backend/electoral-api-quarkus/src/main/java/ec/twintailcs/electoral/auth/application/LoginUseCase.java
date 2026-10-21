@@ -13,8 +13,8 @@ import java.util.UUID;
 /**
  * Autenticacion por email y password.
  *
- * <p>Port exacto del {@code LoginUseCase} del backend Spring: mismos mensajes de error,
- * misma creacion de sesion y misma auditoria.
+ * <p>Port exacto del {@code LoginUseCase} del backend Spring: mismos mensajes de error, misma
+ * creacion de sesion y misma auditoria.
  */
 @ApplicationScoped
 public class LoginUseCase {
@@ -27,11 +27,11 @@ public class LoginUseCase {
 
   @Inject AuthAuditService auditLog;
 
-
   @Transactional
   public JwtService.TokenPair execute(
       String email, String password, String ipCliente, String userAgent) {
-    Usuario u = Usuario.find("email", email == null ? "" : email.trim().toLowerCase()).firstResult();
+    Usuario u =
+        Usuario.find("email", email == null ? "" : email.trim().toLowerCase()).firstResult();
     if (u == null || !u.isHabilitado() || !hasher.matches(password, u.getPasswordHash())) {
       auditLog.recordLoginFail(email, ipCliente);
       throw new AuthException("Credenciales invalidas");

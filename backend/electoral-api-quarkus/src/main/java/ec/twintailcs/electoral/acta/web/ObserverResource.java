@@ -3,7 +3,6 @@ package ec.twintailcs.electoral.acta.web;
 import ec.twintailcs.electoral.acta.application.ActaService;
 import ec.twintailcs.electoral.acta.incidencia.application.IncidenciaService;
 import ec.twintailcs.electoral.acta.incidencia.web.dto.IncidenciaRequestDto;
-import ec.twintailcs.electoral.acta.incidencia.web.dto.IncidenciaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaRequestDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
@@ -35,8 +34,8 @@ import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
 
 /**
- * Endpoints REST del OBSERVER: catalogo de JRVs, registro de actas, borradores, envio, correccion
- * y consultas del veedor.
+ * Endpoints REST del OBSERVER: catalogo de JRVs, registro de actas, borradores, envio, correccion y
+ * consultas del veedor.
  *
  * <p>Port exacto del {@code ObserverController} del backend Spring: mismos paths, mismos permisos,
  * mismos status y mismo cuerpo.
@@ -59,8 +58,8 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
  *
  * <p><b>Orden de las comprobaciones.</b> En Spring la resolucion de argumentos (que produce el 400
  * de la parte o del parametro faltantes) corre ANTES que el {@code @PreAuthorize} (que produce el
- * 403). Aca se reproduce ese orden: primero la validacion del body y de la parte multipart,
- * despues la autorizacion, y al final el caso de uso.
+ * 403). Aca se reproduce ese orden: primero la validacion del body y de la parte multipart, despues
+ * la autorizacion, y al final el caso de uso.
  */
 @Path("/api/v1/observer")
 @Produces(MediaType.APPLICATION_JSON)

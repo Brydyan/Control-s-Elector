@@ -38,7 +38,8 @@ public class ValidacionActa {
     Map<Long, Long> cargoPorCandidato = repository.cargosDeCandidatos(idsCandidatos);
     for (ActaDetalleDto detalle : detalles) {
       if (!ids.add(detalle.candidatoId())) {
-        throw new ActaInvalidaException("Candidato repetido en el detalle: " + detalle.candidatoId());
+        throw new ActaInvalidaException(
+            "Candidato repetido en el detalle: " + detalle.candidatoId());
       }
       Long cargoDelCandidato = cargoPorCandidato.get(detalle.candidatoId());
       if (cargoDelCandidato == null) {

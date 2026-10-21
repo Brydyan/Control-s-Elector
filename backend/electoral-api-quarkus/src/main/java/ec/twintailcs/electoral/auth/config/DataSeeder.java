@@ -15,10 +15,10 @@ import org.jboss.logging.Logger;
 /**
  * Crea el usuario MASTER inicial si no existe.
  *
- * <p>Port del DataSeeder del backend Spring: mismo email derivado
- * ({@code {3 letras nombre}{3 letras apellido}{3 letras rol}@control.ttcs}) y misma password. El
- * usuario tiene que existir con el MISMO email en las dos implementaciones, porque la suite de
- * regresion por contrato usa esas credenciales.
+ * <p>Port del DataSeeder del backend Spring: mismo email derivado ({@code {3 letras nombre}{3
+ * letras apellido}{3 letras rol}@control.ttcs}) y misma password. El usuario tiene que existir con
+ * el MISMO email en las dos implementaciones, porque la suite de regresion por contrato usa esas
+ * credenciales.
  */
 @ApplicationScoped
 public class DataSeeder {
@@ -57,7 +57,8 @@ public class DataSeeder {
     }
     Rol master = Rol.find("nombre", "MASTER").firstResult();
     if (master == null) {
-      throw new IllegalStateException("Rol MASTER no encontrado. Correr la migracion de RBAC primero.");
+      throw new IllegalStateException(
+          "Rol MASTER no encontrado. Correr la migracion de RBAC primero.");
     }
     Usuario admin = new Usuario();
     admin.setNombre(adminNombre);

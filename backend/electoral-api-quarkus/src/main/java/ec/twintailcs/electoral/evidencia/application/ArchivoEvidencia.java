@@ -8,8 +8,8 @@ package ec.twintailcs.electoral.evidencia.application;
  * dependa de JAX-RS.
  *
  * @param nombre nombre del archivo declarado por el cliente
- * @param contentType content type declarado por el cliente (el backend valida el tipo declarado,
- *     no los bytes)
+ * @param contentType content type declarado por el cliente (el backend valida el tipo declarado, no
+ *     los bytes)
  * @param size tamano en bytes
  * @param contenido bytes del archivo
  */

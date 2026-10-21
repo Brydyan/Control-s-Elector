@@ -15,8 +15,4 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
  */
 @RegisterForReflection
 public record ProgresoCantonDto(
-    Long cantonId,
-    String cantonNombre,
-    long totalJrvs,
-    long jrvsConActa,
-    double porcentaje) {}
+    Long cantonId, String cantonNombre, long totalJrvs, long jrvsConActa, double porcentaje) {}

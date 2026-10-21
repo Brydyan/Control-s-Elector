@@ -11,13 +11,13 @@ import jakarta.transaction.Transactional;
  *
  * <p>Es el unico punto de entrada del modulo para dejar rastro: login, refresh y logout.
  *
- * <p><b>Deuda conocida</b>: {@code login} y {@code login_fail} se delegan en el {@link AuditLogService}
- * compartido, que es el que debe tener la propiedad de la escritura. {@code refresh},
- * {@code refresh_fail} y {@code logout} todavia NO existen en ese servicio compartido (el paquete
- * {@code auditlog} esta fuera de la superficie de edicion de esta fase de la migracion), asi que
- * aqui se escribe la fila con la misma forma. Cuando la superficie se abra, estos tres metodos
- * tienen que mudarse a {@code AuditLogService} y esta clase quedar como una delegacion pura: no
- * hay que cambiar ningun llamador.
+ * <p><b>Deuda conocida</b>: {@code login} y {@code login_fail} se delegan en el {@link
+ * AuditLogService} compartido, que es el que debe tener la propiedad de la escritura. {@code
+ * refresh}, {@code refresh_fail} y {@code logout} todavia NO existen en ese servicio compartido (el
+ * paquete {@code auditlog} esta fuera de la superficie de edicion de esta fase de la migracion),
+ * asi que aqui se escribe la fila con la misma forma. Cuando la superficie se abra, estos tres
+ * metodos tienen que mudarse a {@code AuditLogService} y esta clase quedar como una delegacion
+ * pura: no hay que cambiar ningun llamador.
  */
 @ApplicationScoped
 public class AuthAuditService {
@@ -55,8 +55,8 @@ public class AuthAuditService {
   /**
    * Escribe la fila de auditoria de un evento de autenticacion.
    *
-   * <p>Misma forma que escribe el {@code AuditLogService} compartido: entidad {@code auth},
-   * detalle en JSON e IP del cliente.
+   * <p>Misma forma que escribe el {@code AuditLogService} compartido: entidad {@code auth}, detalle
+   * en JSON e IP del cliente.
    */
   private void write(Long usuarioId, String accion, String detalle, String ip) {
     AuditLog entry = new AuditLog();

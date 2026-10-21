@@ -4,8 +4,8 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.util.List;
 
 /**
- * Envoltura de una pagina de resultados. Mismo shape que el backend Spring:
- * {@code {data: [...], meta: {page, size, totalElements, totalPages}}}.
+ * Envoltura de una pagina de resultados. Mismo shape que el backend Spring: {@code {data: [...],
+ * meta: {page, size, totalElements, totalPages}}}.
  */
 @RegisterForReflection
 public record PagedResponse<T>(List<T> data, PageMeta meta) {
