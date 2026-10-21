@@ -87,6 +87,16 @@
 			<version>6.1.1</version>
 		</dependency>
 
+		<!-- AWS SDK v2: el mismo cliente que usa el backend Spring (RustFS en dev, Supabase S3
+		     en prod). Se usa la libreria directo y no la extension quarkus-amazon-s3 para no
+		     cambiar el modelo de configuracion: el backend Spring construye el S3Client a mano
+		     y el contrato tiene que ser el mismo. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.30.0</version>
+		</dependency>
+
 		<!-- BCrypt: mismo algoritmo que usa el backend Spring. -->
 		<dependency>
 			<groupId>org.mindrot</groupId>

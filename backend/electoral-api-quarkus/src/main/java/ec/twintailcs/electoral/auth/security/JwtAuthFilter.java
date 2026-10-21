@@ -7,6 +7,7 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.container.PreMatching;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
@@ -23,6 +24,12 @@ import jakarta.ws.rs.ext.Provider;
  * dos implementaciones sean intercambiables.
  */
 @Provider
+// PRE-matching a proposito: en Spring el filtro de seguridad intercepta TODAS las requests, y una
+// ruta inexistente sin token responde 401 (no 404). Un filtro post-matching de JAX-RS solo corre
+// si hay un recurso que matchear, y las rutas inexistentes se irían al 404. La autorizacion por
+// permiso no vive acá (está en el metodo del recurso, después de la validación del body), asi que
+// perder el ResourceInfo no cuesta nada.
+@PreMatching
 @Priority(Priorities.AUTHORIZATION)
 public class JwtAuthFilter implements ContainerRequestFilter {
 
