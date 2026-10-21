@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
--- changeset electoral:015-01-data-seed-dev
+-- changeset electoral:025-01-data-seed-dev
 -- Datos de desarrollo: geografía mínima, configuración preelectoral,
 -- usuarios de cada rol, JRVs, candidatos y actas en distintos estados.
 --
@@ -266,10 +266,9 @@ WHERE j.numero = 'JRV-BAL-001' AND c.nombre = 'Alcalde/sa' AND oja.jrv_id = j.id
   AND NOT EXISTS (SELECT 1 FROM acta a WHERE a.jrv_id = j.id AND a.cargo_id = c.id AND a.estado = 'CORREGIDA')
 LIMIT 1;
 
-INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado, storage_url,
+INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado,
                   total_sufragantes, votos_blancos, votos_nulos, fecha_registro)
 SELECT j.id, c.id, oja.usuario_id, 'APROBADA',
-       'https://example.com/storage/' || j.numero || '.webp',
        295, 10, 5, NOW() - INTERVAL '1 day'
 FROM jrv j, cargo c, observer_jrv_asignacion oja
 WHERE j.numero = 'JRV-LL-001' AND c.nombre = 'Alcalde/sa' AND oja.jrv_id = j.id
