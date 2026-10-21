@@ -84,8 +84,13 @@ import org.junit.jupiter.api.Test;
  * <p>Este archivo <b>no maquilla ese agujero</b>: afirma el status que el backend devuelve hoy (200,
  * con el acta efectivamente disputada / corregida / aprobada) y lo deja escrito con la referencia a
  * la issue. Cuando #121 se corrija, estos asserts pasan a 403 y hay que actualizarlos. Los tests
- * marcados como tales tienen el prefijo {@code KNOWN HOLE #121} en el {@code @DisplayName} para que
- * un fallo en rojo sea inequívoco.
+ *
+ * <p><b>El agujero #121 está corregido.</b> El guard de clase de {@code CoordinatorController}
+ * incluía {@code acta:read} (que OBSERVER y ADMIN tienen) y {@code disputar}, {@code corregir} y
+ * {@code aprobar} no tenían guard de método: un OBSERVER podía disputar, corregir y aprobar
+ * actas ajenas. Ahora el guard de clase es {@code hasAnyRole('COORDINATOR','MASTER')} —el mismo
+ * que el {@code roleGuard} del frontend— y los tres endpoints mutantes llevan guard de método
+ * propio.
  *
  * <p><b>Defecto encontrado y corregido por esta suite (no es #121).</b> {@code POST
  * /api/v1/observer/actas/borrador} devolvía <b>500</b> cuando el par (JRV, cargo) ya tenía un acta
@@ -381,11 +386,10 @@ class RbacContractIT extends ContractTestSupport {
   }
 
   @Test
-  @DisplayName("KNOWN HOLE #121: un OBSERVER pasa la autorización de disputa y disputa el acta (200)")
-  void observerPasaLaAutorizacionDeDisputaPorElHoleConocido() {
-    // El backend devuelve 200 en vez de 403 porque el guard de clase de CoordinatorController
-    // incluye 'acta:read', que OBSERVER y ADMIN tienen, y 'disputar' no tiene guard de método.
-    // Trackeado en la issue #121. Cuando se corrija, este assert pasa a 403.
+  @DisplayName("un OBSERVER no puede disputar un acta: 403 y el acta no cambia de estado")
+  void observerNoPuedeDisputarUnActa() {
+    // El módulo de coordinación es de COORDINATOR y MASTER. Un OBSERVER puede registrar un acta,
+    // pero no entrar al módulo de coordinación a entorno de la que no es dueño.
     String observer = observerToken();
     ActaDePrueba acta = registrarActa(observer);
 
@@ -394,20 +398,16 @@ class RbacContractIT extends ContractTestSupport {
             .body(json(Map.of("motivo", unique("motivo de disputa"))))
             .put(COORDINATOR + "/actas/" + acta.id() + "/disputar");
 
-    assertThat(r.statusCode())
-        .as("HOLE #121: hoy el OBSERVER disputa el acta; debería ser 403. body: %s", r.asString())
-        .isEqualTo(200);
-    assertThat(r.jsonPath().getString("estado"))
-        .as("HOLE #121: el acta queda efectivamente en disputa")
-        .isEqualTo("EN_DISPUTA");
+    assertProhibido(r, "PUT /coordinator/actas/{id}/disputar");
+    assertThat(estadoEnCoordinator(tokenFor("COORDINATOR"), acta.id()))
+        .as("un 403 no puede dejar el acta en disputa")
+        .isEqualTo("ENVIADA");
   }
 
   @Test
-  @DisplayName("KNOWN HOLE #121: un ADMIN pasa la autorización de disputa y disputa el acta (200)")
-  void adminPasaLaAutorizacionDeDisputaPorElHoleConocido() {
-    // Mismo agujero que #121 pero del lado del ADMIN: el guard de clase incluye 'acta:read' y el
-    // ADMIN lo tiene. La tabla de roles dice que el ADMIN es solo lectura.
-    // Trackeado en la issue #121. Cuando se corrija, este assert pasa a 403.
+  @DisplayName("un ADMIN no puede disputar un acta: 403 y el acta no cambia de estado")
+  void adminNoPuedeDisputarUnActa() {
+    // La tabla de roles dice que el ADMIN es solo lectura.
     String observer = observerToken();
     ActaDePrueba acta = registrarActa(observer);
 
@@ -416,12 +416,10 @@ class RbacContractIT extends ContractTestSupport {
             .body(json(Map.of("motivo", unique("motivo de disputa"))))
             .put(COORDINATOR + "/actas/" + acta.id() + "/disputar");
 
-    assertThat(r.statusCode())
-        .as("HOLE #121: hoy el ADMIN disputa el acta; debería ser 403. body: %s", r.asString())
-        .isEqualTo(200);
-    assertThat(r.jsonPath().getString("estado"))
-        .as("HOLE #121: el acta queda efectivamente en disputa")
-        .isEqualTo("EN_DISPUTA");
+    assertProhibido(r, "PUT /coordinator/actas/{id}/disputar");
+    assertThat(estadoEnCoordinator(tokenFor("COORDINATOR"), acta.id()))
+        .as("un 403 no puede dejar el acta en disputa")
+        .isEqualTo("ENVIADA");
   }
 
   @Test
@@ -461,11 +459,8 @@ class RbacContractIT extends ContractTestSupport {
   }
 
   @Test
-  @DisplayName("KNOWN HOLE #121: un OBSERVER pasa la autorización de corrección del coordinator (200)")
-  void observerPasaLaAutorizacionDeCorreccionPorElHoleConocido() {
-    // El backend devuelve 200 en vez de 403: el guard de clase del coordinator incluye
-    // 'acta:read' (que el OBSERVER tiene) y 'corregir' no tiene guard de método.
-    // Trackeado en la issue #121. Cuando se corrija, este assert pasa a 403.
+  @DisplayName("un OBSERVER no puede corregir un acta en disputa: 403 y el acta no cambia de estado")
+  void observerNoPuedeCorregirUnActa() {
     String observer = observerToken();
     ActaDePrueba acta = registrarActa(observer);
     as(tokenFor("COORDINATOR"))
@@ -477,19 +472,15 @@ class RbacContractIT extends ContractTestSupport {
             .body(json(acta.body()))
             .put(COORDINATOR + "/actas/" + acta.id() + "/corregir");
 
-    assertThat(r.statusCode())
-        .as("HOLE #121: hoy el OBSERVER corrige el acta; debería ser 403. body: %s", r.asString())
-        .isEqualTo(200);
-    assertThat(r.jsonPath().getString("estado"))
-        .as("HOLE #121: el acta queda efectivamente corregida")
-        .isEqualTo("CORREGIDA");
+    assertProhibido(r, "PUT /coordinator/actas/{id}/corregir");
+    assertThat(estadoEnCoordinator(tokenFor("COORDINATOR"), acta.id()))
+        .as("un 403 no puede dejar el acta corregida")
+        .isEqualTo("EN_DISPUTA");
   }
 
   @Test
-  @DisplayName("KNOWN HOLE #121: un ADMIN pasa la autorización de corrección del coordinator (200)")
-  void adminPasaLaAutorizacionDeCorreccionPorElHoleConocido() {
-    // Mismo agujero que #121 del lado del ADMIN. Trackeado en la issue #121.
-    // Cuando se corrija, este assert pasa a 403.
+  @DisplayName("un ADMIN no puede corregir un acta en disputa: 403 y el acta no cambia de estado")
+  void adminNoPuedeCorregirUnActa() {
     String observer = observerToken();
     ActaDePrueba acta = registrarActa(observer);
     as(tokenFor("COORDINATOR"))
@@ -501,12 +492,10 @@ class RbacContractIT extends ContractTestSupport {
             .body(json(acta.body()))
             .put(COORDINATOR + "/actas/" + acta.id() + "/corregir");
 
-    assertThat(r.statusCode())
-        .as("HOLE #121: hoy el ADMIN corrige el acta; debería ser 403. body: %s", r.asString())
-        .isEqualTo(200);
-    assertThat(r.jsonPath().getString("estado"))
-        .as("HOLE #121: el acta queda efectivamente corregida")
-        .isEqualTo("CORREGIDA");
+    assertProhibido(r, "PUT /coordinator/actas/{id}/corregir");
+    assertThat(estadoEnCoordinator(tokenFor("COORDINATOR"), acta.id()))
+        .as("un 403 no puede dejar el acta corregida")
+        .isEqualTo("EN_DISPUTA");
   }
 
   @Test
@@ -524,40 +513,31 @@ class RbacContractIT extends ContractTestSupport {
   }
 
   @Test
-  @DisplayName("KNOWN HOLE #121: un OBSERVER pasa la autorización de aprobación del coordinator (200)")
-  void observerPasaLaAutorizacionDeAprobacionPorElHoleConocido() {
-    // El backend devuelve 200 en vez de 403: el guard de clase del coordinator incluye
-    // 'acta:read' (que el OBSERVER tiene) y 'aprobar' no tiene guard de método.
-    // Trackeado en la issue #121. Cuando se corrija, este assert pasa a 403.
+  @DisplayName("un OBSERVER no puede aprobar un acta: 403 y el acta no cambia de estado")
+  void observerNoPuedeAprobarUnActa() {
     String observer = observerToken();
     ActaDePrueba acta = registrarActa(observer);
 
     Response r = as(observer).put(COORDINATOR + "/actas/" + acta.id() + "/aprobar");
 
-    assertThat(r.statusCode())
-        .as("HOLE #121: hoy el OBSERVER aprueba el acta; debería ser 403. body: %s", r.asString())
-        .isEqualTo(200);
-    assertThat(r.jsonPath().getString("estado"))
-        .as("HOLE #121: el acta queda efectivamente aprobada")
-        .isEqualTo("APROBADA");
+    assertProhibido(r, "PUT /coordinator/actas/{id}/aprobar");
+    assertThat(estadoEnCoordinator(tokenFor("COORDINATOR"), acta.id()))
+        .as("un 403 no puede dejar el acta aprobada")
+        .isEqualTo("ENVIADA");
   }
 
   @Test
-  @DisplayName("KNOWN HOLE #121: un ADMIN pasa la autorización de aprobación del coordinator (200)")
-  void adminPasaLaAutorizacionDeAprobacionPorElHoleConocido() {
-    // Mismo agujero que #121 del lado del ADMIN. Trackeado en la issue #121.
-    // Cuando se corrija, este assert pasa a 403.
+  @DisplayName("un ADMIN no puede aprobar un acta: 403 y el acta no cambia de estado")
+  void adminNoPuedeAprobarUnActa() {
     String observer = observerToken();
     ActaDePrueba acta = registrarActa(observer);
 
     Response r = as(tokenFor("ADMIN")).put(COORDINATOR + "/actas/" + acta.id() + "/aprobar");
 
-    assertThat(r.statusCode())
-        .as("HOLE #121: hoy el ADMIN aprueba el acta; debería ser 403. body: %s", r.asString())
-        .isEqualTo(200);
-    assertThat(r.jsonPath().getString("estado"))
-        .as("HOLE #121: el acta queda efectivamente aprobada")
-        .isEqualTo("APROBADA");
+    assertProhibido(r, "PUT /coordinator/actas/{id}/aprobar");
+    assertThat(estadoEnCoordinator(tokenFor("COORDINATOR"), acta.id()))
+        .as("un 403 no puede dejar el acta aprobada")
+        .isEqualTo("ENVIADA");
   }
 
   @Test
@@ -934,6 +914,28 @@ class RbacContractIT extends ContractTestSupport {
     assertProhibido(
         subirImagen(as(admin), COORDINATOR + "/actas/" + ACTA_INEXISTENTE + "/imagen"),
         "POST /coordinator/actas/{id}/imagen");
+    // Módulo de coordinación: los tres endpoints mutantes llevan guard de método propio
+    // (hasAnyRole('COORDINATOR','MASTER')), así que el ADMIN no puede escribir en ninguno.
+    assertProhibido(
+        as(admin)
+            .body(json(Map.of("motivo", unique("motivo de disputa"))))
+            .put(COORDINATOR + "/actas/" + ACTA_INEXISTENTE + "/disputar"),
+        "PUT /coordinator/actas/{id}/disputar");
+    // Ojo: 'corregir' toma un ActaRequestDto, no un motivo. Con un body inválido la
+    // validación del bean corre ANTES que la autorización y la respuesta sería 400, no 403.
+    assertProhibido(
+        as(admin)
+            .body(json(bodyDeActaValido(observer)))
+            .put(COORDINATOR + "/actas/" + ACTA_INEXISTENTE + "/corregir"),
+        "PUT /coordinator/actas/{id}/corregir");
+    assertProhibido(
+        as(admin).put(COORDINATOR + "/actas/" + ACTA_INEXISTENTE + "/aprobar"),
+        "PUT /coordinator/actas/{id}/aprobar");
+    assertProhibido(
+        as(admin)
+            .body(json(Map.of("motivo", unique("motivo de anulacion"))))
+            .delete(COORDINATOR + "/actas/" + ACTA_INEXISTENTE),
+        "DELETE /coordinator/actas/{actaId}");
     // Módulo de evidencias.
     assertProhibido(
         subirEvidencia(as(admin), ACTA_INEXISTENTE), "POST /evidencias");
@@ -970,46 +972,21 @@ class RbacContractIT extends ContractTestSupport {
   }
 
   @Test
-  @DisplayName("KNOWN HOLE #121: el ADMIN escribe en los tres endpoints mutantes del coordinator sin guarda de método")
-  void elAdminEscribeEnLosEndpointsDelCoordinatorSinGuardaDeMetodo() {
-    // El AGUJERO #121 alcanza también al ADMIN: 'disputar', 'corregir' y 'aprobar' no tienen
-    // guarda de método y el guard de clase del coordinator se satisface con 'acta:read', que el
-    // ADMIN tiene. La tabla de roles dice que el ADMIN es solo lectura.
-    // Estos tres endpoints NO entran en el test del ADMIN que nunca escribe: ahí se afirma el
-    // comportamiento real (no 403), no el deseado.
-    // Trackeado en la issue #121. Cuando se corrija, estos asserts pasan a 403.
+  @DisplayName("el ADMIN no entra al módulo de coordinación: 403 en el buzón, el detalle y el historial")
+  void elAdminNoEntraAlModuloDeCoordinacion() {
+    // El guard de clase del coordinator es hasAnyRole('COORDINATOR','MASTER'), que reproduce el
+    // roleGuard del frontend: /coordinator/actas solo existe para COORDINATOR y MASTER. El ADMIN
+    // lee por /api/v1/dashboard, que tiene su propio guard.
     String observer = observerToken();
+    ActaDePrueba acta = registrarActa(observer);
+    String admin = tokenFor("ADMIN");
 
-    // disputar
-    ActaDePrueba paraDisputar = registrarActa(observer);
-    Response disputar =
-        as(tokenFor("ADMIN"))
-            .body(json(Map.of("motivo", unique("motivo de disputa"))))
-            .put(COORDINATOR + "/actas/" + paraDisputar.id() + "/disputar");
-    assertThat(disputar.statusCode())
-        .as("HOLE #121: hoy el ADMIN disputa el acta; debería ser 403. body: %s", disputar.asString())
-        .isEqualTo(200);
-
-    // corregir
-    ActaDePrueba paraCorregir = registrarActa(observer);
-    as(tokenFor("COORDINATOR"))
-        .body(json(Map.of("motivo", unique("motivo de disputa"))))
-        .put(COORDINATOR + "/actas/" + paraCorregir.id() + "/disputar");
-    Response corregir =
-        as(tokenFor("ADMIN"))
-            .body(json(paraCorregir.body()))
-            .put(COORDINATOR + "/actas/" + paraCorregir.id() + "/corregir");
-    assertThat(corregir.statusCode())
-        .as("HOLE #121: hoy el ADMIN corrige el acta; debería ser 403. body: %s", corregir.asString())
-        .isEqualTo(200);
-
-    // aprobar
-    ActaDePrueba paraAprobar = registrarActa(observer);
-    Response aprobar =
-        as(tokenFor("ADMIN")).put(COORDINATOR + "/actas/" + paraAprobar.id() + "/aprobar");
-    assertThat(aprobar.statusCode())
-        .as("HOLE #121: hoy el ADMIN aprueba el acta; debería ser 403. body: %s", aprobar.asString())
-        .isEqualTo(200);
+    assertProhibido(as(admin).get(COORDINATOR + "/actas"), "GET /coordinator/actas");
+    assertProhibido(
+        as(admin).get(COORDINATOR + "/actas/" + acta.id()), "GET /coordinator/actas/{actaId}");
+    assertProhibido(
+        as(admin).get(COORDINATOR + "/actas/" + acta.id() + "/historial"),
+        "GET /coordinator/actas/{actaId}/historial");
   }
 
   // -----------------------------------------------------------------------------------------------
@@ -1142,7 +1119,7 @@ class RbacContractIT extends ContractTestSupport {
   /** Afirma que el endpoint le cerró la puerta al ADMIN: 403 con el shape estándar de error. */
   private static void assertProhibido(Response r, String endpoint) {
     assertThat(r.statusCode())
-        .as("el ADMIN no puede escribir en %s: body: %s", endpoint, r.asString())
+        .as("acceso denegado en %s: body: %s", endpoint, r.asString())
         .isEqualTo(403);
     assertErrorShape(r, 403);
   }
