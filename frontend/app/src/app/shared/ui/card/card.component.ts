@@ -19,8 +19,13 @@ export class CardComponent {
   @Input() bordered = true;
   @Input() elevated = false;
 
+  /** Extra classes for the PrimeNG card root, used by the feature pages. */
+  @Input() styleClass = '';
+
   /** `p-card` has no bordered/elevated switch; the shadow is applied here. */
-  get styleClass(): string {
-    return this.elevated ? 'app-card--elevated' : '';
+  get cardStyleClass(): string {
+    return [this.styleClass, this.elevated ? 'app-card--elevated' : '']
+      .filter(Boolean)
+      .join(' ');
   }
 }

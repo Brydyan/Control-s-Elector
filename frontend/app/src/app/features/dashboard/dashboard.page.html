@@ -1,6 +1,8 @@
 <!-- Loading state -->
 @if (loading() && !data()) {
-<app-loading-state label="Cargando métricas del proceso..."></app-loading-state>
+<app-loading-state
+  message="Cargando métricas del proceso..."
+></app-loading-state>
 }
 
 <!-- Error state -->
@@ -15,7 +17,7 @@
 }
 
 <!-- Main dashboard content -->
-@if (data(); as d) {
+@if (data()) {
 <section class="progress-banner">
   <div class="progress-banner-left">
     <div class="banner-head">
@@ -24,12 +26,12 @@
         {{ sentActos() }} de {{ totalJrv() }} JRVs han enviado actas registradas
       </p>
     </div>
-    <div class="progress-bar-banner">
-      <div
-        class="progress-bar-banner-fill"
-        [style.width.%]="overallPct()"
-      ></div>
-    </div>
+    <p-progressbar
+      class="progress-bar-banner"
+      [value]="overallPct()"
+      [showValue]="false"
+      color="rgba(255, 255, 255, 0.9)"
+    />
     <div class="banner-cantons">
       @for (c of progreso(); track c.cantonId) {
       <span
@@ -47,33 +49,36 @@
 
 <!-- Stats row -->
 <section class="stats-row">
-  <div class="stat-card c-enviada">
+  <app-card styleClass="stat-card c-enviada">
     <div class="stat-card-label">Enviadas</div>
     <div class="stat-card-value v-enviada">{{ resumen().enviadas }}</div>
     <div class="stat-card-sub">Pendientes revisión</div>
-  </div>
-  <div class="stat-card c-disputa">
+  </app-card>
+  <app-card styleClass="stat-card c-disputa">
     <div class="stat-card-label">En Disputa</div>
     <div class="stat-card-value v-disputa">{{ resumen().enDisputa }}</div>
     <div class="stat-card-sub">Requieren corrección</div>
-  </div>
-  <div class="stat-card c-corregida">
+  </app-card>
+  <app-card styleClass="stat-card c-corregida">
     <div class="stat-card-label">Corregidas</div>
     <div class="stat-card-value v-corregida">{{ resumen().corregidas }}</div>
     <div class="stat-card-sub">Listas para aprobación</div>
-  </div>
-  <div class="stat-card c-aprobada">
+  </app-card>
+  <app-card styleClass="stat-card c-aprobada">
     <div class="stat-card-label">Aprobadas</div>
     <div class="stat-card-value v-aprobada">{{ resumen().aprobadas }}</div>
     <div class="stat-card-sub">Confirmadas</div>
-  </div>
+  </app-card>
 </section>
 
 <!-- Bottom grid -->
 <section class="bottom-grid">
   <!-- Progreso por cantón -->
-  <article class="card">
-    <div class="card-title">🗺️ Progreso por Cantón</div>
+  <app-card>
+    <div class="card-title">
+      <i class="pi pi-map" aria-hidden="true"></i>
+      <span>Progreso por Cantón</span>
+    </div>
     @for (c of progreso(); track c.cantonId) {
     <div class="canton-row">
       <div class="canton-row-header">
@@ -85,20 +90,21 @@
         </div>
         <div class="canton-pct" [class]="'tier-' + tier(c)">{{ pct(c) }}%</div>
       </div>
-      <div class="prog-bar">
-        <div
-          class="prog-fill"
-          [class]="'fill-' + tier(c)"
-          [style.width.%]="pct(c)"
-        ></div>
-      </div>
+      <p-progressbar
+        [value]="pct(c)"
+        [showValue]="false"
+        [color]="tierColor(c)"
+      />
     </div>
     }
-  </article>
+  </app-card>
 
   <!-- Novedades (actas en disputa) -->
-  <article class="card">
-    <div class="card-title">🕐 Actas en Disputa</div>
+  <app-card>
+    <div class="card-title">
+      <i class="pi pi-clock" aria-hidden="true"></i>
+      <span>Actas en Disputa</span>
+    </div>
     @if (novedades().length === 0) {
     <p class="empty">Sin actas en disputa actualmente.</p>
     } @for (n of novedades(); track n.actaPublicId) {
@@ -107,10 +113,10 @@
         <div class="acta-jrv">JRV {{ n.jrvNumero }}</div>
         <div class="acta-cargo">{{ n.cargoNombre }}</div>
       </div>
-      <span class="badge badge-EN_DISPUTA">EN_DISPUTA</span>
+      <app-badge variant="EN_DISPUTA">EN_DISPUTA</app-badge>
       <span class="acta-time">{{ n.minutosTranscurridos }} min</span>
     </div>
     }
-  </article>
+  </app-card>
 </section>
 }
