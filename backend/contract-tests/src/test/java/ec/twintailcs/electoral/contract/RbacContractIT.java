@@ -87,12 +87,13 @@ import org.junit.jupiter.api.Test;
  * marcados como tales tienen el prefijo {@code KNOWN HOLE #121} en el {@code @DisplayName} para que
  * un fallo en rojo sea inequívoco.
  *
- * <p><b>Defecto nuevo encontrado por esta suite (no es #121).</b> {@code POST
- * /api/v1/observer/actas/borrador} devuelve <b>500</b> cuando el par (JRV, cargo) ya tiene un acta
- * activa registrada por <b>otro</b> usuario: el use case busca el borrador por {@code (jrv, cargo,
- * observerId)}, no lo encuentra e intenta insertar, y viola el índice único {@code uk_acta_activa}
- * (no se mapea a 4xx). El hermano {@code POST /api/v1/observer/actas} sí devuelve 409 para el mismo
- * caso. Está documentado en el test {@link #guardarBorradorSobreUnParConActaDeOtroObserverDevuelve500()}.
+ * <p><b>Defecto encontrado y corregido por esta suite (no es #121).</b> {@code POST
+ * /api/v1/observer/actas/borrador} devolvía <b>500</b> cuando el par (JRV, cargo) ya tenía un acta
+ * activa registrada por <b>otro</b> usuario: el use case buscaba el borrador por {@code (jrv, cargo,
+ * observerId)}, no lo encontraba e intentaba insertar, violando el índice único {@code
+ * uk_acta_activa}. El hermano {@code POST /api/v1/observer/actas} sí devolvía 409 para el mismo
+ * caso. Ya corregido: ambos devuelven 409. Está documentado en {@link
+ * #guardarBorradorSobreUnParConActaDeOtroObserverDevuelve409()}.
  *
  * <p><b>Sobre los datos.</b> Un acta ocupa para siempre su par (JRV, cargo) mientras no esté
  * ANULADA, así que cada test que necesita un acta real reserva un par libre con
@@ -217,16 +218,16 @@ class RbacContractIT extends ContractTestSupport {
   }
 
   @Test
-  @DisplayName("POST /observer/actas/borrador sobre un par con acta de otro observer devuelve 500")
-  void guardarBorradorSobreUnParConActaDeOtroObserverDevuelve500() {
-    // DEFECTO NUEVO (no es #121): guardar un borrador sobre un par (JRV, cargo) que ya tiene un
-    // acta activa registrada por OTRO usuario devuelve 500 en vez de 409.
-    // Causa: GuardarBorradorActaUseCase busca el borrador por (jrv, cargo, observerId), no ve el
-    // acta del otro observer e intenta insertar; el índice único uk_acta_activa
-    // (jrv_id, cargo_id) WHERE estado IN ('BORRADOR','ENVIADA','EN_DISPUTA','CORREGIDA') revienta
-    // con DataIntegrityViolationException, que cae en el catch-all del GlobalExceptionHandler.
-    // El hermano POST /api/v1/observer/actas sí devuelve 409 para el mismo caso.
-    // El assert fija el comportamiento REAL (500); cuando el backend lo corrija pasa a 409.
+  @DisplayName("POST /observer/actas/borrador sobre un par con acta de otro observer devuelve 409")
+  void guardarBorradorSobreUnParConActaDeOtroObserverDevuelve409() {
+    // El par (JRV, cargo) admite una sola acta activa. Guardar un borrador sobre un par que ya
+    // tiene un acta activa registrada por OTRO usuario tiene que devolver 409, igual que su
+    // hermano POST /api/v1/observer/actas.
+    //
+    // Antes devolvía 500: GuardarBorradorActaUseCase buscaba el borrador por (jrv, cargo,
+    // observerId), no veía el acta del otro observer e intentaba insertar; el índice único
+    // uk_acta_activa (jrv_id, cargo_id) WHERE estado IN ('BORRADOR','ENVIADA','EN_DISPUTA',
+    // 'CORREGIDA') reventaba con DataIntegrityViolationException y caía en el catch-all.
     String observer = observerToken();
     ActaDePrueba actaDeOtro = registrarActa(observer);
 
@@ -239,7 +240,8 @@ class RbacContractIT extends ContractTestSupport {
 
     Response r = as(masterToken()).body(json(body)).post(OBSERVER + "/actas/borrador");
 
-    assertErrorShape(r, 500);
+    assertErrorShape(r, 409);
+    assertThat(r.jsonPath().getString("message")).contains("Ya existe un acta activa");
   }
 
   @Test

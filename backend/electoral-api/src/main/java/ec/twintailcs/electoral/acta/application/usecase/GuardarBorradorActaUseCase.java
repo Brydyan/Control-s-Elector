@@ -6,6 +6,7 @@ import ec.twintailcs.electoral.acta.domain.ActaDetalleRepository;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
+import ec.twintailcs.electoral.acta.domain.JrvCargoYaRegistradoException;
 import ec.twintailcs.electoral.acta.web.ActaDetalleDto;
 import ec.twintailcs.electoral.acta.web.ActaRequestDto;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
@@ -19,6 +20,7 @@ import ec.twintailcs.electoral.electoral.domain.JrvCargoRepository;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.JrvRepository;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,10 +73,25 @@ public class GuardarBorradorActaUseCase {
 
     validarCargoHabilitadoEnJrv(jrv.getId(), cargo.getId());
 
-    Acta acta =
-        actaRepository
-            .findActaActivaBy(jrv.getId(), cargo.getId(), observerId)
-            .orElseGet(Acta::nuevoBorrador);
+    // El par (JRV, cargo) admite una sola acta activa. Si el observer no tiene borrador propio
+    // pero hay un acta activa de OTRO observer en ese par, el índice parcial uk_acta_activa
+    // revienta el INSERT con DataIntegrityViolationException y el endpoint devolvía 500 en vez
+    // de 409. Mismo criterio que RegistrarActaUseCase.
+    Optional<Acta> borradorPropio =
+        actaRepository.findActaActivaBy(jrv.getId(), cargo.getId(), observerId);
+
+    Acta acta;
+    if (borradorPropio.isPresent()) {
+      acta = borradorPropio.get();
+    } else {
+      actaRepository
+          .findActaActivaConLock(jrv, cargo)
+          .ifPresent(
+              existente -> {
+                throw new JrvCargoYaRegistradoException(dto.getJrvId(), dto.getCargoId());
+              });
+      acta = Acta.nuevoBorrador();
+    }
     boolean esNuevo = acta.getId() == null;
 
     acta.setJrv(jrv);
