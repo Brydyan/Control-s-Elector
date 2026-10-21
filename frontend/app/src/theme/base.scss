@@ -49,3 +49,68 @@ body {
   border: 1px solid var(--color-border-on-surface) !important;
   border-radius: var(--radius-lg) !important;
 }
+
+/*
+ * El piso de toque de los controles primarios.
+ *
+ * S3 de `odd/tasks/frontend-responsive-shell.md`, palanca 1: 85 elementos
+ * interactivos miden menos de 44×44 px, el mínimo de WCAG 2.2 SC 2.5.8
+ * (Target Size — Minimum, AA). En el conteo un dedo que falla es un voto mal
+ * cargado, así que el piso se aplica una sola vez y aquí, no página por
+ * página: el botón de PrimeNG, el icono de la topbar y los chevrons del
+ * paginador son el mismo contrato en todas las rutas autenticadas.
+ *
+ * `44px` es el número que fija la norma, no una decisión del sistema de
+ * diseño: por eso se escribe literal en la única regla que lo necesita y no
+ * se declara un token nuevo — el bridge de tokens del rebalance #149 está
+ * congelado en esta fase.
+ *
+ * El `!important` está localizado y repite el precedente de `.p-card` de este
+ * mismo archivo, por las mismas dos razones: `variables.scss` carga
+ * `base.scss` antes de que el styled engine de PrimeNG emita sus reglas, y
+ * `layout.scss` — que `angular.json` carga al final — fija `width`/`height`
+ * en los iconos de la topbar. Sin él la regla que llega primero pierde la
+ * batalla de cascada y el piso no llega a aplicarse.
+ *
+ * El precio del piso es que `small` y el tamaño por defecto comparten altura:
+ * la jerarquía visual de los botones la sostienen el color y el peso, no los
+ * 2rem de diferencia que tenían antes.
+ */
+.p-button,
+.layout-topbar-action,
+.p-paginator-first,
+.p-paginator-prev,
+.p-paginator-next,
+.p-paginator-last {
+  min-height: 44px !important;
+}
+
+/*
+ * Los iconos solos son cuadrados: su ancho entra en el mismo contrato que su
+ * alto. `min-width` gana sobre el `width` fijo del shell sin necesitar tocar
+ * `layout.scss`, que es de otra unidad de trabajo.
+ */
+.layout-topbar-action,
+.p-paginator-first,
+.p-paginator-prev,
+.p-paginator-next,
+.p-paginator-last {
+  min-width: 44px !important;
+}
+
+/*
+ * El badge de estado (`app-badge` → `p-tag`) es una etiqueta y no un control:
+ * no tiene rol, no entra al orden de tabulación y no tiene manejador, así que
+ * WCAG 2.5.8 no lo mide. Lo que sí importa es que el chip que dice en qué
+ * estado está el acta sea legible y localizable con el dedo en el teléfono —
+ * el viewport donde esta fase mide el contrato— sin estirar la tabla de
+ * escritorio, donde el chip compacto es parte del ritmo de la fila. De ahí
+ * que el piso entre sólo bajo 768px.
+ */
+@media (max-width: 767px) {
+  app-badge .p-tag {
+    /* `p-tag` ya centra su contenido: sólo hace falta el piso. */
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
