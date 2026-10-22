@@ -58,7 +58,11 @@
     >
       <i class="pi pi-bell" aria-hidden="true"></i>
       @if (notifications() > 0) {
-        <p-badge [value]="notifications()" severity="danger" class="layout-notification-badge" />
+        <p-badge
+          [value]="notifications()"
+          severity="danger"
+          class="layout-notification-badge"
+        />
       }
     </button>
 
@@ -99,7 +103,11 @@
   <div class="layout-user-panel">
     <p class="layout-user-panel-name">{{ displayName() }}</p>
     <p class="layout-user-panel-role">{{ roleLabel() }}</p>
-    <button class="layout-topbar-action layout-logout" type="button" (click)="logout()">
+    <button
+      class="layout-topbar-action layout-logout"
+      type="button"
+      (click)="logout()"
+    >
       <i class="pi pi-sign-out" aria-hidden="true"></i>
       <span>Cerrar sesión</span>
     </button>
