@@ -63,7 +63,9 @@ export class LayoutService {
   readonly viewportWidth = this._viewportWidth.asReadonly();
 
   /** True when the viewport is wide enough for the static sidebar layout. */
-  readonly isDesktop = computed(() => this._viewportWidth() >= DESKTOP_BREAKPOINT);
+  readonly isDesktop = computed(
+    () => this._viewportWidth() >= DESKTOP_BREAKPOINT,
+  );
 
   constructor() {
     if (typeof window !== 'undefined') {
