@@ -109,7 +109,9 @@ describe('SidebarComponent', () => {
     const aside = fixture.nativeElement.querySelector('aside.layout-sidebar');
     expect(aside).toBeTruthy();
 
-    const links = fixture.nativeElement.querySelectorAll('aside.layout-sidebar a');
+    const links = fixture.nativeElement.querySelectorAll(
+      'aside.layout-sidebar a',
+    );
     expect(links.length).toBeGreaterThan(0);
   });
 

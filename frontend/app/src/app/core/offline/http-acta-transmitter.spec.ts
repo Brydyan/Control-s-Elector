@@ -1,7 +1,4 @@
-import {
-  HttpClient,
-  provideHttpClient,
-} from '@angular/common/http';
+import { HttpClient, provideHttpClient } from '@angular/common/http';
 import {
   HttpTestingController,
   provideHttpClientTesting,

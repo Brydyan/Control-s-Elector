@@ -9,11 +9,7 @@ import {
 import { Observable, firstValueFrom } from 'rxjs';
 import { OfflineStorageService, PendingActa } from './offline-storage.service';
 import { HttpActaTransmitter } from './http-acta-transmitter';
-import {
-  calcularBackoffMs,
-  clasificarFallo,
-  mensajeFallo,
-} from './fallos';
+import { calcularBackoffMs, clasificarFallo, mensajeFallo } from './fallos';
 
 /**
  * Opciones de una transmisión.
@@ -200,9 +196,7 @@ export class SyncService {
       return;
     }
     this.pendientes.set(cola.length);
-    this.fallidos.set(
-      cola.filter((item) => item.estado === 'failed').length,
-    );
+    this.fallidos.set(cola.filter((item) => item.estado === 'failed').length);
   }
 
   /**

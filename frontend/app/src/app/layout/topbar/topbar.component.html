@@ -52,13 +52,15 @@
       @if (sync.pendientes() > 0) {
         <span class="layout-queue-count">
           {{ sync.pendientes() }}
-          {{ sync.pendientes() === 1 ? 'acta en cola' : 'actas en cola' }}
+          {{ sync.pendientes() === 1 ? "acta en cola" : "actas en cola" }}
         </span>
         @if (sync.sincronizando()) {
           <span class="layout-queue-syncing">· enviando…</span>
         }
         @if (sync.fallidos() > 0) {
-          <span class="layout-queue-failed">· {{ sync.fallidos() }} con error</span>
+          <span class="layout-queue-failed"
+            >· {{ sync.fallidos() }} con error</span
+          >
         }
       }
     </div>
@@ -68,7 +70,7 @@
         @if (confirmandoDescarte()) {
           <span class="layout-queue-confirm">
             ¿Descartar {{ sync.fallidos() }}
-            {{ sync.fallidos() === 1 ? 'acta' : 'actas' }} con error?
+            {{ sync.fallidos() === 1 ? "acta" : "actas" }} con error?
           </span>
           <button
             type="button"
@@ -117,7 +119,11 @@
     >
       <i class="pi pi-bell" aria-hidden="true"></i>
       @if (notifications() > 0) {
-        <p-badge [value]="notifications()" severity="danger" class="layout-notification-badge" />
+        <p-badge
+          [value]="notifications()"
+          severity="danger"
+          class="layout-notification-badge"
+        />
       }
     </button>
 
@@ -158,7 +164,11 @@
   <div class="layout-user-panel">
     <p class="layout-user-panel-name">{{ displayName() }}</p>
     <p class="layout-user-panel-role">{{ roleLabel() }}</p>
-    <button class="layout-topbar-action layout-logout" type="button" (click)="logout()">
+    <button
+      class="layout-topbar-action layout-logout"
+      type="button"
+      (click)="logout()"
+    >
       <i class="pi pi-sign-out" aria-hidden="true"></i>
       <span>Cerrar sesión</span>
     </button>
