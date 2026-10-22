@@ -86,8 +86,12 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
 ENV LANGUAGE='en_US:en'
 
 COPY --from=build --chown=185:0 /home/quarkus/proj/target/*-runner /deployments/
-# Overrides de properties de la imagen, si el modulo los declara.
-COPY --from=build --chown=185:0 /home/quarkus/proj/target/docker/ /deployments/
+
+# No se copia `target/docker/`: ese directorio solo lo produce Quarkus cuando
+# `quarkus.container-image-build=true`, que este modulo no activa porque arma
+# la imagen con este Dockerfile y no con la que genera Quarkus. Ademas contiene
+# los Dockerfiles generados, no overrides de properties: no aporta nada de
+# runtime. El COPY canonico de Quarkus tampoco lo tiene.
 
 EXPOSE 8080
 USER 185
