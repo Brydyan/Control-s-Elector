@@ -14,7 +14,12 @@
 # que no estan en el classpath y Graal aborta. Refs #114.
 
 # ─── Build (Mandrel) ───────────────────────────────────────────────────────
-FROM quay.io/quarkus/ubi-quarkus-mandrel-builder-image:jdk-21 AS build
+# El builder tiene que ser Mandrel 25: `checkGraalVMVersion` aborta el build con
+# `Out of date version of GraalVM or Mandrel detected: 23.1.12.1. Quarkus
+# currently supports 25.0.0`. Notese el prefijo `ubi9-` del repo, que NO es el
+# mismo que el `ubi-quarkus-mandrel-builder-image` de siempre. Este builder es
+# JDK 25 (LTS), igual que el resto del pipeline nativo.
+FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25 AS build
 
 WORKDIR /home/quarkus/proj
 
@@ -64,8 +69,8 @@ RUN --mount=type=cache,target=/home/quarkus/.m2,uid=1001,gid=1001,sharing=locked
 #      puede ni expresar el probe ni depurar el contenedor.
 #   2. sin JDK. Esta es una imagen nativa, no JVM.
 #   3. UBI 9 (glibc 2.34). El builder de arriba es
-#      `ubi-quarkus-mandrel-builder-image:jdk-21`, que desde Quarkus 3.19 está
-#      basado en UBI 9: el ejecutable que produce NO corre sobre UBI 8.
+#      `ubi9-quarkus-mandrel-builder-image:jdk-25`, también basado en UBI 9 con
+#      glibc 2.34: el ejecutable que produce NO corre sobre UBI 8.
 #
 # Por qué NO las imágenes oficiales "mínimas" de Quarkus. Medido sobre las
 # imágenes reales:
