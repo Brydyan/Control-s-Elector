@@ -197,9 +197,7 @@ export function composite(
 export function relativeLuminance(rgb: [number, number, number]): number {
   const [r, g, b] = rgb.map((channel) => {
     const value = channel / 255;
-    return value <= 0.03928
-      ? value / 12.92
-      : ((value + 0.055) / 1.055) ** 2.4;
+    return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
   });
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
@@ -229,9 +227,7 @@ export function ratioOf(
   backgroundToken: string,
   overToken?: string,
 ): number {
-  const foreground = parseColor(
-    resolver.resolve(foregroundToken, scheme),
-  );
+  const foreground = parseColor(resolver.resolve(foregroundToken, scheme));
   if (!foreground) {
     throw new Error(`"${foregroundToken}" does not resolve to a colour`);
   }

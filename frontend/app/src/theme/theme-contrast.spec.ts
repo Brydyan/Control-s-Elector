@@ -168,8 +168,12 @@ describe('theme colour scheme', () => {
   });
 
   it('should paint the dark surfaces darker than the light ones', () => {
-    const lightCard = parseColor(resolver.resolve('--color-surface-card', 'light'));
-    const darkCard = parseColor(resolver.resolve('--color-surface-card', 'dark'));
+    const lightCard = parseColor(
+      resolver.resolve('--color-surface-card', 'light'),
+    );
+    const darkCard = parseColor(
+      resolver.resolve('--color-surface-card', 'dark'),
+    );
     expect(lightCard).not.toBeNull();
     expect(darkCard).not.toBeNull();
 
@@ -194,13 +198,7 @@ describe('theme colour scheme', () => {
   it.each(PAIRS)(
     'should keep the $name readable in the light scheme',
     (pair) => {
-      const ratio = ratioOf(
-        resolver,
-        'light',
-        pair.fg,
-        pair.bg,
-        pair.over,
-      );
+      const ratio = ratioOf(resolver, 'light', pair.fg, pair.bg, pair.over);
       expect(ratio).toBeGreaterThanOrEqual(pair.min);
     },
   );
@@ -241,8 +239,10 @@ describe('global typography', () => {
     for (const utility of ['.font-display', '.font-title', '.font-body']) {
       const declared = blocks.some(
         (block) =>
-          block.selector.split(',').map((part) => part.trim()).includes(utility) &&
-          /(^|[\s;{])color\s*:/.test(block.body),
+          block.selector
+            .split(',')
+            .map((part) => part.trim())
+            .includes(utility) && /(^|[\s;{])color\s*:/.test(block.body),
       );
       expect(declared).toBe(true);
     }
