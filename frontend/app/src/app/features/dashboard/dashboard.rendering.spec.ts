@@ -63,7 +63,9 @@ describe('DashboardPage (rendering)', () => {
 
   it('should render the four summary counters', () => {
     const values = Array.from(
-      fixture.nativeElement.querySelectorAll('.stat-card-value') as NodeListOf<HTMLElement>,
+      fixture.nativeElement.querySelectorAll(
+        '.stat-card-value',
+      ) as NodeListOf<HTMLElement>,
     ).map((el) => el.textContent?.trim());
 
     expect(values).toEqual(['1', '1', '1', '1']);
