@@ -16,7 +16,8 @@
           [(ngModel)]="terminoBusqueda"
           (ngModelChange)="onBusquedaChange()"
           aria-label="Buscar por JRV, ID o estado"
-         pInputText />
+          pInputText
+        />
         @if (terminoBusqueda) {
         <p-inputicon
           styleClass="pi pi-times"
@@ -49,9 +50,7 @@
       (ngModelChange)="cambiarCanton($event)"
       aria-label="Filtrar por cantón"
     />
-    }
-
-    @if (tieneFiltrosActivos()) {
+    } @if (tieneFiltrosActivos()) {
     <app-button
       variant="ghost"
       size="sm"
@@ -184,22 +183,15 @@
               {{ acta.votosBlancos }} / {{ acta.votosNulos }}
             </td>
             <td class="td-muted">
-              @if (checksumTexto(acta); as checksum) {
-              {{ checksum }}
-              @if (checksumValido(acta) === true) {
-              <i
-                class="pi pi-check"
-                aria-label="Checksum válido"
-              ></i>
+              @if (checksumTexto(acta); as checksum) { {{ checksum }} @if
+              (checksumValido(acta) === true) {
+              <i class="pi pi-check" aria-label="Checksum válido"></i>
               } @else if (checksumValido(acta) === false) {
               <i
                 class="pi pi-exclamation-triangle"
                 aria-label="Checksum inválido"
               ></i>
-              }
-              } @else {
-              —
-              }
+              } } @else { — }
             </td>
             <td class="td-muted">
               {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
