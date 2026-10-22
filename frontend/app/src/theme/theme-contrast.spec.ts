@@ -125,9 +125,9 @@ const CARD_PAIRS: ContrastPair[] = [
     min: AA_LARGE,
   },
   {
-    name: 'banner heading on the brand blue',
-    fg: '--color-text-on-brand',
-    bg: '--color-brand-primary',
+    name: 'banner heading on the sidebar surface',
+    fg: '--color-text-on-brand-panel',
+    bg: '--color-surface-sidebar',
     min: AA_LARGE,
   },
 ];
@@ -258,6 +258,14 @@ describe('global typography', () => {
  * rule painted it with `opacity: 0.8` on top of the brand blue, and no token
  * can undo an opacity. The caption has to carry a token for its colour and
  * reach AA (4.5:1) in both schemes.
+ *
+ * After the visual rebalance (S3 of `odd/tasks/frontend-visual-rebalance.md`)
+ * the banner is no longer painted with the brand blue: it sits on
+ * `--color-surface-sidebar` (slate-900 in the light scheme), so the
+ * "background of the banner" the caption reads against is the sidebar token,
+ * not the brand one. The rule on the caption stayed the same — white text,
+ * no opacity — and now reads against a darker surface with even more head
+ * room.
  */
 describe('the dashboard banner caption', () => {
   const dashboardSource = readFileSync(
@@ -295,13 +303,13 @@ describe('the dashboard banner caption', () => {
 
       const foreground = parseColor(resolver.resolve(colorToken!, scheme));
       const background = parseColor(
-        resolver.resolve('--color-brand-primary', scheme),
+        resolver.resolve('--color-surface-sidebar', scheme),
       );
       expect(foreground).not.toBeNull();
       expect(background).not.toBeNull();
 
       // What the browser paints: the colour of the token, dimmed by the
-      // opacity of the rule, over the blue of the banner.
+      // opacity of the rule, over the sidebar surface of the banner.
       const painted = composite(
         { ...foreground!, alpha: foreground!.alpha * opacity },
         background!.rgb,

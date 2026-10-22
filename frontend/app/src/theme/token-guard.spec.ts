@@ -74,7 +74,7 @@ function fixture(feature: { path: string; content: string }): string {
   mkdirSync(join(root, 'src/theme'), { recursive: true });
   writeFileSync(
     join(root, 'src/theme/tokens.scss'),
-    ':root {\n  --color-brand-primary: #2563eb;\n  --color-border-medium: #e2e8f0;\n}\n',
+    ':root {\n  --color-brand-primary: #1c4a8e;\n  --color-border-medium: #e2e8f0;\n}\n',
     'utf8',
   );
 

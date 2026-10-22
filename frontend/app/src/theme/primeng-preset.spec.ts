@@ -8,17 +8,17 @@ import { primengTheme, DARK_MODE_CLASS } from './primeng-theme';
  * These assertions pin the literal values declared in `src/theme/tokens.scss`.
  */
 describe('electoralPreset', () => {
-  it('should map the primary ramp to the institutional blue scale', () => {
+  it('should map the primary ramp to the institutional navy scale', () => {
     const primary = electoralPreset.semantic.primary as Record<string, string>;
 
-    expect(primary['50']).toBe('#eff6ff');
-    expect(primary['100']).toBe('#dbeafe');
-    expect(primary['200']).toBe('#bfdbfe');
-    expect(primary['500']).toBe('#2563eb');
-    expect(primary['600']).toBe('#1d4ed8');
-    expect(primary['700']).toBe('#1e40af');
-    expect(primary['800']).toBe('#1e3a8a');
-    expect(primary['950']).toBe('#0f172a');
+    expect(primary['50']).toBe('#e8eef7');
+    expect(primary['100']).toBe('#d6e0ee');
+    expect(primary['200']).toBe('#b1c4dd');
+    expect(primary['500']).toBe('#1c4a8e');
+    expect(primary['600']).toBe('#15366b');
+    expect(primary['700']).toBe('#0f2a4d');
+    expect(primary['800']).toBe('#0a213f');
+    expect(primary['950']).toBe('#020617');
   });
 
   it('should not ship the Aura default emerald primary', () => {

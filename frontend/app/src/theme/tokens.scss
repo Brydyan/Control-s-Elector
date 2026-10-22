@@ -24,15 +24,23 @@
  */
 
 :root {
-  // 1. Escala Tonal de Marca (Azul Institucional)
-  --primitive-blue-50: #eff6ff;
-  --primitive-blue-200: #bfdbfe;
-  --primitive-blue-300: #93c5fd;
-  --primitive-blue-400: #60a5fa;
-  --primitive-blue-500: #2563eb;
-  --primitive-blue-600: #1d4ed8;
-  --primitive-blue-700: #1e40af;
-  --primitive-blue-900: #1e3a8a;
+  // 1. Escala Tonal de Marca (Navy Institucional)
+  //
+  // La rampa "blue" ya no es el Tailwind blue-600: la marca institucional
+  // pide un navy desaturado que se sostiene sobre大面积 sin gritar. La rampa
+  // completa se reescribió en el rebalance visual (odd/tasks/frontend-visual-
+  // rebalance.md, S1) — los nombres siguen siendo "blue" porque el preset de
+  // PrimeNG pide `primitive.blue` y el vocabulario semántico no cambia.
+  --primitive-blue-50: #e8eef7;
+  --primitive-blue-100: #d6e0ee;
+  --primitive-blue-200: #b1c4dd;
+  --primitive-blue-300: #7c9cc4;
+  --primitive-blue-400: #4d75a8;
+  --primitive-blue-500: #1c4a8e;
+  --primitive-blue-600: #15366b;
+  --primitive-blue-700: #0f2a4d;
+  --primitive-blue-800: #0a213f;
+  --primitive-blue-900: #061730;
 
   // Navy / Slate profundo para superficies oscuras y textos
   --primitive-slate-950: #020617;
@@ -80,7 +88,13 @@
   --color-brand-border: var(--primitive-blue-200);
 
   // Superficies
-  --color-surface-page: var(--primitive-slate-50);
+  //
+  // El page ya no es slate-50 puro: es slate-100 con un toque cian del 4%
+  // (hex inline, no primitivo) que sigue hablando del azul de marca sin
+  // coincidir exactamente con él. El delta contra el card sube de 5 a 12
+  // unidades de luminosidad y las tarjetas se despegan sin gritar — ver
+  // S2 de odd/tasks/frontend-visual-rebalance.md.
+  --color-surface-page: #eef2f7;
   --color-surface-card: var(--primitive-white);
   --color-surface-raised: var(--primitive-slate-100);
   --color-surface-canvas: var(--primitive-white);
@@ -146,7 +160,7 @@
   --color-status-danger-bg: var(--primitive-red-50);
   --color-status-danger-border: var(--primitive-red-200);
 
-  --color-status-info: var(--primitive-blue-700);
+  --color-status-info: var(--primitive-blue-600);
   --color-status-info-bg: var(--primitive-blue-50);
   --color-status-info-border: var(--primitive-blue-200);
 
@@ -319,8 +333,8 @@
   --color-status-danger-border: rgba(239, 68, 68, 0.4);
 
   --color-status-info: var(--primitive-blue-300);
-  --color-status-info-bg: rgba(37, 99, 235, 0.16);
-  --color-status-info-border: rgba(96, 165, 250, 0.4);
+  --color-status-info-bg: rgba(76, 117, 168, 0.18);
+  --color-status-info-border: rgba(177, 196, 221, 0.4);
 
   /* El acta corregida — mismo tono morado, un paso más claro. */
   --color-status-corrected: var(--primitive-purple-300);
@@ -352,10 +366,14 @@
   --color-backdrop-photo: #000;
   --color-text-on-brand-panel: var(--primitive-white);
 
-  /* Marca — mismo tono, un paso más claro: sobre fondo oscuro el azul
-     institucional se apaga. */
+  /*
+   * Marca — la rampa "blue" ya es navy institucional, así que los pasos
+   * del dark scheme siguen la misma rampa pero con un paso más claro en
+   * cada uno: el navy-500 se vuelve navy-400, el navy-600 se vuelve
+   * navy-500, etc. Mismo vocabulario, mismos nombres, sin inventar hex.
+   */
   --color-brand-primary: var(--primitive-blue-400);
-  --color-brand-primary-strong: var(--primitive-blue-300);
-  --color-brand-primary-active: var(--primitive-blue-200);
-  --color-brand-border: rgba(96, 165, 250, 0.65);
+  --color-brand-primary-strong: var(--primitive-blue-500);
+  --color-brand-primary-active: var(--primitive-blue-600);
+  --color-brand-border: rgba(122, 154, 196, 0.65);
 }
