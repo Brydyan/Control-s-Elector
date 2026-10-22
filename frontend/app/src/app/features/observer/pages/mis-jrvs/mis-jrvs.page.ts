@@ -63,7 +63,8 @@ export class MisJrvsPage implements OnInit {
       },
       error: (err) => {
         this.error.set(
-          'No se pudieron cargar las mesas asignadas. Verifica tu conexión.');
+          'No se pudieron cargar las mesas asignadas. Verifica tu conexión.',
+        );
         this.loading.set(false);
         console.error('Error fetching JRVs:', err);
       },

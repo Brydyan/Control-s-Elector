@@ -175,7 +175,8 @@ export class ActasListaPage implements OnInit, OnDestroy {
       error: (err) => {
         this.error.set(
           err?.error?.message ||
-          'No se pudieron cargar las actas para supervisión.');
+            'No se pudieron cargar las actas para supervisión.',
+        );
         this.loading.set(false);
       },
     });

@@ -10,12 +10,14 @@
   </header>
 
   <div class="filters">
-    <input type="text"
+    <input
+      type="text"
       [(ngModel)]="terminoBusqueda"
       (ngModelChange)="page = 0; cargarUsuarios()"
       placeholder="Buscar por nombre, email o ID"
       aria-label="Buscar usuarios()"
-     pInputText />
+      pInputText
+    />
     <p-select
       [options]="rolFilterOptions"
       optionLabel="label"
@@ -90,15 +92,22 @@
           <td>{{ usuario.habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
           <td>{{ usuario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions">
-            <app-button variant="ghost" size="sm" (clicked)="verDetalles(usuario)">
+            <app-button
+              variant="ghost"
+              size="sm"
+              (clicked)="verDetalles(usuario)"
+            >
               Ver detalles
             </app-button>
             @if (esMaster) {
-            <app-button variant="ghost" size="sm" (clicked)="abrirEditar(usuario)">
+            <app-button
+              variant="ghost"
+              size="sm"
+              (clicked)="abrirEditar(usuario)"
+            >
               Editar
             </app-button>
-            }
-            @if (puedeAnular(usuario)) {
+            } @if (puedeAnular(usuario)) {
             <app-button
               variant="danger"
               size="sm"
@@ -106,8 +115,7 @@
             >
               Deshabilitar
             </app-button>
-            }
-            @if (esMaster && !usuario.habilitado) {
+            } @if (esMaster && !usuario.habilitado) {
             <app-button
               variant="ghost"
               size="sm"
@@ -139,8 +147,7 @@
         <app-button variant="ghost" size="sm" (clicked)="abrirEditar(usuario)">
           Editar
         </app-button>
-        }
-        @if (puedeAnular(usuario)) {
+        } @if (puedeAnular(usuario)) {
         <app-button
           variant="danger"
           size="sm"
@@ -175,11 +182,11 @@
 >
   <label class="field">
     <span>Nombre</span>
-    <input type="text" [(ngModel)]="nombre"  pInputText />
+    <input type="text" [(ngModel)]="nombre" pInputText />
   </label>
   <label class="field">
     <span>Apellido</span>
-    <input type="text" [(ngModel)]="apellido"  pInputText />
+    <input type="text" [(ngModel)]="apellido" pInputText />
   </label>
   <label class="field">
     <span>Rol</span>
@@ -188,9 +195,7 @@
 
   @if (error()) {
   <p-message severity="error" [text]="error() ?? ''" />
-  }
-
-  @if (passwordTemporal) {
+  } @if (passwordTemporal) {
   <div class="password-alert">
     <strong>Contraseña temporal</strong><code>{{ passwordTemporal }}</code
     ><span>Copiala ahora: solo se muestra una vez.</span>
@@ -198,7 +203,11 @@
   }
 
   <ng-template #footer>
-    <app-button variant="secondary" [disabled]="submitting()" (clicked)="cerrarModal()">
+    <app-button
+      variant="secondary"
+      [disabled]="submitting()"
+      (clicked)="cerrarModal()"
+    >
       Cancelar
     </app-button>
     <app-button [disabled]="submitting()" (clicked)="guardar()">
@@ -219,9 +228,7 @@
   @if (usuarioSeleccionado) {
   <dl class="detail-list">
     <dt>Nombre</dt>
-    <dd>
-      {{ usuarioSeleccionado.nombre }} {{ usuarioSeleccionado.apellido }}
-    </dd>
+    <dd>{{ usuarioSeleccionado.nombre }} {{ usuarioSeleccionado.apellido }}</dd>
     <dt>Email</dt>
     <dd>{{ usuarioSeleccionado.email }}</dd>
     <dt>Rol</dt>

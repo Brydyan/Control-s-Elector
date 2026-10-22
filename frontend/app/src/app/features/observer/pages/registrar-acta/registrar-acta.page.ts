@@ -125,7 +125,9 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set('No se pudieron cargar los candidatos para esta dignidad.');
+        this.error.set(
+          'No se pudieron cargar los candidatos para esta dignidad.',
+        );
         this.loading.set(false);
         console.error('Error loading candidatos:', err);
       },
@@ -340,7 +342,8 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
       error: (err) => {
         this.submitting.set(false);
         this.error.set(
-          'Error al guardar el borrador. ' + (err.error?.message || ''));
+          'Error al guardar el borrador. ' + (err.error?.message || ''),
+        );
       },
     });
   }
@@ -387,7 +390,8 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
         this.submitting.set(false);
         this.error.set(
           'Error al enviar el acta: ' +
-          (err.error?.message || 'Revisa la conexión.'));
+            (err.error?.message || 'Revisa la conexión.'),
+        );
         // T-FE-09 S2 / G1: encolar en IndexedDB para sync posterior.
         void this.encolarActaOffline(payload, err);
       },
@@ -413,7 +417,8 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
         OfflineStorageService.draftId(this.jrvId, this.cargoId),
       );
       this.error.set(
-        'Acta guardada en este dispositivo. Se transmitirá en cuanto recupere señal.');
+        'Acta guardada en este dispositivo. Se transmitirá en cuanto recupere señal.',
+      );
     } catch (enqueueErr) {
       console.error('Error al encolar acta offline:', enqueueErr);
     }
