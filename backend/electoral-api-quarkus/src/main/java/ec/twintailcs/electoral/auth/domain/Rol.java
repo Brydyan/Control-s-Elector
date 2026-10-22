@@ -1,6 +1,5 @@
 package ec.twintailcs.electoral.auth.domain;
 
-import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,7 +23,7 @@ public class Rol extends PanacheEntityBase {
   @Column(name = "nombre", length = 32, nullable = false, unique = true)
   String nombre;
 
-  @UuidGenerator(algorithm = UuidV7Generator.class)
+  @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
   @Column(name = "public_id", nullable = false, unique = true, columnDefinition = "UUID")
   UUID publicId;
 
