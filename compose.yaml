@@ -135,9 +135,12 @@ services:
       # JWT
       APP_JWT_SECRET: ${APP_JWT_SECRET:-dev-only-change-in-prod-32chars-min-jwt-hmac-key}
       APP_JWT_REFRESH_PEPPER: ${APP_JWT_REFRESH_PEPPER:-dev-only-control-elector-refresh-pepper}
-      # Seed admin
-      APP_SEED_ADMIN_EMAIL: ${APP_SEED_ADMIN_EMAIL:-admin@control-elector.local}
-      APP_SEED_ADMIN_PASSWORD: ${APP_SEED_ADMIN_PASSWORD:-admin12345}
+      # Bootstrap admin
+      # El admin inicial lo siembra la migracion 026-admin-inicial.sql, no una
+      # variable de entorno. En staging/produccion se corre con
+      # QUARKUS_LIQUIDASE_CONTEXTS vacio para no crearlo: la cuenta se
+      # provisiona a mano. Ver el aviso de seguridad en el changelog.
+      QUARKUS_LIQUIDASE_CONTEXTS: ${QUARKUS_LIQUIDASE_CONTEXTS:-seed}
     ports:
       - "8083:80"
     depends_on:
