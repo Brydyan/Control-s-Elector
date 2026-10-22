@@ -160,20 +160,14 @@
       <div class="checksum-status">
         @if (isChecksumValid) {
         <i class="pi pi-check" aria-hidden="true"></i> Balance electoral exacto
-        } @else {
-        <i class="pi pi-times" aria-hidden="true"></i> La suma no coincide con el
-        total
-        }
+        } @else { <i class="pi pi-times" aria-hidden="true"></i> La suma no
+        coincide con el total }
       </div>
     </div>
 
     <div class="step-actions">
       @if (!isChecksumValid && totalVotosComputados > 0) {
-      <app-button
-        variant="secondary"
-        size="lg"
-        (clicked)="irAPasoImagen()"
-      >
+      <app-button variant="secondary" size="lg" (clicked)="irAPasoImagen()">
         <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
         Continuar con Inconsistencia (Foto Requerida)
         <i class="pi pi-arrow-right" aria-hidden="true"></i>

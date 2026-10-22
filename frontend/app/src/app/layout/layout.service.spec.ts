@@ -35,9 +35,7 @@ describe('LayoutService', () => {
   it('should restore the persisted collapse state', () => {
     localStorage.setItem('electoral_sidebar_collapsed', 'true');
 
-    const restored = TestBed.runInInjectionContext(
-      () => new LayoutService(),
-    );
+    const restored = TestBed.runInInjectionContext(() => new LayoutService());
 
     expect(restored.desktopCollapsed()).toBe(true);
   });
