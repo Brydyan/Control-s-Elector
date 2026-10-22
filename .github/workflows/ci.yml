@@ -293,12 +293,16 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # El modulo Quarkus no tiene mvnw: el runner de GitHub ya trae Maven.
+      # Se usa `./mvnw` y no el Maven del runner: el wrapper pinea la misma
+      # version (3.9.16) que usa el build nativo dentro de
+      # `Dockerfile.native`, asi que los tests y la imagen nativa se compilan
+      # con el mismo Maven. Si divergen, un test verde puede no reproducir el
+      # fallo del AOT.
       # `verify` corre los tests (el surefire de este modulo incluye los *IT)
       # y ademas arma la app, asi que el job tambien cubre el packaging.
       - name: Run the Quarkus backend tests
         working-directory: backend/electoral-api-quarkus
-        run: mvn -B clean verify
+        run: ./mvnw -B clean verify
 
   # ===========================================================================
   # BACKEND NATIVE (fase 2, issue #114)

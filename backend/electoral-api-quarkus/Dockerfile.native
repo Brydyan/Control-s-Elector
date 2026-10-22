@@ -25,17 +25,30 @@ WORKDIR /home/quarkus/proj
 ARG MAVEN_OPTS="-Dquarkus.native.native-image-xmx=5g"
 ENV MAVEN_OPTS=${MAVEN_OPTS}
 
-# Primero el pom, para que la capa de dependencias se cachee sola.
+# El builder de Mandrel trae `native-image` pero NO trae Maven, y el repo no
+# tiene un wrapper global: invocar `mvn` acá moría con
+# `/bin/sh: mvn: command not found`. Se usa el Maven Wrapper del modulo, que
+# baja la version pineada en .mvn/wrapper/maven-wrapper.properties (3.9.16, la
+# misma linea 3.9.x que usa la imagen JVM de maven:3.9-eclipse-temurin-21).
+#
+# El cache va a `/home/quarkus/.m2` y no a `/root/.m2`: el build corre como el
+# usuario `quarkus` (uid 1001), y verificado que no puede escribir en /root, de
+# modo que el mount anterior no solo no cacheaba, ademas era inusable.
+COPY --chown=quarkus:quarkus mvnw ./
+COPY --chown=quarkus:quarkus .mvn ./.mvn
+RUN chmod +x ./mvnw
+
+# Primero el pom y el wrapper, para que la capa de dependencias se cachee sola.
 COPY --chown=quarkus:quarkus pom.xml ./
-RUN --mount=type=cache,target=/root/.m2,sharing=locked \
-    mvn -B -ntp dependency:go-offline -DskipTests
+RUN --mount=type=cache,target=/home/quarkus/.m2,sharing=locked \
+    ./mvnw -B -ntp dependency:go-offline -DskipTests
 
 COPY --chown=quarkus:quarkus src ./src
 
 # `sources-only=false`: el builder por defecto mete los fuentes de las
 # dependencias en la imagen, que no es lo que queremos.
-RUN --mount=type=cache,target=/root/.m2,sharing=locked \
-    mvn -B -ntp package -Dnative -DskipTests \
+RUN --mount=type=cache,target=/home/quarkus/.m2,sharing=locked \
+    ./mvnw -B -ntp package -Dnative -DskipTests \
         -Dquarkus.native.sources-only=false \
         -Dquarkus.native.container-build=false
 
