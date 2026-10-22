@@ -254,7 +254,9 @@
   background: var(--p-surface-900);
   color: var(--p-surface-200);
   border-right: 1px solid rgb(255 255 255 / 8%);
-  transition: transform 0.2s ease, width 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    width 0.2s ease;
   z-index: 997;
 }
 
@@ -280,7 +282,9 @@
   border-radius: var(--p-border-radius-md);
   color: var(--p-surface-200);
   text-decoration: none;
-  transition: background-color 0.15s ease, color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .layout-sidebar a:hover {
@@ -315,7 +319,9 @@
 }
 
 .layout-wrapper.layout-static.layout-static-inactive .layout-sidebar a span,
-.layout-wrapper.layout-static.layout-static-inactive .layout-sidebar .layout-nav-section {
+.layout-wrapper.layout-static.layout-static-inactive
+  .layout-sidebar
+  .layout-nav-section {
   display: none;
 }
 
