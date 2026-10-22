@@ -137,6 +137,41 @@
 			<artifactId>rest-assured</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!--
+			Testcontainers: Postgres real para el test de RLS. No se puede probar una politica de
+			row-level security contra un mock ni contra H2: la politica vive en Postgres y el rol
+			no-superuser (los superusers la saltean por atributo) es parte del escenario.
+
+			Versiones fijadas a mano y no por el BOM de Quarkus para que coincidan con las que
+			resuelve el backend Spring (backend/electoral-api/pom.xml): mismo testcontainers
+			2.0.5 y mismo assertj 3.27.7 que los que trae el BOM de Spring Boot 4.1.0.
+		-->
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-postgresql</artifactId>
+			<version>2.0.5</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-junit-jupiter</artifactId>
+			<version>2.0.5</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- AssertJ: misma version que el backend Spring y que la suite de contrato. -->
+		<dependency>
+			<groupId>org.assertj</groupId>
+			<artifactId>assertj-core</artifactId>
+			<version>3.27.7</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!--
+			El driver JDBC de Postgres NO se declara aca: quarkus-jdbc-postgresql ya lo trae en
+			scope compile (org.postgresql:postgresql), asi que esta disponible en los tests.
+		-->
 	</dependencies>
 
 	<build>
@@ -191,10 +226,23 @@
 				</executions>
 			</plugin>
 
+			<!--
+				Surefire corre tambien los *IT: los tests de RLS son de integracion (Testcontainers
+				con Postgres real) y viven junto a los unitarios, igual que en el modulo Spring.
+				Sin esto, `mvn test` no correria RlsIsolationIT y la cobertura de RLS seria
+				decoracion.
+			-->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>${surefire-plugin.version}</version>
+				<configuration>
+					<includes>
+						<include>**/*Test.java</include>
+						<include>**/*Tests.java</include>
+						<include>**/*IT.java</include>
+					</includes>
+				</configuration>
 			</plugin>
 
 			<plugin>

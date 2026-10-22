@@ -271,6 +271,35 @@ jobs:
         run: docker logs electoral-api-quarkus
 
   # ===========================================================================
+  # BACKEND QUARKUS TESTS
+  # ===========================================================================
+  # Los tests del modulo Quarkus (backend/electoral-api-quarkus). Son los que
+  # la suite de contrato NO puede sustituir: la suite de regresion por contrato
+  # habla solo HTTP, asi que no puede afirmar la politica RLS de Postgres ni el
+  # formato del UUID. RlsIsolationIT corre contra un Postgres real de
+  # Testcontainers, que levanta y baja solo — el job no necesita ningun
+  # service de Postgres.
+  backend-quarkus-test:
+    name: Backend Quarkus Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # El modulo Quarkus no tiene mvnw: el runner de GitHub ya trae Maven.
+      # `verify` corre los tests (el surefire de este modulo incluye los *IT)
+      # y ademas arma la app, asi que el job tambien cubre el packaging.
+      - name: Run the Quarkus backend tests
+        working-directory: backend/electoral-api-quarkus
+        run: mvn -B clean verify
+
+  # ===========================================================================
   # FRONTEND JOBS (Separados: format, lint, test, build)
   # ===========================================================================
   frontend-format:

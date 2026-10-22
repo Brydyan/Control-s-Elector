@@ -241,6 +241,19 @@ public abstract class ContractTestSupport {
     return ((Number) combo.get("jrvId")).longValue();
   }
 
+  /**
+   * Devuelve al pool un par (JRV, cargo) reservado que el test no llegó a usar.
+   *
+   * <p>{@link #comboLibre(String)} reserva el par en memoria para que otro test de la misma corrida
+   * no lo tome. La reserva se libera sola cuando el acta que lo ocupa llega a ANULADA, pero un test
+   * que reserva un par y <b>no</b> crea un acta (porque el backend rechazó el registro) tiene que
+   * devolverlo a mano: si no, el pool se encoge en cada corrida y la suite se satura con el mensaje
+   * "No queda ningún par JRV+cargo sin acta activa".
+   */
+  protected static void liberarComboReservado(Map<String, Object> combo) {
+    COMBOS_RESERVADOS.remove(jrvId(combo) + "-" + cargoId(combo));
+  }
+
   /** ID interno del cargo de un combo reservado. */
   protected static long cargoId(Map<String, Object> combo) {
     return ((Number) combo.get("cargoId")).longValue();
@@ -304,6 +317,42 @@ public abstract class ContractTestSupport {
       suma += 10L * (i + 1);
     }
     return suma;
+  }
+
+  /**
+   * Mensaje exacto que el backend devuelve cuando la suma de votos no cierra con el total de
+   * sufragantes.
+   *
+   * <p>El mensaje es parte del contrato: el frontend lo muestra al observer tal cual, así que su
+   * forma exacta ({@code ≠}, el orden de los sumandos, el nombre de cada campo) no puede cambiar
+   * sin romper la aplicación. Los números salen del propio body que se mandó —no de constantes
+   * sueltas— para que el assert no pueda quedar viejo si el helper de armado cambia.
+   */
+  protected static String mensajeDeSumaDescuadrada(Map<String, Object> body) {
+    int suma = 0;
+    Object detalles = body.get("detalles");
+    if (detalles instanceof List<?> lista) {
+      for (Object item : lista) {
+        if (item instanceof Map<?, ?> detalle) {
+          suma += ((Number) detalle.get("votos")).intValue();
+        }
+      }
+    }
+    int blancos = ((Number) body.get("votosBlancos")).intValue();
+    int nulos = ((Number) body.get("votosNulos")).intValue();
+    int total = suma + blancos + nulos;
+    int enviado = ((Number) body.get("totalSufragantes")).intValue();
+    return "Los votos no cuadran. Candidatos="
+        + suma
+        + " + Blancos="
+        + blancos
+        + " + Nulos="
+        + nulos
+        + " = "
+        + total
+        + " ≠ "
+        + enviado
+        + " (total sufragantes)";
   }
 
   /** Registra un acta creada por el test para que la limpieza la libere al terminar. */

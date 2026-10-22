@@ -246,3 +246,26 @@ Como se hizo, en orden:
 - `AWS_S3_PATH_STYLE` no lo mapea el binding de MicroProfile Config (mapea `AWS_S3_PATH_STYLE_ACCESS_ENABLED`), asi que se lee del entorno a mano, como lo resolvia Spring por placeholder.
 
 **Lo que se llevo puesto:** los DTOs que cruzan el cable necesitan `@RegisterForReflection` en native image. Sin eso Jackson no encuentra serializador y responde 500. En Spring eso habria sido un `reflect-config.json` escrito a mano: 23 entidades JPA, Nimbus, AWS SDK v2, Liquibase, OpenPDF y el generador UUIDv7 propio. En Quarkus lo genera el framework. **La migracion a Quarkus no es un paso intermedio, es el habilitador de la fase nativa.**
+
+### L15 — 2026-10-21 — Entrega en dos PRs encadenados
+
+La fase 1 se entrega en **dos pull requests apilados**, ambos con el prefijo `(backend)` en el titulo para distinguirlos de los PRs de frontend que tiene abiertos la otra sesion.
+
+| PR | Rama | Base | Contenido | Tamano |
+|---|---|---|---|---|
+| **#139** | `feat/backend-quarkus-migration` | `develop` | La migracion completa + la suite de contrato + los jobs de CI + los 5 bugs reales del backend Spring | 26 commits, 206 archivos, +16.177 |
+| **#140** | `test/backend-quarkus-coverage` | `feat/backend-quarkus-migration` (PR #139) | La cobertura que el contrato black-box no puede ver: RLS de Postgres, UUIDv7, el invariante de suma de votos y la unicidad del par bajo concurrencia real | 3 commits, 6 archivos, +715 |
+
+Estrategia de entrega: `stacked-to-main` (PRs apilados a `develop`). El segundo PR depende del primero: no se puede revisar la cobertura sin la migracion debajo.
+
+**Por que la migracion es un solo PR y no 13.** El modulo Quarkus es una unidad entregable: un backend que corre. Cortarlo en 13 PRs deja 12 backends que no arrancan. El unico corte honesto que habia era justamente el que se hizo: la cobertura, que va aparte y se apila.
+
+**Verificacion de la entrega:**
+- Suite de contrato: **122/122 contra Spring y 122/122 contra Quarkus** (crecio de 120 con los dos tests nuevos de integridad electoral).
+- Tests del modulo Quarkus: **4/4** (`mvn -B clean verify`, verificado con el comando exacto que corre el CI).
+- CI del PR #139: **8/8 jobs en verde**, incluido `backend-quarkus`.
+- El CI del PR #140 no corre en el PR (el workflow solo dispara contra `main`/`develop` y la base es una rama de feature): corre cuando la cadena aterriza en `develop`.
+
+**Dos bugs del CI encontrados al abrir el PR, ambos por no probar la imagen de verdad:**
+1. `docker build -f electoral-api-quarkus/Dockerfile` es relativo al **directorio de trabajo**, no al contexto de build: desde la raiz del repo ese path no existe. La ruta correcta es `-f backend/electoral-api-quarkus/Dockerfile ... ./backend`.
+2. El job arrancaba el backend contra la base **vacia** del service, y el arranque reventaba con `Schema validation: missing table [acta]`: Liquibase crea el schema pero corre DESPUES de la validacion de Hibernate. Ahora el job arranca el backend **dos veces**: la primera con la migracion activada y la validacion apagada (crea el schema), la segunda con los defaults (valida que el schema coincide con las entidades).
