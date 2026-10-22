@@ -8,7 +8,7 @@ import { primengTheme, DARK_MODE_CLASS } from './primeng-theme';
  * These assertions pin the literal values declared in `src/theme/tokens.scss`.
  */
 describe('electoralPreset', () => {
-it('should map the primary ramp to the institutional navy scale', () => {
+  it('should map the primary ramp to the institutional navy scale', () => {
     const primary = electoralPreset.semantic.primary as Record<string, string>;
 
     expect(primary['50']).toBe('#e8eef7');

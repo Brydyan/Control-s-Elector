@@ -25,8 +25,7 @@ import { fileURLToPath } from 'node:url';
  */
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 
-const read = (path: string): string =>
-  readFileSync(join(ROOT, path), 'utf8');
+const read = (path: string): string => readFileSync(join(ROOT, path), 'utf8');
 
 const SOURCE = {
   base: read('src/theme/base.scss'),
@@ -113,7 +112,9 @@ describe('T7.3 — global 44px floor for interactive controls (S3 palanca 1)', (
         // The base rule for `.p-button` is part of the min-height
         // selector list and does NOT carry min-width; that's the
         // documented contract for a labeled button.
-        expect(SOURCE.base).not.toMatch(/\.p-button\b[^\{]*\{[^}]*min-width\s*:\s*44px/);
+        expect(SOURCE.base).not.toMatch(
+          /\.p-button\b[^\{]*\{[^}]*min-width\s*:\s*44px/,
+        );
         return;
       }
       const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -171,7 +172,10 @@ describe('T7.2 — acta capture fits at 390px (S2)', () => {
 describe('T7.4 — hit-areas on dense lists (S3 palanca 2)', () => {
   it('should keep the .p-tab filter strip 44px tall on actas-lista', () => {
     const body = blockBody(SOURCE.actasLista, '.p-tab');
-    expect(body, '.p-tab rule missing from actas-lista.page.scss').not.toBeNull();
+    expect(
+      body,
+      '.p-tab rule missing from actas-lista.page.scss',
+    ).not.toBeNull();
     expect(hasProp(body!, 'min-height', '44px')).toBe(true);
   });
 
