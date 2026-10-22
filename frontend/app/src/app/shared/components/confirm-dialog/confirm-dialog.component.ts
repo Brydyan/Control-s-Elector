@@ -28,7 +28,7 @@ import { ButtonComponent } from '../../ui/button/button.component';
       [header]="title"
     >
       @if (message) {
-      <p class="message">{{ message }}</p>
+        <p class="message">{{ message }}</p>
       }
       <ng-template #footer>
         <app-button
