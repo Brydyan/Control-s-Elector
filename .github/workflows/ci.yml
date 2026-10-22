@@ -271,7 +271,7 @@ jobs:
   # Testcontainers, que levanta y baja solo — el job no necesita ningun
   # service de Postgres.
   backend-quarkus-test:
-    name: Backend Quarkus Tests
+    name: Backend Tests & Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
