@@ -54,7 +54,9 @@ describe('TopbarComponent', () => {
     fixture.componentRef.setInput('subtitle', 'Elecciones Seccionales 2027');
     fixture.detectChanges();
 
-    const title = fixture.nativeElement.querySelector('.layout-topbar-title .title');
+    const title = fixture.nativeElement.querySelector(
+      '.layout-topbar-title .title',
+    );
     expect(title.textContent).toContain('Resumen General');
   });
 
