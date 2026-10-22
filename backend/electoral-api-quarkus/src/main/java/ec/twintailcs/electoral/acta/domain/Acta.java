@@ -1,6 +1,5 @@
 package ec.twintailcs.electoral.acta.domain;
 
-import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,7 +43,7 @@ public class Acta extends PanacheEntityBase {
   @Column(name = "version", nullable = false)
   Long version;
 
-  @UuidGenerator(algorithm = UuidV7Generator.class)
+  @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
   @Column(
       name = "public_id",
       nullable = false,

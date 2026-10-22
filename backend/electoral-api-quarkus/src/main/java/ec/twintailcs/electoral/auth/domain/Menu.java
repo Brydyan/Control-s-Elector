@@ -1,6 +1,5 @@
 package ec.twintailcs.electoral.auth.domain;
 
-import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -41,7 +40,7 @@ public class Menu extends PanacheEntityBase {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
 
-  @UuidGenerator(algorithm = UuidV7Generator.class)
+  @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
   @Column(
       name = "public_id",
       nullable = false,
