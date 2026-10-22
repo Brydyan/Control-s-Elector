@@ -15,7 +15,11 @@ import { toPrimeIcon } from '../icon-map';
     <div class="empty-state">
       @if (icon) {
         <div class="empty-state__icon-wrapper">
-          <i [class]="iconClass" class="empty-state__icon" aria-hidden="true"></i>
+          <i
+            [class]="iconClass"
+            class="empty-state__icon"
+            aria-hidden="true"
+          ></i>
         </div>
       }
       @if (title) {
