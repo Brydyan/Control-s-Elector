@@ -46,12 +46,12 @@ import { PinAuthService } from '../../../core/auth/pin-auth.service';
       />
 
       @if (errorMessage) {
-      <p-message
-        class="pin-error"
-        severity="error"
-        [text]="errorMessage!"
-        data-testid="pin-error"
-      />
+        <p-message
+          class="pin-error"
+          severity="error"
+          [text]="errorMessage!"
+          data-testid="pin-error"
+        />
       }
 
       <ng-template #footer>
