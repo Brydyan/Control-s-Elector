@@ -40,11 +40,31 @@ RUN --mount=type=cache,target=/root/.m2,sharing=locked \
         -Dquarkus.native.container-build=false
 
 # ─── Runtime (sin JVM) ────────────────────────────────────────────────────
-# UBI minimal y no la imagen distroless de Quarkus a proposito: distroless no
-# trae shell ni curl, y sin shell no se puede expresar el HEALTHCHECK de
-# Dockerfile ni inspeccionar el contenedor. UBI minimal mantiene ambas cosas y
-# sigue sin JDK.
-FROM quay.io/quarkus/ubi-quarkus-runtime-image:jdk-21
+# La imagen base tiene que cumplir TRES condiciones. Las tres están medidas
+# ejecutando la imagen, no asumidas:
+#
+#   1. shell Y curl. El HEALTHCHECK de abajo es `curl -sf`; sin shell no se
+#      puede ni expresar el probe ni depurar el contenedor.
+#   2. sin JDK. Esta es una imagen nativa, no JVM.
+#   3. UBI 9 (glibc 2.34). El builder de arriba es
+#      `ubi-quarkus-mandrel-builder-image:jdk-21`, que desde Quarkus 3.19 está
+#      basado en UBI 9: el ejecutable que produce NO corre sobre UBI 8.
+#
+# Por qué NO las imágenes oficiales "mínimas" de Quarkus. Medido sobre las
+# imágenes reales:
+#
+#   quay.io/quarkus/ubi9-quarkus-micro-image:2.0 -> trae shell y bash, pero NO
+#       trae curl. El HEALTHCHECK fallaría en cada chequeo y el container nunca
+#       llegaría a healthy, así que cualquier `depends_on: service_healthy`
+#       quedaría esperando para siempre.
+#   la imagen distroless de Quarkus -> sin shell y sin curl, por lo que el
+#       HEALTHCHECK ni siquiera se puede escribir.
+#
+# `registry.access.redhat.com/ubi9/ubi-minimal:9.7` sí trae shell, bash y curl,
+# sin JDK, sobre glibc 2.34. Es la base que usa el `Dockerfile.native` oficial
+# del quickstart de Quarkus, así que el ejecutable nativo tiene el mismo
+# entorno glibc que el builder.
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
 
 ENV LANGUAGE='en_US:en'
 
