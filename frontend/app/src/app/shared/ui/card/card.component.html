@@ -1,23 +1,25 @@
-<div
-  class="app-card"
-  [class.app-card--bordered]="bordered"
-  [class.app-card--elevated]="elevated"
->
-  <header *ngIf="headerTitle || subtitle" class="app-card__header">
-    <div class="app-card__title-group">
-      <h3 *ngIf="headerTitle" class="app-card__title">{{ headerTitle }}</h3>
-      <p *ngIf="subtitle" class="app-card__subtitle">{{ subtitle }}</p>
-    </div>
-    <div class="app-card__header-actions">
-      <ng-content select="[card-header-actions]"></ng-content>
-    </div>
-  </header>
+<p-card [styleClass]="cardStyleClass">
+  <ng-template #header>
+    @if (headerTitle || subtitle) {
+      <div class="app-card__header">
+        <div class="app-card__title-group">
+          @if (headerTitle) {
+            <h3 class="app-card__title">{{ headerTitle }}</h3>
+          }
+          @if (subtitle) {
+            <p class="app-card__subtitle">{{ subtitle }}</p>
+          }
+        </div>
+        <div class="app-card__header-actions">
+          <ng-content select="[card-header-actions]"></ng-content>
+        </div>
+      </div>
+    }
+  </ng-template>
 
-  <div class="app-card__body">
-    <ng-content></ng-content>
-  </div>
+  <ng-content></ng-content>
 
-  <footer class="app-card__footer">
+  <ng-template #footer>
     <ng-content select="[card-footer]"></ng-content>
-  </footer>
-</div>
+  </ng-template>
+</p-card>

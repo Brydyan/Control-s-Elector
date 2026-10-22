@@ -1,8 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { IonIcon } from '@ionic/angular/standalone';
+import { Dialog } from 'primeng/dialog';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
+import { TableModule } from 'primeng/table';
+import { Textarea } from 'primeng/textarea';
 import {
   BadgeComponent,
   BadgeVariant,
@@ -12,7 +16,6 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { mapError } from '../../../../shared/errors/error-handler';
-import { FocusTrapDirective } from '@shared/a11y/focus-trap.directive';
 import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
 import {
   ActaDetalleCompleto,
@@ -32,14 +35,17 @@ type ErrorTarget = 'main' | 'disputa' | 'corregir';
   imports: [
     CommonModule,
     FormsModule,
-    IonIcon,
     BadgeComponent,
     ButtonComponent,
     CardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
-    FocusTrapDirective,
     ConfirmDialogComponent,
+    Dialog,
+    InputText,
+    Message,
+    TableModule,
+    Textarea,
   ],
   templateUrl: './acta-detalle.page.html',
   styleUrls: ['./acta-detalle.page.scss'],
@@ -53,10 +59,21 @@ export class ActaDetallePage implements OnInit, OnDestroy {
   private static readonly SUCCESS_VISIBLE_MS = 4000;
 
   actaId!: number;
-  data: ActaDetalleCompleto | null = null;
-  loading = true;
-  submitting = false;
-  error: string | null = null;
+  readonly data = signal<ActaDetalleCompleto | null>(null);
+
+  /**
+   * The loaded detail.
+   *
+   * Only read it inside a `data()` guard: the detail is null while the
+   * request is in flight, and the assertion would take the screen down.
+   * Outside a guard, read the signal with the optional chaining instead.
+   */
+  get detalle(): ActaDetalleCompleto {
+    return this.data()!;
+  }
+  readonly loading = signal(true);
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
   actionSuccessMessage: string | null = null;
   /** True cuando el último error vino de un 409 y debemos recargar al reintentar. */
   errorEsConflicto = false;
@@ -95,23 +112,23 @@ export class ActaDetallePage implements OnInit, OnDestroy {
       this.actaId = Number(idParam);
       this.cargarDetalle();
     } else {
-      this.error = 'No se proporcionó el identificador del acta.';
-      this.loading = false;
+      this.error.set('No se proporcionó el identificador del acta.');
+      this.loading.set(false);
     }
   }
 
   cargarDetalle(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
     this.errorEsConflicto = false;
 
     this.coordinatorService.getActaDetalleCompleto(this.actaId).subscribe({
       next: (detalle) => {
-        this.data = detalle;
-        this.loading = false;
+        this.data.set(detalle);
+        this.loading.set(false);
       },
       error: (err) => {
-        this.submitting = false;
+        this.submitting.set(false);
         this.handleActionError(err, 'main', /* reloadOnConflict */ false);
       },
     });
@@ -133,9 +150,9 @@ export class ActaDetallePage implements OnInit, OnDestroy {
     } else if (target === 'corregir') {
       this.errorCorregir = mapped.message;
     } else {
-      this.error = mapped.message;
+      this.error.set(mapped.message);
     }
-    this.submitting = false;
+    this.submitting.set(false);
 
     if (mapped.type === 'conflict') {
       this.errorEsConflicto = true;
@@ -152,7 +169,7 @@ export class ActaDetallePage implements OnInit, OnDestroy {
    */
   private handleActionSuccess(message: string): void {
     this.actionSuccessMessage = message;
-    this.submitting = false;
+    this.submitting.set(false);
     this.cargarDetalle();
 
     if (this.successTimer != null) {
@@ -180,8 +197,8 @@ export class ActaDetallePage implements OnInit, OnDestroy {
 
   confirmarAprobar(): void {
     this.confirmAprobarAbierto = false;
-    this.submitting = true;
-    this.error = null;
+    this.submitting.set(true);
+    this.error.set(null);
     this.errorEsConflicto = false;
 
     this.coordinatorService.aprobarActa(this.actaId).subscribe({
@@ -207,7 +224,7 @@ export class ActaDetallePage implements OnInit, OnDestroy {
       return;
     }
 
-    this.submitting = true;
+    this.submitting.set(true);
     this.errorDisputa = null;
 
     const payload: DisputarActaPayload = {
@@ -225,13 +242,13 @@ export class ActaDetallePage implements OnInit, OnDestroy {
 
   // CORREGIR
   abrirModalCorregir(): void {
-    if (!this.data) return;
-    this.correcionSufragantes = this.data.acta.totalSufragantes;
-    this.correcionBlancos = this.data.acta.votosBlancos;
-    this.correcionNulos = this.data.acta.votosNulos;
+    if (!this.data()) return;
+    this.correcionSufragantes = this.detalle.acta.totalSufragantes;
+    this.correcionBlancos = this.detalle.acta.votosBlancos;
+    this.correcionNulos = this.detalle.acta.votosNulos;
     this.votosCorregidosMap.clear();
 
-    this.data.candidatos.forEach((c) => {
+    this.detalle.candidatos.forEach((c) => {
       this.votosCorregidosMap.set(c.id, c.votos || 0);
     });
 
@@ -269,7 +286,7 @@ export class ActaDetallePage implements OnInit, OnDestroy {
   }
 
   confirmarCorrecion(): void {
-    if (!this.data) return;
+    if (!this.data()) return;
 
     if (!this.isChecksumCorregidoValido) {
       this.errorCorregir =
@@ -285,15 +302,15 @@ export class ActaDetallePage implements OnInit, OnDestroy {
     );
 
     const payload: CorregirActaPayload = {
-      jrvId: this.data.acta.jrvId,
-      cargoId: this.data.acta.cargoId,
+      jrvId: this.detalle.acta.jrvId,
+      cargoId: this.detalle.acta.cargoId,
       totalSufragantes: this.correcionSufragantes,
       votosBlancos: this.correcionBlancos,
       votosNulos: this.correcionNulos,
       detalles,
     };
 
-    this.submitting = true;
+    this.submitting.set(true);
     this.errorCorregir = null;
 
     this.coordinatorService.corregirActa(this.actaId, payload).subscribe({
@@ -312,8 +329,8 @@ export class ActaDetallePage implements OnInit, OnDestroy {
    * tiene una inconsistencia visible para el coordinator.
    */
   chequeos(): Array<{ ok: boolean; texto: string }> {
-    if (!this.data) return [];
-    const acta = this.data.acta;
+    if (!this.data()) return [];
+    const acta = this.detalle.acta;
     const checks: Array<{ ok: boolean; texto: string }> = [];
 
     checks.push({
@@ -339,10 +356,10 @@ export class ActaDetallePage implements OnInit, OnDestroy {
       });
     } else {
       checks.push({
-        ok: this.data.checksumValido,
-        texto: this.data.checksumValido
+        ok: this.detalle.checksumValido,
+        texto: this.detalle.checksumValido
           ? 'Cuadre verificado: candidatos + blancos + nulos = total sufragantes.'
-          : `Cuadre inconsistente: diferencia ${this.data.diferenciaChecksum}.`,
+          : `Cuadre inconsistente: diferencia ${this.detalle.diferenciaChecksum}.`,
       });
     }
 

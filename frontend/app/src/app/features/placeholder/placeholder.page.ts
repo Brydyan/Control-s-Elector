@@ -35,8 +35,8 @@ import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.com
       .btn-back {
         display: inline-block;
         padding: 0.625rem 1.25rem;
-        background: var(--ion-color-primary, #1e40af);
-        color: #ffffff;
+        background: var(--color-brand-primary);
+        color: var(--color-text-on-brand);
         text-decoration: none;
         border-radius: 0.5rem;
         font-weight: 500;
@@ -44,7 +44,7 @@ import { EmptyStateComponent } from '../../shared/ui/empty-state/empty-state.com
         transition: background 0.2s ease;
       }
       .btn-back:hover {
-        background: var(--ion-color-primary-shade, #1e3a8a);
+        background: var(--color-brand-primary-strong);
       }
     `,
   ],

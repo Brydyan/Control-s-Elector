@@ -1,10 +1,11 @@
-import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
+import { Skeleton } from 'primeng/skeleton';
 
 export type SkeletonVariant = 'text' | 'rect' | 'circle';
 
 /**
- * Local loading placeholder with an optional projected loading boundary.
+ * Loading placeholder backed by PrimeNG, with an optional projected loading
+ * boundary.
  *
  * When `loadingBoundary` is enabled, projected content is rendered only while
  * `loading` is true. Otherwise, the component renders its built-in placeholder.
@@ -12,42 +13,31 @@ export type SkeletonVariant = 'text' | 'rect' | 'circle';
 @Component({
   selector: 'app-skeleton',
   standalone: true,
-  imports: [CommonModule],
+  imports: [Skeleton],
   template: `
-    <ng-container *ngIf="loading && isLoadingBoundary">
+    @if (loading && isLoadingBoundary) {
       <ng-content></ng-content>
-    </ng-container>
-    <ng-container *ngIf="loading && !isLoadingBoundary">
-      <ng-container *ngIf="variant === 'text' && lines > 1; else single">
-        <span
-          *ngFor="let line of lineArray; let last = last"
-          class="skeleton skeleton--text"
-          [style.width]="last ? '60%' : '100%'"
-          [style.height]="height"
-          [class.skeleton--no-animation]="animate === 'none'"
-          [class.skeleton--transition]="transition"
-          aria-hidden="true"
-        ></span>
-      </ng-container>
-      <ng-template #single>
-        <span
-          class="skeleton"
-          [class.skeleton--rect]="variant === 'rect'"
-          [class.skeleton--circle]="variant === 'circle'"
-          [style.width]="width"
-          [style.height]="height"
-          [class.skeleton--no-animation]="animate === 'none'"
-          [class.skeleton--transition]="transition"
-          aria-hidden="true"
-        ></span>
-      </ng-template>
-    </ng-container>
+    }
+    @if (loading && !isLoadingBoundary) {
+      @if (variant === 'text' && lines > 1) {
+        @for (line of lineArray; track $index; let last = $last) {
+          <p-skeleton
+            [shape]="shape"
+            [width]="last ? '60%' : '100%'"
+            [height]="height"
+            [animation]="animation"
+          />
+        }
+      } @else {
+        <p-skeleton
+          [shape]="shape"
+          [width]="width"
+          [height]="height"
+          [animation]="animation"
+        />
+      }
+    }
   `,
-  styleUrls: ['./skeleton.component.scss'],
-  host: {
-    '[class.skeleton--no-animation]': "animate === 'none'",
-    '[class.skeleton--transition]': 'transition',
-  },
 })
 export class SkeletonComponent {
   @Input() loading = true;
@@ -67,6 +57,16 @@ export class SkeletonComponent {
 
   get isLoadingBoundary(): boolean {
     return this.loadingBoundary || this.hasProjectedContent;
+  }
+
+  /** PrimeNG only special-cases the circle shape; text renders as a rect. */
+  get shape(): string {
+    return this.variant === 'circle' ? 'circle' : 'rect';
+  }
+
+  /** PrimeNG implements the shimmer as the `wave` animation. */
+  get animation(): string {
+    return this.animate === 'none' ? 'none' : 'wave';
   }
 
   get lineArray(): unknown[] {

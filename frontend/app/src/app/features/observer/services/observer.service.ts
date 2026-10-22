@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import type { OpcionesTransmision } from '../../../core/offline/sync.service';
 import {
   ActaRequest,
   ActaResponse,
@@ -69,8 +70,24 @@ export class ObserverService {
     return this.http.post<ActaResponse>(`${this.baseUrl}/actas/borrador`, acta);
   }
 
-  enviarActaDirecta(acta: ActaRequest): Observable<ActaResponse> {
-    return this.http.post<ActaResponse>(`${this.baseUrl}/actas`, acta);
+  /**
+   * Envía el acta al servidor.
+   *
+   * Acepta las mismas opciones que el transmisor de la cola offline
+   * (`core/offline/http-acta-transmitter.ts`): las cabeceras viajan hasta la
+   * petición, de modo que la clave de idempotencia (`Idempotency-Key`)
+   * llega al wire y un reintento no crea un segundo acta.
+   *
+   * El contrato HTTP no cambia: mismo endpoint, mismo cuerpo; lo único que
+   * se suma es una cabecera opcional.
+   */
+  enviarActaDirecta(
+    acta: ActaRequest,
+    opciones?: OpcionesTransmision,
+  ): Observable<ActaResponse> {
+    return this.http.post<ActaResponse>(`${this.baseUrl}/actas`, acta, {
+      headers: opciones?.headers ?? {},
+    });
   }
 
   enviarBorrador(actaId: number): Observable<ActaResponse> {

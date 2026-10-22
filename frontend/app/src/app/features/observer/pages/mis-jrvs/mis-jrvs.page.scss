@@ -12,58 +12,27 @@
 
   .page-title {
     margin: 0;
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-display);
     font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
+    color: var(--color-text-primary);
   }
 
   .page-subtitle {
     margin: var(--space-1) 0 0;
     font-size: var(--font-size-sm);
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
   }
 }
 
+/*
+ * The filter bar is PrimeNG's `p-tabs` (see the template). The `.filter-tab`
+ * that used to live here styled a tab that no template rendered.
+ */
 .filter-tabs {
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
   padding-bottom: var(--space-2);
-
-  .filter-tab {
-    appearance: none;
-    border: 1px solid var(--border-default);
-    background: var(--surface-card);
-    color: var(--text-secondary);
-    padding: var(--space-2) var(--space-4);
-    min-height: 40px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius-pill);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-medium);
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all var(--transition-base);
-
-    @media (max-width: 768px) {
-      min-height: 44px;
-      padding: var(--space-3) var(--space-4);
-    }
-
-    &:hover {
-      background: var(--color-surface-page);
-    }
-
-    &--active {
-      background: var(--color-primary);
-      color: var(--color-primary-contrast);
-      border-color: var(--color-primary);
-      font-weight: var(--font-weight-semibold);
-      box-shadow: var(--shadow-sm);
-    }
-  }
 }
 
 .jrv-grid {
@@ -92,27 +61,29 @@
   .jrv-badge-id {
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
+    color: var(--color-text-primary);
   }
 }
 
 .jrv-location {
   margin: 0;
   font-size: var(--font-size-sm);
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 }
 
 .jrv-stats {
   display: flex;
   justify-content: space-between;
   padding: var(--space-2) var(--space-3);
-  background: var(--surface-subtle);
+  background: var(--color-surface-page);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
 
   strong {
-    color: var(--text-primary);
+    color: var(--color-text-primary);
+    /* Los cargos registrados y pendientes se comparan entre JRVs. */
+    font-variant-numeric: tabular-nums;
   }
 }
 

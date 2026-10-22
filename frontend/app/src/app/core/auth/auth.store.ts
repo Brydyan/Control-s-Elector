@@ -20,6 +20,23 @@ export class AuthStore {
   readonly isAuthenticated = computed(() => this._accessToken() !== null);
 
   /**
+   * Role of the current session, or null when there is no session.
+   *
+   * The role comes from the JWT claims, the same source `roleGuard` reads.
+   * Nothing is looked up in storage: the access token never leaves memory,
+   * so neither can the role.
+   */
+  readonly role = computed(() => this._user()?.role ?? null);
+
+  /**
+   * True when the current session belongs to a MASTER.
+   *
+   * Single source of truth for the MASTER-only controls of the app: the
+   * pages read this signal instead of guessing the role from a storage key.
+   */
+  readonly isMaster = computed(() => this.role() === 'MASTER');
+
+  /**
    * T-FE-09: señal global que indica que el veedor debe desbloquear
    * con PIN local (offline + token expirado). El layout raíz observa
    * esta señal para mostrar {@link PinUnlockModalComponent}.

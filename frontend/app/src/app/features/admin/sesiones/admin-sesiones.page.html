@@ -2,128 +2,146 @@
   <header class="page-header">
     <div>
       <h1>Sesiones Activas</h1>
-      <span>{{ totalElements }} sesiones</span>
+      <span>{{ totalElements() }} sesiones</span>
     </div>
   </header>
+
   <div class="filters">
     <input
+      type="text"
       [(ngModel)]="terminoBusqueda"
-      (ngModelChange)="page=0; cargarSesiones()"
+      (ngModelChange)="page = 0; cargarSesiones()"
       placeholder="Buscar por email de usuario"
       aria-label="Buscar sesiones"
+      pInputText
     />
   </div>
+
   <app-skeleton
     name="admin-sesiones"
-    [loading]="loading"
+    [loading]="loading()"
     animate="shimmer"
     [transition]="true"
     [loadingBoundary]="true"
   >
-    <div>
-      <ng-container *ngIf="loading"
-        ><div class="skeleton-list">
-          <span
-            *ngFor="let _ of [1,2,3,4,5]"
-            class="skeleton-block"
-            aria-hidden="true"
-          ></span></div
-      ></ng-container>
+    <div class="skeleton-list">
+      @for (row of [1, 2, 3, 4, 5]; track row) {
+      <p-skeleton height="2.5rem" />
+      }
     </div>
   </app-skeleton>
-  ><app-error-state
-    *ngIf="error && !loading"
+
+  <app-error-state
+    *ngIf="error() && !loading()"
     title="Error al cargar sesiones"
-    [message]="error"
+    [message]="error() ?? undefined"
     ><app-button variant="primary" (clicked)="cargarSesiones()"
       >Reintentar</app-button
     ></app-error-state
-  ><app-empty-state
-    *ngIf="!loading && !error && !sesiones.length"
-    icon="pulse-outline"
+  >
+  <app-empty-state
+    *ngIf="!loading() && !error() && !sesiones().length"
+    icon="pulse"
     title="No hay sesiones activas"
     description="No se encontraron sesiones que coincidan con la búsqueda."
-  ></app-empty-state
-  ><ng-container *ngIf="!loading && !error && sesiones.length"
-    ><div class="table-wrap desktop-only">
-      <table>
-        <thead>
-          <tr>
-            <th>Usuario</th>
-            <th>IP</th>
-            <th>Último uso</th>
-            <th>Expira</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let sesion of sesiones">
-            <td>
-              <strong>{{ sesion.usuarioEmail }}</strong
-              ><small>#{{ sesion.id }} · {{ sesion.publicId }}</small>
-            </td>
-            <td>{{ sesion.ipCliente || '—' }}</td>
-            <td>{{ sesion.ultimoUsoEn | date:'dd/MM/yyyy HH:mm' }}</td>
-            <td>{{ sesion.expiraEn | date:'dd/MM/yyyy HH:mm' }}</td>
-            <td class="actions">
-              <button (click)="verDetalles(sesion)">Ver detalles</button
-              ><button
-                *ngIf="puedeRevocar()"
-                class="danger"
-                (click)="revocar(sesion)"
-              >
-                Revocar
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <div class="cards mobile-only">
-      <article *ngFor="let sesion of sesiones">
-        <strong>{{ sesion.usuarioEmail }}</strong
-        ><span>IP: {{ sesion.ipCliente || '—' }}</span
-        ><span>Último uso: {{ sesion.ultimoUsoEn | date:'short' }}</span>
-        <div class="actions">
-          <button (click)="verDetalles(sesion)">Ver detalles</button
-          ><button
-            *ngIf="puedeRevocar()"
-            class="danger"
-            (click)="revocar(sesion)"
-          >
-            Revocar
-          </button>
-        </div>
-      </article>
-    </div>
-    <app-paginator
-      [page]="page"
-      [size]="size"
-      [totalElements]="totalElements"
-      (pageChange)="onPageChange($event)"
-      (sizeChange)="onSizeChange($event)"
-    ></app-paginator
-  ></ng-container>
+  ></app-empty-state>
+
+  @if (!loading() && !error() && sesiones().length) {
+  <div class="table-wrap desktop-only">
+    <p-table [value]="sesiones()" [rowHover]="true" styleClass="admin-table">
+      <ng-template #header>
+        <tr>
+          <th>Usuario</th>
+          <th>IP</th>
+          <th>Último uso</th>
+          <th>Expira</th>
+          <th>Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-sesion>
+        <tr>
+          <td>
+            <strong>{{ sesion.usuarioEmail }}</strong
+            ><small>#{{ sesion.id }} · {{ sesion.publicId }}</small>
+          </td>
+          <td>{{ sesion.ipCliente || '—' }}</td>
+          <td>{{ sesion.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ sesion.expiraEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="actions">
+            <app-button
+              variant="ghost"
+              size="sm"
+              (clicked)="verDetalles(sesion)"
+            >
+              Ver detalles
+            </app-button>
+            @if (puedeRevocar()) {
+            <app-button variant="danger" size="sm" (clicked)="revocar(sesion)">
+              Revocar
+            </app-button>
+            }
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <div class="cards mobile-only">
+    @for (sesion of sesiones(); track sesion.publicId) {
+    <article>
+      <strong>{{ sesion.usuarioEmail }}</strong
+      ><span>IP: {{ sesion.ipCliente || '—' }}</span
+      ><span
+        >Último uso: {{ sesion.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</span
+      >
+      <div class="actions">
+        <app-button variant="ghost" size="sm" (clicked)="verDetalles(sesion)">
+          Ver detalles
+        </app-button>
+        @if (puedeRevocar()) {
+        <app-button variant="danger" size="sm" (clicked)="revocar(sesion)">
+          Revocar
+        </app-button>
+        }
+      </div>
+    </article>
+    }
+  </div>
+
+  <app-paginator
+    [page]="page"
+    [size]="size"
+    [totalElements]="totalElements()"
+    (pageChange)="onPageChange($event)"
+    (sizeChange)="onSizeChange($event)"
+  ></app-paginator>
+  }
 </div>
-<div *ngIf="modalAbierto" class="modal-backdrop">
-  <section
-    class="modal"
-    [appFocusTrap]="modalAbierto"
-    [escapeCallback]="cerrarModal"
-  >
-    <h2>Detalle de sesión</h2>
-    <dl *ngIf="sesionSeleccionada">
-      <dt>Usuario</dt>
-      <dd>{{ sesionSeleccionada.usuarioEmail }}</dd>
-      <dt>IP</dt>
-      <dd>{{ sesionSeleccionada.ipCliente || '—' }}</dd>
-      <dt>User agent</dt>
-      <dd>{{ sesionSeleccionada.userAgent || '—' }}</dd>
-      <dt>Último uso</dt>
-      <dd>{{ sesionSeleccionada.ultimoUsoEn | date:'medium' }}</dd>
-      <dt>Expira</dt>
-      <dd>{{ sesionSeleccionada.expiraEn | date:'medium' }}</dd>
-    </dl>
-    <button class="primary" (click)="cerrarModal()">Cerrar</button>
-  </section>
-</div>
+
+<p-dialog
+  [(visible)]="modalAbierto"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '28rem' }"
+  header="Detalle de sesión"
+  (onHide)="cerrarModal()"
+>
+  @if (sesionSeleccionada) {
+  <dl class="detail-list">
+    <dt>Usuario</dt>
+    <dd>{{ sesionSeleccionada.usuarioEmail }}</dd>
+    <dt>IP</dt>
+    <dd>{{ sesionSeleccionada.ipCliente || '—' }}</dd>
+    <dt>User agent</dt>
+    <dd>{{ sesionSeleccionada.userAgent || '—' }}</dd>
+    <dt>Último uso</dt>
+    <dd>{{ sesionSeleccionada.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
+    <dt>Expira</dt>
+    <dd>{{ sesionSeleccionada.expiraEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
+  </dl>
+  }
+  <ng-template #footer>
+    <app-button (clicked)="cerrarModal()">Cerrar</app-button>
+  </ng-template>
+</p-dialog>
