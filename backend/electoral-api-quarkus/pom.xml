@@ -259,15 +259,27 @@
 	<profiles>
 		<profile>
 			<!--
-				Build nativo. Se compila dentro de un contenedor (el builder de Mandrel/GraalVM
-				necesita más memoria y toolchain de la que tiene un runner normal):
+				Build nativo. El AOT se compila dentro de un container porque el
+				builder de Mandrel/GraalVM necesita mas memoria y toolchain de la
+				que tiene un runner normal:
 
-				  ./mvnw package -Dnative -Dquarkus.native.container-build=true
+				  ./mvnw package -Dnative -Dquarkus.native.container-build=false
 
-				Después, el ejecutable nativo queda en target/*-runner y se puede levantar
-				con el Dockerfile de este módulo.
+				Despues, el ejecutable nativo queda en target/*-runner.
+
+				El `<activation>` por propiedad NO es opcional: sin el, Maven nunca
+				activa este profile por su cuenta y `-Dnative` solo define una
+				propiedad cualquiera, dejando `quarkus.native.enabled` en null. El
+				build "pasaba" en verde haciendo un build JVM normal, sin pasar nunca
+				por GraalVM, y `target/*-runner` no existia. Con el profile activar
+				por `-Dnative`, tambien funciona la forma explicita `-Pnative`.
 			-->
 			<id>native</id>
+			<activation>
+				<property>
+					<name>native</name>
+				</property>
+			</activation>
 			<properties>
 				<quarkus.native.enabled>true</quarkus.native.enabled>
 				<quarkus.package.type>native</quarkus.package.type>
