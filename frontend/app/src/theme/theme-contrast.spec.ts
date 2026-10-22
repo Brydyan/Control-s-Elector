@@ -351,18 +351,15 @@ describe('the input placeholder', () => {
   it.each([
     ['light', 'the light scheme'],
     ['dark', 'the dark scheme'],
-  ] as const)(
-    'should reach AA over the card surface in %s',
-    (scheme) => {
-      const ratio = ratioOf(
-        resolver,
-        scheme,
-        '--color-text-muted',
-        '--color-surface-card',
-      );
-      expect(ratio).toBeGreaterThanOrEqual(PLACEHOLDER_MIN);
-    },
-  );
+  ] as const)('should reach AA over the card surface in %s', (scheme) => {
+    const ratio = ratioOf(
+      resolver,
+      scheme,
+      '--color-text-muted',
+      '--color-surface-card',
+    );
+    expect(ratio).toBeGreaterThanOrEqual(PLACEHOLDER_MIN);
+  });
 
   it('should paint the placeholder with a theme token, not a fixed colour', () => {
     // Un color fijo passaria el ratio de un esquema y reprobria el otro.
