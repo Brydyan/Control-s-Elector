@@ -90,6 +90,19 @@
 			<version>2.30.0</version>
 		</dependency>
 
+		<!-- El cliente HTTP del AWS SDK se declara explicito en vez de dejarlo que lo
+		     descubra por ServiceLoader. En imagen nativa GraalVM corre con
+		     `-H:-UseServiceLoaderFeature` (default de Quarkus, no configurado aqui) y la
+		     busqueda falla con `SdkClientException: Unable to load an HTTP
+		     implementation from any provider in the chain`, que se traduce en un 500 en
+		     toda operacion de evidencia. El artefacto ya venia transitivo en scope
+		     runtime; se declara para poder referenciar ApacheHttpClient desde el codigo. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>apache-client</artifactId>
+			<version>2.30.0</version>
+		</dependency>
+
 
 
 		<!-- BCrypt: mismo algoritmo que usa el backend Spring. -->
