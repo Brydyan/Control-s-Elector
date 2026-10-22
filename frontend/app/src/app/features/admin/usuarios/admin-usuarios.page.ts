@@ -80,13 +80,14 @@ export class AdminUsuariosPage implements OnInit {
   ];
 
   /** Filter options for the role, with the "all roles" entry first. */
-  readonly rolFilterOptions: Array<{ label: string; value: RolUsuario | '' }> = [
-    { label: 'Todos los roles', value: '' },
-    { label: 'MASTER', value: 'MASTER' },
-    { label: 'COORDINATOR', value: 'COORDINATOR' },
-    { label: 'OBSERVER', value: 'OBSERVER' },
-    { label: 'ADMIN', value: 'ADMIN' },
-  ];
+  readonly rolFilterOptions: Array<{ label: string; value: RolUsuario | '' }> =
+    [
+      { label: 'Todos los roles', value: '' },
+      { label: 'MASTER', value: 'MASTER' },
+      { label: 'COORDINATOR', value: 'COORDINATOR' },
+      { label: 'OBSERVER', value: 'OBSERVER' },
+      { label: 'ADMIN', value: 'ADMIN' },
+    ];
 
   ngOnInit(): void {
     this.cargarUsuarios();
@@ -242,7 +243,7 @@ export class AdminUsuariosPage implements OnInit {
       .subscribe({
         next: () => this.cargarUsuarios(),
         error: (err) =>
-          (this.error.set(err?.message || 'No se pudo re-habilitar el usuario.')),
+          this.error.set(err?.message || 'No se pudo re-habilitar el usuario.'),
       });
   }
 }

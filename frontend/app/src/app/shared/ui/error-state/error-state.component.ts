@@ -15,7 +15,10 @@ import { Button } from 'primeng/button';
   template: `
     <div class="error-state" role="alert">
       <div class="error-state__icon-wrapper">
-        <i class="pi pi-exclamation-circle error-state__icon" aria-hidden="true"></i>
+        <i
+          class="pi pi-exclamation-circle error-state__icon"
+          aria-hidden="true"
+        ></i>
       </div>
       <h3 class="error-state__title">{{ title }}</h3>
       @if (message) {
