@@ -103,7 +103,7 @@ export class AdminSesionesPage implements OnInit {
     this.service.revocarSesion(sesion.id).subscribe({
       next: () => this.cargarSesiones(),
       error: (err) =>
-        (this.error.set(err?.message || 'No se pudo revocar la sesión.')),
+        this.error.set(err?.message || 'No se pudo revocar la sesión.'),
     });
   }
   onPageChange(page: number): void {
