@@ -85,7 +85,13 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
 
 ENV LANGUAGE='en_US:en'
 
-COPY --from=build --chown=185:0 /home/quarkus/proj/target/*-runner /deployments/
+# El destino va con nombre de archivo explicito, no como directorio. Con
+# `COPY ... /deployments/` el glob preserva el basename y el binario queda
+# como `electoral-api-quarkus-0.0.1-SNAPSHOT-runner`, mientras el ENTRYPOINT
+# busca `/deployments/quarkus-run`: el container moria al arrancar con
+# `stat /deployments/quarkus-run: no such file or directory`. Verificado que
+# `COPY .../target/*-runner /deployments/quarkus-run` si lo renombra.
+COPY --from=build --chown=185:0 /home/quarkus/proj/target/*-runner /deployments/quarkus-run
 
 # No se copia `target/docker/`: ese directorio solo lo produce Quarkus cuando
 # `quarkus.container-image-build=true`, que este modulo no activa porque arma
