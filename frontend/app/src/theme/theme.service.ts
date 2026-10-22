@@ -45,7 +45,9 @@ export class ThemeService {
   private readPreference(): boolean {
     if (!isPlatformBrowser(this.platformId)) return false;
     try {
-      return this.document.defaultView?.localStorage?.getItem(STORAGE_KEY) === 'dark';
+      return (
+        this.document.defaultView?.localStorage?.getItem(STORAGE_KEY) === 'dark'
+      );
     } catch {
       return false;
     }
