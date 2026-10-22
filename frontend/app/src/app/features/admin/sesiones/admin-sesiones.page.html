@@ -7,12 +7,14 @@
   </header>
 
   <div class="filters">
-    <input type="text"
+    <input
+      type="text"
       [(ngModel)]="terminoBusqueda"
       (ngModelChange)="page = 0; cargarSesiones()"
       placeholder="Buscar por email de usuario"
       aria-label="Buscar sesiones"
-     pInputText />
+      pInputText
+    />
   </div>
 
   <app-skeleton
@@ -66,7 +68,11 @@
           <td>{{ sesion.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td>{{ sesion.expiraEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions">
-            <app-button variant="ghost" size="sm" (clicked)="verDetalles(sesion)">
+            <app-button
+              variant="ghost"
+              size="sm"
+              (clicked)="verDetalles(sesion)"
+            >
               Ver detalles
             </app-button>
             @if (puedeRevocar()) {
@@ -85,7 +91,9 @@
     <article>
       <strong>{{ sesion.usuarioEmail }}</strong
       ><span>IP: {{ sesion.ipCliente || '—' }}</span
-      ><span>Último uso: {{ sesion.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</span>
+      ><span
+        >Último uso: {{ sesion.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</span
+      >
       <div class="actions">
         <app-button variant="ghost" size="sm" (clicked)="verDetalles(sesion)">
           Ver detalles
