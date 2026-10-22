@@ -54,7 +54,11 @@
   ></app-loading-state>
 
   <!-- Error State -->
-  <app-error-state *ngIf="error() && !loading()" title="Atención" [message]="error() ?? undefined">
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Atención"
+    [message]="error() ?? undefined"
+  >
     <app-button variant="primary" (clicked)="cargarDetalle()">
       Reintentar
     </app-button>
@@ -81,8 +85,9 @@
       <div class="banner-info">
         <span class="banner-title">
           Acta {{ detalle.acta.estado === 'APROBADA' ? 'Aprobada' :
-          detalle.acta.estado === 'EN_DISPUTA' ? 'En Disputa' : detalle.acta.estado
-          === 'CORREGIDA' ? 'Corregida' : 'Enviada — Pendiente Revisión' }}
+          detalle.acta.estado === 'EN_DISPUTA' ? 'En Disputa' :
+          detalle.acta.estado === 'CORREGIDA' ? 'Corregida' : 'Enviada —
+          Pendiente Revisión' }}
         </span>
         <span class="banner-sub">
           ID de control: #{{ detalle.acta.id }} · JRV-{{ detalle.acta.jrvId }}
@@ -107,14 +112,15 @@
           <div class="info-item">
             <span class="info-label">JRV:</span>
             <span class="info-value font-bold"
-              >#{{ detalle.acta.jrvId }} ({{ detalle.jrv?.numero || 'Mesa Oficial'
-              }})</span
+              >#{{ detalle.acta.jrvId }} ({{ detalle.jrv?.numero || 'Mesa
+              Oficial' }})</span
             >
           </div>
           <div class="info-item">
             <span class="info-label">Dignidad:</span>
             <span class="info-value font-bold"
-              >{{ detalle.cargo?.nombre || 'Cargo #' + detalle.acta.cargoId }}</span
+              >{{ detalle.cargo?.nombre || 'Cargo #' + detalle.acta.cargoId
+              }}</span
             >
           </div>
           <div class="info-item" *ngIf="detalle.cargo?.nivel">
@@ -128,7 +134,8 @@
           <div class="info-item">
             <span class="info-label">Fecha Envío:</span>
             <span class="info-value"
-              >{{ detalle.acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm:ss' }}</span
+              >{{ detalle.acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm:ss'
+              }}</span
             >
           </div>
           <div class="info-item">
@@ -243,7 +250,9 @@
           <ng-template #footer>
             <tr class="row-subtotal">
               <td colspan="2">Votos en Blanco</td>
-              <td class="td-votos font-bold">{{ detalle.acta.votosBlancos }}</td>
+              <td class="td-votos font-bold">
+                {{ detalle.acta.votosBlancos }}
+              </td>
             </tr>
             <tr class="row-subtotal">
               <td colspan="2">Votos Nulos</td>
@@ -304,13 +313,11 @@
           <span>
             {{ nombre }}@if (h.registradoPorRol) {
             <span>({{ h.registradoPorRol }})</span>
-          }
+            }
           </span>
-          }
-          @if (h.ipAddress) {
+          } @if (h.ipAddress) {
           <span class="historial-ip">IP: {{ h.ipAddress }}</span>
-          }
-          @if (h.detalle) {
+          } @if (h.detalle) {
           <span class="historial-detalle">{{ h.detalle }}</span>
           }
         </div>
@@ -450,7 +457,9 @@
       <div class="candidate-correction-row">
         <div class="cand-info">
           <span class="cand-name font-bold">{{ c.nombre }}</span>
-          <span class="cand-sub td-muted">{{ c.partidoSiglas || 'Lista' }}</span>
+          <span class="cand-sub td-muted"
+            >{{ c.partidoSiglas || 'Lista' }}</span
+          >
         </div>
         <div class="cand-input-wrap">
           <input
@@ -476,16 +485,14 @@
       <span>
         Suma calculada: <strong>{{ sumaVotosCorregidos }}</strong> / Total
         requerido: <strong>{{ correcionSufragantes }}</strong> (Diferencia: {{
-        diferenciaChecksumCorregida > 0 ? '+' : '' }}{{ diferenciaChecksumCorregida
-        }})
+        diferenciaChecksumCorregida > 0 ? '+' : '' }}{{
+        diferenciaChecksumCorregida }})
       </span>
       <span class="checksum-msg">
         @if (isChecksumCorregidoValido) {
-        <i class="pi pi-check" aria-hidden="true"></i> Total verificado
-        } @else {
-        <i class="pi pi-times" aria-hidden="true"></i> La suma no coincide con el
-        total de sufragantes
-        }
+        <i class="pi pi-check" aria-hidden="true"></i> Total verificado } @else
+        { <i class="pi pi-times" aria-hidden="true"></i> La suma no coincide con
+        el total de sufragantes }
       </span>
     </div>
 

@@ -68,9 +68,9 @@ export class ActaDetallePage implements OnInit, OnDestroy {
    * request is in flight, and the assertion would take the screen down.
    * Outside a guard, read the signal with the optional chaining instead.
    */
-    get detalle(): ActaDetalleCompleto {
-      return this.data()!;
-    }
+  get detalle(): ActaDetalleCompleto {
+    return this.data()!;
+  }
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
