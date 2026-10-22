@@ -56,8 +56,14 @@ public abstract class ContractTestSupport {
   /** Mapper Jackson 3 — misma versión y reglas de formato que usa el backend. */
   protected static final ObjectMapper JSON = JsonMapper.builder().build();
 
+  // El admin de bootstrap lo crea la migracion `026-admin-inicial.sql`. Antes
+  // lo creaba el `DataSeeder`, que generaba el email con `EmailGenerator`
+  // (`admsismas@control.ttcs` para nombre/apellido/rol por defecto); ese seeder
+  // se borro porque insertaba un admin nuevo en cada arranque. Con la
+  // migracion, el email es el declarado en el changelog. Este default tiene que
+  // seguirlo, o el login MASTER falla con 401 y los 31 tests de la suite caen.
   private static final String MASTER_EMAIL =
-      setting("contract.master.email", "CONTRACT_MASTER_EMAIL", "admsismas@control.ttcs");
+      setting("contract.master.email", "CONTRACT_MASTER_EMAIL", "admin@control-elector.local");
   private static final String MASTER_PASSWORD =
       setting("contract.master.password", "CONTRACT_MASTER_PASSWORD", "admin12345");
 
