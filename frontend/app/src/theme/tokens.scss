@@ -377,3 +377,34 @@
   --color-brand-primary-active: var(--primitive-blue-600);
   --color-brand-border: rgba(122, 154, 196, 0.65);
 }
+
+/*
+ * Placeholders de input — override accesible al default de PrimeNG.
+ *
+ * PrimeNG los define como
+ *
+ *     ::placeholder { color: color-mix(in oklab, currentcolor 50%, transparent) }
+ *
+ * y no expone ningun token `--p-*-placeholder` para ajustarlo (el bundle
+ * compilado solo trae `--p-text-color`). Medido sobre las superficies reales
+ * de este tema, el 50% de alfa no alcanza el 4.5:1 que WCAG AA exige para
+ * texto normal:
+ *
+ *     esquema claro   #878b94 sobre #ffffff  →  3.41:1   falla
+ *     esquema oscuro  #525d71 sobre #0f172a  →  2.69:1   falla
+ *
+ * El problema no es un token mal elegido sino la opacidad: al 50%, ningun
+ * gris oscuro de la rampa llega a 4.5:1 sobre su superficie.
+ *
+ * Se usa `--color-text-muted`, que es el token que la app ya declara para
+ * "texto de apoyo". Este archivo lo remapea por esquema — slate-600 en claro,
+ * slate-400 en oscuro — y en los dos casos supera el minimo con holgura
+ * (7.58:1 y 6.96:1). Asi el fix es una sola regla, theme-aware por
+ * definicion y sin numeros magicos.
+ *
+ * Va fuera de `:root` y de `.app-dark` a proposito: el selector no cambia,
+ * cambia el valor de la variable segun el esquema activo.
+ */
+::placeholder {
+  color: var(--color-text-muted);
+}
