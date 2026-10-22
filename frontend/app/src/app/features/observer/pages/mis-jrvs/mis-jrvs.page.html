@@ -55,7 +55,10 @@
   ></app-empty-state>
 
   <!-- Lista de JRVs -->
-  <div class="jrv-grid" *ngIf="!loading() && !error() && filteredJrvs.length > 0">
+  <div
+    class="jrv-grid"
+    *ngIf="!loading() && !error() && filteredJrvs.length > 0"
+  >
     <app-card
       *ngFor="let jrv of filteredJrvs"
       [elevated]="true"
@@ -73,7 +76,8 @@
             </app-badge>
           </div>
           <p class="jrv-location">
-            <i class="pi pi-map-marker" aria-hidden="true"></i> {{ jrv.parroquia || 'Parroquia no asignada' }}
+            <i class="pi pi-map-marker" aria-hidden="true"></i> {{ jrv.parroquia
+            || 'Parroquia no asignada' }}
           </p>
           <div class="jrv-stats">
             <span

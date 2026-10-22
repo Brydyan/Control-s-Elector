@@ -26,13 +26,10 @@
       El acta no se ha enviado
     </p>
     <p id="confirmar-salida-texto" class="confirm-panel__text">
-      @if (totalVotosComputados > 0) {
-      Escribiste {{ totalVotosComputados }} votos que todavía no se han enviado
-      al servidor.
-      } @else {
-      Todavía no has enviado el acta de esta dignidad.
-      } Si vuelves ahora queda como borrador en este dispositivo, para
-      retomarlo cuando regreses.
+      @if (totalVotosComputados > 0) { Escribiste {{ totalVotosComputados }}
+      votos que todavía no se han enviado al servidor. } @else { Todavía no has
+      enviado el acta de esta dignidad. } Si vuelves ahora queda como borrador
+      en este dispositivo, para retomarlo cuando regreses.
     </p>
     <div class="confirm-panel__actions">
       <app-button variant="ghost" size="md" (clicked)="seguirEscribiendo()">
@@ -82,8 +79,7 @@
   >
     @if (draftSavedMessage(); as aviso) {
     <p class="draft-pill-notification">{{ aviso }}</p>
-    }
-    @if (success(); as exito) {
+    } @if (success(); as exito) {
     <p class="success-banner">
       <i class="pi pi-check-circle" aria-hidden="true"></i>
       <span>{{ exito }}</span>
@@ -326,17 +322,11 @@
           <strong>{{ getVoto(c.id) }}</strong>
         </div>
         }
-        <div
-          class="review-row"
-          [class.review-row--invalid]="!isChecksumValid"
-        >
+        <div class="review-row" [class.review-row--invalid]="!isChecksumValid">
           <span>Balance electoral:</span>
           <strong>
-            @if (isChecksumValid) {
-            Cuadra ({{ totalVotosComputados }} de {{ totalSufragantes }})
-            } @else {
-            {{ descripcionDiferencia }}
-            }
+            @if (isChecksumValid) { Cuadra ({{ totalVotosComputados }} de {{
+            totalSufragantes }}) } @else { {{ descripcionDiferencia }} }
           </strong>
         </div>
         <div class="review-row review-row--highlight">
