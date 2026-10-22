@@ -299,9 +299,9 @@ describe('ActasListaPage (rendered contract)', () => {
   /** Labels of every button the page renders right now. */
   function buttonLabels(): string[] {
     return Array.from(
-      fixture.nativeElement.querySelectorAll('button') as NodeListOf<
-        HTMLButtonElement
-      >,
+      fixture.nativeElement.querySelectorAll(
+        'button',
+      ) as NodeListOf<HTMLButtonElement>,
     ).map((button) => (button.textContent ?? '').trim());
   }
 

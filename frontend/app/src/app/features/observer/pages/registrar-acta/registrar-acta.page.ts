@@ -167,8 +167,9 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     viewChild<ElementRef<HTMLElement>>('panelConfirmacion');
 
   /** Explicación del checksum (recibe el foco cuando bloquea el avance). */
-  private readonly explicacionChecksum =
-    viewChild<ElementRef<HTMLElement>>('explicacionChecksum');
+  private readonly explicacionChecksum = viewChild<ElementRef<HTMLElement>>(
+    'explicacionChecksum',
+  );
 
   totalSufragantes = 0;
   votosBlancos = 0;
@@ -218,7 +219,9 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
         this.loading.set(false);
       },
       error: (err) => {
-        this.error.set('No se pudieron cargar los candidatos para esta dignidad.');
+        this.error.set(
+          'No se pudieron cargar los candidatos para esta dignidad.',
+        );
         this.loading.set(false);
         console.error('Error loading candidatos:', err);
       },
@@ -589,7 +592,8 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
       error: (err) => {
         this.submitting.set(false);
         this.error.set(
-          'Error al guardar el borrador. ' + (err.error?.message || ''));
+          'Error al guardar el borrador. ' + (err.error?.message || ''),
+        );
       },
     });
   }
