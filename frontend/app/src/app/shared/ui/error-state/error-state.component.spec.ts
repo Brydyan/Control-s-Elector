@@ -31,9 +31,7 @@ describe('ErrorStateComponent', () => {
     fixture.componentRef.setInput('showRetry', true);
     fixture.detectChanges();
 
-    const button = fixture.nativeElement.querySelector(
-      '.p-button',
-    );
+    const button = fixture.nativeElement.querySelector('.p-button');
     button.click();
 
     expect(component.retry.emit).toHaveBeenCalled();

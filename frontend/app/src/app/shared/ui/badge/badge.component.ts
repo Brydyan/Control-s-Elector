@@ -37,12 +37,7 @@ export class BadgeComponent {
   @Input() variant: BadgeVariant = 'default';
 
   get severity():
-    | 'success'
-    | 'info'
-    | 'warn'
-    | 'danger'
-    | 'secondary'
-    | undefined {
+    'success' | 'info' | 'warn' | 'danger' | 'secondary' | undefined {
     switch (this.variant) {
       case 'APROBADA':
         return 'success';

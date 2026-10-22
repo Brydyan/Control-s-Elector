@@ -56,7 +56,9 @@ describe('ActaDetallePage (rendering)', () => {
         {
           provide: CoordinatorService,
           useValue: {
-            getActaDetalleCompleto: vi.fn().mockReturnValue(detalle$.asObservable()),
+            getActaDetalleCompleto: vi
+              .fn()
+              .mockReturnValue(detalle$.asObservable()),
             aprobarActa: vi.fn(),
             disputarActa: vi.fn(),
             corregirActa: vi.fn(),
