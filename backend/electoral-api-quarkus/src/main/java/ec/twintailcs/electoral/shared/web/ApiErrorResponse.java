@@ -6,12 +6,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Shape estandar del error del backend. Es el mismo que produce el
- * {@code GlobalExceptionHandler} del backend Spring: {@code {timestamp, status, error, message}}
- * y, en los errores de validacion de bean, {@code fields}.
+ * Shape estandar del error del backend. Es el mismo que produce el {@code GlobalExceptionHandler}
+ * del backend Spring: {@code {timestamp, status, error, message}} y, en los errores de validacion
+ * de bean, {@code fields}.
  *
- * <p>La suite de regresion por contrato afirma estas claves, asi que cualquier cambio
- * de forma es un cambio de contrato.
+ * <p>La suite de regresion por contrato afirma estas claves, asi que cualquier cambio de forma es
+ * un cambio de contrato.
  */
 public final class ApiErrorResponse {
 

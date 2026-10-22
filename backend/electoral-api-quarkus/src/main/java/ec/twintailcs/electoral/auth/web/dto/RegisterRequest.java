@@ -8,13 +8,13 @@ import jakarta.validation.constraints.Size;
 /**
  * Body para POST /auth/register.
  *
- * <p>El email se genera automaticamente a partir de nombre, apellido y rol con el formato:
- * {3 letras nombre}{3 letras apellido}{3 letras rol}@control.ttcs. Ej: Juan Perez, OBSERVER -&gt;
+ * <p>El email se genera automaticamente a partir de nombre, apellido y rol con el formato: {3
+ * letras nombre}{3 letras apellido}{3 letras rol}@control.ttcs. Ej: Juan Perez, OBSERVER -&gt;
  * juaperobs@control.ttcs
  *
- * <p>El rol se pasa porque en esta version los registros los hace un MASTER desde el dashboard.
- * El endpoint no esta abierto a registro libre (sino seria un vector de spam): quien llama debe
- * tener permisos elevados.
+ * <p>El rol se pasa porque en esta version los registros los hace un MASTER desde el dashboard. El
+ * endpoint no esta abierto a registro libre (sino seria un vector de spam): quien llama debe tener
+ * permisos elevados.
  */
 @RegisterForReflection
 public record RegisterRequest(

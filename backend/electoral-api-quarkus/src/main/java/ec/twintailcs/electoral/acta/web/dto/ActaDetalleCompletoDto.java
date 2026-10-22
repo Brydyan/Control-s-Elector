@@ -9,8 +9,8 @@ import java.util.UUID;
 /**
  * Detalle completo de un acta para vistas de COORDINATOR y OBSERVER.
  *
- * <p>Extiende el listado plano con las colecciones que ese no carga (votos por candidato,
- * evidencia y motivo de disputa), igual que el {@code ActaDetalleCompletoDto} del backend Spring.
+ * <p>Extiende el listado plano con las colecciones que ese no carga (votos por candidato, evidencia
+ * y motivo de disputa), igual que el {@code ActaDetalleCompletoDto} del backend Spring.
  */
 @RegisterForReflection
 public record ActaDetalleCompletoDto(

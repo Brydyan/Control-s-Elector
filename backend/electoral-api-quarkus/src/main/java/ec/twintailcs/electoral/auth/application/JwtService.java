@@ -22,9 +22,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 /**
  * Emite y valida JWT firmados con HMAC-SHA256 (HS256).
  *
- * <p>Port exacto del {@code JwtService} del backend Spring: mismos claims, misma
- * validacion y mismo algoritmo. Los tokens emitidos por una implementacion tienen que
- * ser aceptados por la otra durante el strangler.
+ * <p>Port exacto del {@code JwtService} del backend Spring: mismos claims, misma validacion y mismo
+ * algoritmo. Los tokens emitidos por una implementacion tienen que ser aceptados por la otra
+ * durante el strangler.
  */
 @ApplicationScoped
 public class JwtService {

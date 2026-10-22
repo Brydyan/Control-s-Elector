@@ -50,10 +50,10 @@ cada delegación vuelve a resolverlo.
 Copiar tal cual. Cada una cuesta una ronda si no se avisa.
 
 ```
-- `./mvnw test | tail` devuelve el exit de `tail`, NO el de Maven. Redirigí a archivo
+- `mvn test | tail` devuelve el exit de `tail`, NO el de Maven. Redirigí a archivo
   y leé target/surefire-reports/*.xml. Hay 78 tests en ERROR ahora mismo: si tu comando
   da "exit 0", desconfiá.
-- El working directory del backend es backend/electoral-api/, no la raíz.
+- El working directory del backend es backend/electoral-api-quarkus/, no la raíz.
 - El shell es fish: `$status`, no `$?`. Un glob sin match aborta el comando.
 - `ng test` cuelga sin `--watch=false --browsers=ChromeHeadless` (karma.conf.js:40-41).
 - La BD de dev ya está migrada: las migraciones rotas SOLO se ven en contenedor limpio.
@@ -96,8 +96,8 @@ Para ahorrar tokens y prevenir saturación de contexto:
 | Rol | Cuándo usar `rtk` | Comandos recomendados |
 |---|---|---|
 | **Arquitecto / QA** | Inspección ágil sin desbordar el hilo principal | `rtk git status`, `rtk git diff`, `rtk smart <archivo>` |
-| **Builder (`sdd-apply`)** | Compilación, mutaciones y verificación rápida | `rtk err ./mvnw clean compile`, `rtk err pnpm build`, `rtk test ./mvnw test`, `rtk test pnpm test:ci`, `rtk git status --short` |
-| **Verify (Contexto limpio)** | Auditoría de mutaciones y formateo | `rtk test <cmd>`, `rtk err ./mvnw spotless:check`. *(Nota: la compuerta final SIEMPRE cuenta totales exactos desde XMLs/Vitest)* |
+| **Builder (`sdd-apply`)** | Compilación, mutaciones y verificación rápida | `rtk err mvn clean compile`, `rtk err pnpm build`, `rtk test mvn test`, `rtk test pnpm test:ci`, `rtk git status --short` |
+| **Verify (Contexto limpio)** | Auditoría de mutaciones y formateo | `rtk test <cmd>`, `rtk err mvn spotless:check`. *(Nota: la compuerta final SIEMPRE cuenta totales exactos desde XMLs/Vitest)* |
 
 ---
 

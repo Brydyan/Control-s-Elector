@@ -1,6 +1,5 @@
 package ec.twintailcs.electoral.acta.domain;
 
-import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,13 +17,12 @@ import org.hibernate.annotations.UuidGenerator;
 /**
  * Acta electoral: el registro de los votos de una JRV para un cargo.
  *
- * <p>Mismo schema que la entidad del backend Spring. Las FKs a {@code jrv}, {@code cargo} y
- * {@code usuario} se mapean como columnas simples y no como asociaciones: esas tablas son de los
- * modulos de geografia, electoral y auth, y el modulo de actas solo necesita sus identificadores
- * (los nombres y numeros se leen con consultas de proyeccion). Asi la entidad no tiene proxies
- * perezosos que disparar un {@code LazyInitializationException} al mapear el DTO fuera de la
- * transaccion, que es el problema que el backend Spring tuvo que resolver con {@code
- * ActaAssociations}.
+ * <p>Mismo schema que la entidad del backend Spring. Las FKs a {@code jrv}, {@code cargo} y {@code
+ * usuario} se mapean como columnas simples y no como asociaciones: esas tablas son de los modulos
+ * de geografia, electoral y auth, y el modulo de actas solo necesita sus identificadores (los
+ * nombres y numeros se leen con consultas de proyeccion). Asi la entidad no tiene proxies perezosos
+ * que disparar un {@code LazyInitializationException} al mapear el DTO fuera de la transaccion, que
+ * es el problema que el backend Spring tuvo que resolver con {@code ActaAssociations}.
  *
  * <p>Los nombres de columna van EXPLICITOS: Quarkus no aplica la conversion CamelCaseToUnderscores
  * que aplica Spring, asi que declararlos es lo que hace que las dos implementaciones mapeen el
@@ -45,7 +43,7 @@ public class Acta extends PanacheEntityBase {
   @Column(name = "version", nullable = false)
   Long version;
 
-  @UuidGenerator(algorithm = UuidV7Generator.class)
+  @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
   @Column(
       name = "public_id",
       nullable = false,

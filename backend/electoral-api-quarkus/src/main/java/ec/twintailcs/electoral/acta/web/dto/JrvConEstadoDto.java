@@ -9,8 +9,4 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
  */
 @RegisterForReflection
 public record JrvConEstadoDto(
-    Long id,
-    String numero,
-    String parroquia,
-    int cargosPendientes,
-    int cargosRegistrados) {}
+    Long id, String numero, String parroquia, int cargosPendientes, int cargosRegistrados) {}

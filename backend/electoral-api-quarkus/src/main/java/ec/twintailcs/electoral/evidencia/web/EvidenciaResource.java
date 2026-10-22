@@ -33,16 +33,16 @@ import org.jboss.resteasy.reactive.multipart.FileUpload;
  * Endpoints REST para la gestion de evidencias fotograficas.
  *
  * <p>Rutas: POST /api/v1/evidencias (subir, multipart) — GET /api/v1/evidencias/{id} (metadata) —
- * GET /api/v1/evidencias/{id}/download-url (URL prefirmada) — PATCH
- * /api/v1/evidencias/{id}/estado (aprobar / rechazar) — PATCH
- * /api/v1/evidencias/{id}/observaciones — DELETE /api/v1/evidencias/{id}.
+ * GET /api/v1/evidencias/{id}/download-url (URL prefirmada) — PATCH /api/v1/evidencias/{id}/estado
+ * (aprobar / rechazar) — PATCH /api/v1/evidencias/{id}/observaciones — DELETE
+ * /api/v1/evidencias/{id}.
  *
- * <p>Port exacto del {@code EvidenciaController} del backend Spring: mismos paths, mismos
- * permisos, mismos status y mismo cuerpo.
+ * <p>Port exacto del {@code EvidenciaController} del backend Spring: mismos paths, mismos permisos,
+ * mismos status y mismo cuerpo.
  *
- * <p><b>Orden de las comprobaciones.</b> En Spring, la resolucion de argumentos (que produce el
- * 400 de la parte o del parametro faltantes) corre ANTES que el {@code @PreAuthorize} (que produce
- * el 403). Aca se reproduce ese orden: primero la parte multipart y el query param, despues la
+ * <p><b>Orden de las comprobaciones.</b> En Spring, la resolucion de argumentos (que produce el 400
+ * de la parte o del parametro faltantes) corre ANTES que el {@code @PreAuthorize} (que produce el
+ * 403). Aca se reproduce ese orden: primero la parte multipart y el query param, despues la
  * autorizacion, y al final el caso de uso.
  */
 @Path("/api/v1/evidencias")

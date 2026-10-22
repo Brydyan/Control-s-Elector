@@ -28,8 +28,8 @@ import java.util.List;
  * <p>Port exacto del {@code PartidoController} del backend Spring: mismos paths, mismos permisos,
  * mismos status y mismo cuerpo.
  *
- * <p>Los listados son de lectura abierta a cualquier usuario autenticado (el filtro de JWT ya
- * exige token); las escrituras exigen {@code configuracion:write}, que solo tiene MASTER.
+ * <p>Los listados son de lectura abierta a cualquier usuario autenticado (el filtro de JWT ya exige
+ * token); las escrituras exigen {@code configuracion:write}, que solo tiene MASTER.
  */
 @Path("/api/v1/configuracion/partidos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -54,8 +54,7 @@ public class PartidoResource {
       @Valid PartidoRequest dto, @HeaderParam("X-Forwarded-For") String xForwardedFor) {
     autorizador.exigir("configuracion:write");
 
-    Partido partido =
-        service.createPartido(dto, contexto.usuarioId(), contexto.ip(xForwardedFor));
+    Partido partido = service.createPartido(dto, contexto.usuarioId(), contexto.ip(xForwardedFor));
     return Response.status(Response.Status.CREATED).entity(mapper.toDto(partido)).build();
   }
 

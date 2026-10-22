@@ -27,12 +27,7 @@ public class ActualizarCargoUseCase {
     cargo.setPuestos(dto.puestos());
 
     audit.registrarConIp(
-        masterId,
-        "ACTUALIZAR_CARGO",
-        "cargo",
-        id,
-        "Cargo actualizado: " + dto.nombre(),
-        ipAddress);
+        masterId, "ACTUALIZAR_CARGO", "cargo", id, "Cargo actualizado: " + dto.nombre(), ipAddress);
     return cargo;
   }
 }

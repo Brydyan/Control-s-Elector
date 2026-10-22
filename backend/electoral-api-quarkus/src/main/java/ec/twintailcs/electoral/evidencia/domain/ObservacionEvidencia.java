@@ -12,8 +12,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 
 /**
- * Observacion marcada por el OBSERVER sobre su evidencia. Tabla junction propia entre la
- * evidencia y el {@link TipoObservacion}.
+ * Observacion marcada por el OBSERVER sobre su evidencia. Tabla junction propia entre la evidencia
+ * y el {@link TipoObservacion}.
  *
  * <p>Diseno (port del backend Spring): tabla junction propia en vez de columna jsonb en evidencia.
  * La restriccion de «maximo 2» se aplica en el caso de uso (RF-OBS-02) y se respalda con un trigger

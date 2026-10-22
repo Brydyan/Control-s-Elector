@@ -1,10 +1,10 @@
 package ec.twintailcs.electoral.auth.web;
 
 import ec.twintailcs.electoral.auth.application.SesionAdminService;
-import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
-import ec.twintailcs.electoral.auth.web.dto.SesionResponseDto;
-import jakarta.enterprise.context.ApplicationScoped;
 import ec.twintailcs.electoral.auth.security.Autorizador;
+import ec.twintailcs.electoral.auth.web.dto.SesionResponseDto;
+import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;

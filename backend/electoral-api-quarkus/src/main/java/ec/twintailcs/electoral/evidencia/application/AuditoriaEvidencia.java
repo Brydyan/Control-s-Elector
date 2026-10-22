@@ -7,8 +7,8 @@ import jakarta.enterprise.context.ApplicationScoped;
  * Registro de auditoria del modulo de evidencias.
  *
  * <p><b>Por que escribe la entidad y no usa el {@code AuditLogService}.</b> El servicio de
- * auditoria del backend Quarkus todavia no expone el metodo generico {@code registrar(...)} que
- * usa el backend Spring (solo tiene los de sesion), y el modulo de auditoria esta fuera de la
+ * auditoria del backend Quarkus todavia no expone el metodo generico {@code registrar(...)} que usa
+ * el backend Spring (solo tiene los de sesion), y el modulo de auditoria esta fuera de la
  * superficie de edicion de este modulo. Escribir la entidad desde aca deja el mismo rastro en la
  * base (misma tabla, misma accion, mismo detalle y mismo formato JSON) y no cambia ninguna
  * invariante: el detalle human-readable se envuelve en el payload {@code {"message": ...}} que usa

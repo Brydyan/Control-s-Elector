@@ -27,9 +27,9 @@ import java.util.List;
  *   <li>Sin paginacion: la medicion del techo (~2700 actas) lo descarta.
  * </ul>
  *
- * <p>El guard de clase del backend Spring es {@code hasAnyRole('ADMIN','MASTER','COORDINATOR')}; aca
- * se traduce a la llamada explicita del {@link Autorizador} en cada metodo (mismo efecto: OBSERVER
- * recibe 403).
+ * <p>El guard de clase del backend Spring es {@code hasAnyRole('ADMIN','MASTER','COORDINATOR')};
+ * aca se traduce a la llamada explicita del {@link Autorizador} en cada metodo (mismo efecto:
+ * OBSERVER recibe 403).
  */
 @Path("/api/v1/dashboard")
 @Produces(MediaType.APPLICATION_JSON)
