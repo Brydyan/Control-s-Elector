@@ -367,6 +367,15 @@
   background: var(--color-surface-page);
   border-radius: var(--radius-md);
 
+  /*
+   * S3 — palanca 2: la fila de corrección es una lista densa —el scrolls de
+   * `.candidates-correction-list` la recorta a 250px— y su target es el input
+   * de votos, no la fila: un pseudo-elemento `inset: 0` sobre la fila se
+   * pintaría por encima del input y le robaría el clic. El piso va en el
+   * control, y la fila conserva su altura natural.
+   */
+  min-height: 44px;
+
   .cand-info {
     display: flex;
     flex-direction: column;
@@ -382,6 +391,7 @@
     width: 100px;
     .cand-input {
       text-align: right;
+      min-height: 44px;
     }
   }
 }

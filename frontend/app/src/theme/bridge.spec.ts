@@ -14,10 +14,14 @@ import { LIGHT_BRIDGE, DARK_BRIDGE } from './primeng-preset';
  * the vocabulary and the component library is fed from it.
  *
  * The bridge moves names around, so the contract it has to keep is the one
- * that matters: **nothing that is painted changes**. Every name the bridge
- * feeds has to resolve to the very same value it had before, in both schemes.
- * The "before" column below is the value the running app painted when the
- * three vocabularies coexisted.
+ * that matters: **every name the bridge feeds has to resolve to whatever
+ * value the app's layer declares for it, in both schemes**. The "before"
+ * column below is the value the running app paints *after* the visual
+ * rebalance (`odd/tasks/frontend-visual-rebalance.md`): the bridge itself
+ * does not move hex around — it only points at names — so when the app's
+ * `--color-brand-primary` changes hue from `#2563eb` to `#1c4a8e`, the
+ * column follows. The contract is name-only: if a rebalance ever breaks
+ * this table, the bridge is the thing that hid the change.
  */
 
 const THEME_DIR = dirname(fileURLToPath(import.meta.url));
@@ -73,7 +77,7 @@ const BRIDGE: BridgeEntry[] = [
     prime: '--p-primary-color',
     light: LIGHT_BRIDGE.primary.color,
     dark: DARK_BRIDGE.primary.color,
-    before: { light: '#2563eb', dark: '#60a5fa' },
+    before: { light: '#1c4a8e', dark: '#4d75a8' },
   },
   {
     prime: '--p-primary-contrast-color',

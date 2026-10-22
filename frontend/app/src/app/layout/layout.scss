@@ -434,19 +434,59 @@
 
 @media (max-width: 767px) {
   .layout-main-container {
-    padding: 4.5rem 1rem 0 1rem;
+    padding: 5.75rem 1rem 0 1rem;
     margin-left: 0 !important;
   }
 
+  /*
+   * En mobile la topbar deja de ser una sola fila horizontal: el pill de
+   * conexión y los indicadores de cola tienen su propia línea debajo del
+   * brand y de las acciones primarias (avatar, tema, notificaciones). Si la
+   * dejáramos en flex horizontal a 390px, el pill colisionaba con el wordmark
+   * y empujaba las acciones primarias fuera del viewport — S1 de
+   * `odd/tasks/frontend-responsive-shell.md`.
+   *
+   * La altura pasa a `auto` para que crezca según el contenido y el padding
+   * inferior del contenedor principal se ajusta para no tapar el contenido
+   * que sigue debajo de esta topbar de dos filas.
+   */
   .layout-topbar {
-    height: 4rem;
-    padding: 0 0.75rem;
+    height: auto;
+    min-height: 4rem;
+    padding: 0.5rem 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .layout-topbar-start {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .layout-topbar-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+    column-gap: 0.5rem;
+    justify-content: flex-start;
+  }
+
+  /*
+   * El pill de conexión se pinta a la izquierda de su fila propia. Le
+   * aseguramos `min-height: 44px` también en este bloque (lo cubre la regla
+   * global de T7.3, pero una redundancia explícita aquí deja la decisión de
+   * mobile documentada sin tener que saltar entre breakpoints para leerla).
+   */
+  .layout-status-pill {
+    min-height: 44px;
+    padding-inline: 0.875rem;
   }
 
   .layout-sidebar {
-    top: 4rem;
+    top: 5.75rem;
     width: 18rem;
-    height: calc(100vh - 4rem);
+    height: calc(100vh - 5.75rem);
     transform: translateX(-100%);
   }
 
