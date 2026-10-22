@@ -32,7 +32,10 @@
     description="Esta JRV no tiene dignidades electorales activas registradas."
   ></app-empty-state>
 
-  <div class="cargos-list" *ngIf="!loading() && !error() && cargos().length > 0">
+  <div
+    class="cargos-list"
+    *ngIf="!loading() && !error() && cargos().length > 0"
+  >
     <app-card
       *ngFor="let cargo of cargos()"
       [elevated]="true"
