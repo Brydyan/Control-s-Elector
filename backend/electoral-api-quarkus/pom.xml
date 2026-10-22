@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>ec.twintailcs</groupId>
+	<artifactId>electoral-api-quarkus</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>electoral-api-quarkus</name>
+	<description>
+		Backend electoral sobre Quarkus — fase 1 de la issue #113 (migración desde Spring Boot).
+		Es el backend destino del strangler: comparte schema (Liquibase), contratos HTTP
+		(idénticos a los que fija la suite de regresión por contrato) y variables de entorno
+		con el backend Spring.
+	</description>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.compiler.release>21</maven.compiler.release>
+
+		<quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
+		<quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
+		<quarkus.platform.version>3.40.1</quarkus.platform.version>
+
+		<compiler-plugin.version>3.16.0</compiler-plugin.version>
+		<surefire-plugin.version>3.5.6</surefire-plugin.version>
+		<failsafe-plugin.version>3.5.6</failsafe-plugin.version>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>${quarkus.platform.group-id}</groupId>
+				<artifactId>${quarkus.platform.artifact-id}</artifactId>
+				<version>${quarkus.platform.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<!-- REST -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-rest</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-rest-jackson</artifactId>
+		</dependency>
+
+		<!-- Persistencia: el MISMO schema que el backend Spring (mismo changelog Liquibase). -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-hibernate-orm-panache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-jdbc-postgresql</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-liquibase</artifactId>
+		</dependency>
+
+		<!-- Validación: mismo jakarta.validation que el backend Spring. -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-hibernate-validator</artifactId>
+		</dependency>
+
+		<!-- JWT: se usa Nimbus JOSE igual que en Spring, para que los tokens sean
+		     byte-compatibles entre las dos implementaciones durante el strangler. -->
+		<dependency>
+			<groupId>com.nimbusds</groupId>
+			<artifactId>nimbus-jose-jwt</artifactId>
+			<version>9.40</version>
+		</dependency>
+
+		<!-- UUIDv7 (RFC 9562): mismo generador que el backend Spring, para que los
+		     public_id de las dos implementaciones se comporten igual. -->
+		<dependency>
+			<groupId>com.github.f4b6a3</groupId>
+			<artifactId>uuid-creator</artifactId>
+			<version>6.1.1</version>
+		</dependency>
+
+		<!-- AWS SDK v2: el mismo cliente que usa el backend Spring (RustFS en dev, Supabase S3
+		     en prod). Se usa la libreria directo y no la extension quarkus-amazon-s3 para no
+		     cambiar el modelo de configuracion: el backend Spring construye el S3Client a mano
+		     y el contrato tiene que ser el mismo. -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.30.0</version>
+		</dependency>
+
+
+
+		<!-- BCrypt: mismo algoritmo que usa el backend Spring. -->
+		<dependency>
+			<groupId>org.mindrot</groupId>
+			<artifactId>jbcrypt</artifactId>
+			<version>0.4</version>
+		</dependency>
+
+		<!-- OpenPDF: genera el PDF del expediente de impugnacion CNE (modulo de actas).
+		     Misma libreria y misma version que usa el backend Spring, para que el documento
+		     sea indistinguible entre las dos implementaciones. -->
+		<dependency>
+			<groupId>com.github.librepdf</groupId>
+			<artifactId>openpdf</artifactId>
+			<version>2.0.3</version>
+		</dependency>
+
+		<!-- Observabilidad: el health va en /actuator/health para no romper el contrato
+		     con el backend Spring ni el job de CI. -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-smallrye-health</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-smallrye-openapi</artifactId>
+		</dependency>
+
+		<!-- Test -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.rest-assured</groupId>
+			<artifactId>rest-assured</artifactId>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>io.quarkus</groupId>
+				<artifactId>quarkus-maven-plugin</artifactId>
+				<version>${quarkus.platform.version}</version>
+				<extensions>true</extensions>
+				<executions>
+					<execution>
+						<goals>
+							<goal>build</goal>
+							<goal>generate-code</goal>
+							<goal>generate-code-tests</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${compiler-plugin.version}</version>
+			</plugin>
+
+			<!--
+				El changelog de Liquibase tiene un solo dueño: backend/electoral-api/src/main/resources/database.
+				Se copia al classpath de este módulo en vez de duplicar el archivo, para que el
+				schema no pueda divergir entre las dos implementaciones durante el strangler.
+			-->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copiar-changelog-liquibase</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.outputDirectory}/database</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.basedir}/../electoral-api/src/main/resources/database</directory>
+									<filtering>false</filtering>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${surefire-plugin.version}</version>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-failsafe-plugin</artifactId>
+				<version>${failsafe-plugin.version}</version>
+			</plugin>
+		</plugins>
+	</build>
+
+	<profiles>
+		<profile>
+			<!--
+				Build nativo. Se compila dentro de un contenedor (el builder de Mandrel/GraalVM
+				necesita más memoria y toolchain de la que tiene un runner normal):
+
+				  ./mvnw package -Dnative -Dquarkus.native.container-build=true
+
+				Después, el ejecutable nativo queda en target/*-runner y se puede levantar
+				con el Dockerfile de este módulo.
+			-->
+			<id>native</id>
+			<properties>
+				<quarkus.native.enabled>true</quarkus.native.enabled>
+				<quarkus.package.type>native</quarkus.package.type>
+				<quarkus.native.container-build>true</quarkus.native.container-build>
+			</properties>
+		</profile>
+	</profiles>
+
+</project>

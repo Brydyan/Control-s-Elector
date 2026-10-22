@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.acta.application.usecase;
 
+import ec.twintailcs.electoral.acta.application.ActaAssociations;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaEstadoInvalidoException;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
@@ -32,6 +33,9 @@ public class AnularActaUseCase {
         actaRepository
             .findByIdWithLock(actaId)
             .orElseThrow(() -> new ActaInvalidaException("Acta no encontrada: " + actaId));
+    // Materializa jrv/cargo/registradaPor: la notificación referencia el acta y el observer la lee
+    // fuera de esta transacción.
+    ActaAssociations.inicializar(acta);
 
     if (acta.getEstado() != EstadoActa.APROBADA) {
       throw new ActaEstadoInvalidoException(

@@ -30,3 +30,11 @@ databaseChangeLog:
   - include: { file: database/changelog/020-evidencia-observaciones.sql }
   - include: { file: database/changelog/021-permiso-evidencia-update.sql }
   - include: { file: database/changelog/023-create-incidencia-jrv.sql }
+  - include: { file: database/changelog/024-widen-audit-log-accion.sql }
+  # El seed de datos de referencia va al FINAL, no por número de archivo sino por
+  # orden de ejecución. Escribes para un punto del esquema en el que aun existia
+  # `acta.storage_url` (columna que dropea 019) y sobre `usuario.public_id`, que
+  # 004 dejo NOT NULL sin default. Correlo antes de un 016/019 te rompe las bases
+  # ya migradas; correrlo al final funciona igual en bases nuevas y existentes.
+  - include: { file: database/changelog/025-00-usuario-public-id-default.sql }
+  - include: { file: database/changelog/025-data-seed.sql }

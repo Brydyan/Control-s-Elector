@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.acta.application.usecase;
 
+import ec.twintailcs.electoral.acta.application.ActaAssociations;
 import ec.twintailcs.electoral.acta.domain.AccesoNoPermitidoException;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaDetalle;
@@ -46,6 +47,8 @@ public class CorregirActaUseCase {
         actaRepository
             .findByIdWithLock(actaId)
             .orElseThrow(() -> new ActaInvalidaException("Acta no encontrada: " + actaId));
+    // Materializa jrv/cargo/registradaPor: el controller mapea el DTO fuera de esta transacción.
+    ActaAssociations.inicializar(acta);
 
     if (acta.getEstado() != EstadoActa.EN_DISPUTA) {
       throw new ActaEstadoInvalidoException(

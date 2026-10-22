@@ -77,8 +77,13 @@ import org.springframework.web.multipart.MultipartFile;
     description = "Revision, disputa, correccion, aprobacion, anulacion y expediente PDF.")
 @RestController
 @RequestMapping("/api/v1/coordinator")
-@PreAuthorize(
-    "hasAnyAuthority('acta:aprobar','acta:rechazar','acta:disputar','acta:read','acta:anular')")
+// El módulo de coordinación es de COORDINATOR y MASTER. Antes el guard de clase era
+// `hasAnyAuthority('acta:aprobar','acta:rechazar','acta:disputar','acta:read','acta:anular')`:
+// `acta:read` lo tienen OBSERVER y ADMIN, y `disputar`/`corregir`/`aprobar` no tenian guard de
+// metodo, asi que un OBSERVER podia disputar, corregir y aprobar actas ajenas (issue #121).
+// Este guard reproduce exactamente el `roleGuard` del frontend, que ya restringia
+// `/coordinator/actas` a COORDINATOR y MASTER.
+@PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")
 public class CoordinatorController {
 
   private final ActaService actaService;
@@ -361,6 +366,7 @@ public class CoordinatorController {
         description = "Acta no encontrada",
         content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
   })
+  @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")
   @PutMapping("/actas/{actaId}/disputar")
   public ResponseEntity<ActaResponseDto> disputar(
       @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
@@ -395,6 +401,7 @@ public class CoordinatorController {
         description = "Acta no encontrada",
         content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
   })
+  @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")
   @PutMapping("/actas/{actaId}/corregir")
   public ResponseEntity<ActaResponseDto> corregir(
       @Parameter(description = "ID interno del acta") @PathVariable Long actaId,
@@ -431,6 +438,7 @@ public class CoordinatorController {
         description = "El acta no esta en estado aprobable",
         content = @Content(schema = @Schema(implementation = ApiErrorResponseDto.class)))
   })
+  @PreAuthorize("hasAnyRole('COORDINATOR','MASTER')")
   @PutMapping("/actas/{actaId}/aprobar")
   public ResponseEntity<ActaResponseDto> aprobar(
       @Parameter(description = "ID interno del acta") @PathVariable Long actaId,

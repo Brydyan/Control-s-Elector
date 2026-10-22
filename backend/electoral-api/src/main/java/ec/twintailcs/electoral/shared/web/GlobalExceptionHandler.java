@@ -19,7 +19,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
  * Traduce excepciones a respuestas JSON consistentes.
@@ -93,13 +96,58 @@ public class GlobalExceptionHandler {
     return body(HttpStatus.FORBIDDEN, ex.getMessage(), null);
   }
 
-  /** Parte multipart faltante o parámetro requerido ausente → 400 BAD REQUEST. */
-  @ExceptionHandler({
-    MissingServletRequestPartException.class,
-    MissingServletRequestParameterException.class
-  })
+  /**
+   * Parte multipart faltante → 400 BAD REQUEST.
+   *
+   * <p>Un handler por tipo de excepción. Spring exige que el parámetro del método coincida con la
+   * excepción declarada: si un handler declara dos tipos y recibe uno solo, Spring no puede
+   * resolver el argumento, lo descarta con "No suitable resolver" y la excepción cae al {@code
+   * DefaultHandlerExceptionResolver}, que hace {@code sendError(400)}. Ese dispatch va a {@code
+   * /error}, que no está en {@code permitAll}, y el cliente recibía 401 en vez de 400.
+   */
+  @ExceptionHandler(MissingServletRequestPartException.class)
   public ResponseEntity<Map<String, Object>> missingPart(MissingServletRequestPartException ex) {
     return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+  }
+
+  /** Parámetro requerido ausente → 400 BAD REQUEST. Mismo motivo que {@link #missingPart}. */
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<Map<String, Object>> missingParam(
+      MissingServletRequestParameterException ex) {
+    return body(HttpStatus.BAD_REQUEST, ex.getMessage(), null);
+  }
+
+  /**
+   * Ruta inexistente → 404 NOT FOUND.
+   *
+   * <p>Sin este handler la excepción caía en el catch-all genérico y una ruta inexistente respondía
+   * 500 "internal error".
+   */
+  @ExceptionHandler(NoResourceFoundException.class)
+  public ResponseEntity<Map<String, Object>> noResource(NoResourceFoundException ex) {
+    return body(HttpStatus.NOT_FOUND, "Not found", null);
+  }
+
+  /**
+   * Método HTTP no soportado en una ruta existente → 405 METHOD NOT ALLOWED.
+   *
+   * <p>Mismo motivo que {@link #noResource}: sin handler explícito caía en el catch-all y devolvía
+   * 500.
+   */
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<Map<String, Object>> methodNotSupported(
+      HttpRequestMethodNotSupportedException ex) {
+    return body(HttpStatus.METHOD_NOT_ALLOWED, ex.getMessage(), null);
+  }
+
+  /**
+   * Body JSON malformado o de tipo incompatible → 400 BAD REQUEST.
+   *
+   * <p>Sin este handler caía en el catch-all: un body inválido devolvía 500 en vez de 400.
+   */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<Map<String, Object>> unreadableBody(HttpMessageNotReadableException ex) {
+    return body(HttpStatus.BAD_REQUEST, "malformed request body", null);
   }
 
   @ExceptionHandler(AccesoNoPermitidoException.class)
