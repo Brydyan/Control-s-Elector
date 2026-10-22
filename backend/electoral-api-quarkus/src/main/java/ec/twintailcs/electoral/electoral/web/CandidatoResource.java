@@ -26,8 +26,8 @@ import java.util.List;
 /**
  * Endpoints REST para la configuracion preelectoral de Candidatos.
  *
- * <p>Port exacto del {@code CandidatoController} del backend Spring: mismos paths, mismos
- * permisos, mismos status y mismo cuerpo.
+ * <p>Port exacto del {@code CandidatoController} del backend Spring: mismos paths, mismos permisos,
+ * mismos status y mismo cuerpo.
  */
 @Path("/api/v1/configuracion/candidatos")
 @Produces(MediaType.APPLICATION_JSON)

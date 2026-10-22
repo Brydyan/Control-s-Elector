@@ -9,18 +9,18 @@ import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
 import ec.twintailcs.electoral.auth.domain.RecursoNoEncontradoException;
 import ec.twintailcs.electoral.evidencia.application.usecase.ConsultarEvidenciaUseCase;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
-import io.quarkus.panache.common.Sort;
 import java.util.List;
 import java.util.UUID;
 
 /**
  * Arma el detalle completo del acta: votos por candidato, evidencia y motivo de disputa.
  *
- * <p>El listado plano (sin colecciones) sigue en otro endpoint: este caso de uso es para la vista de
- * detalle, donde SI se cargan las colecciones.
+ * <p>El listado plano (sin colecciones) sigue en otro endpoint: este caso de uso es para la vista
+ * de detalle, donde SI se cargan las colecciones.
  */
 @ApplicationScoped
 public class ConsultarActaDetalleUseCase {

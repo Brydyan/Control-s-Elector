@@ -16,8 +16,8 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 
 /**
  * Wrapper sobre el {@link S3Client} singleton con operaciones de alto nivel. Los resources y los
- * casos de uso no deberian tocar el {@code S3Client} directamente: siempre pasan por aca para
- * tener un punto unico de loggeo y de manejo de errores.
+ * casos de uso no deberian tocar el {@code S3Client} directamente: siempre pasan por aca para tener
+ * un punto unico de loggeo y de manejo de errores.
  *
  * <p>Convenciones:
  *

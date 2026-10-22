@@ -9,8 +9,9 @@ import jakarta.ws.rs.ext.Provider;
 /**
  * Error de validacion del dominio de actas → 400 BAD REQUEST.
  *
- * <p>Contrato explicito del backend Spring: acta inexistente, votos que no cuadran, JRV/cargo/candidato
- * no encontrados y candidato que no pertenece al cargo llegan al cliente como 400, no como 500.
+ * <p>Contrato explicito del backend Spring: acta inexistente, votos que no cuadran,
+ * JRV/cargo/candidato no encontrados y candidato que no pertenece al cargo llegan al cliente como
+ * 400, no como 500.
  */
 @Provider
 public class ActaInvalidaExceptionMapper implements ExceptionMapper<ActaInvalidaException> {

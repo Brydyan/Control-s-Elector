@@ -13,16 +13,16 @@ import jakarta.persistence.EntityManager;
  * parametrizado de {@code SET LOCAL}: el valor vive solo durante la transaccion, asi que una
  * conexion del pool no puede arrastrar la identidad de un request a otro.
  *
- * <p>El rol no se manda: la funcion {@code get_current_user_rol_name()} de la base lo deduce del
- * id del usuario. Es lo mismo que hace el backend Spring, que ademas fija {@code
- * app.current_user_rol} por compatibilidad.
+ * <p>El rol no se manda: la funcion {@code get_current_user_rol_name()} de la base lo deduce del id
+ * del usuario. Es lo mismo que hace el backend Spring, que ademas fija {@code app.current_user_rol}
+ * por compatibilidad.
  *
- * <p><b>Por que vive en el modulo de evidencias.</b> El paquete {@code shared/security} del
- * backend Spring (que es donde deberia estar) todavia no esta portado y esta fuera de la
- * superficie de edicion de este modulo. Evidencias es el primer modulo que ESCRIBE en una tabla
- * con RLS (la politica de insert exige {@code usuario_id = get_current_user_id()}), asi que es el
- * que tiene el requisito mas estricto. Cuando se porte {@code shared/security}, esta clase se
- * muda ahi y los dos modulos la siguen usando.
+ * <p><b>Por que vive en el modulo de evidencias.</b> El paquete {@code shared/security} del backend
+ * Spring (que es donde deberia estar) todavia no esta portado y esta fuera de la superficie de
+ * edicion de este modulo. Evidencias es el primer modulo que ESCRIBE en una tabla con RLS (la
+ * politica de insert exige {@code usuario_id = get_current_user_id()}), asi que es el que tiene el
+ * requisito mas estricto. Cuando se porte {@code shared/security}, esta clase se muda ahi y los dos
+ * modulos la siguen usando.
  */
 @ApplicationScoped
 public class RlsContexto {

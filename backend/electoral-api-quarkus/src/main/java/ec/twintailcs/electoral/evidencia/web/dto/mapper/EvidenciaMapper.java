@@ -16,8 +16,8 @@ import java.util.List;
  * <p><b>Las observaciones se leen de la base, no de la entidad.</b> Igual que hace el mapper del
  * backend Spring (que consulta el repositorio de observaciones), y no el campo de la entidad: asi
  * el DTO ve siempre lo que esta persistido, incluso en la misma transaccion en la que se acaban de
- * marcar. El mapper se invoca DENTRO de la transaccion, asi que la consulta usa la misma conexion
- * y el mismo contexto de RLS.
+ * marcar. El mapper se invoca DENTRO de la transaccion, asi que la consulta usa la misma conexion y
+ * el mismo contexto de RLS.
  */
 @ApplicationScoped
 public class EvidenciaMapper {
@@ -35,7 +35,8 @@ public class EvidenciaMapper {
             .setParameter("evidenciaId", entity.getId())
             .getResultList()
             .stream()
-            .map(observacion -> new ObservacionDto(observacion.getTipo(), observacion.getCreadoEn()))
+            .map(
+                observacion -> new ObservacionDto(observacion.getTipo(), observacion.getCreadoEn()))
             .toList();
 
     return new EvidenciaResponse(

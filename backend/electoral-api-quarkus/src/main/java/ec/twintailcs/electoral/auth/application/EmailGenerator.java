@@ -6,13 +6,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.text.Normalizer;
 
 /**
- * Genera emails automaticos con formato: {3 letras nombre}{3 letras apellido}{3 letras rol}@control.ttcs
- * Ej: Juan Perez, OBSERVER -&gt; juaperobs@control.ttcs
+ * Genera emails automaticos con formato: {3 letras nombre}{3 letras apellido}{3 letras
+ * rol}@control.ttcs Ej: Juan Perez, OBSERVER -&gt; juaperobs@control.ttcs
  *
  * <p>Port exacto del {@code EmailGenerator} del backend Spring, para que un usuario creado en
- * cualquiera de las dos implementaciones tenga el mismo email: normaliza tildes, toma las
- * primeras 3 letras de cada parte y, si el email ya existe, agrega un sufijo numerico
- * ({@code juaperobs2@}, {@code juaperobs3@}, ...).
+ * cualquiera de las dos implementaciones tenga el mismo email: normaliza tildes, toma las primeras
+ * 3 letras de cada parte y, si el email ya existe, agrega un sufijo numerico ({@code juaperobs2@},
+ * {@code juaperobs3@}, ...).
  */
 @ApplicationScoped
 public class EmailGenerator {
@@ -60,8 +60,8 @@ public class EmailGenerator {
   /**
    * Genera el email BASE, sin resolver colisiones.
    *
-   * <p>Es lo que necesita el seeder del usuario MASTER: el email del admin tiene que ser siempre
-   * el mismo ({@code admsismas@control.ttcs}), no uno con sufijo, porque ahi se busca si el
+   * <p>Es lo que necesita el seeder del usuario MASTER: el email del admin tiene que ser siempre el
+   * mismo ({@code admsismas@control.ttcs}), no uno con sufijo, porque ahi se busca si el
    * administrador ya fue creado.
    */
   public String generarBase(String nombre, String apellido, String rol) {

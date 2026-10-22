@@ -15,8 +15,8 @@ import org.jboss.logging.Logger;
 /**
  * Mapeo de excepciones al shape estandar de error.
  *
- * <p>La validacion de bean corre ANTES que la autorizacion (igual que en Spring): un body
- * invalido con un rol sin permiso devuelve 400, no 403.
+ * <p>La validacion de bean corre ANTES que la autorizacion (igual que en Spring): un body invalido
+ * con un rol sin permiso devuelve 400, no 403.
  */
 public final class ErrorMappers {
 
@@ -73,8 +73,7 @@ public final class ErrorMappers {
 
   /** Metodo HTTP no soportado en una ruta existente → 405 METHOD NOT ALLOWED. */
   @Provider
-  public static class MethodNotAllowedMapper
-      implements ExceptionMapper<NotAllowedException> {
+  public static class MethodNotAllowedMapper implements ExceptionMapper<NotAllowedException> {
 
     @Override
     public Response toResponse(NotAllowedException ex) {

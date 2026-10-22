@@ -6,14 +6,14 @@ import java.util.TreeSet;
 /**
  * Parametros de paginacion y orden del listado de actas del coordinator.
  *
- * <p>Mismo contrato que el {@code PageRequestFactory} del backend Spring: {@code page}, {@code size},
- * {@code sort} y {@code dir} son parametros separados, el size tiene un tope de 100 y el campo de
- * orden tiene que estar en la lista permitida. Los parametros invalidos fallan con {@link
+ * <p>Mismo contrato que el {@code PageRequestFactory} del backend Spring: {@code page}, {@code
+ * size}, {@code sort} y {@code dir} son parametros separados, el size tiene un tope de 100 y el
+ * campo de orden tiene que estar en la lista permitida. Los parametros invalidos fallan con {@link
  * IllegalArgumentException}, que el backend mapea a 400 con el shape estandar de error.
  *
- * <p>El paquete {@code shared/web/pagination} compartido usa otro contrato (un solo parametro {@code
- * sort} con el formato {@code "campo,direccion"}), asi que la lista blanca y la clause {@code ORDER
- * BY} de este endpoint se resuelven aca.
+ * <p>El paquete {@code shared/web/pagination} compartido usa otro contrato (un solo parametro
+ * {@code sort} con el formato {@code "campo,direccion"}), asi que la lista blanca y la clause
+ * {@code ORDER BY} de este endpoint se resuelven aca.
  */
 public record ActaPageSpec(int page, int size, String campo, boolean ascendente) {
 

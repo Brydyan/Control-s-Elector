@@ -4,9 +4,9 @@ import ec.twintailcs.electoral.evidencia.application.ArchivoEvidencia;
 import ec.twintailcs.electoral.evidencia.application.AuditoriaEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.ActaEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.ActaEvidenciaRepository;
+import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaInvalidaException;
-import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.storage.s3.S3StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -69,8 +69,7 @@ public class SubirEvidenciaUseCase {
       throw new EvidenciaInvalidaException("No se pueden subir evidencias a un acta ANULADA");
     }
 
-    boolean esRegistrador =
-        acta.registradaPor() != null && acta.registradaPor().equals(usuarioId);
+    boolean esRegistrador = acta.registradaPor() != null && acta.registradaPor().equals(usuarioId);
     boolean esPrivilegiado = "COORDINATOR".equals(rolNombre) || "MASTER".equals(rolNombre);
     if (!esRegistrador && !esPrivilegiado) {
       throw new EvidenciaInvalidaException(
@@ -111,11 +110,7 @@ public class SubirEvidenciaUseCase {
     // La auditoria va DENTRO de la transaccion: si algo falla despues, el audit hace rollback
     // junto con la evidencia.
     auditoria.registrar(
-        usuarioId,
-        "EVIDENCIA_SUBIDA",
-        evidencia.getId(),
-        "Evidencia subida s3Key=" + s3Key,
-        ip);
+        usuarioId, "EVIDENCIA_SUBIDA", evidencia.getId(), "Evidencia subida s3Key=" + s3Key, ip);
 
     return evidencia;
   }
@@ -131,7 +126,8 @@ public class SubirEvidenciaUseCase {
     }
     String contentType = archivo.contentType();
     if (contentType == null || !contentType.startsWith(ALLOWED_MIME_PREFIX)) {
-      throw new EvidenciaInvalidaException("Content-Type debe ser image/*, recibido: " + contentType);
+      throw new EvidenciaInvalidaException(
+          "Content-Type debe ser image/*, recibido: " + contentType);
     }
   }
 
@@ -180,9 +176,13 @@ public class SubirEvidenciaUseCase {
               if (status == Status.STATUS_ROLLEDBACK) {
                 try {
                   s3.delete(s3Key);
-                  log.infof("S3 cleanup after rollback for key %s (evidencia NOT persisted)", s3Key);
+                  log.infof(
+                      "S3 cleanup after rollback for key %s (evidencia NOT persisted)", s3Key);
                 } catch (RuntimeException s3Cleanup) {
-                  log.errorf(s3Cleanup, "S3 cleanup FAILED after rollback for key %s; orphan remains", s3Key);
+                  log.errorf(
+                      s3Cleanup,
+                      "S3 cleanup FAILED after rollback for key %s; orphan remains",
+                      s3Key);
                 }
               }
             }

@@ -10,9 +10,9 @@ import org.jboss.logging.Logger;
 /**
  * Logout: revoca la sesion del refresh token.
  *
- * <p>Port exacto del {@code LogoutUseCase} del backend Spring: la revocacion es idempotente (si
- * el token no esta o la sesion ya estaba revocada, no pasa nada y tampoco se falla) y el refresh
- * token nunca se guarda en claro: se busca por su hash con pepper.
+ * <p>Port exacto del {@code LogoutUseCase} del backend Spring: la revocacion es idempotente (si el
+ * token no esta o la sesion ya estaba revocada, no pasa nada y tampoco se falla) y el refresh token
+ * nunca se guarda en claro: se busca por su hash con pepper.
  */
 @ApplicationScoped
 public class LogoutUseCase {

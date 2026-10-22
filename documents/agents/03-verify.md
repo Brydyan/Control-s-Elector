@@ -64,7 +64,7 @@ encontró un defecto que tres lecturas no vieron.
 
 ```bash
 # copiar la línea EXACTA del CI y ejecutarla, no interpretarla
-cd backend/electoral-api && ./mvnw -B clean package -DskipTests
+cd backend/electoral-api-quarkus && mvn -B clean package -DskipTests
 
 # como el checkout limpio de CI: sin .env, que está en .gitignore
 git stash && <correr sin .env>
@@ -86,9 +86,9 @@ docker compose down -v && docker compose up -d
 
 | Patrón | Dónde mirar en este proyecto |
 |---|---|
-| **Nadie recorre el camino** (§4.1) | La frontera Angular ↔ Spring: ¿alguien prueba que el cuerpo que manda el frontend es un `ActaRequestDto` válido? Hoy no |
-| **Regla en un sitio y no en su vecino** (§4.2) | `ObserverController` usa `@PreAuthorize("@authz.has(...)")`; `CoordinatorController` usa `hasAnyRole(...)`. Dos mecanismos conviviendo: comprobar endpoint por endpoint |
-| **El comentario que miente** (§4.3) | `ActaService.registrar:77-82` afirma que RLS es el control vigente. `RlsInterceptor.java` existe — verificá que está **cableado y emitiendo** `SET LOCAL app.current_user_id`, no que el archivo existe |
+| **Nadie recorre el camino** (§4.1) | La frontera Angular ↔ backend: ¿alguien prueba que el cuerpo que manda el frontend es un `ActaRequestDto` válido? Hoy no |
+| **Regla en un sitio y no en su vecino** (§4.2) | Un endpoint exige el permiso con `Autorizador.exigir(...)` y otro se olvida. En Quarkus REST los interceptores CDI no se aplican a los metodos del recurso, asi que la autorizacion NO es declarativa: si nadie escribe la llamada, el endpoint queda abierto y no hay anotacion que delate el olvido. Comprobar endpoint por endpoint |
+| **El comentario que miente** (§4.3) | `ActaService.registrar:77-82` afirma que RLS es el control vigente. el interceptor de RLS existe — verificá que está **cableado y emitiendo** `set_config('app.current_user_id', ...)`, no que el archivo existe |
 | **Control que compara contra un nombre** (§4.4) | La tabla `rol` tiene `nombre` editable. Buscar `getNombre().equals("MASTER")` y equivalentes: si alguien puede renombrar el rol, el control no existe |
 | **Depende de dónde corre** (§4.5) | Migraciones que sólo fallan en BD limpia. `.env` en `.gitignore`. Tres caminos de seed: Liquibase, `infra/sql/03-seed.sql`, `DataSeeder.java` |
 | **Compuerta sin garantía** (§4.6) | `ci.yml` con `-DskipTests`. Por cada compuerta: escribí el defecto que dice prevenir y preguntá si lo detectaría |
@@ -120,8 +120,8 @@ desorden. Cada entrada lleva las cinco partes:
 2. **Causa raíz** — 002-rbac-seed.sql:74, fila ('ADMIN','acta','aprobar') en el VALUES.
 3. **Reproducción**
    ```bash
-   cd backend/electoral-api
-   ./mvnw -B test -Dtest=MigracionesSchemaTest > /tmp/r.log 2>&1; echo "exit=$?"
+   cd backend/electoral-api-quarkus
+   mvn -B test -Dtest=MigracionesSchemaTest > /tmp/r.log 2>&1; echo "exit=$?"
    ```
    El comando que demuestra la causa:
    ```sql

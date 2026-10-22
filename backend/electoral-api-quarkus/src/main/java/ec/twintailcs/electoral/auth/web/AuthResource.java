@@ -72,8 +72,10 @@ public class AuthResource {
 
   @POST
   @Path("/login")
-  public Response login(@Valid LoginRequest body, @HeaderParam(HttpHeaders.USER_AGENT) String userAgent) {
-    JwtService.TokenPair pair = loginUseCase.execute(body.email(), body.password(), ipDe(), userAgent);
+  public Response login(
+      @Valid LoginRequest body, @HeaderParam(HttpHeaders.USER_AGENT) String userAgent) {
+    JwtService.TokenPair pair =
+        loginUseCase.execute(body.email(), body.password(), ipDe(), userAgent);
     Usuario usuario = Usuario.find("email", body.email().trim().toLowerCase()).firstResult();
 
     AuthResponse payload =
@@ -165,8 +167,8 @@ public class AuthResource {
   // --------- helpers ---------
 
   /**
-   * Lee el refresh token de la cookie o del body. La cookie tiene prioridad: es el camino que
-   * usan los navegadores.
+   * Lee el refresh token de la cookie o del body. La cookie tiene prioridad: es el camino que usan
+   * los navegadores.
    */
   private static String readRefresh(String refreshEnCookie, RefreshRequest body) {
     if (refreshEnCookie != null && !refreshEnCookie.isBlank()) {
@@ -179,9 +181,9 @@ public class AuthResource {
   }
 
   /**
-   * Cookie httpOnly + Secure + SameSite=Strict. El header se arma a mano y no con
-   * {@code NewCookie} para que sea byte a byte igual al del backend Spring
-   * (JAX-RS no expone SameSite de forma uniforme entre implementaciones).
+   * Cookie httpOnly + Secure + SameSite=Strict. El header se arma a mano y no con {@code NewCookie}
+   * para que sea byte a byte igual al del backend Spring (JAX-RS no expone SameSite de forma
+   * uniforme entre implementaciones).
    */
   public static String buildRefreshCookie(String value) {
     return REFRESH_COOKIE
@@ -193,9 +195,9 @@ public class AuthResource {
   }
 
   /**
-   * IP del cliente. El backend Spring toma {@code X-Forwarded-For} y si no, la direccion
-   * remota del servlet; aca se usa el header que deja el proxy, con "sistema" como
-   * fallback. Cuando el modulo este completo se engancha la direccion remota de Vert.x.
+   * IP del cliente. El backend Spring toma {@code X-Forwarded-For} y si no, la direccion remota del
+   * servlet; aca se usa el header que deja el proxy, con "sistema" como fallback. Cuando el modulo
+   * este completo se engancha la direccion remota de Vert.x.
    */
   private static String ipDe() {
     String xForwardedFor = System.getProperty("x-forwarded-for", "sistema");

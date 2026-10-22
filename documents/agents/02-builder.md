@@ -73,11 +73,11 @@ cierre `back/2026-09-07-fix-liquibase-rbac-order`.
 ## Cómo se mide, en este repo
 
 ```bash
-cd backend/electoral-api
-./mvnw -B test > /tmp/test.log 2>&1; echo "exit=$?"
+cd backend/electoral-api-quarkus
+mvn -B test > /tmp/test.log 2>&1; echo "exit=$?"
 ```
 
-**Nunca en un pipe.** `./mvnw test | tail` devuelve el exit de `tail`: en este proyecto dio
+**Nunca en un pipe.** `mvn test | tail` devuelve el exit de `tail`: en este proyecto dio
 `exit 0` con 78 tests en error. Los números se sacan de los XML, no del log:
 
 ```bash
@@ -138,9 +138,10 @@ Cada feature o módulo implementado DEBE acompañarse de tests que validen:
 **Comando de medición:**
 ```bash
 # Backend
-cd backend/electoral-api
-./mvnw clean verify -Djacoco.skip=false
-# Reporte: target/site/jacoco/index.html
+cd backend/electoral-api-quarkus
+mvn clean verify
+# El modulo no instrumenta cobertura (su pom no tiene jacoco): la cobertura de
+# codigo no llega a ser gate. Los gates son los tests y spotless:check.
 
 # Frontend
 cd frontend/app
@@ -152,10 +153,12 @@ pnpm test:coverage
 
 Antes de marcar una tarea como "done":
 
-- **Spotless formatting**: `./mvnw spotless:check` (Java)
+- **Spotless formatting**: `mvn spotless:check` (Java)
 - **ESLint + Prettier**: `pnpm lint && pnpm format:check` (TypeScript/Angular)
 - **Code smells via SonarQube** (opcional): duplicados, complejidad ciclomática > 10, métodos > 30 líneas
-- **Security scanning**: `dependency-check` para librerías vulnerables (Maven plugin)
+- **Security scanning**: revisar dependencias vulnerables a mano (`mvn dependency:tree`). El
+  modulo no configura `dependency-check`; agregarlo es una tarea pendiente, no un gate
+  que hoy se pueda correr.
 
 Cualquier violación **bloquea merge**. Si encuentras deuda técnica fuera de scope, anótala en `apply-progress.md` bajo "Hallazgos".
 
@@ -242,14 +245,14 @@ logger.error("Error"); // ¿Dónde? ¿Cuál usuario? ¿Qué JRV?
 | **SQL Injection** | Usar JPA + prepared statements, nunca String concat | `repository.findByJrvId(jrvId)` ✅ |
 | **CSRF** | GET idempotente, POST/PUT/DELETE con CSRF token | Angular `HttpClientXsrfModule` activado |
 | **XSS** | Angular data binding (no innerHtml), sanitizar inputs | `{{ acta.titulo }}` ✅, `[innerHTML]` ❌ |
-| **Auth bypass** | `@PreAuthorize` en TODOS los endpoints, testear RLS | Mutation: quitar `@PreAuthorize` → test cae |
+| **Auth bypass** | `Autorizador.exigir(...)` en TODOS los endpoints, testear RLS | Mutation: quitar la llamada → test cae |
 | **Sensitive data** | No loguear JWT, contraseña, refresh token | Grep: `logger.*token` debe estar vacío |
-| **Dependency vulns** | `mvn dependency-check:check` antes de merge | Maven Security Plugin scans transitives |
+| **Dependency vulns** | `mvn dependency:tree` y revisar a mano | El modulo no tiene `dependency-check`: no hay gate automatico |
 
 **Antes de marcar done:**
 ```bash
-# Backend
-./mvnw dependency-check:check -DskipProvidedScope=true
+# Backend: el modulo no configura dependency-check. El escaneo de dependencias
+# queda como paso manual (`mvn dependency:tree`, OWASP) hasta que se agregue.
 
 # Frontend
 npm audit (prohibido high/critical sin fix)

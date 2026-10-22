@@ -1,6 +1,5 @@
 package ec.twintailcs.electoral.evidencia.domain;
 
-import ec.twintailcs.electoral.shared.persistence.UuidV7Generator;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -20,13 +19,13 @@ import org.hibernate.annotations.UuidGenerator;
  *
  * <p>El binario vive en S3 ({@code s3_key}); en la base guardamos solo metadata.
  *
- * <p>Port exacto de la entidad del backend Spring. El {@code acta} es una FK ({@code acta_id}) y
- * no se mapea como entidad: el modulo de evidencias no recorre hacia el acta (solo necesita su
+ * <p>Port exacto de la entidad del backend Spring. El {@code acta} es una FK ({@code acta_id}) y no
+ * se mapea como entidad: el modulo de evidencias no recorre hacia el acta (solo necesita su
  * identificador y su geometria, que copia en {@code jrv_id} y {@code cargo_id}), asi que se mapea
- * como columna simple, igual que hace el modulo de geografia con {@code provincia_id}. Por el
- * mismo motivo las observaciones ({@code evidencia_observacion.evidencia_id}) se consultan por id
- * y no como coleccion lazy: asi el DTO siempre ve lo que esta en la base, sin depender de una
- * coleccion inicializada en otra transaccion.
+ * como columna simple, igual que hace el modulo de geografia con {@code provincia_id}. Por el mismo
+ * motivo las observaciones ({@code evidencia_observacion.evidencia_id}) se consultan por id y no
+ * como coleccion lazy: asi el DTO siempre ve lo que esta en la base, sin depender de una coleccion
+ * inicializada en otra transaccion.
  *
  * <p>Los nombres de columna van EXPLICITOS: Quarkus no aplica la conversion CamelCaseToUnderscores
  * que aplica Spring, asi que declararlos es lo que hace que las dos implementaciones mapeen el
@@ -40,8 +39,13 @@ public class Evidencia extends PanacheEntityBase {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
 
-  @UuidGenerator(algorithm = UuidV7Generator.class)
-  @Column(name = "public_id", nullable = false, unique = true, updatable = false, columnDefinition = "UUID")
+  @UuidGenerator(style = UuidGenerator.Style.VERSION_7)
+  @Column(
+      name = "public_id",
+      nullable = false,
+      unique = true,
+      updatable = false,
+      columnDefinition = "UUID")
   UUID publicId;
 
   /** Acta a la que se asocia la evidencia. */

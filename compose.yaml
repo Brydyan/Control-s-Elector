@@ -2,8 +2,8 @@
 # compose.yaml — Stack de desarrollo local (staging)
 # =============================================================================
 # Solo servicios de infraestructura: PostgreSQL y RustFS (emulación S3).
-# El backend (Spring Boot) y el frontend (Angular) corren nativos en el host:
-#   - Backend: cd backend/electoral-api && mvn spring-boot:run
+# El backend (Quarkus) y el frontend (Angular) corren nativos en el host:
+#   - Backend: cd backend/electoral-api-quarkus && mvn quarkus:dev
 #   - Frontend: cd frontend/app && ng serve
 #
 # Esto es a propósito. Cada cambio Java re-build nativo de GraalVM consume
@@ -13,6 +13,12 @@
 #
 # El binario nativo de GraalVM queda reservado para deploy en Railway
 # (donde el proceso de build corre fuera del desktop y tiene más memoria).
+# El build nativo exige 6-8 GB de RAM, que es justamente lo que el desktop no
+# tiene. Ver `backend/electoral-api-quarkus/Dockerfile.native`.
+#
+# Para correr el backend nativo desde el host (sin Docker), hace falta
+# GraalVM/Mandrel y `mvn package -Dnative`; con la RAM que tiene esta maquina
+# el AOT no entra. Para desarrollo, `mvn quarkus:dev` sobre la JVM.
 #
 # Uso (desarrollo local):
 #   docker compose --profile dev up -d   # Postgres + Backend + RustFS
@@ -73,12 +79,15 @@ services:
           memory: ${POSTGRES_MEM_LIMIT:-512M}
 
   # ---------------------------------------------------------------------------
-  # Electoral API — Spring Boot Backend
+  # Electoral API — Backend Quarkus (ejecutable nativo, sin JVM)
   # ---------------------------------------------------------------------------
+  # La imagen es la NATIVA (Dockerfile.native): no lleva JVM. La de JVM
+  # (Dockerfile) sigue existiendo para el job de CI que corre la suite de
+  # contrato rapido; produccion corre el binario.
   electoral-api:
     build:
-      context: ./backend/electoral-api
-      dockerfile: Dockerfile
+      context: ./backend/electoral-api-quarkus
+      dockerfile: Dockerfile.native
     container_name: electoral-api-${APP_ENV:-dev}
     profiles: ["dev"]
     environment:
@@ -89,12 +98,33 @@ services:
       DB_USER: ${DB_USER:-electoral_user}
       DB_PASSWORD: ${DB_PASSWORD:-electoral_pass}
       # Server
-      # The API listens on 80 inside the container so that the frontend's
+# The API listens on 80 inside the container so that the frontend's
       # nginx can reach it as `electoral-api:80`, the same shape the k8s
       # Service exposes (port 80 -> targetPort 8081).
+      #
+      # `SERVER_PORT` lo honra Quarkus via `quarkus.http.port=${SERVER_PORT:8080}`.
+      # Tiene que quedar en 80: `ports` de abajo mapea 8083->80, el healthcheck
+      # consulta localhost:80, y `frontend/app/nginx.conf` proxea a
+      # `electoral-api:80`. Ponerlo en 8080 rompe los tres a la vez.
       SERVER_PORT: 80
-      SPRING_PROFILES_ACTIVE: dev,docker
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      # Hibernate corre en `none` a proposito, y no es un descuido.
+      #
+      # En Spring, Liquibase corre ANTES de que Hibernate valida, asi que una
+      # base recien creada levantaba sola. En Quarkus el orden es al reves:
+      # Hibernate valida primero y una base vacia revienta con
+      # `Schema validation: missing table [acta]`.
+      #
+      # Poner `validate` aca significaria que `docker compose up` contra una base
+      # nueva no levanta. El control de drift (si una entidad cambia sin que el
+      # changelog cambie) no se pierde: vive en el job `backend-quarkus` de CI,
+      # que arranca el backend DOS veces — la primera con `none` para que Liquibase
+      # cree el schema, la segunda con `validate` para afirmar que el schema
+      # coincide con las entidades.
+      QUARKUS_HIBERNATE_GENERATION: ${QUARKUS_HIBERNATE_GENERATION:-none}
+      # Liquibase aplica las migraciones al arrancar. El backend Spring lo hacia
+      # siempre (`spring.liquibase.enabled=true`); cuando era OFF era porque el
+      # backend Spring migraba por su cuenta. Ahora es el unico dueño del schema.
+      QUARKUS_LIQUIDASE_MIGRATE_AT_START: ${QUARKUS_LIQUIDASE_MIGRATE_AT_START:-true}
       # S3 / RustFS
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}

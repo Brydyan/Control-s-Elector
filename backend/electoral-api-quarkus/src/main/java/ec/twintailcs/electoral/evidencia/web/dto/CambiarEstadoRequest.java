@@ -10,4 +10,5 @@ import jakarta.validation.constraints.NotNull;
  * separado).
  */
 @RegisterForReflection
-public record CambiarEstadoRequest(@NotNull(message = "El estado es obligatorio") EstadoEvidencia estado) {}
+public record CambiarEstadoRequest(
+    @NotNull(message = "El estado es obligatorio") EstadoEvidencia estado) {}

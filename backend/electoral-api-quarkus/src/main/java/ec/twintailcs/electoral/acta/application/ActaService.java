@@ -170,8 +170,7 @@ public class ActaService {
     Acta acta =
         repository
             .buscarPorId(actaId)
-            .orElseThrow(
-                () -> new ActaInvalidaException("Acta no encontrada: " + actaId));
+            .orElseThrow(() -> new ActaInvalidaException("Acta no encontrada: " + actaId));
 
     // Autoria: el OBSERVER solo ve SUS actas.
     if (!acta.getRegistradaPorId().equals(observerId)) {
@@ -264,7 +263,8 @@ public class ActaService {
   public ActaResponseDto disputar(Long actaId, String motivo, String xForwardedFor) {
     Long coordinatorId = activarContexto();
     Acta acta =
-        marcarEnDisputaActaUseCase.execute(actaId, coordinatorId, motivo, contexto.ip(xForwardedFor));
+        marcarEnDisputaActaUseCase.execute(
+            actaId, coordinatorId, motivo, contexto.ip(xForwardedFor));
     return mapper.toDto(proyeccionDe(acta));
   }
 

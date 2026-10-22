@@ -17,8 +17,8 @@ public class CrearCandidatoUseCase {
   @Inject ConfiguracionAuditService audit;
 
   /**
-   * Crea el candidato. El cargo y el partido tienen que existir: si no, la operacion se rechaza
-   * con 404.
+   * Crea el candidato. El cargo y el partido tienen que existir: si no, la operacion se rechaza con
+   * 404.
    */
   @Transactional
   public Candidato execute(CandidatoRequest dto, Long masterId, String ipAddress) {
