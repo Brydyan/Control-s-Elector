@@ -1,8 +1,21 @@
 --liquibase formatted sql
 
--- changeset electoral:015-01-data-seed-dev
+-- changeset electoral:025-01-data-seed-dev context:seed
 -- Datos de desarrollo: geografía mínima, configuración preelectoral,
 -- usuarios de cada rol, JRVs, candidatos y actas en distintos estados.
+--
+-- CONTEXTO LIQUIBASE "seed": este changeset es DATO de referencia, no esquema.
+-- La app lo corre porque `spring.liquibase.contexts=seed`; la suite de tests
+-- NO lo corre (el pom le pasa `spring.liquibase.contexts=schema-only`).
+--
+-- Por qué: la suite del backend está diseñada contra una base con solo el
+-- esquema. Afirma "base vacía" (DashboardControllerTest.RNF_DASH_01), espera
+-- que el primer partido sea el que crea el test, espera una sola sesión, y
+-- construye su propia geografía con códigos fijos (provincia '24', cantón
+-- '2401'). Con el seed aplicado en la base de test, esas aserciones no se
+-- pueden cumplir y el setup revienta por colisión de índices únicos.
+-- Separar esquema de dato de referencia es la razón de que el seed tenga
+-- contexto propio.
 --
 -- Convenciones:
 --   * Solo se insertan filas si la tabla está vacía (idempotente).
@@ -266,10 +279,9 @@ WHERE j.numero = 'JRV-BAL-001' AND c.nombre = 'Alcalde/sa' AND oja.jrv_id = j.id
   AND NOT EXISTS (SELECT 1 FROM acta a WHERE a.jrv_id = j.id AND a.cargo_id = c.id AND a.estado = 'CORREGIDA')
 LIMIT 1;
 
-INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado, storage_url,
+INSERT INTO acta (jrv_id, cargo_id, registrada_por, estado,
                   total_sufragantes, votos_blancos, votos_nulos, fecha_registro)
 SELECT j.id, c.id, oja.usuario_id, 'APROBADA',
-       'https://example.com/storage/' || j.numero || '.webp',
        295, 10, 5, NOW() - INTERVAL '1 day'
 FROM jrv j, cargo c, observer_jrv_asignacion oja
 WHERE j.numero = 'JRV-LL-001' AND c.nombre = 'Alcalde/sa' AND oja.jrv_id = j.id

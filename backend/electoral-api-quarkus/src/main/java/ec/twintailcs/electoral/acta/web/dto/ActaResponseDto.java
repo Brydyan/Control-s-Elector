@@ -1,0 +1,26 @@
+package ec.twintailcs.electoral.acta.web.dto;
+
+import ec.twintailcs.electoral.acta.domain.EstadoActa;
+import io.quarkus.runtime.annotations.RegisterForReflection;
+import java.time.Instant;
+
+/**
+ * Respuesta publica de la API para un acta.
+ *
+ * <p>Mismo shape que el {@code ActaResponseDto} del backend Spring.
+ */
+@RegisterForReflection
+public record ActaResponseDto(
+    Long id,
+    Long jrvId,
+    Long cargoId,
+    Long registradaPorId,
+    EstadoActa estado,
+    Integer totalSufragantes,
+    Integer votosBlancos,
+    Integer votosNulos,
+    Instant fechaRegistro,
+    String motivoAnulacion,
+    String nombreCargo,
+    String numeroJrv,
+    Long totalVotosCandidatos) {}
