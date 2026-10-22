@@ -5,6 +5,7 @@ packages: []
 # Build scripts required by the Angular toolchain (native binaries / caches).
 allowBuilds:
   '@parcel/watcher': true
+  '@tailwindcss/oxide': true
   esbuild: true
   lmdb: true
   msgpackr-extract: true

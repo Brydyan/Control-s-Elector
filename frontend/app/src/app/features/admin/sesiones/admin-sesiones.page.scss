@@ -1,1 +1,5 @@
-@import "../usuarios/admin-usuarios.page.scss";
+/*
+ * The sessions page shares the admin layout with the users page. Sass `@use`
+ * is used instead of the deprecated `@import`.
+ */
+@use "../usuarios/admin-usuarios.page.scss";

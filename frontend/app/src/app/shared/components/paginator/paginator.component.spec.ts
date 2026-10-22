@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { providePrimeNG } from 'primeng/config';
 import { PaginatorComponent } from './paginator.component';
 
 describe('PaginatorComponent', () => {
@@ -9,6 +10,7 @@ describe('PaginatorComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PaginatorComponent],
+      providers: [providePrimeNG()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PaginatorComponent);
@@ -26,47 +28,41 @@ describe('PaginatorComponent', () => {
     expect(component.totalPages).toBe(3);
   });
 
-  it('should emit previous page unless already on the first one', () => {
+  it('should emit the page reported by the paginator', () => {
     const emitted: number[] = [];
     component.pageChange.subscribe((p) => emitted.push(p));
 
-    component.page = 2;
     component.size = 20;
-    component.totalElements = 100;
-    component.previous();
-    expect(emitted).toEqual([1]);
+    component.onPageChange({ first: 20, rows: 20 });
 
-    component.page = 0;
-    component.previous();
     expect(emitted).toEqual([1]);
   });
 
-  it('should emit next page unless already on the last one', () => {
-    const emitted: number[] = [];
-    component.pageChange.subscribe((p) => emitted.push(p));
-
-    component.page = 0;
+  it('should translate the record index into the first record of the page', () => {
+    component.page = 1;
     component.size = 20;
-    component.totalElements = 100;
-    component.next();
-    expect(emitted).toEqual([1]);
 
-    component.page = 4;
-    component.next();
-    expect(emitted).toEqual([1]);
+    expect(component.firstRecordIndex).toBe(20);
   });
 
-  it('should emit the selected page size', () => {
+  it('should emit the page size when the paginator changes it', () => {
     const emitted: number[] = [];
     component.sizeChange.subscribe((s) => emitted.push(s));
 
-    const select = document.createElement('select');
-    const option = document.createElement('option');
-    option.value = '50';
-    select.appendChild(option);
-    select.value = '50';
-    component.changeSize({ target: select } as unknown as Event);
+    component.size = 20;
+    component.onPageChange({ first: 0, rows: 50 });
+
     expect(emitted).toEqual([50]);
+  });
+
+  it('should not emit a size change when the size did not change', () => {
+    const emitted: number[] = [];
+    component.sizeChange.subscribe((s) => emitted.push(s));
+
+    component.size = 20;
+    component.onPageChange({ first: 1, rows: 20 });
+
+    expect(emitted).toEqual([]);
   });
 
   it('should render the page info text', () => {
@@ -75,9 +71,9 @@ describe('PaginatorComponent', () => {
     fixture.componentRef.setInput('totalElements', 42);
     fixture.detectChanges();
 
-    const info = fixture.debugElement.query(By.css('.paginator-info'));
+    const info = fixture.debugElement.query(By.css('.p-paginator-current'));
+    expect(info).toBeTruthy();
     expect(info.nativeElement.textContent).toContain('Página 2 de 3');
-    expect(info.nativeElement.textContent).toContain('42 total');
   });
 
   it('should hide the paginator when there is a single page', () => {
@@ -85,6 +81,6 @@ describe('PaginatorComponent', () => {
     component.totalElements = 5;
     fixture.detectChanges();
 
-    expect(fixture.debugElement.query(By.css('.paginator'))).toBeNull();
+    expect(fixture.debugElement.query(By.css('p-paginator'))).toBeNull();
   });
 });

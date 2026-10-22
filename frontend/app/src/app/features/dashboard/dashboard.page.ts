@@ -7,9 +7,12 @@ import {
   inject,
   signal,
 } from '@angular/core';
+import { ProgressBar } from 'primeng/progressbar';
 import { Subscription } from 'rxjs';
 import {
+  BadgeComponent,
   ButtonComponent,
+  CardComponent,
   ErrorStateComponent,
   LoadingStateComponent,
 } from '../../shared/ui';
@@ -39,6 +42,9 @@ import { DashboardService } from './services/dashboard.service';
   imports: [
     CommonModule,
     ButtonComponent,
+    CardComponent,
+    BadgeComponent,
+    ProgressBar,
     LoadingStateComponent,
     ErrorStateComponent,
   ],
@@ -127,6 +133,18 @@ export class DashboardPage implements OnInit, OnDestroy {
   tier(canton: ProgresoCanton): 'green' | 'blue' | 'amber' {
     const p = this.pct(canton);
     return p >= 100 ? 'green' : p >= 50 ? 'blue' : 'amber';
+  }
+
+  /** Color of the progress bar for a tier. */
+  tierColor(canton: ProgresoCanton): string {
+    switch (this.tier(canton)) {
+      case 'green':
+        return 'var(--color-status-success)';
+      case 'amber':
+        return 'var(--color-status-warning)';
+      default:
+        return 'var(--color-brand-primary)';
+    }
   }
 
   reintentar(): void {

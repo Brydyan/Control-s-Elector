@@ -1,8 +1,9 @@
 // ─────────────────────────────────────────────────────────────
-// IONIC VARIABLES & THEME AGGREGATION
+// VARIABLES & THEME AGGREGATION
 // ─────────────────────────────────────────────────────────────
 
 @use "./tokens";
-@use "./ionic-theme";
+@use "./fonts";
+@use "./base";
 @use "./typography";
 @use "./utilities";

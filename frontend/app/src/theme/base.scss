@@ -1,0 +1,18 @@
+// ─────────────────────────────────────────────────────────────
+// BASE GLOBAL
+// ─────────────────────────────────────────────────────────────
+
+/*
+ * El lienzo de la página.
+ *
+ * Sin esta regla el fondo lo pone el navegador: su canvas por defecto, que en
+ * el esquema oscuro es `#121212` — un color que no pertenece a la rampa del
+ * sistema de diseño. El shell (topbar y barra lateral) pinta `#0f172a` y el
+ * lienzo `#121212`: la costura entre el chrome y las páginas se ve.
+ *
+ * El lienzo se toma del token, así que los dos esquemas pintan su lienzo con
+ * su propia rampa y el shell y las páginas nunca se separan.
+ */
+body {
+  background-color: var(--color-surface-canvas);
+}

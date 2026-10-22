@@ -55,11 +55,11 @@ describe('JrvCargosPage', () => {
   it('should create and load cargos for JRV', () => {
     expect(component).toBeTruthy();
     expect(component.jrvId).toBe(42);
-    expect(component.cargos.length).toBe(2);
+    expect(component.cargos().length).toBe(2);
   });
 
   it('should navigate to registrar acta', () => {
-    component.registrarActa(component.cargos[0]);
+    component.registrarActa(component.cargos()[0]);
     expect(routerSpy.navigate).toHaveBeenCalledWith([
       '/observer/jrv',
       42,

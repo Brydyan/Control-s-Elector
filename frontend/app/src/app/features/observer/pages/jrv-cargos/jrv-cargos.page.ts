@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   BadgeComponent,
@@ -33,9 +33,9 @@ export class JrvCargosPage implements OnInit {
   private readonly observerService = inject(ObserverService);
 
   jrvId!: number;
-  cargos: CargoConEstado[] = [];
-  loading = true;
-  error: string | null = null;
+  readonly cargos = signal<CargoConEstado[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
     const idParam = this.route.snapshot.paramMap.get('jrvId');
@@ -43,22 +43,22 @@ export class JrvCargosPage implements OnInit {
       this.jrvId = Number(idParam);
       this.cargarCargos();
     } else {
-      this.error = 'Identificador de JRV inválido.';
-      this.loading = false;
+      this.error.set('Identificador de JRV inválido.');
+      this.loading.set(false);
     }
   }
 
   cargarCargos(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
     this.observerService.getCargosDeJrv(this.jrvId).subscribe({
       next: (data) => {
-        this.cargos = data;
-        this.loading = false;
+        this.cargos.set(data);
+        this.loading.set(false);
       },
       error: (err) => {
-        this.error = 'No se pudieron cargar las dignidades para esta mesa.';
-        this.loading = false;
+        this.error.set('No se pudieron cargar las dignidades para esta mesa.');
+        this.loading.set(false);
         console.error('Error loading cargos:', err);
       },
     });

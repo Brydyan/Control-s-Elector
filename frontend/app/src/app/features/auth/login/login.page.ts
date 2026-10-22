@@ -6,6 +6,9 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
 import { finalize } from 'rxjs';
 
 import { AuthService } from '../../../core/auth/services/auth.service';
@@ -13,7 +16,7 @@ import { AuthService } from '../../../core/auth/services/auth.service';
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, Button, InputText, Message],
   templateUrl: './login.page.html',
   styleUrl: './login.page.scss',
 })

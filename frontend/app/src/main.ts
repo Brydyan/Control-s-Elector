@@ -1,70 +1,42 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import {
-  RouteReuseStrategy,
   provideRouter,
   withPreloading,
   PreloadAllModules,
 } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { inject, APP_INITIALIZER } from '@angular/core';
-import {
-  IonicRouteStrategy,
-  provideIonicAngular,
-} from '@ionic/angular/standalone';
-import { addIcons } from 'ionicons';
-import {
-  alertCircleOutline,
-  analyticsOutline,
-  arrowBackOutline,
-  cameraOutline,
-  checkmarkCircleOutline,
-  checkmarkDoneOutline,
-  closeCircle,
-  closeOutline,
-  createOutline,
-  documentTextOutline,
-  gridOutline,
-  homeOutline,
-  logOutOutline,
-  menuOutline,
-  notificationsOutline,
-  peopleOutline,
-  searchOutline,
-  settingsOutline,
-} from 'ionicons/icons';
+import { inject, APP_INITIALIZER, LOCALE_ID } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
+import { provideServiceWorker } from '@angular/service-worker';
+import { providePrimeNG } from 'primeng/config';
 
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/core/auth/auth.interceptor';
 import { SyncService } from './app/core/offline/sync.service';
+import { primengTheme } from './theme/primeng-theme';
+import { environment } from './environments/environment';
 
-addIcons({
-  'menu-outline': menuOutline,
-  'close-outline': closeOutline,
-  'home-outline': homeOutline,
-  'document-text-outline': documentTextOutline,
-  'grid-outline': gridOutline,
-  'checkmark-circle-outline': checkmarkCircleOutline,
-  'checkmark-done-outline': checkmarkDoneOutline,
-  'alert-circle-outline': alertCircleOutline,
-  'camera-outline': cameraOutline,
-  'settings-outline': settingsOutline,
-  'people-outline': peopleOutline,
-  'analytics-outline': analyticsOutline,
-  'log-out-outline': logOutOutline,
-  'notifications-outline': notificationsOutline,
-  'search-outline': searchOutline,
-  'close-circle': closeCircle,
-  'create-outline': createOutline,
-  'arrow-back-outline': arrowBackOutline,
-});
+/**
+ * The app speaks Spanish: the dates, the numbers and the month names. The
+ * locale data has to be registered before the first bootstrap, and
+ * `LOCALE_ID` tells Angular which one to use.
+ */
+registerLocaleData(localeEs);
 
 bootstrapApplication(AppComponent, {
   providers: [
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
-    provideIonicAngular(),
+    { provide: LOCALE_ID, useValue: 'es' },
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(routes, withPreloading(PreloadAllModules)),
+    providePrimeNG({ theme: primengTheme, ripple: true }),
+    // The service worker is what makes the field flow work without signal:
+    // it caches the app shell and the last known reads.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: environment.production,
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     {
       provide: APP_INITIALIZER,
       useFactory: () => {
