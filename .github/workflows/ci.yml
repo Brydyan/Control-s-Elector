@@ -2,7 +2,21 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
+    # `main` y `develop` son las ramas de integracion. Los demas prefijos estan
+    # porque el stack de PRs es apilado: un PR cuya base es otra rama de feature
+    # (por ejemplo #152 sobre `feat/backend-quarkus-cutover`) no dispara CI si la
+    # lista no lo cubre, y se queda sin checks en silencio.
+    branches:
+      - main
+      - develop
+      - 'feat/**'
+      - 'fix/**'
+      - 'refactor/**'
+      - 'test/**'
+      - 'chore/**'
+      - 'build/**'
+      - 'upgrade/**'
+      - 'docs/**'
   push:
     branches: [main, develop]
     paths:
@@ -32,7 +46,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
@@ -101,7 +115,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
@@ -196,7 +210,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
@@ -289,7 +303,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
@@ -358,7 +372,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 

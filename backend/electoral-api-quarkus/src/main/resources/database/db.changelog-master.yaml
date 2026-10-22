@@ -38,3 +38,8 @@ databaseChangeLog:
   # ya migradas; correrlo al final funciona igual en bases nuevas y existentes.
   - include: { file: database/changelog/025-00-usuario-public-id-default.sql }
   - include: { file: database/changelog/025-data-seed.sql }
+  # El admin inicial va al final: necesita `rol` con nombre MASTER, que crea el
+  # seed de RBAC. Lleva `context: seed` explicito para poder excluirlo con
+  # QUARKUS_LIQUIDASE_CONTEXTS vacio en staging/produccion. Ver el aviso de
+  # seguridad en el archivo.
+  - include: { file: database/changelog/026-admin-inicial.sql }

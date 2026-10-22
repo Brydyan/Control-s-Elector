@@ -7,7 +7,7 @@
 # modulo hermano al lado.
 
 # ─── Build ───────────────────────────────────────────────────────────────────
-FROM maven:3.9-eclipse-temurin-21 AS builder
+FROM maven:3.9-eclipse-temurin-25 AS builder
 WORKDIR /app
 
 # Primero el pom, para que la capa de dependencias se cachee sola.
@@ -17,7 +17,7 @@ COPY src ./src
 RUN mvn -B package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
 COPY --from=builder /app/target/quarkus-app/lib/ ./lib/
