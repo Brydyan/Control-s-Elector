@@ -22,16 +22,14 @@ describe('MasterCargosPage', () => {
         .mockReturnValue(
           of({ id: 3, nombre: 'Alcalde', nivel: 'CANTON', puestos: 1 }),
         ),
-      actualizarCargo: vi
-        .fn()
-        .mockReturnValue(
-          of({
-            id: 1,
-            nombre: 'Presidente Editado',
-            nivel: 'NACIONAL',
-            puestos: 1,
-          }),
-        ),
+      actualizarCargo: vi.fn().mockReturnValue(
+        of({
+          id: 1,
+          nombre: 'Presidente Editado',
+          nivel: 'NACIONAL',
+          puestos: 1,
+        }),
+      ),
       eliminarCargo: vi.fn().mockReturnValue(of(undefined)),
     };
 
