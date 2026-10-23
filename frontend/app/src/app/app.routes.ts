@@ -159,8 +159,8 @@ export const routes: Routes = [
         path: 'master/cargos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/master/pages/cargos/master-cargos.page').then(
+            (m) => m.MasterCargosPage,
           ),
         data: {
           roles: ['MASTER'],
@@ -174,8 +174,8 @@ export const routes: Routes = [
         path: 'master/partidos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/master/pages/partidos/master-partidos.page').then(
+            (m) => m.MasterPartidosPage,
           ),
         data: {
           roles: ['MASTER'],
@@ -189,8 +189,8 @@ export const routes: Routes = [
         path: 'master/candidatos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/master/pages/candidatos/master-candidatos.page').then(
+            (m) => m.MasterCandidatosPage,
           ),
         data: {
           roles: ['MASTER'],
