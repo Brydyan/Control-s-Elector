@@ -65,13 +65,20 @@ export class JrvCargosPage implements OnInit {
   }
 
   registrarActa(cargo: CargoConEstado): void {
-    this.router.navigate([
+    const route = [
       '/observer/jrv',
       this.jrvId,
       'cargo',
       cargo.cargoId,
       'registrar',
-    ]);
+    ];
+    if (cargo.estadoActa === 'EN_DISPUTA' && cargo.actaId) {
+      this.router.navigate(route, {
+        queryParams: { actaId: cargo.actaId, modo: 'disputa' },
+      });
+    } else {
+      this.router.navigate(route);
+    }
   }
 
   volver(): void {

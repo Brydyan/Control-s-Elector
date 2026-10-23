@@ -115,4 +115,11 @@ export class ObserverService {
       `${this.baseUrl}/correcciones-pendientes`,
     );
   }
+
+  corregirActa(actaId: number, payload: ActaRequest): Observable<ActaResponse> {
+    return this.http.put<ActaResponse>(
+      `${this.baseUrl}/actas/${actaId}/corregir`,
+      payload,
+    );
+  }
 }
