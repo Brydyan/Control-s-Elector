@@ -38,28 +38,24 @@ describe('MasterCandidatosPage', () => {
       listarCargos: vi.fn().mockReturnValue(of(mockCargos)),
       listarPartidos: vi.fn().mockReturnValue(of(mockPartidos)),
       listarCandidatos: vi.fn().mockReturnValue(of(mockCandidatos)),
-      crearCandidato: vi
-        .fn()
-        .mockReturnValue(
-          of({
-            id: 102,
-            nombre: 'Nuevo Candidato',
-            orden: 2,
-            cargoId: 1,
-            partidoId: 10,
-          }),
-        ),
-      actualizarCandidato: vi
-        .fn()
-        .mockReturnValue(
-          of({
-            id: 100,
-            nombre: 'Luisa G. Actualizada',
-            orden: 1,
-            cargoId: 1,
-            partidoId: 10,
-          }),
-        ),
+      crearCandidato: vi.fn().mockReturnValue(
+        of({
+          id: 102,
+          nombre: 'Nuevo Candidato',
+          orden: 2,
+          cargoId: 1,
+          partidoId: 10,
+        }),
+      ),
+      actualizarCandidato: vi.fn().mockReturnValue(
+        of({
+          id: 100,
+          nombre: 'Luisa G. Actualizada',
+          orden: 1,
+          cargoId: 1,
+          partidoId: 10,
+        }),
+      ),
       eliminarCandidato: vi.fn().mockReturnValue(of(undefined)),
     };
 
