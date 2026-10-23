@@ -20,6 +20,10 @@ RUN mvn -B package -DskipTests
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/target/quarkus-app/lib/ ./lib/
 COPY --from=builder /app/target/quarkus-app/*.jar ./
 COPY --from=builder /app/target/quarkus-app/app/ ./app/
