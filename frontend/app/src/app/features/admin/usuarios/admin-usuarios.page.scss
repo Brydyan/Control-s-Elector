@@ -37,8 +37,10 @@
 
 .table-wrap {
   overflow: auto;
+  background: var(--color-surface-card);
   border: 1px solid var(--color-border-on-surface);
-  border-radius: 10px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-surface);
 }
 
 /*
