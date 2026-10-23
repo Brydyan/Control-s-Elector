@@ -10,8 +10,8 @@ import { Router } from '@angular/router';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
-import { AuthService } from './services/auth.service';
-import { AuthStore } from './auth.store';
+import { AuthService } from '../../features/auth/services/auth.service';
+import { AuthStore } from '../../features/auth/services/auth.store';
 
 /**
  * Attaches the in-memory access token as `Authorization: Bearer` ONLY for

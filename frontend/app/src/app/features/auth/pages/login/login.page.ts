@@ -11,7 +11,7 @@ import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { finalize } from 'rxjs';
 
-import { AuthService } from '../../../../core/auth/services/auth.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',

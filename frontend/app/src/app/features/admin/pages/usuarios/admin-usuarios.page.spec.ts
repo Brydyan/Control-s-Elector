@@ -5,8 +5,8 @@ import localeEs from '@angular/common/locales/es';
 import { providePrimeNG } from 'primeng/config';
 import { of } from 'rxjs';
 import { AdminApi } from '../../data/admin.api';
-import { AuthStore } from '../../../../core/auth/auth.store';
-import type { Role } from '../../../../core/auth/domain/user.model';
+import { AuthStore } from '../../../auth/services/auth.store';
+import type { Role } from '../../../auth/domain/models/user.model';
 import { AdminUsuariosPage } from './admin-usuarios.page';
 
 /**

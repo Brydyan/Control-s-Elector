@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { CurrentUser } from '../domain/user.model';
+import { CurrentUser } from '../domain/models/user.model';
 import { AuthResponseDto, CurrentUserDto, LoginRequestDto } from './auth.dto';
 
 /**
@@ -26,7 +26,7 @@ export interface Session {
  * httpOnly refresh cookie.
  */
 @Injectable({ providedIn: 'root' })
-export class AuthRepository {
+export class AuthApi {
   private readonly http = inject(HttpClient);
   private readonly base = `${environment.apiUrl}/auth`;
 

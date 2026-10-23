@@ -10,10 +10,10 @@ import { firstValueFrom, isObservable, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { authGuard, guestGuard, roleGuard } from './auth.guard';
-import { AuthService } from './services/auth.service';
-import { AuthStore } from './auth.store';
-import { CurrentUser } from './domain/user.model';
-import { PinAuthService } from './pin-auth.service';
+import { AuthService } from '../../features/auth/services/auth.service';
+import { AuthStore } from '../../features/auth/services/auth.store';
+import { CurrentUser } from '../../features/auth/domain/models/user.model';
+import { PinAuthService } from '../../features/auth/services/pin-auth.service';
 
 /**
  * Tests unitarios para los guards CanActivateFn (T-FE-02 CRITICAL 1).
