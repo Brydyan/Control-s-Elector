@@ -95,4 +95,15 @@ describe('ButtonComponent', () => {
       fixture.nativeElement.querySelector('.p-button').classList,
     ).toContain('p-button-lg');
   });
+
+  it('should pass icon and rounded inputs to the rendered PrimeNG button', () => {
+    fixture.componentRef.setInput('icon', 'pi pi-ellipsis-v');
+    fixture.componentRef.setInput('rounded', true);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('button');
+    expect(button.classList).toContain('p-button-rounded');
+    const iconEl = fixture.nativeElement.querySelector('.pi.pi-ellipsis-v');
+    expect(iconEl).toBeTruthy();
+  });
 });

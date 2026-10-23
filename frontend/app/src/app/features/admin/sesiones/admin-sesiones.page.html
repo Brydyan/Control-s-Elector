@@ -68,18 +68,20 @@
           <td>{{ sesion.ultimoUsoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td>{{ sesion.expiraEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions">
+            <p-menu
+              #menu
+              [model]="obtenerAccionesSesion(sesion)"
+              [popup]="true"
+              appendTo="body"
+            />
             <app-button
               variant="ghost"
               size="sm"
-              (clicked)="verDetalles(sesion)"
-            >
-              Ver detalles
-            </app-button>
-            @if (puedeRevocar()) {
-            <app-button variant="danger" size="sm" (clicked)="revocar(sesion)">
-              Revocar
-            </app-button>
-            }
+              icon="pi pi-ellipsis-v"
+              [rounded]="true"
+              aria-label="Acciones de sesión"
+              (clicked)="menu.toggle($event)"
+            />
           </td>
         </tr>
       </ng-template>
