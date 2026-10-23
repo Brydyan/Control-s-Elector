@@ -321,3 +321,60 @@ describe('the dashboard banner caption', () => {
     },
   );
 });
+
+/**
+ * El placeholder de los inputs lo fija PrimeNG con
+ *
+ *     ::placeholder { color: color-mix(in oklab, currentcolor 50%, transparent) }
+ *
+ * y no expone ningun token `--p-*-placeholder`, asi que no se puede ajustar
+ * desde el preset: hay que sobreescribir la pseudo-clase.
+ *
+ * Al 50% de alfa no llegaba a WCAG AA en ninguno de los dos esquemas. Medido
+ * sobre las superficies reales de los inputs (`--color-surface-card`):
+ *
+ *     claro   50% de slate-900 sobre blanco  ->  3.41:1   falla
+ *     oscuro  50% de slate-400 sobre slate-900 ->  2.69:1   falla
+ *
+ * El defecto no era un token mal elegido sino la opacidad: al 50%, ningun
+ * gris de la rampa llega a 4.5:1 sobre su superficie, asi que cambiar de
+ * token sin tocar el alfa tampoco lo habria arreglado.
+ *
+ * Este caso vivia fuera del alcance de esta suite — la de contraste ya
+ * existe y calcula ratios de verdad, pero no miraba la pseudo-clase — y por
+ * eso el defecto llego a `develop`. Queda cubierto para que una
+ * actualizacion de PrimeNG no lo reintroduzca.
+ */
+describe('the input placeholder', () => {
+  const PLACEHOLDER_MIN = AA_TEXT;
+
+  it.each([
+    ['light', 'the light scheme'],
+    ['dark', 'the dark scheme'],
+  ] as const)('should reach AA over the card surface in %s', (scheme) => {
+    const ratio = ratioOf(
+      resolver,
+      scheme,
+      '--color-text-muted',
+      '--color-surface-card',
+    );
+    expect(ratio).toBeGreaterThanOrEqual(PLACEHOLDER_MIN);
+  });
+
+  it('should paint the placeholder with a theme token, not a fixed colour', () => {
+    // Un color fijo passaria el ratio de un esquema y reprobria el otro.
+    expect(tokensSource).toMatch(
+      /^::placeholder\s*\{\s*color:\s*var\(--color-text-muted\);\s*\}/m,
+    );
+  });
+
+  it('should not inherit the 50% alpha of the PrimeNG default', () => {
+    // `color-mix(..., 50%, transparent)` es exactamente lo que produced el
+    // defecto: el test anterior pasa solo si el alfa deja de ser 50%.
+    // Solo la regla; el comentario de `tokens.scss` cita el default de
+    // PrimeNG a proposito y no debe hacer fallar el test.
+    const rule = tokensSource.match(/^::placeholder\s*\{[^}]*\}/m);
+    expect(rule).not.toBeNull();
+    expect(rule?.[0]).not.toMatch(/color-mix\([^)]*50%\s*,\s*transparent/);
+  });
+});
