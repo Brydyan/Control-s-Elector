@@ -1,5 +1,5 @@
-import type { SortDir } from '../../../shared/models/page.model';
-import { EstadoActa } from '../../observer/models/observer.model';
+import type { SortDir } from '../../../../shared/models/page.model';
+import { EstadoActa } from '../../../observer/domain/models/observer.model';
 
 export type { EstadoActa };
 

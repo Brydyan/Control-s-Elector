@@ -6,7 +6,7 @@ export const routes: Routes = [
     path: 'login',
     canActivate: [guestGuard],
     loadComponent: () =>
-      import('./features/auth/login/login.page').then((m) => m.LoginPage),
+      import('./features/auth/pages/login/login.page').then((m) => m.LoginPage),
   },
   {
     path: '',
@@ -19,7 +19,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./features/dashboard/dashboard.page').then(
+          import('./features/dashboard/pages/dashboard/dashboard.page').then(
             (m) => m.DashboardPage,
           ),
         data: {
@@ -129,7 +129,7 @@ export const routes: Routes = [
         path: 'admin/usuarios',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/admin/usuarios/admin-usuarios.page').then(
+          import('./features/admin/pages/usuarios/admin-usuarios.page').then(
             (m) => m.AdminUsuariosPage,
           ),
         data: {
@@ -144,7 +144,7 @@ export const routes: Routes = [
         path: 'admin/sesiones',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/admin/sesiones/admin-sesiones.page').then(
+          import('./features/admin/pages/sesiones/admin-sesiones.page').then(
             (m) => m.AdminSesionesPage,
           ),
         data: {
