@@ -386,6 +386,25 @@ export class ActaDetallePage implements OnInit, OnDestroy {
     return estado;
   }
 
+  obtenerEstadoLabel(estado: EstadoActa): string {
+    switch (estado) {
+      case 'APROBADA':
+        return 'Aprobada';
+      case 'EN_DISPUTA':
+        return 'En Disputa';
+      case 'CORREGIDA':
+        return 'Corregida';
+      case 'ENVIADA':
+        return 'Enviada';
+      case 'BORRADOR':
+        return 'Borrador';
+      case 'ANULADA':
+        return 'Anulada';
+      default:
+        return estado;
+    }
+  }
+
   // T-FE-10 E.4: handlers de subida contingencia y descarga PDF.
 
   /**

@@ -111,6 +111,11 @@ describe('ActaDetallePage', () => {
     );
     expect(component.data()?.acta.id).toBe(42);
     expect(component.data()?.acta.estado).toBe('ENVIADA');
+
+    const badge = fixture.nativeElement.querySelector(
+      '.status-banner app-badge',
+    );
+    expect(badge?.textContent.trim()).toBe('Enviada');
   });
 
   it('should navigate back to list on volver', () => {
