@@ -43,3 +43,8 @@ databaseChangeLog:
   # QUARKUS_LIQUIDASE_CONTEXTS vacio en staging/produccion. Ver el aviso de
   # seguridad en el archivo.
   - include: { file: database/changelog/026-admin-inicial.sql }
+  # Repara el hash de las cuentas de referencia del 025, que se creo con un
+  # placeholder de 61 caracteres en vez de un BCrypt de 60 y por lo tanto no
+  # dejaba iniciar sesion. Va aparte porque un changeset corre una sola vez:
+  # editar el 025 arregla bases nuevas, no las ya migradas.
+  - include: { file: database/changelog/027-repara-hash-cuentas-referencia.sql }
