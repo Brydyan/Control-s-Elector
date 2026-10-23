@@ -142,4 +142,47 @@ describe('SidebarComponent', () => {
     expect(byLabel.get('Dashboard')).toBe('pi pi-home');
     expect(byLabel.get('Registrar acta')).toBe('pi pi-plus-circle');
   });
+
+  it('should not duplicate Operacion Electoral if already provided by backend menus', () => {
+    menuServiceSpy.getMyMenus.and.returnValue(
+      of([
+        {
+          id: '10',
+          parentId: null,
+          codigo: 'observer',
+          label: 'Operación Electoral',
+          icono: 'ballot',
+          ruta: '/observer/mis-jrvs',
+          orden: 4,
+          activo: true,
+          children: [
+            {
+              id: '11',
+              parentId: '10',
+              codigo: 'observer.jrvs',
+              label: 'Mis JRVs',
+              icono: 'checkbox',
+              ruta: '/observer/mis-jrvs',
+              orden: 1,
+              activo: true,
+              children: [],
+            },
+          ],
+        },
+      ]),
+    );
+
+    component.cargarMenus();
+
+    const operacionSections = component
+      .sections()
+      .filter((s) => s.label.toLowerCase() === 'operación electoral');
+    expect(operacionSections.length).toBe(1);
+
+    const misJrvsItems = component
+      .sections()
+      .flatMap((s) => s.items)
+      .filter((item) => item.route === '/observer/mis-jrvs');
+    expect(misJrvsItems.length).toBe(1);
+  });
 });
