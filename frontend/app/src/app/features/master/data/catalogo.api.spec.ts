@@ -5,7 +5,7 @@ import {
 } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { CatalogoService } from './catalogo.service';
+import { CatalogoApi } from './catalogo.api';
 import { environment } from '../../../../environments/environment';
 import {
   CargoRequestDto,
@@ -14,28 +14,20 @@ import {
   PartidoResponseDto,
   CandidatoRequestDto,
   CandidatoResponseDto,
-} from '../models/catalogo.model';
+} from '../domain/models/catalogo.model';
 
-describe('CatalogoService', () => {
-  let service: CatalogoService;
+describe('CatalogoApi', () => {
+  let api: CatalogoApi;
   let httpMock: HttpTestingController;
   const baseUrl = `${environment.apiUrl}/configuracion`;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [
-        CatalogoService,
-        provideHttpClient(),
-        provideHttpClientTesting(),
-      ],
+      providers: [CatalogoApi, provideHttpClient(), provideHttpClientTesting()],
     });
-    service = injectCatalogoService();
+    api = TestBed.inject(CatalogoApi);
     httpMock = TestBed.inject(HttpTestingController);
   });
-
-  function injectCatalogoService(): CatalogoService {
-    return TestBed.inject(CatalogoService);
-  }
 
   afterEach(() => {
     httpMock.verify();
@@ -47,7 +39,7 @@ describe('CatalogoService', () => {
         { id: 1, nombre: 'Presidente', nivel: 'NACIONAL', puestos: 1 },
       ];
 
-      service.listarCargos().subscribe((data) => {
+      api.listarCargos().subscribe((data) => {
         expect(data).toEqual(mockCargos);
       });
 
@@ -64,7 +56,7 @@ describe('CatalogoService', () => {
       };
       const response: CargoResponseDto = { id: 2, ...payload };
 
-      service.crearCargo(payload).subscribe((data) => {
+      api.crearCargo(payload).subscribe((data) => {
         expect(data).toEqual(response);
       });
 
@@ -82,7 +74,7 @@ describe('CatalogoService', () => {
       };
       const response: CargoResponseDto = { id: 3, ...payload };
 
-      service.actualizarCargo(3, payload).subscribe((data) => {
+      api.actualizarCargo(3, payload).subscribe((data) => {
         expect(data).toEqual(response);
       });
 
@@ -93,7 +85,7 @@ describe('CatalogoService', () => {
     });
 
     it('debe eliminar un cargo', () => {
-      service.eliminarCargo(3).subscribe((res) => {
+      api.eliminarCargo(3).subscribe((res) => {
         expect(res).toBeUndefined();
       });
 
@@ -109,7 +101,7 @@ describe('CatalogoService', () => {
         { id: 1, nombre: 'Movimiento Verde', siglas: 'MV', numeroLista: 5 },
       ];
 
-      service.listarPartidos().subscribe((data) => {
+      api.listarPartidos().subscribe((data) => {
         expect(data).toEqual(mockPartidos);
       });
 
@@ -126,7 +118,7 @@ describe('CatalogoService', () => {
       };
       const response: PartidoResponseDto = { id: 2, ...payload };
 
-      service.crearPartido(payload).subscribe((data) => {
+      api.crearPartido(payload).subscribe((data) => {
         expect(data).toEqual(response);
       });
 
@@ -143,7 +135,7 @@ describe('CatalogoService', () => {
       };
       const response: PartidoResponseDto = { id: 2, ...payload };
 
-      service.actualizarPartido(2, payload).subscribe((data) => {
+      api.actualizarPartido(2, payload).subscribe((data) => {
         expect(data).toEqual(response);
       });
 
@@ -153,7 +145,7 @@ describe('CatalogoService', () => {
     });
 
     it('debe eliminar un partido', () => {
-      service.eliminarPartido(2).subscribe((res) => {
+      api.eliminarPartido(2).subscribe((res) => {
         expect(res).toBeUndefined();
       });
 
@@ -169,11 +161,9 @@ describe('CatalogoService', () => {
         { id: 1, nombre: 'Juan Pérez', orden: 1, cargoId: 1, partidoId: 2 },
       ];
 
-      service
-        .listarCandidatos({ cargoId: 1, partidoId: 2 })
-        .subscribe((data) => {
-          expect(data).toEqual(mockCandidatos);
-        });
+      api.listarCandidatos({ cargoId: 1, partidoId: 2 }).subscribe((data) => {
+        expect(data).toEqual(mockCandidatos);
+      });
 
       const req = httpMock.expectOne(
         `${baseUrl}/candidatos?cargoId=1&partidoId=2`,
@@ -191,7 +181,7 @@ describe('CatalogoService', () => {
       };
       const response: CandidatoResponseDto = { id: 5, ...payload };
 
-      service.crearCandidato(payload).subscribe((data) => {
+      api.crearCandidato(payload).subscribe((data) => {
         expect(data).toEqual(response);
       });
 
@@ -209,7 +199,7 @@ describe('CatalogoService', () => {
       };
       const response: CandidatoResponseDto = { id: 5, ...payload };
 
-      service.actualizarCandidato(5, payload).subscribe((data) => {
+      api.actualizarCandidato(5, payload).subscribe((data) => {
         expect(data).toEqual(response);
       });
 
@@ -219,7 +209,7 @@ describe('CatalogoService', () => {
     });
 
     it('debe eliminar un candidato', () => {
-      service.eliminarCandidato(5).subscribe((res) => {
+      api.eliminarCandidato(5).subscribe((res) => {
         expect(res).toBeUndefined();
       });
 
