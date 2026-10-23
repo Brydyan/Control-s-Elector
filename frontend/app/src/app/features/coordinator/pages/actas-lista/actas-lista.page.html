@@ -197,24 +197,20 @@
               {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
             </td>
             <td class="td-actions">
+              <p-menu
+                #menu
+                [model]="obtenerAccionesActa(acta)"
+                [popup]="true"
+                appendTo="body"
+              />
               <app-button
-                variant="primary"
+                variant="ghost"
                 size="sm"
-                (clicked)="verDetalle(acta.id)"
-              >
-                Revisar
-              </app-button>
-              @if (puedeAnular(acta)) {
-              <app-button
-                variant="danger"
-                size="sm"
-                class="ml-1"
-                (clicked)="anular(acta.id)"
-                aria-label="Anular acta aprobada"
-              >
-                Anular
-              </app-button>
-              }
+                icon="pi pi-ellipsis-v"
+                [rounded]="true"
+                aria-label="Acciones de acta"
+                (clicked)="menu.toggle($event)"
+              />
             </td>
           </tr>
         </ng-template>
