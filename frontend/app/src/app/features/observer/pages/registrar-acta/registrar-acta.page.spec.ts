@@ -19,6 +19,8 @@ describe('RegistrarActaPage', () => {
       'guardarBorrador',
       'enviarActaDirecta',
       'subirImagenActa',
+      'corregirActa',
+      'getCorreccionesPendientes',
     ]);
     // `p-steps` subscribes to the router events on init, so the mock needs
     // the stream even though the page never navigates from the strip.
@@ -558,5 +560,29 @@ describe('RegistrarActaPage', () => {
     ).map((element) => (element.textContent ?? '').trim());
 
     expect(labels).toEqual(['Votos', 'Evidencia', 'Revisión']);
+  });
+
+  it('debe enviar la corrección en modo disputa al pulsar Enviar Corrección', () => {
+    component.esModoDisputa.set(true);
+    component.actaIdEnDisputa = 999;
+    escribirPadron(100);
+    escribirVotos('Candidato A', 50);
+    escribirVotos('Candidato B', 50);
+
+    observerServiceSpy.corregirActa.and.returnValue(
+      of({ id: 999, estado: 'CORREGIDA' } as any),
+    );
+    offlineStorageSpy.eliminarBorrador.and.returnValue(Promise.resolve());
+
+    component.enviarActaFinal();
+
+    expect(observerServiceSpy.corregirActa).toHaveBeenCalledWith(
+      999,
+      expect.objectContaining({
+        jrvId: 101,
+        cargoId: 2,
+        totalSufragantes: 100,
+      }),
+    );
   });
 });
