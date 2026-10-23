@@ -9,9 +9,9 @@ import {
   tap,
 } from 'rxjs';
 
-import { AuthRepository, Session } from '../data/auth.repository';
+import { AuthApi, Session } from '../data/auth.api';
 import { LoginRequestDto } from '../data/auth.dto';
-import { AuthStore } from '../auth.store';
+import { AuthStore } from './auth.store';
 import { StoragePersistenceService } from './storage-persistence.service';
 
 /**
@@ -21,7 +21,7 @@ import { StoragePersistenceService } from './storage-persistence.service';
  */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly repo = inject(AuthRepository);
+  private readonly repo = inject(AuthApi);
   private readonly store = inject(AuthStore);
   private readonly persistence = inject(StoragePersistenceService);
 

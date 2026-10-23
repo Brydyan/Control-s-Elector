@@ -8,8 +8,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActaItem, CargoResumen } from '../../models/coordinator.model';
 import type { PagedResponse } from '../../../../shared/models/page.model';
 import { CoordinatorApi } from '../../data/coordinator.api';
-import { AuthStore } from '../../../../core/auth/auth.store';
-import type { Role } from '../../../../core/auth/domain/user.model';
+import { AuthStore } from '../../../auth/services/auth.store';
+import type { Role } from '../../../auth/domain/models/user.model';
 import { ActasListaPage } from './actas-lista.page';
 
 /**

@@ -15,9 +15,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { environment } from '../../../environments/environment';
 import { authInterceptor } from './auth.interceptor';
-import { AuthService } from './services/auth.service';
-import { AuthStore } from './auth.store';
-import { CurrentUser } from './domain/user.model';
+import { AuthService } from '../../features/auth/services/auth.service';
+import { AuthStore } from '../../features/auth/services/auth.store';
+import { CurrentUser } from '../../features/auth/domain/models/user.model';
 
 describe('authInterceptor', () => {
   let http: HttpClient;

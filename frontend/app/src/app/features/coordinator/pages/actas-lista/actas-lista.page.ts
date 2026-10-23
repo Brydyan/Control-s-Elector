@@ -22,7 +22,7 @@ import {
 } from '../../../../shared/ui';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { mapError } from '../../../../shared/errors/error-handler';
-import { AuthStore } from '../../../../core/auth/auth.store';
+import { AuthStore } from '../../../auth/services/auth.store';
 import {
   ActaFiltros,
   ActaItem,

@@ -1,6 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 
-import { CurrentUser } from './domain/user.model';
+import { CurrentUser } from '../domain/models/user.model';
 
 /**
  * In-memory auth state.

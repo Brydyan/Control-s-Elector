@@ -2,10 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { Observable, Subject, of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AuthRepository, Session } from '../data/auth.repository';
-import { AuthStore } from '../auth.store';
+import { AuthApi, Session } from '../data/auth.api';
+import { AuthStore } from './auth.store';
 import { AuthService } from './auth.service';
-import { CurrentUser } from '../domain/user.model';
+import { CurrentUser } from '../domain/models/user.model';
 import { StoragePersistenceService } from './storage-persistence.service';
 
 /**
@@ -51,11 +51,7 @@ describe('AuthService (T-FE-03)', () => {
       logout: vi.fn(),
     };
     TestBed.configureTestingModule({
-      providers: [
-        AuthService,
-        AuthStore,
-        { provide: AuthRepository, useValue: repo },
-      ],
+      providers: [AuthService, AuthStore, { provide: AuthApi, useValue: repo }],
     });
     service = TestBed.inject(AuthService);
     store = TestBed.inject(AuthStore);

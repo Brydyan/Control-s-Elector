@@ -5,9 +5,9 @@ import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AuthService } from '../../../../core/auth/services/auth.service';
-import { CurrentUser } from '../../../../core/auth/domain/user.model';
-import { Session } from '../../../../core/auth/data/auth.repository';
+import { AuthService } from '../../services/auth.service';
+import { CurrentUser } from '../../domain/models/user.model';
+import { Session } from '../../data/auth.api';
 
 import { LoginPage } from './login.page';
 

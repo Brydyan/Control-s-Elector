@@ -14,7 +14,7 @@ import {
   SkeletonComponent,
 } from '../../../../shared/ui';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
-import { AuthStore } from '../../../../core/auth/auth.store';
+import { AuthStore } from '../../../auth/services/auth.store';
 import { AdminApi } from '../../data/admin.api';
 import {
   SesionFiltros,

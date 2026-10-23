@@ -2,9 +2,9 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { map, of } from 'rxjs';
 
-import { PinAuthService } from './pin-auth.service';
-import { AuthService } from './services/auth.service';
-import { AuthStore } from './auth.store';
+import { PinAuthService } from '../../features/auth/services/pin-auth.service';
+import { AuthService } from '../../features/auth/services/auth.service';
+import { AuthStore } from '../../features/auth/services/auth.store';
 
 /**
  * Protects authenticated routes. If there is already an in-memory
