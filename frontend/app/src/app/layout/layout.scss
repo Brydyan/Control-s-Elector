@@ -329,14 +329,16 @@
  */
 .layout-sidebar {
   position: fixed;
-  top: 5rem;
-  left: 0;
-  width: 20rem;
-  height: calc(100vh - 5rem);
+  top: 6rem;
+  left: 1.5rem;
+  width: 18.5rem;
+  height: calc(100vh - 7.5rem);
   overflow-y: auto;
   background: var(--p-content-background);
   color: var(--p-text-color);
-  border-right: 1px solid var(--p-content-border-color);
+  border: 1px solid var(--p-content-border-color);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-surface);
   transition:
     transform 0.2s ease,
     width 0.2s ease;
@@ -409,7 +411,7 @@
 }
 
 .layout-wrapper.layout-static.layout-static-inactive .layout-main-container {
-  margin-left: 4rem;
+  margin-left: 4.5rem;
 }
 
 .layout-wrapper.layout-overlay .layout-sidebar {
@@ -494,8 +496,14 @@
 
   .layout-sidebar {
     top: 5.75rem;
+    left: 0;
     width: 18rem;
     height: calc(100vh - 5.75rem);
+    border-radius: 0;
+    border-top: none;
+    border-left: none;
+    border-bottom: none;
+    border-right: 1px solid var(--p-content-border-color);
     transform: translateX(-100%);
   }
 
