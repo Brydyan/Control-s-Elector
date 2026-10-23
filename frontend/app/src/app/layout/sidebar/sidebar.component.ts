@@ -134,9 +134,17 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }
     });
 
+    // Deduplicar: si el menú dinámico del backend ya incluye la sección o la ruta, no volver a inyectarla
+    const alreadyHasMisJrvs = sections.some(
+      (s) =>
+        s.label.toLowerCase() === 'operación electoral' ||
+        s.items.some((item) => item.route === '/observer/mis-jrvs'),
+    );
+
     // Agregar sección de operación electoral solo a roles con acceso al flujo (OBSERVER y MASTER)
+    // si no vino provista ya por el backend
     const role = this.user()?.role;
-    if (role === 'OBSERVER' || role === 'MASTER') {
+    if (!alreadyHasMisJrvs && (role === 'OBSERVER' || role === 'MASTER')) {
       sections.push({
         label: 'Operación Electoral',
         items: [
