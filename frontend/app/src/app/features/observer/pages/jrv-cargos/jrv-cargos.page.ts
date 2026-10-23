@@ -9,8 +9,8 @@ import {
   ErrorStateComponent,
   LoadingStateComponent,
 } from '../../../../shared/ui';
-import { CargoConEstado } from '../../models/observer.model';
-import { ObserverService } from '../../services/observer.service';
+import { CargoConEstado } from '../../domain/models/observer.model';
+import { ObserverApi } from '../../data/observer.api';
 
 @Component({
   selector: 'app-jrv-cargos',
@@ -30,7 +30,7 @@ import { ObserverService } from '../../services/observer.service';
 export class JrvCargosPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly observerService = inject(ObserverService);
+  private readonly observerService = inject(ObserverApi);
 
   jrvId!: number;
   readonly cargos = signal<CargoConEstado[]>([]);

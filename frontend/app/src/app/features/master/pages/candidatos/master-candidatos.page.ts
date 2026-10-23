@@ -16,13 +16,13 @@ import {
   ErrorStateComponent,
   SkeletonComponent,
 } from '../../../../shared/ui';
-import { CatalogoService } from '../../services/catalogo.service';
+import { CatalogoApi } from '../../data/catalogo.api';
 import {
   CandidatoRequestDto,
   CandidatoResponseDto,
   CargoResponseDto,
   PartidoResponseDto,
-} from '../../models/catalogo.model';
+} from '../../domain/models/catalogo.model';
 
 @Component({
   selector: 'app-master-candidatos',
@@ -46,7 +46,7 @@ import {
   styleUrls: ['./master-candidatos.page.scss'],
 })
 export class MasterCandidatosPage implements OnInit {
-  private readonly service = inject(CatalogoService);
+  private readonly service = inject(CatalogoApi);
 
   readonly candidatos = signal<CandidatoResponseDto[]>([]);
   readonly cargos = signal<CargoResponseDto[]>([]);

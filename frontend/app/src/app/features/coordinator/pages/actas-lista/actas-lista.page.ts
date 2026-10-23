@@ -29,8 +29,8 @@ import {
   CantonResumen,
   CargoResumen,
   EstadoActa,
-} from '../../models/coordinator.model';
-import { CoordinatorService } from '../../services/coordinator.service';
+} from '../../domain/models/coordinator.model';
+import { CoordinatorApi } from '../../data/coordinator.api';
 
 @Component({
   selector: 'app-actas-lista',
@@ -59,7 +59,7 @@ import { CoordinatorService } from '../../services/coordinator.service';
   styleUrls: ['./actas-lista.page.scss'],
 })
 export class ActasListaPage implements OnInit, OnDestroy {
-  private readonly coordinatorService = inject(CoordinatorService);
+  private readonly coordinatorService = inject(CoordinatorApi);
   private readonly router = inject(Router);
   private readonly authStore = inject(AuthStore);
   private readonly busqueda$ = new Subject<string>();

@@ -269,7 +269,10 @@ describe('global typography', () => {
  */
 describe('the dashboard banner caption', () => {
   const dashboardSource = readFileSync(
-    join(SOURCE_DIR, 'app/features/dashboard/dashboard.page.scss'),
+    join(
+      SOURCE_DIR,
+      'app/features/dashboard/pages/dashboard/dashboard.page.scss',
+    ),
     'utf8',
   );
 

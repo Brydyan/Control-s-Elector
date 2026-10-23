@@ -2,8 +2,8 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MasterPartidosPage } from './master-partidos.page';
-import { CatalogoService } from '../../services/catalogo.service';
-import { PartidoResponseDto } from '../../models/catalogo.model';
+import { CatalogoApi } from '../../data/catalogo.api';
+import { PartidoResponseDto } from '../../domain/models/catalogo.model';
 
 describe('MasterPartidosPage', () => {
   let component: MasterPartidosPage;
@@ -38,7 +38,7 @@ describe('MasterPartidosPage', () => {
     TestBed.configureTestingModule({
       providers: [
         MasterPartidosPage,
-        { provide: CatalogoService, useValue: catalogoServiceMock },
+        { provide: CatalogoApi, useValue: catalogoServiceMock },
       ],
     });
 
