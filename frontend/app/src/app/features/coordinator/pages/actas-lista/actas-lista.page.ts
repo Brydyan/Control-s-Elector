@@ -9,6 +9,8 @@ import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { Tab, TabList, Tabs } from 'primeng/tabs';
 import { TableModule } from 'primeng/table';
+import { Menu } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
   BadgeComponent,
@@ -51,6 +53,7 @@ import { CoordinatorService } from '../../services/coordinator.service';
     TabList,
     Tabs,
     TableModule,
+    Menu,
   ],
   templateUrl: './actas-lista.page.html',
   styleUrls: ['./actas-lista.page.scss'],
@@ -358,5 +361,26 @@ export class ActasListaPage implements OnInit, OnDestroy {
 
   verDetalle(actaId: number): void {
     this.router.navigate(['/coordinator/actas', actaId]);
+  }
+
+  obtenerAccionesActa(acta: ActaItem): MenuItem[] {
+    const items: MenuItem[] = [
+      {
+        label: 'Revisar',
+        icon: 'pi pi-eye',
+        command: () => this.verDetalle(acta.id),
+      },
+    ];
+
+    if (this.puedeAnular(acta)) {
+      items.push({
+        label: 'Anular',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-500',
+        command: () => this.anular(acta.id),
+      });
+    }
+
+    return items;
   }
 }

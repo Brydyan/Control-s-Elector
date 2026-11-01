@@ -305,16 +305,16 @@ describe('ActasListaPage (rendered contract)', () => {
     ).map((button) => (button.textContent ?? '').trim());
   }
 
-  it('muestra el botón Anular solo con una sesión MASTER', () => {
+  it('muestra la acción Anular solo con una sesión MASTER', () => {
     loginAs('MASTER');
     fixture.detectChanges();
-
-    expect(buttonLabels()).toContain('Anular');
+    const accionesMaster = component.obtenerAccionesActa(actaAprobada);
+    expect(accionesMaster.some((item) => item.label === 'Anular')).toBe(true);
 
     loginAs('COORDINATOR');
     fixture.detectChanges();
-
-    expect(buttonLabels()).not.toContain('Anular');
+    const accionesCoord = component.obtenerAccionesActa(actaAprobada);
+    expect(accionesCoord.some((item) => item.label === 'Anular')).toBe(false);
   });
 
   it('muestra las fechas en formato español dd/MM/yyyy HH:mm', () => {

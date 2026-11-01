@@ -5,6 +5,8 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Skeleton } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+import { Menu } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
 import {
   ButtonComponent,
   EmptyStateComponent,
@@ -31,6 +33,7 @@ import { SesionFiltros, SesionResponseDto } from '../models/admin.model';
     InputText,
     Skeleton,
     TableModule,
+    Menu,
   ],
   templateUrl: './admin-sesiones.page.html',
   styleUrls: ['./admin-sesiones.page.scss'],
@@ -105,5 +108,26 @@ export class AdminSesionesPage implements OnInit {
     this.size = size;
     this.page = 0;
     this.cargarSesiones();
+  }
+
+  obtenerAccionesSesion(sesion: SesionResponseDto): MenuItem[] {
+    const items: MenuItem[] = [
+      {
+        label: 'Ver detalles',
+        icon: 'pi pi-eye',
+        command: () => this.verDetalles(sesion),
+      },
+    ];
+
+    if (this.puedeRevocar()) {
+      items.push({
+        label: 'Revocar',
+        icon: 'pi pi-ban',
+        styleClass: 'text-red-500',
+        command: () => this.revocar(sesion),
+      });
+    }
+
+    return items;
   }
 }

@@ -92,38 +92,20 @@
           <td>{{ usuario.habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
           <td>{{ usuario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions">
+            <p-menu
+              #menu
+              [model]="obtenerAccionesUsuario(usuario)"
+              [popup]="true"
+              appendTo="body"
+            />
             <app-button
               variant="ghost"
               size="sm"
-              (clicked)="verDetalles(usuario)"
-            >
-              Ver detalles
-            </app-button>
-            @if (esMaster()) {
-            <app-button
-              variant="ghost"
-              size="sm"
-              (clicked)="abrirEditar(usuario)"
-            >
-              Editar
-            </app-button>
-            } @if (puedeAnular(usuario)) {
-            <app-button
-              variant="danger"
-              size="sm"
-              (clicked)="deshabilitar(usuario)"
-            >
-              Deshabilitar
-            </app-button>
-            } @if (esMaster() && !usuario.habilitado) {
-            <app-button
-              variant="ghost"
-              size="sm"
-              (clicked)="rehabilitar(usuario)"
-            >
-              Re-habilitar
-            </app-button>
-            }
+              icon="pi pi-ellipsis-v"
+              [rounded]="true"
+              aria-label="Acciones de usuario"
+              (clicked)="menu.toggle($event)"
+            />
           </td>
         </tr>
       </ng-template>
