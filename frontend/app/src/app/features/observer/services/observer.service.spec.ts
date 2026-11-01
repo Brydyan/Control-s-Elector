@@ -125,4 +125,27 @@ describe('ObserverService', () => {
     expect(keys).not.toContain('file');
     req.flush(null);
   });
+
+  it('should corregir acta en disputa', () => {
+    const payload = {
+      jrvId: 1,
+      cargoId: 2,
+      totalSufragantes: 100,
+      votosBlancos: 5,
+      votosNulos: 5,
+      detalles: [{ candidatoId: 10, votos: 90 }],
+    };
+
+    service.corregirActa(123, payload).subscribe((res) => {
+      expect(res.id).toBe(123);
+      expect(res.estado).toBe('CORREGIDA');
+    });
+
+    const req = httpMock.expectOne(
+      `${environment.apiUrl}/observer/actas/123/corregir`,
+    );
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual(payload);
+    req.flush({ id: 123, estado: 'CORREGIDA' });
+  });
 });

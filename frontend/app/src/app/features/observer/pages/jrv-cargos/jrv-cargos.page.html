@@ -57,11 +57,12 @@
 
         <div class="cargo-actions">
           <app-button
-            [variant]="cargo.registrado ? 'secondary' : 'primary'"
+            [variant]="cargo.estadoActa === 'EN_DISPUTA' ? 'danger' : cargo.registrado ? 'secondary' : 'primary'"
             size="sm"
             (clicked)="registrarActa(cargo)"
           >
-            {{ cargo.registrado ? 'Ver / Modificar' : 'Registrar Acta' }}
+            {{ cargo.estadoActa === 'EN_DISPUTA' ? 'Subsanar Disputa' :
+            cargo.registrado ? 'Ver / Modificar' : 'Registrar Acta' }}
           </app-button>
         </div>
       </div>

@@ -11,6 +11,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { InputText } from 'primeng/inputtext';
 import { Steps } from 'primeng/steps';
+import { Message } from 'primeng/message';
 import {
   ButtonComponent,
   CardComponent,
@@ -102,6 +103,7 @@ function escribirCantidad(input: HTMLInputElement, valor: number): void {
     ErrorStateComponent,
     InputText,
     Steps,
+    Message,
   ],
   templateUrl: './registrar-acta.page.html',
   styleUrls: ['./registrar-acta.page.scss'],
@@ -116,6 +118,9 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
 
   jrvId!: number;
   cargoId!: number;
+  actaIdEnDisputa: number | null = null;
+  readonly esModoDisputa = signal(false);
+  readonly motivoDisputa = signal<string | null>(null);
 
   /**
    * Paso activo del formulario.
@@ -193,11 +198,54 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     if (jrvParam && cargoParam) {
       this.jrvId = Number(jrvParam);
       this.cargoId = Number(cargoParam);
+
+      const qpActaId =
+        this.route.snapshot.queryParamMap?.get('actaId') ??
+        this.route.snapshot.queryParams?.['actaId'];
+      const qpModo =
+        this.route.snapshot.queryParamMap?.get('modo') ??
+        this.route.snapshot.queryParams?.['modo'];
+      if (qpModo === 'disputa' && qpActaId) {
+        this.actaIdEnDisputa = Number(qpActaId);
+        this.esModoDisputa.set(true);
+        this.cargarDisputaInfo();
+      }
+
       this.cargarCandidatos();
     } else {
       this.error.set('Parámetros incompletos en la ruta.');
       this.loading.set(false);
     }
+  }
+
+  private cargarDisputaInfo(): void {
+    if (!this.actaIdEnDisputa) return;
+    this.observerService.getCorreccionesPendientes().subscribe({
+      next: (actas) => {
+        const acta = actas.find((a) => a.id === this.actaIdEnDisputa);
+        if (acta) {
+          if (acta.motivoDisputa) {
+            this.motivoDisputa.set(acta.motivoDisputa);
+          }
+          if (acta.totalSufragantes) {
+            this.totalSufragantes = acta.totalSufragantes;
+          }
+          if (acta.votosBlancos !== undefined) {
+            this.votosBlancos = acta.votosBlancos;
+          }
+          if (acta.votosNulos !== undefined) {
+            this.votosNulos = acta.votosNulos;
+          }
+          if (acta.detalles && acta.detalles.length > 0) {
+            acta.detalles.forEach((d) => {
+              this.votosPorCandidato.set(d.candidatoId, d.votos);
+            });
+          }
+        }
+      },
+      error: (err) =>
+        console.warn('No se pudo precargar el acta en disputa:', err),
+    });
   }
 
   cargarCandidatos(): void {
@@ -614,6 +662,48 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     this.error.set(null);
 
     const payload = this.buildActaRequest();
+
+    if (this.esModoDisputa() && this.actaIdEnDisputa) {
+      this.observerService
+        .corregirActa(this.actaIdEnDisputa, payload)
+        .subscribe({
+          next: (res) => {
+            if (this.selectedImageFile && res.id) {
+              this.observerService
+                .subirImagenActa(res.id, this.selectedImageFile)
+                .subscribe({
+                  next: () => {
+                    void this.offlineStorage.eliminarBorrador(
+                      OfflineStorageService.draftId(this.jrvId, this.cargoId),
+                    );
+                    this.finalizarEnvio();
+                  },
+                  error: (imgErr) => {
+                    console.warn(
+                      'Acta corregida pero falló la subida de nueva evidencia fotográfica:',
+                      imgErr,
+                    );
+                    this.finalizarEnvio();
+                  },
+                });
+            } else {
+              void this.offlineStorage.eliminarBorrador(
+                OfflineStorageService.draftId(this.jrvId, this.cargoId),
+              );
+              this.finalizarEnvio();
+            }
+          },
+          error: (err) => {
+            this.submitting.set(false);
+            this.error.set(
+              'Error al enviar la corrección del acta: ' +
+                (err.error?.message || err.message || ''),
+            );
+          },
+        });
+      return;
+    }
+
     this.observerService
       .enviarActaDirecta(payload, {
         headers: { [IDEMPOTENCY_HEADER]: this.idempotencyKey },
