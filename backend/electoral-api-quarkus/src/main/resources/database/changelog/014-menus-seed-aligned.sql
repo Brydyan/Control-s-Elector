@@ -13,7 +13,7 @@ UPDATE menu SET label = 'Administración', icono = 'settings', ruta = '/admin', 
 
 -- Reorganizar submenús bajo Operación Electoral (OBSERVER)
 -- actas.registrar y evidencias.subir se mueven bajo "observer"
-UPDATE menu SET label = 'Registrar Acta', icono = 'add-circle', ruta = '/observer/registrar',
+UPDATE menu SET label = 'Registrar Acta', icono = 'add-circle', ruta = '/observer/registrar-acta',
   parent_id = (SELECT id FROM menu WHERE codigo = 'observer' AND borrado_en IS NULL), orden = 2
   WHERE codigo = 'actas.registrar';
 
