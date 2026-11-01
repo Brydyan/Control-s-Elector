@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import {
-  ActaDraft,
+  ActaDraftSinFoto,
   OfflineStorageService,
   PendingActa,
 } from './offline-storage.service';
@@ -173,7 +173,7 @@ describe('OfflineStorageService', () => {
   });
 
   it('should save and retrieve a draft', async () => {
-    const draft: ActaDraft = {
+    const draft: ActaDraftSinFoto = {
       draftId: 'draft_101_2',
       jrvId: 101,
       cargoId: 2,
@@ -181,13 +181,15 @@ describe('OfflineStorageService', () => {
       votosBlancos: 5,
       votosNulos: 5,
       votosPorCandidato: { 1: 70, 2: 70 },
-      updatedAt: 0,
     };
     await service.guardarBorrador(draft);
     const retrieved = await service.obtenerBorrador('draft_101_2');
     expect(retrieved).toBeTruthy();
     expect(retrieved?.totalSufragantes).toBe(150);
     expect(retrieved?.votosPorCandidato).toEqual({ 1: 70, 2: 70 });
+    // Un borrador escrito sin foto se lee como "sin foto", no como un error.
+    expect(retrieved?.imageBlob).toBeNull();
+    expect(retrieved?.imageName).toBeNull();
   });
 
   it('should return null when obtaining a missing draft', async () => {
@@ -204,9 +206,110 @@ describe('OfflineStorageService', () => {
       votosBlancos: 0,
       votosNulos: 0,
       votosPorCandidato: {},
-      updatedAt: 0,
     });
     await service.eliminarBorrador('draft_x');
     expect(await service.obtenerBorrador('draft_x')).toBeNull();
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // T-FE-13 A.2 / D4 — la foto del borrador vive en IndexedDB, en binario
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('T-FE-13: should store the evidence photo as a binary Blob, never as Base64', async () => {
+    const blob = new Blob(['fake-pixels'], { type: 'image/webp' });
+    await service.guardarFotoBorrador('draft_101_2', 101, 2, blob, 'acta.webp');
+
+    const retrieved = await service.obtenerBorrador('draft_101_2');
+    expect(retrieved).toBeTruthy();
+    expect(retrieved?.imageName).toBe('acta.webp');
+    // D4: la foto NUNCA es una cadena ni una URL `data:` (Base64). Con un
+    // IndexedDB real el valor vuelve como `Blob`; `fake-indexeddb` puede
+    // aplanarlo, así que la garantía que se verifica es "no es texto".
+    expect(typeof retrieved?.imageBlob).not.toBe('string');
+    expect(JSON.stringify(retrieved?.imageBlob)).not.toMatch(/^data:image/);
+    if (retrieved?.imageBlob instanceof Blob) {
+      expect(retrieved.imageBlob.type).toBe('image/webp');
+    }
+  });
+
+  it('T-FE-13: should keep the votes when the photo is written', async () => {
+    await service.guardarBorrador({
+      draftId: 'draft_101_2',
+      jrvId: 101,
+      cargoId: 2,
+      totalSufragantes: 150,
+      votosBlancos: 5,
+      votosNulos: 5,
+      votosPorCandidato: { 1: 70, 2: 70 },
+    });
+
+    await service.guardarFotoBorrador(
+      'draft_101_2',
+      101,
+      2,
+      new Blob(['foto'], { type: 'image/webp' }),
+      'acta.webp',
+    );
+
+    const retrieved = await service.obtenerBorrador('draft_101_2');
+    expect(retrieved?.totalSufragantes).toBe(150);
+    expect(retrieved?.votosPorCandidato).toEqual({ 1: 70, 2: 70 });
+    expect(retrieved?.imageName).toBe('acta.webp');
+  });
+
+  it('T-FE-13: should keep the photo when the votes are written', async () => {
+    await service.guardarFotoBorrador(
+      'draft_101_2',
+      101,
+      2,
+      new Blob(['foto'], { type: 'image/webp' }),
+      'acta.webp',
+    );
+
+    await service.guardarBorrador({
+      draftId: 'draft_101_2',
+      jrvId: 101,
+      cargoId: 2,
+      totalSufragantes: 150,
+      votosBlancos: 5,
+      votosNulos: 5,
+      votosPorCandidato: { 1: 70, 2: 70 },
+    });
+
+    const retrieved = await service.obtenerBorrador('draft_101_2');
+    // El autoguardado de los votos NO puede borrar la foto: sin ella, el
+    // acta que se transmitiría después no tendría evidencia.
+    expect(retrieved?.imageName).toBe('acta.webp');
+    expect(retrieved?.totalSufragantes).toBe(150);
+  });
+
+  it('T-FE-13: should list the drafts of a JRV indexed by cargoId', async () => {
+    await service.guardarFotoBorrador(
+      'draft_101_2',
+      101,
+      2,
+      new Blob(['foto-2'], { type: 'image/webp' }),
+      'alcalde.webp',
+    );
+    await service.guardarFotoBorrador(
+      'draft_101_3',
+      101,
+      3,
+      new Blob(['foto-3'], { type: 'image/webp' }),
+      'prefecto.webp',
+    );
+    // Otra JRV: no debe aparecer en el listado de la mesa 101.
+    await service.guardarFotoBorrador(
+      'draft_202_2',
+      202,
+      2,
+      new Blob(['foto-otra'], { type: 'image/webp' }),
+      'otra.webp',
+    );
+
+    const borradores = await service.obtenerBorradoresDeJrv(101);
+    expect(Object.keys(borradores)).toEqual(['2', '3']);
+    expect(borradores[2].imageName).toBe('alcalde.webp');
+    expect(borradores[3].imageName).toBe('prefecto.webp');
   });
 });
