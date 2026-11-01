@@ -10,16 +10,42 @@ import {
 } from '../../../../shared/ui';
 
 import { ImageCompressionService } from '../../../../core/services/image-compression.service';
-import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
+import {
+  ActaDraft,
+  OfflineStorageService,
+} from '../../../../core/offline/offline-storage.service';
 import {
   ActaDetalleItem,
   ActaRequest,
   CandidatoInfo,
 } from '../../models/observer.model';
-import { ActaStorageService } from '../../services/acta-storage.service';
 import { ObserverService } from '../../services/observer.service';
 
-type Step = 'VOTOS' | 'IMAGEN' | 'REVISION';
+type Step = 'IMAGEN' | 'VOTOS' | 'REVISION';
+
+/**
+ * Padrón estándar CNE de una JRV (T-FE-13 D2).
+ *
+ * Superarlo NO invalida el acta: es una mesa especial y el veedor tiene que
+ * confirmarlo. Por eso es un aviso, no un bloqueo.
+ */
+const PADRON_ESTANDAR_CNE = 350;
+
+/**
+ * Tope duro de sufragantes de una JRV (T-FE-13 D2).
+ *
+ * Ninguna JRV puede superar los 500 electores. Superarlo no es una mesa
+ * especial: es un error de tipeo (2500, 3500) y por eso bloquea el envío.
+ */
+const TOPE_SUFRAGANTES_CNE = 500;
+
+/**
+ * Espera del autoguardado del borrador durable (IndexedDB).
+ *
+ * Escribir en IndexedDB en cada tecla castiga a un teléfono viejo y no
+ * aporta nada: lo que se protege es la caída del proceso, no el instante.
+ */
+const DELAY_GUARDADO_BORRADOR_MS = 400;
 
 @Component({
   selector: 'app-registrar-acta',
@@ -39,14 +65,23 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly observerService = inject(ObserverService);
-  private readonly storageService = inject(ActaStorageService);
   private readonly imageCompression = inject(ImageCompressionService);
   private readonly offlineStorage = inject(OfflineStorageService);
 
   jrvId!: number;
   cargoId!: number;
 
-  currentStep: Step = 'VOTOS';
+  /**
+   * Paso activo del wizard (T-FE-13 D1).
+   *
+   * El orden es "Foto Primero": la evidencia se captura en el paso 1, antes
+   * de que el veedor escriba un solo voto. Si las autoridades desalojan el
+   * aula mientras se digita, la foto ya está asegurada en el dispositivo.
+   *
+   * La excepción documentada en D1 es "Digitar votos primero": el botón
+   * secundario de `continuarAVotos()` deja saltarlo cuando no hay cámara.
+   */
+  currentStep: Step = 'IMAGEN';
   loading = true;
   submitting = false;
   error: string | null = null;
@@ -64,6 +99,9 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   imagePreviewUrl: string | null = null;
   /** D7 (T-FE-08 S5): true cuando el usuario cancela cámara o no selecciona archivo. */
   captureCancelled = false;
+
+  /** Temporizador del autoguardado del borrador durable. */
+  private temporizadorGuardado: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit(): void {
     const jrvParam = this.route.snapshot.paramMap.get('jrvId');
@@ -93,8 +131,6 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
 
         // T-FE-09 V.5: restaurar borrador IndexedDB si existe (resiliencia LMK).
         void this.restaurarBorradorOffline();
-        // Restaurar borrador local si existe
-        this.restaurarBorradorLocal();
         this.loading = false;
       },
       error: (err) => {
@@ -108,6 +144,10 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   /**
    * T-FE-09 V.5: tras cargar candidatos, consulta `acta_drafts` y, si hay
    * un borrador para (jrvId, cargoId), repobla el estado del formulario.
+   *
+   * T-FE-13 A.2: además de los votos, restaura la foto de la evidencia. Es
+   * lo que hace que el modo "Foto Primero" sobreviva a un cierre de pestaña
+   * por Android LMK: la foto no está en la RAM, está en el disco.
    */
   private async restaurarBorradorOffline(): Promise<void> {
     const draftId = OfflineStorageService.draftId(this.jrvId, this.cargoId);
@@ -119,58 +159,46 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     Object.entries(draft.votosPorCandidato).forEach(([id, votos]) => {
       this.votosPorCandidato.set(Number(id), Number(votos));
     });
+    this.restaurarFotoBorrador(draft);
     this.mostrarMensajeBorrador(
       'Borrador restaurado desde almacenamiento offline.',
     );
   }
 
-  private restaurarBorradorLocal(): void {
-    const draft = this.storageService.recuperarBorrador(
-      this.jrvId,
-      this.cargoId,
-    );
-    if (!draft) return;
+  /**
+   * Reconstruye la foto que venía en el borrador.
+   *
+   * Un IndexedDB real conserva el `Blob` intacto. Si el entorno lo devolvió
+   * aplano (o si el borrador es anterior a T-FE-13 y no tiene foto), se
+   * ignora en lugar de romper la pantalla: el veedor puede volver a tomar la
+   * fotografía.
+   */
+  private restaurarFotoBorrador(draft: ActaDraft): void {
+    const blob = draft.imageBlob;
+    if (!blob || !(blob instanceof Blob)) return;
 
-    this.totalSufragantes = draft.totalSufragantes || 0;
-    this.votosBlancos = draft.votosBlancos || 0;
-    this.votosNulos = draft.votosNulos || 0;
+    const file = new File([blob], draft.imageName ?? 'acta-foto.webp', {
+      type: blob.type || 'image/webp',
+    });
+    this.selectedImageFile = file;
+    this.imagePreviewUrl = this.imageCompression.createPreviewUrl(file);
+  }
 
-    if (draft.votosPorCandidato) {
-      Object.entries(draft.votosPorCandidato).forEach(([id, votos]) => {
-        this.votosPorCandidato.set(Number(id), Number(votos));
-      });
+  /**
+   * Autoguardado del borrador electoral (T-FE-13 A.2).
+   *
+   * El borrador durable es IndexedDB, nunca `localStorage`: el almacenamiento
+   * síncrono bloquea el hilo principal, no admite Blobs y revienta con
+   * `QuotaExceededError` a los 5 MB (D4).
+   */
+  private registrarCambio(): void {
+    if (this.temporizadorGuardado !== null) {
+      clearTimeout(this.temporizadorGuardado);
     }
-    this.mostrarMensajeBorrador(
-      'Borrador recuperado del almacenamiento local.',
-    );
-  }
-
-  guardarBorradorLocal(): void {
-    const votosObj: Record<number, number> = {};
-    this.votosPorCandidato.forEach((v, k) => {
-      votosObj[k] = v;
-    });
-
-    this.storageService.guardarBorrador({
-      jrvId: this.jrvId,
-      cargoId: this.cargoId,
-      totalSufragantes: this.totalSufragantes,
-      votosBlancos: this.votosBlancos,
-      votosNulos: this.votosNulos,
-      votosPorCandidato: votosObj,
-      updatedAt: new Date().toISOString(),
-    });
-
-    this.mostrarMensajeBorrador('Guardado localmente en este dispositivo.');
-  }
-
-  private mostrarMensajeBorrador(msg: string): void {
-    this.draftSavedMessage = msg;
-    setTimeout(() => {
-      if (this.draftSavedMessage === msg) {
-        this.draftSavedMessage = null;
-      }
-    }, 3000);
+    this.temporizadorGuardado = setTimeout(() => {
+      this.temporizadorGuardado = null;
+      void this.guardarBorradorOffline();
+    }, DELAY_GUARDADO_BORRADOR_MS);
   }
 
   getVoto(candidatoId: number): number {
@@ -181,11 +209,11 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const value = Math.max(0, parseInt(input.value, 10) || 0);
     this.votosPorCandidato.set(candidatoId, value);
-    this.guardarBorradorLocal();
+    this.registrarCambio();
   }
 
   onSufragantesChange(): void {
-    this.guardarBorradorLocal();
+    this.registrarCambio();
   }
 
   get sumaVotosCandidatos(): number {
@@ -208,6 +236,13 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     return this.totalVotosComputados - this.totalSufragantes;
   }
 
+  /**
+   * Cuadre electoral estricto 1:1 (T-FE-13 B.2, D3).
+   *
+   * La suma de candidatos + blancos + nulos tiene que ser EXACTAMENTE el
+   * padrón de la JRV. No hay tolerancia: el backend rechaza con 400 ante
+   * cualquier discrepancia y la base de datos guarda el mismo invariante.
+   */
   get isChecksumValid(): boolean {
     return (
       this.totalSufragantes > 0 &&
@@ -215,13 +250,106 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     );
   }
 
+  /**
+   * Cota de sufragantes: el aviso que el veedor tiene que leer (T-FE-13 B.1).
+   *
+   * Dos niveles, porque son dos hechos distintos: superar el padrón estándar
+   * es una mesa especial (aviso); superar el tope duro es un error de tipeo
+   * (bloqueo).
+   */
+  get alertaSufragantes(): string | null {
+    if (this.totalSufragantes > TOPE_SUFRAGANTES_CNE) {
+      return 'Límite CNE excedido: ninguna JRV puede superar 500 sufragantes.';
+    }
+    if (this.totalSufragantes > PADRON_ESTANDAR_CNE) {
+      return 'Advertencia: El padrón estándar es de 350 electores. Verifique si es una mesa especial.';
+    }
+    return null;
+  }
+
+  /**
+   * Nivel del aviso de cota, para el color del banner (S3/S4).
+   *
+   * `warning` es una mesa especial; `error` es un error de tipeo que impide
+   * transmitir el acta.
+   */
+  get nivelAlertaSufragantes(): 'warning' | 'error' | null {
+    if (this.totalSufragantes > TOPE_SUFRAGANTES_CNE) return 'error';
+    if (this.totalSufragantes > PADRON_ESTANDAR_CNE) return 'warning';
+    return null;
+  }
+
+  /**
+   * El padrón está dentro de la cota CNE (T-FE-13 B.1).
+   *
+   * Cero no es válido porque el padrón todavía no se ha escrito: eso lo
+   * bloquea el checksum, no la cota.
+   */
+  get esSufragantesValido(): boolean {
+    return (
+      this.totalSufragantes > 0 && this.totalSufragantes <= TOPE_SUFRAGANTES_CNE
+    );
+  }
+
+  /**
+   * El padrón excede el tope duro: el acta no se puede transmitir (S4).
+   */
+  get excedeTopeSufragantes(): boolean {
+    return this.totalSufragantes > TOPE_SUFRAGANTES_CNE;
+  }
+
+  /**
+   * Avanza del paso de evidencia al de votos (T-FE-13 D1).
+   *
+   * La foto ya está asegurada: se capturó en el paso 1 y se guardó en
+   * IndexedDB. Este paso es el que se puede saltar, con "Digitar votos
+   * primero", cuando el dispositivo no tiene cámara utilizable.
+   */
+  continuarAVotos(): void {
+    if (!this.selectedImageFile) {
+      this.error =
+        'Toma la fotografía del acta antes de digitar los votos, o usa "Digitar votos primero".';
+      return;
+    }
+    this.error = null;
+    this.currentStep = 'VOTOS';
+    void this.guardarBorradorOffline();
+  }
+
+  /**
+   * Excepción documentada en D1: digitar los votos sin cámara.
+   *
+   * El default operacional sigue siendo la foto primero; esto es para el
+   * caso en que el dispositivo no puede fotografiar.
+   */
+  digitarVotosPrimero(): void {
+    this.error = null;
+    this.currentStep = 'VOTOS';
+    void this.guardarBorradorOffline();
+  }
+
+  /**
+   * Vuelve al paso de evidencia, por ejemplo para repetir una foto borrosa.
+   *
+   * Antes de abrir la cámara se persiste el borrador: es el patrón "Guardar
+   * antes de capturar" (T-FE-09 V.4) que sobrevive a un LMK de Android.
+   */
   irAPasoImagen(): void {
     this.error = null;
-    // T-FE-09 B.3 / V.4 — patrón "Guardar antes de capturar":
-    // persistir el estado actual en IndexedDB antes de abrir la cámara
-    // para sobrevivir un eventual LMK de Android.
     void this.guardarBorradorOffline();
     this.currentStep = 'IMAGEN';
+  }
+
+  /**
+   * Abre la cámara después de persistir el borrador.
+   *
+   * El disparo de la cámara es el momento de mayor riesgo de que el proceso
+   * muera (LMK de Android). Con el estado ya en IndexedDB, perder el proceso
+   * no pierde lo escrito.
+   */
+  abrirCamara(input: HTMLInputElement): void {
+    void this.guardarBorradorOffline();
+    input.click();
   }
 
   /**
@@ -241,8 +369,24 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
       votosBlancos: this.votosBlancos,
       votosNulos: this.votosNulos,
       votosPorCandidato: votosObj,
-      updatedAt: Date.now(),
     });
+  }
+
+  /**
+   * Persiste la foto de la evidencia, sin tocar los votos (T-FE-13 A.2).
+   *
+   * La escritura es inmediata y va a su propio canal: si el proceso muere
+   * justo después del disparo, la foto sigue en el dispositivo.
+   */
+  private async guardarFotoOffline(): Promise<void> {
+    if (!this.selectedImageFile) return;
+    await this.offlineStorage.guardarFotoBorrador(
+      OfflineStorageService.draftId(this.jrvId, this.cargoId),
+      this.jrvId,
+      this.cargoId,
+      this.selectedImageFile,
+      this.selectedImageFile.name,
+    );
   }
 
   onFileSelected(event: Event): void {
@@ -259,6 +403,10 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
         this.imageCompression.revokePreviewUrl(this.imagePreviewUrl);
       }
       this.imagePreviewUrl = this.imageCompression.createPreviewUrl(file);
+
+      // T-FE-13 A.2: la foto se asegura en el dispositivo en el mismo
+      // instante en que se captura, antes de que se escriba un solo voto.
+      void this.guardarFotoOffline();
       return;
     }
 
@@ -269,6 +417,12 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.temporizadorGuardado !== null) {
+      clearTimeout(this.temporizadorGuardado);
+      this.temporizadorGuardado = null;
+      // Lo último escrito no se pierde al salir de la pantalla.
+      void this.guardarBorradorOffline();
+    }
     // D1 cleanup: revocar URL efímera al desmontar la página.
     if (this.imagePreviewUrl) {
       this.imageCompression.revokePreviewUrl(this.imagePreviewUrl);
@@ -319,6 +473,13 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   }
 
   enviarActaFinal(): void {
+    // T-FE-13 B.1 / S4: el tope duro de la CNE bloquea el envío. No es una
+    // mesa especial: es un error de tipeo en el padrón.
+    if (this.excedeTopeSufragantes) {
+      this.error = this.alertaSufragantes;
+      return;
+    }
+
     if (!this.isChecksumValid) {
       this.error = 'Verificación electoral inválida: los votos no cuadran.';
       return;
@@ -416,6 +577,15 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     setTimeout(() => {
       this.router.navigate(['/observer/jrv', this.jrvId, 'cargos']);
     }, 1800);
+  }
+
+  private mostrarMensajeBorrador(msg: string): void {
+    this.draftSavedMessage = msg;
+    setTimeout(() => {
+      if (this.draftSavedMessage === msg) {
+        this.draftSavedMessage = null;
+      }
+    }, 3000);
   }
 
   cancelar(): void {

@@ -92,9 +92,22 @@ docker compose down -v && docker compose up -d
 | **Control que compara contra un nombre** (§4.4) | La tabla `rol` tiene `nombre` editable. Buscar `getNombre().equals("MASTER")` y equivalentes: si alguien puede renombrar el rol, el control no existe |
 | **Depende de dónde corre** (§4.5) | Migraciones que sólo fallan en BD limpia. `.env` en `.gitignore`. Tres caminos de seed: Liquibase, `infra/sql/03-seed.sql`, `DataSeeder.java` |
 | **Compuerta sin garantía** (§4.6) | `ci.yml` con `-DskipTests`. Por cada compuerta: escribí el defecto que dice prevenir y preguntá si lo detectaría |
+| **Visual/UX defects** (§4.7) | Si el change toca UI/frontend: usar **ux-designer** (usabilidad, accesibilidad, flujos) y **taste-skill** (dirección visual, consistencia, pulido). Reportar hallazgos en `fixes-required.md` si bloquean. |
 
 Regla general para §4.6: muchas compuertas comprueban **la presencia de lo que hay**, no
 **la ausencia de lo que falta**.
+
+---
+
+## Auditoría Visual (Frontend changes)
+
+Si `apply-progress.md` reporta cambios en `frontend/app/`:
+
+1. **ux-designer**: Revisar usabilidad, accesibilidad WCAG, flujos intuitivos
+2. **taste-skill**: Revisar dirección visual, consistencia, pulido. Evitar componentes genéricos
+
+Resultado: agregar sección `## QA Visual` a `verify-report.md` con hallazgos de ambas skills.
+Si hay defectos que bloquean, crearlos en `fixes-required.md` con el prefijo `UI/UX:`.
 
 ---
 
@@ -105,6 +118,11 @@ Lleva lo que se ejecutó y lo que se midió. Los comandos, con su salida. Los n�
 
 Si un número del Builder no coincide con el tuyo, **el tuyo manda** y la discrepancia se
 reporta: es un hallazgo, no un detalle de formato.
+
+Incluir secciones para:
+- **QA Visual** — hallazgos de ux-designer y taste-skill (si aplica)
+- **Mutaciones aplicadas** — cada defecto que encontraste
+- **Compuertas ejecutadas** — comandos y sus números
 
 ---
 
