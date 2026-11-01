@@ -7,6 +7,8 @@ import { Message } from 'primeng/message';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
+import { Menu } from 'primeng/menu';
+import { MenuItem } from 'primeng/api';
 import {
   ButtonComponent,
   EmptyStateComponent,
@@ -40,6 +42,7 @@ import {
     Select,
     Skeleton,
     TableModule,
+    Menu,
   ],
   templateUrl: './admin-usuarios.page.html',
   styleUrls: ['./admin-usuarios.page.scss'],
@@ -245,5 +248,42 @@ export class AdminUsuariosPage implements OnInit {
         error: (err) =>
           this.error.set(err?.message || 'No se pudo re-habilitar el usuario.'),
       });
+  }
+
+  obtenerAccionesUsuario(usuario: UsuarioResponseDto): MenuItem[] {
+    const items: MenuItem[] = [
+      {
+        label: 'Ver detalles',
+        icon: 'pi pi-eye',
+        command: () => this.verDetalles(usuario),
+      },
+    ];
+
+    if (this.esMaster()) {
+      items.push({
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.abrirEditar(usuario),
+      });
+    }
+
+    if (this.puedeAnular(usuario)) {
+      items.push({
+        label: 'Deshabilitar',
+        icon: 'pi pi-ban',
+        styleClass: 'text-red-500',
+        command: () => this.deshabilitar(usuario),
+      });
+    }
+
+    if (this.esMaster() && !usuario.habilitado) {
+      items.push({
+        label: 'Re-habilitar',
+        icon: 'pi pi-check',
+        command: () => this.rehabilitar(usuario),
+      });
+    }
+
+    return items;
   }
 }

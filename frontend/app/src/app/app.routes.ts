@@ -25,7 +25,6 @@ export const routes: Routes = [
         data: {
           title: 'Resumen General',
           subtitle: 'Elecciones Seccionales 2027 · Provincia Santa Elena',
-          notifications: 3,
         },
       },
       {
