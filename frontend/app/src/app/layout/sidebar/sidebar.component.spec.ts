@@ -105,13 +105,84 @@ describe('SidebarComponent', () => {
     expect(hasOperacion).toBe(false);
   });
 
-  it('should reflect desktop collapsed state on sidebar element', () => {
-    const aside = fixture.nativeElement.querySelector('aside.sidebar');
+  it('should render the shell sidebar with a link per menu item', () => {
+    const aside = fixture.nativeElement.querySelector('aside.layout-sidebar');
     expect(aside).toBeTruthy();
-    expect(aside.classList.contains('collapsed')).toBe(false);
 
-    component.layout.toggleDesktopCollapse();
-    fixture.detectChanges();
-    expect(aside.classList.contains('collapsed')).toBe(true);
+    const links = fixture.nativeElement.querySelectorAll(
+      'aside.layout-sidebar a',
+    );
+    expect(links.length).toBeGreaterThan(0);
+  });
+
+  it('should map the catalog icon keys to PrimeIcons', () => {
+    const icons = component
+      .sections()
+      .flatMap((section) => section.items)
+      .map((item) => item.icon);
+
+    expect(icons.every((icon) => icon.startsWith('pi pi-'))).toBe(true);
+    expect(icons).toContain('pi pi-home');
+    expect(icons).toContain('pi pi-plus-circle');
+  });
+
+  /*
+   * S11: the sidebar used to carry its own switch of eleven backend keys and
+   * the app carried a second table of sixty Ionic names. There is one table
+   * now, keyed by what the API sends.
+   */
+  it('should resolve the icons of the backend catalog through the one table', () => {
+    const byLabel = new Map(
+      component
+        .sections()
+        .flatMap((section) => section.items)
+        .map((item) => [item.label, item.icon]),
+    );
+
+    expect(byLabel.get('Dashboard')).toBe('pi pi-home');
+    expect(byLabel.get('Registrar acta')).toBe('pi pi-plus-circle');
+  });
+
+  it('should not duplicate Operacion Electoral if already provided by backend menus', () => {
+    menuServiceSpy.getMyMenus.and.returnValue(
+      of([
+        {
+          id: '10',
+          parentId: null,
+          codigo: 'observer',
+          label: 'Operación Electoral',
+          icono: 'ballot',
+          ruta: '/observer/mis-jrvs',
+          orden: 4,
+          activo: true,
+          children: [
+            {
+              id: '11',
+              parentId: '10',
+              codigo: 'observer.jrvs',
+              label: 'Mis JRVs',
+              icono: 'checkbox',
+              ruta: '/observer/mis-jrvs',
+              orden: 1,
+              activo: true,
+              children: [],
+            },
+          ],
+        },
+      ]),
+    );
+
+    component.cargarMenus();
+
+    const operacionSections = component
+      .sections()
+      .filter((s) => s.label.toLowerCase() === 'operación electoral');
+    expect(operacionSections.length).toBe(1);
+
+    const misJrvsItems = component
+      .sections()
+      .flatMap((s) => s.items)
+      .filter((item) => item.route === '/observer/mis-jrvs');
+    expect(misJrvsItems.length).toBe(1);
   });
 });

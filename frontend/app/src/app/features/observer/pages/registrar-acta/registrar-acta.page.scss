@@ -1,8 +1,28 @@
+/*
+ * S2 — el registro de acta desbordaba a 390px
+ * ---------------------------------------------
+ *
+ * La página de captura está escrita para el escritorio: una grilla de dos
+ * columnas y filas cuyo hijo derecho tiene un ancho fijo. A 390px —el ancho
+ * que mide el contrato de esta fase— las cards se salían por la derecha y la
+ * páginainentaba scroll horizontal. El bloque de abajo cierra el síntoma con
+ * tres reglas: la grilla pasa a una columna, ningún hijo de una fila empuja
+ * el ancho más allá del viewport, y el borde inferior respeta el safe-area.
+ */
 .registrar-acta-container {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
   padding: var(--space-4) 0;
+
+  /*
+   * Safe-area. La barra de inicio del iPhone se come el borde inferior del
+   * viewport: los botones del último paso —los que escriben el acta—
+   * quedaban debajo. El resumen vive inline dentro de una card, no en un pie
+   * fijo, así que el margen seguro se aplica al borde del contenedor, que es
+   * donde cae esa última fila de acciones.
+   */
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
 }
 
 .page-topbar {
@@ -16,64 +36,38 @@
 
   .page-title {
     margin: 0;
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-display);
     font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
+    color: var(--color-text-primary);
   }
 
   .page-subtitle {
     margin: var(--space-1) 0 0;
     font-size: var(--font-size-sm);
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
   }
 }
 
+/*
+ * The stepper of the page is PrimeNG's `p-steps` (see the template). The
+ * hand-rolled step, number and label that used to live here were never
+ * rendered: the labels of the app's own stepper ran together as
+ * "VotosEvidenciaRevisión".
+ */
 .stepper {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-2);
-}
 
-.step-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  opacity: 0.5;
-
-  &--active {
-    opacity: 1;
-    font-weight: var(--font-weight-semibold);
-
-    .step-number {
-      background-color: var(--color-primary);
-      color: var(--color-primary-contrast);
-    }
-  }
-
-  .step-number {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-full);
-    background-color: var(--surface-subtle);
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-bold);
-  }
-
-  .step-label {
-    font-size: var(--font-size-sm);
-    color: var(--text-primary);
-  }
-}
-
-.step-divider {
-  flex: 1;
-  height: 1px;
-  background-color: var(--border-subtle);
+  /*
+   * S2: los cuatro pasos del `p-steps` no caben en una fila de 390px. En vez
+   * de dejar que el strip empuje la página —y con ella el scroll horizontal
+   * que S2 viene a cerrar— el overflow se queda adentro del componente y el
+   * operador lo recorre deslizando los pasos.
+   */
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .step-content {
@@ -89,8 +83,17 @@
 
   &--2col {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    /*
+     * S2: blancos y nulos side by side necesitan dos columnas de ancho; a
+     * 390px no caben. Mobile-first como `two-col-grid` de acta-detalle: la
+     * columna única es el estado base y el escritorio recupera la grilla.
+     */
+    grid-template-columns: 1fr;
     gap: var(--space-4);
+
+    @media (min-width: 768px) {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 }
 
@@ -103,28 +106,17 @@
 .form-label {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  color: var(--text-primary);
+  color: var(--color-text-primary);
 }
 
-.form-input {
-  width: 100%;
-  padding: var(--space-3);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-base);
-  background-color: var(--surface-card);
-  color: var(--text-primary);
-  outline: none;
-  transition: border-color var(--transition-fast);
-
-  &:focus {
-    border-color: var(--color-primary);
-  }
-
-  &--center {
-    text-align: center;
-    font-weight: var(--font-weight-bold);
-  }
+/*
+ * The base class of the vote input is gone: no template carried it, which is
+ * why the input overflowed its own card. The modifier lives on its own and
+ * stays: the vote is centred and in bold.
+ */
+.form-input--center {
+  text-align: center;
+  font-weight: var(--font-weight-bold);
 }
 
 .candidates-list {
@@ -139,7 +131,7 @@
   justify-content: space-between;
   gap: var(--space-4);
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
 
   &:last-child {
     border-bottom: none;
@@ -151,20 +143,57 @@
   flex-direction: column;
   gap: var(--space-1);
 
+  /*
+   * S2: la fila del candidato es un flex con el nombre a la izquierda y el
+   * input a la derecha. Sin `min-width: 0` el nombre largo —un partido con
+   * many palabras— empuja el input fuera de la card en vez de partirse.
+   */
+  min-width: 0;
+
   .candidate-name {
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
+    color: var(--color-text-primary);
+    overflow-wrap: anywhere;
   }
 
   .candidate-party {
     font-size: var(--font-size-xs);
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
+    overflow-wrap: anywhere;
   }
 }
 
 .candidate-input {
+  /*
+   * S2: el input de votos conserva su ancho mínimo —90px, el número que
+   * alcanza para comparar cifras dígito a dígito con el `tabular-nums` que
+   * `typography.scss` ya da a todo `input[inputmode="numeric"]`— pero ese
+   * ancho es un máximo, no una exigencia de la fila: `max-width: 100%`
+   * permite que se encoja antes de desbordar el viewport.
+   */
   width: 90px;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/*
+ * S3 — palanca 2: el área de toque de las listas densas
+ * ----------------------------------------------------
+ *
+ * La fila del candidato es el control más tocado de la aplicación: es donde
+ * el veedor escribe el acta con el dedo y donde un error seeteerita como voto
+ * mal cargado. PrimeNG dibuja el input con la altura de su campo de texto —
+ * por debajo de 44px— así que el piso lo pone esta hoja, no la global de
+ * `theme/base.scss`, que sólo gobierna botones e iconos.
+ *
+ * La fila no recibe banda `::before` a propósito: su único target es el
+ * input, y un pseudo-elemento `inset: 0` sobre la fila se pintaría por
+ * encima del input y le robaría el clic. El área que hay que agrandar aquí
+ * es la del control, no la del contenedor.
+ */
+.candidate-input input {
+  min-height: 44px;
 }
 
 .draft-pill-notification {
@@ -177,10 +206,92 @@
   color: var(--primitive-blue-900);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-pill);
   margin-bottom: var(--space-2);
   align-self: flex-start;
   animation: fadeIn 0.2s ease-in-out;
+}
+
+/*
+ * Región de estado no urgente (`role="status"`).
+ *
+ * La región vive siempre en el DOM —sólo cambia su texto— para que el
+ * lector de pantalla la anuncie. Cuando está vacía compensa el `gap` del
+ * contenedor para no dejar un hueco en la maqueta.
+ */
+.status-region {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+
+  &--vacio {
+    margin-top: calc(var(--space-6) * -1);
+    margin-bottom: calc(var(--space-6) * -1);
+  }
+}
+
+.success-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  background-color: var(--color-status-success-bg);
+  border: 1px solid var(--color-status-success-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-status-success);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin: 0;
+}
+
+/* Confirmación de salida: hay votos escritos que no se han enviado. */
+.confirm-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-status-warning-border);
+  border-left: 4px solid var(--color-status-warning);
+  border-radius: var(--radius-md);
+  background-color: var(--color-status-warning-bg);
+  color: var(--color-text-primary);
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-status-warning);
+  }
+
+  &__text {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+}
+
+/* Razón junto a los campos: el motivo por el que no se puede avanzar. */
+.form-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-sm);
+
+  &--error {
+    color: var(--color-status-danger);
+  }
 }
 
 @keyframes fadeIn {
@@ -205,22 +316,21 @@
   gap: var(--space-2);
 
   &--valid {
-    background-color: var(--color-success-subtle);
-    border: 1px solid var(--border-success);
-    color: var(--color-success-emphasis);
+    background-color: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    color: var(--color-status-success);
   }
 
   &--invalid {
-    background-color: var(--color-danger-subtle);
-    border: 1px solid var(--border-danger);
-    color: var(--color-danger-emphasis);
+    background-color: var(--color-status-danger-bg);
+    border: 1px solid var(--color-status-danger-border);
+    color: var(--color-status-danger);
   }
 
-  .checksum-delta {
+  .checksum-difference {
     display: inline-block;
     margin-left: var(--space-2);
     font-weight: var(--font-weight-bold);
-    color: var(--primitive-red-800);
   }
 }
 
@@ -254,7 +364,7 @@
   max-height: 280px;
   overflow: hidden;
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-default);
+  border: 1px solid var(--color-border-medium);
 
   .preview-img {
     width: 100%;
@@ -271,7 +381,7 @@
 
   .upload-tip {
     font-size: var(--font-size-xs);
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     margin: 0;
   }
 }
@@ -286,25 +396,38 @@
   display: flex;
   justify-content: space-between;
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
   font-size: var(--font-size-sm);
+
+  /*
+   * S2: la fila de revisión empareja un nombre de candidato —o el nombre de
+   * un archivo de evidencia, que no tiene dónde partirse— con su cifra. Sin
+   * `min-width: 0` ni `gap` el lado largo se comía el lado corto y la fila
+   * se salía del viewport.
+   */
+  gap: var(--space-4);
+
+  > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
 
   &:last-child {
     border-bottom: none;
   }
 
   &--highlight {
-    color: var(--color-primary);
+    color: var(--color-brand-primary);
   }
 }
 
 .success-banner {
-  background-color: var(--color-success-subtle);
-  border: 1px solid var(--border-success);
+  background-color: var(--color-status-success-bg);
+  border: 1px solid var(--color-status-success-border);
   border-radius: var(--radius-md);
   padding: var(--space-4);
   text-align: center;
-  color: var(--color-success-emphasis);
+  color: var(--color-status-success);
 
   h3 {
     margin: 0 0 var(--space-1);

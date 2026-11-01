@@ -109,8 +109,13 @@ describe('ActaDetallePage', () => {
     expect(coordinatorServiceMock.getActaDetalleCompleto).toHaveBeenCalledWith(
       42,
     );
-    expect(component.data?.acta.id).toBe(42);
-    expect(component.data?.acta.estado).toBe('ENVIADA');
+    expect(component.data()?.acta.id).toBe(42);
+    expect(component.data()?.acta.estado).toBe('ENVIADA');
+
+    const badge = fixture.nativeElement.querySelector(
+      '.status-banner app-badge',
+    );
+    expect(badge?.textContent.trim()).toBe('Enviada');
   });
 
   it('should navigate back to list on volver', () => {
@@ -189,7 +194,7 @@ describe('ActaDetallePage', () => {
     expect(coordinatorServiceMock.getActaDetalleCompleto).toHaveBeenCalledTimes(
       2,
     ); // inicial + recarga
-    expect(component.submitting).toBe(false);
+    expect(component.submitting()).toBe(false);
   });
 
   it('should auto-clear success message after the configured timeout', () => {
@@ -221,9 +226,9 @@ describe('ActaDetallePage', () => {
   });
 
   it('should flag inconsistent checksum when diferenciaChecksum is not zero', () => {
-    if (component.data) {
-      component.data.diferenciaChecksum = 5;
-      component.data.checksumValido = false;
+    if (component.data()) {
+      component.data().diferenciaChecksum = 5;
+      component.data().checksumValido = false;
     }
     const checks = component.chequeos();
     const cuadreCheck = checks.find((c) => c.texto.includes('Cuadre'));

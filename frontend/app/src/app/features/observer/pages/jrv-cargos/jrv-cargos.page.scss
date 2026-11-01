@@ -12,15 +12,15 @@
 .page-header {
   .page-title {
     margin: 0;
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-display);
     font-weight: var(--font-weight-bold);
-    color: var(--text-primary);
+    color: var(--color-text-primary);
   }
 
   .page-subtitle {
     margin: var(--space-1) 0 0;
     font-size: var(--font-size-sm);
-    color: var(--text-secondary);
+    color: var(--color-text-secondary);
   }
 }
 
@@ -53,12 +53,12 @@
     margin: 0;
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
-    color: var(--text-primary);
+    color: var(--color-text-primary);
   }
 }
 
 .cargo-nivel {
   font-size: var(--font-size-xs);
-  color: var(--text-secondary);
+  color: var(--color-text-secondary);
   text-transform: uppercase;
 }

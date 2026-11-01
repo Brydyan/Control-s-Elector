@@ -2,7 +2,21 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, develop]
+    # `main` y `develop` son las ramas de integracion. Los demas prefijos estan
+    # porque el stack de PRs es apilado: un PR cuya base es otra rama de feature
+    # (por ejemplo #152 sobre `feat/backend-quarkus-cutover`) no dispara CI si la
+    # lista no lo cubre, y se queda sin checks en silencio.
+    branches:
+      - main
+      - develop
+      - 'feat/**'
+      - 'fix/**'
+      - 'refactor/**'
+      - 'test/**'
+      - 'chore/**'
+      - 'build/**'
+      - 'upgrade/**'
+      - 'docs/**'
   push:
     branches: [main, develop]
     paths:
@@ -32,7 +46,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
@@ -40,29 +54,269 @@ jobs:
         run: git fetch origin develop:refs/remotes/origin/develop || true
 
       - name: Check Java formatting
-        working-directory: backend/electoral-api
-        run: ./mvnw -B spotless:check
+        working-directory: backend/electoral-api-quarkus
+        run: mvn -B spotless:check
 
-  backend-test:
-    name: Backend Tests & Coverage
+  # El backend es UNO solo. Antes estos dos jobs eran `backend-format` (Spring)
+  # y `backend-test` (Spring), y `backend-quarkus-test` corria los tests del
+  # modulo Quarkus. Con el corte, `backend-quarkus-test` es el unico que
+  # verifica y formatea el backend: no hay segundo modulo que testear.
+
+  # ===========================================================================
+  # BACKEND CONTRACT TESTS
+  # ===========================================================================
+  # Suite de regresion por contrato (backend/contract-tests). El artefacto es
+  # agnosticodel framework: habla solo HTTP, asi que el mismo test que validaba
+  # la paridad entre Spring y Quarkus sigue siendo valido — lo que cambio fue
+  # contra quien corre. Cuando quede una sola implementacion, esta suite es el
+  # gate de contrato del backend.
+  backend-contract:
+    name: Backend Contract Tests
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: electoral_db
+          POSTGRES_USER: electoral_user
+          POSTGRES_PASSWORD: electoral_pass
+          POSTGRES_INITDB_ARGS: >-
+            --encoding=UTF8
+            --locale-provider=icu
+            --icu-locale=es-EC
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U electoral_user -d electoral_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rustfs:
+        image: rustfs/rustfs:latest
+        env:
+          RUSTFS_ACCESS_KEY: rustfsadmin
+          RUSTFS_SECRET_KEY: rustfsadmin123
+          RUSTFS_ADDRESS: "0.0.0.0:9000"
+          RUSTFS_CONSOLE_ENABLE: "true"
+          RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+          RUSTFS_VOLUMES: /data
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/health"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
 
-      - name: Verify Backend
-        working-directory: backend/electoral-api
-        run: ./mvnw -B clean verify -Dspotless.check.skip=true
+      # El backend no crea el bucket: lo crea el compose en dev y aca lo
+      # creamos nosotros. Sin el bucket el S3HealthIndicator queda DOWN y
+      # /actuator/health devuelve 503.
+      - name: Create the evidence bucket
+        run: |
+          docker run --rm --network host \
+            -e AWS_ACCESS_KEY_ID=rustfsadmin \
+            -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+            -e AWS_DEFAULT_REGION=us-east-1 \
+            amazon/aws-cli \
+            --endpoint-url http://localhost:9000 \
+            s3api create-bucket --bucket electoral-evidences
+
+      - name: Build the backend image
+        run: docker build -t electoral-api:contract backend/electoral-api-quarkus
+
+      # --network host para que el contenedor alcance los services de GitHub
+      # Actions por los puertos publicados en el host (5432 y 9000). Asi no
+      # hay que adivinar el nombre de la red de los services.
+      - name: Run the backend
+        run: |
+          docker run -d --name electoral-api --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=electoral_db \
+            -e DB_USER=electoral_user \
+            -e DB_PASSWORD=electoral_pass \
+            -e SERVER_PORT=8080 \
+            -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+            -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+            -e APP_SEED_ADMIN_PASSWORD=admin12345 \
+            -e AWS_ACCESS_KEY_ID=rustfsadmin \
+            -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+            -e AWS_S3_ENDPOINT=http://localhost:9000 \
+            -e AWS_S3_REGION=us-east-1 \
+            -e AWS_S3_BUCKET=electoral-evidences \
+            -e AWS_S3_PATH_STYLE=true \
+            electoral-api:contract
+
+      - name: Wait for the backend to be healthy
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+              echo "Backend saludable"
+              curl -s http://localhost:8080/actuator/health
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "El backend no llego a estar saludable"
+          docker logs electoral-api
+          exit 1
+
+      - name: Run the contract suite
+        working-directory: backend/contract-tests
+        run: mvn -B verify -Dcontract.baseUrl=http://localhost:8080
+
+      - name: Backend logs on failure
+        if: failure()
+        run: docker logs electoral-api
 
   # ===========================================================================
-  # FRONTEND JOBS (Separados: format, lint, test, build)
+  # BACKEND QUARKUS
   # ===========================================================================
+  # El unico backend. Este job afirma dos cosas que la suite de contrato no
+  # puede ver: que la imagen levanta contra una base VACIA (arrancando dos
+  # veces, porque en Quarkus Hibernate valida antes de que Liquibase cree el
+  # schema) y que el health responde en /actuator/health del puerto principal.
+  backend-quarkus:
+    name: Backend Quarkus
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: electoral_db
+          POSTGRES_USER: electoral_user
+          POSTGRES_PASSWORD: electoral_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U electoral_user -d electoral_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      # El contexto de build es el modulo: el changelog de Liquibase vive en su
+      # src/main/resources/database, asi que la imagen no depende de un hermano.
+      - name: Build the Quarkus image
+        run: docker build -t electoral-api-quarkus backend/electoral-api-quarkus
+
+      # El backend arranca DOS veces a proposito.
+      #
+      # 1. Contra la base VACIA del service, con la migracion activada y la validacion de
+      #    Hibernate apagada. Liquibase crea el schema, pero corre DESPUES de la validacion de
+      #    Hibernate: contra una base vacia el arranque con `validate` (el default) revienta
+      #    con "Schema validation: missing table [acta]". En Spring el orden era al reves, por
+      #    eso nunca hizo falta y por eso esta fase no es obvia.
+      # 2. Contra el schema ya creado, con los defaults: el backend tiene que levantar Y
+      #    validar que el schema coincide con las entidades. Si alguien cambia una entidad sin
+      #    cambiar el changelog, esta fase lo detecta en el CI y no en produccion.
+      #
+      # Esta fase 2 es el control de drift del backend: en compose el arranque corre con
+      # `none` para que una base nueva levante, asi que el `validate` vive acá.
+      - name: Run the Quarkus backend
+        run: |
+          boot_quarkus() {
+            docker run -d --name electoral-api-quarkus --network host \
+              -e DB_HOST=localhost \
+              -e DB_PORT=5432 \
+              -e DB_NAME=electoral_db \
+              -e DB_USER=electoral_user \
+              -e DB_PASSWORD=electoral_pass \
+              -e SERVER_PORT=8080 \
+              -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+              -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+              "$@" \
+              electoral-api-quarkus
+          }
+
+          wait_healthy() {
+            for i in $(seq 1 90); do
+              if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "El backend Quarkus no llego a estar saludable"
+            docker logs electoral-api-quarkus
+            return 1
+          }
+
+          boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true -e QUARKUS_HIBERNATE_GENERATION=none
+          wait_healthy || exit 1
+          echo "Primer arranque: el backend creo el schema y quedo saludable"
+
+          docker rm -f electoral-api-quarkus
+          boot_quarkus
+          wait_healthy || exit 1
+          echo "Segundo arranque: el backend valido el schema y quedo saludable"
+          curl -s http://localhost:8080/actuator/health
+          echo
+
+      - name: Quarkus logs on failure
+        if: failure()
+        run: docker logs electoral-api-quarkus
+
+  # ===========================================================================
+  # BACKEND QUARKUS TESTS
+  # ===========================================================================
+  # Los tests del modulo Quarkus (backend/electoral-api-quarkus). Son los que
+  # la suite de contrato NO puede sustituir: la suite de regresion por contrato
+  # habla solo HTTP, asi que no puede afirmar la politica RLS de Postgres ni el
+  # formato del UUID. RlsIsolationIT corre contra un Postgres real de
+  # Testcontainers, que levanta y baja solo — el job no necesita ningun
+  # service de Postgres.
+  backend-quarkus-test:
+    name: Backend Tests & Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Spotless corre con `ratchetFrom origin/develop`: compara contra esa
+          # referencia para solo exigir formato en lo que cambio. El checkout por
+          # defecto es depth 1 y deja el repo sin esa referencia, con lo cual el
+          # build muere con "No such reference 'origin/develop'" — que no es un
+          # problema de formato sino de que el baseline no esta.
+          fetch-depth: 0
+
+      - name: Fetch formatting baseline
+        run: git fetch origin develop:refs/remotes/origin/develop || true
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      # Se usa `./mvnw` y no el Maven del runner: el wrapper pinea la misma
+      # version (3.9.16) que usa el build nativo dentro de
+      # `Dockerfile.native`, asi que los tests y la imagen nativa se compilan
+      # con el mismo Maven. Si divergen, un test verde puede no reproducir el
+      # fallo del AOT.
+      # `verify` corre los tests (el surefire de este modulo incluye los *IT)
+      # y ademas arma la app, asi que el job tambien cubre el packaging.
+      - name: Run the Quarkus backend tests
+        working-directory: backend/electoral-api-quarkus
+        run: ./mvnw -B clean verify
   frontend-format:
     name: Frontend Format Check
     runs-on: ubuntu-latest

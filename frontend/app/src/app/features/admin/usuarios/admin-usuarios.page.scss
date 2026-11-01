@@ -2,192 +2,148 @@
   max-width: 1400px;
   margin: 0 auto;
   padding: 24px;
-  color: var(--text-color, #172033);
+  color: var(--color-text-on-surface);
 }
+
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
   margin-bottom: 20px;
+
   h1 {
     margin: 0 0 4px;
     font-size: 24px;
+    color: var(--color-text-on-surface);
   }
+
   span {
-    color: var(--text-muted, #64748b);
+    color: var(--color-text-muted-on-surface);
   }
 }
+
 .filters {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
   margin-bottom: 20px;
-  input,
-  select {
-    min-height: 42px;
-    padding: 0 12px;
-    border: 1px solid var(--border-color, #cbd5e1);
-    border-radius: 8px;
-    background: white;
-  }
-  input {
+
+  p-inputtext {
     min-width: 260px;
   }
 }
-button {
-  border: 0;
-  background: none;
-  cursor: pointer;
-  padding: 8px 10px;
-  color: var(--color-primary, #1d4ed8);
-}
-button.primary {
-  background: var(--color-primary, #1d4ed8);
-  color: white;
-  border-radius: 8px;
-}
-button.danger {
-  color: #b91c1c;
-}
-button.link {
-  text-decoration: underline;
-}
+
 .table-wrap {
   overflow: auto;
-  border: 1px solid var(--border-color, #e2e8f0);
+  border: 1px solid var(--color-border-on-surface);
   border-radius: 10px;
 }
-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-  th,
-  td {
-    padding: 14px 16px;
-    border-bottom: 1px solid #eef2f7;
-    vertical-align: middle;
-  }
-  th {
-    background: #f8fafc;
-    font-size: 12px;
-    text-transform: uppercase;
-  }
+
+/*
+ * The table is rendered by PrimeNG, so its internals are reached through the
+ * encapsulation boundary.
+ */
+:host ::ng-deep .admin-table {
   small {
     display: block;
-    color: #64748b;
+    color: var(--color-text-muted-on-surface);
     margin-top: 4px;
   }
+
   .actions {
     white-space: nowrap;
   }
 }
+
 .cards {
   gap: 12px;
+
   article {
     display: flex;
     flex-direction: column;
     gap: 7px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--color-border-on-surface);
     border-radius: 10px;
     padding: 16px;
+
+    /*
+     * S3 — palanca 2: la fila de acciones de la card móvil es la zona más
+     * apretada del admin. Los botones ya miden 44px de alto desde
+     * `theme/base.scss`; sin flex los tres `ghost` se alinean en línea con el
+     * hueco del marcado entre ellos, se enciman al partir y quedan targets
+     * ambiguos. El `gap` de 8px es el espaciado que la propia norma acepta
+     * para separar objetivos vecinos sin ambigüedad.
+     */
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
   }
 }
+
 .skeleton-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-.skeleton-block {
-  display: block;
-  width: 100%;
-  height: 48px;
-  border-radius: 8px;
-  background: var(--surface-muted, #e2e8f0);
-  animation: skeleton-pulse 1.5s ease-in-out infinite;
-}
-@keyframes skeleton-pulse {
-  50% {
-    opacity: 0.55;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .skeleton-block {
-    animation: none;
-  }
-}
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  background: rgba(15, 23, 42, 0.5);
-}
-.modal {
-  width: min(520px, 100%);
-  max-height: 90vh;
-  overflow: auto;
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
-  h2 {
-    margin-top: 0;
-  }
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin: 14px 0;
+
+/* Dialog ---------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+
+  span {
     font-weight: 600;
-    input,
-    select {
-      min-height: 42px;
-      padding: 0 10px;
-      border: 1px solid #cbd5e1;
-      border-radius: 7px;
-      font-weight: 400;
-    }
+    color: var(--color-text-on-surface);
   }
-  footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 20px;
+}
+
+.password-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
+  border-radius: 8px;
+
+  code {
+    font-size: 18px;
+    font-weight: 700;
   }
-  .error {
-    color: #b91c1c;
-  }
-  .password-alert {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 14px;
-    background: #dcfce7;
-    color: #166534;
-    border-radius: 8px;
-    code {
-      font-size: 18px;
-      font-weight: 700;
-    }
-  }
+}
+
+.detail-list {
+  margin: 0;
+
   dt {
     font-weight: 700;
     margin-top: 10px;
+    color: var(--color-text-on-surface);
   }
+
   dd {
     margin: 3px 0;
+    color: var(--color-text-muted-on-surface);
   }
 }
+
 .mobile-only {
   display: flex;
   flex-direction: column;
 }
+
 .desktop-only {
   display: none;
 }
+
 @media (min-width: 768px) {
   .mobile-only {
     display: none;
