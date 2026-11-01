@@ -26,16 +26,20 @@ describe('RegistrarActaPage', () => {
     routerSpy.events = of(EMPTY);
     offlineStorageSpy = jasmine.createSpyObj('OfflineStorageService', [
       'guardarBorrador',
+      'guardarFotoBorrador',
       'obtenerBorrador',
+      'obtenerBorradoresDeJrv',
       'eliminarBorrador',
       'encolarActa',
       'obtenerPendientes',
       'eliminarPendiente',
     ]);
     offlineStorageSpy.obtenerBorrador.and.returnValue(Promise.resolve(null));
-    // Cada test arranca sin borradores: el autoguardado del paso 1 escribe
-    // en localStorage y un borrador de un test anterior contaminaría el
-    // siguiente al restaurar.
+    offlineStorageSpy.guardarBorrador.and.returnValue(Promise.resolve());
+    offlineStorageSpy.guardarFotoBorrador.and.returnValue(Promise.resolve());
+    offlineStorageSpy.eliminarBorrador.and.returnValue(Promise.resolve());
+    // Cada test arranca sin borradores: un borrador de un test anterior
+    // contaminaría el siguiente al restaurar.
     localStorage.clear();
 
     observerServiceSpy.getCandidatosPorCargo.and.returnValue(
@@ -105,15 +109,6 @@ describe('RegistrarActaPage', () => {
     component.votosPorCandidato.set(1, 40);
     component.votosPorCandidato.set(2, 40);
     expect(component.isChecksumValid).toBe(true);
-  });
-
-  it('should proceed to image step when called', () => {
-    component.totalSufragantes = 100;
-    component.votosBlancos = 0;
-    component.votosNulos = 0;
-    component.irAPasoImagen();
-    expect(component.currentStep()).toBe('IMAGEN');
-    expect(component.error()).toBeNull();
   });
 
   it('should NOT call enviarActaDirecta when checksum is invalid (D.4)', () => {
@@ -264,36 +259,11 @@ describe('RegistrarActaPage', () => {
   });
 
   it('should have file input with accept="image/*" and capture="environment" (S3)', () => {
-    // Navegar a IMAGEN step para renderizar el input
-    component.currentStep.set('IMAGEN');
-    fixture.detectChanges();
-
+    // El flujo arranca en IMAGEN: el input está en pantalla desde el inicio.
     const fileInput = fixture.nativeElement.querySelector('input[type="file"]');
     expect(fileInput).toBeTruthy();
     expect(fileInput.getAttribute('accept')).toBe('image/*');
     expect(fileInput.getAttribute('capture')).toBe('environment');
-  });
-
-  it('should save draft to IndexedDB before advancing to IMAGEN step (T-FE-09 V.4)', async () => {
-    component.totalSufragantes = 100;
-    component.votosBlancos = 5;
-    component.votosNulos = 5;
-    component.votosPorCandidato.set(1, 45);
-    component.votosPorCandidato.set(2, 45);
-
-    offlineStorageSpy.guardarBorrador.and.returnValue(Promise.resolve());
-
-    component.irAPasoImagen();
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    expect(component.currentStep()).toBe('IMAGEN');
-    expect(offlineStorageSpy.guardarBorrador).toHaveBeenCalledWith(
-      expect.objectContaining({
-        draftId: 'draft_101_2',
-        totalSufragantes: 100,
-        votosPorCandidato: { 1: 45, 2: 45 },
-      }),
-    );
   });
 
   it('should restore draft from IndexedDB after LMK reload (T-FE-09 V.5)', async () => {
@@ -306,6 +276,8 @@ describe('RegistrarActaPage', () => {
         votosBlancos: 10,
         votosNulos: 5,
         votosPorCandidato: { 1: 70, 2: 65 },
+        imageBlob: null,
+        imageName: null,
         updatedAt: Date.now(),
       }),
     );
@@ -349,8 +321,364 @@ describe('RegistrarActaPage', () => {
   });
 
   // ─────────────────────────────────────────────────────────────────────
+  // T-FE-13 A.1 — el wizard arranca en la foto y no en el conteo
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('T-FE-13 A.1: el wizard arranca en el paso IMAGEN (Foto Primero)', () => {
+    expect(component.currentStep()).toBe('IMAGEN');
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="step-imagen"]'),
+    ).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelector('[data-testid="step-votos"]'),
+    ).toBeNull();
+  });
+
+  it('T-FE-13 A.1: tras capturar la foto aparece "Continuar a Digitación de Votos"', () => {
+    // Sin foto, la vía principal todavía no está disponible.
+    expect(hostButton('btn-continuar-votos')).toBeNull();
+
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:foto');
+    seleccionarFoto(new File(['x'], 'acta.webp', { type: 'image/webp' }));
+
+    expect(hostButton('btn-continuar-votos')).toBeTruthy();
+
+    innerButton('btn-continuar-votos')?.click();
+    fixture.detectChanges();
+
+    expect(component.currentStep()).toBe('VOTOS');
+  });
+
+  it('T-FE-13 A.1: "Digitar votos primero" permite saltar la foto', () => {
+    expect(hostButton('btn-digitar-votos-primero')).toBeTruthy();
+
+    innerButton('btn-digitar-votos-primero')?.click();
+    fixture.detectChanges();
+
+    expect(component.currentStep()).toBe('VOTOS');
+    expect(component.selectedImageFile).toBeNull();
+  });
+
+  it('T-FE-13 A.1: el paso de votos vuelve a dejar ver la foto', () => {
+    component.digitarVotosPrimero();
+    fixture.detectChanges();
+    component.irAPasoImagen();
+    fixture.detectChanges();
+
+    expect(component.currentStep()).toBe('IMAGEN');
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // T-FE-13 A.2 — la foto y el borrador viven en IndexedDB, no en localStorage
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('T-FE-13 A.2: la foto se guarda en IndexedDB (acta_drafts) al capturarla', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:foto');
+    const archivo = new File(['pixeles'], 'acta.webp', { type: 'image/webp' });
+
+    component.onFileSelected({
+      target: { files: [archivo] },
+    } as unknown as Event);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(offlineStorageSpy.guardarFotoBorrador).toHaveBeenCalledWith(
+      'draft_101_2',
+      101,
+      2,
+      archivo,
+      'acta.webp',
+    );
+  });
+
+  it('T-FE-13 A.2: la foto del borrador se restaura tras un cierre por LMK', async () => {
+    const blob = new Blob(['pixeles'], { type: 'image/webp' });
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:restaurada');
+    offlineStorageSpy.obtenerBorrador.and.returnValue(
+      Promise.resolve({
+        draftId: 'draft_101_2',
+        jrvId: 101,
+        cargoId: 2,
+        totalSufragantes: 150,
+        votosBlancos: 10,
+        votosNulos: 5,
+        votosPorCandidato: { 1: 70, 2: 65 },
+        imageBlob: blob,
+        imageName: 'acta-foto.webp',
+        updatedAt: Date.now(),
+      }),
+    );
+
+    component.cargarCandidatos();
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // El acta vuelve con su evidencia: la foto no estaba en la RAM.
+    expect(component.selectedImageFile).toBeTruthy();
+    expect(component.selectedImageFile?.name).toBe('acta-foto.webp');
+    expect(component.imagePreviewUrl).toBe('blob:restaurada');
+    expect(component.getVoto(1)).toBe(70);
+  });
+
+  it('T-FE-13 A.2: el borrador NO se escribe en localStorage ni en Base64', async () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');
+    localStorage.clear();
+
+    component.totalSufragantes = 100;
+    component.votosPorCandidato.set(1, 100);
+    component.onFileSelected({
+      target: { files: [new File(['x'], 'acta.webp', { type: 'image/webp' })] },
+    } as unknown as Event);
+    component.continuarAVotos();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // D4: `localStorage` sincrónico está prohibido (bloquea el hilo, no
+    // admite Blobs y revienta con QuotaExceededError a los 5 MB).
+    expect(setItemSpy).not.toHaveBeenCalled();
+    expect(localStorage.length).toBe(0);
+
+    // Y los dos datos sí están en IndexedDB, por separado.
+    expect(offlineStorageSpy.guardarBorrador).toHaveBeenCalled();
+    expect(offlineStorageSpy.guardarFotoBorrador).toHaveBeenCalled();
+
+    // La foto entra como Blob binario: nunca como cadena ni como data: URL.
+    const llamada = vi.mocked(offlineStorageSpy.guardarFotoBorrador).mock
+      .calls[0];
+    const blob = llamada[3];
+    expect(typeof blob).not.toBe('string');
+    expect(blob).toBeInstanceOf(Blob);
+    expect(JSON.stringify(blob)).not.toMatch(/^data:image/);
+  });
+
+  it('T-FE-13 A.2: el autoguardado de los votos NO borra la foto ya guardada', async () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:foto');
+    component.onFileSelected({
+      target: { files: [new File(['x'], 'acta.webp', { type: 'image/webp' })] },
+    } as unknown as Event);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    component.totalSufragantes = 100;
+    component.votosPorCandidato.set(1, 100);
+    component.continuarAVotos();
+    await new Promise((resolve) => setTimeout(resolve, 600));
+
+    // Son dos canales distintos: guardarBorrador no lleva foto y
+    // guardarFotoBorrador no lleva votos.
+    const guardadoVotos = vi.mocked(offlineStorageSpy.guardarBorrador).mock
+      .calls[0][0] as Record<string, unknown>;
+    expect(guardadoVotos).not.toHaveProperty('imageBlob');
+    expect(guardadoVotos['votosPorCandidato']).toEqual({ 1: 100, 2: 0 });
+    expect(offlineStorageSpy.guardarFotoBorrador).toHaveBeenCalledTimes(1);
+  });
+
+  it('T-FE-13 A.2: la cámara se abre sólo después de que el borrador quedó escrito', async () => {
+    // El almacenamiento devuelve una promesa que NO resuelve: el borrador
+    // sigue en el aire mientras la cámara se abre.
+    let liberar: () => void = () => {};
+    const pendiente = new Promise<void>((resolve) => {
+      liberar = resolve;
+    });
+    offlineStorageSpy.guardarBorrador.and.returnValue(pendiente);
+
+    let camaraAbierta = false;
+    const input = {
+      click: () => {
+        camaraAbierta = true;
+      },
+    } as unknown as HTMLInputElement;
+
+    component.abrirCamara(input);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Mientras el borrador no está escrito, la cámara NO se abre: es lo que
+    // protege al acta de un cierre de proceso por Android LMK (D4).
+    expect(camaraAbierta).toBe(false);
+
+    liberar();
+    await pendiente;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Escrito el borrador, la cámara se abre.
+    expect(camaraAbierta).toBe(true);
+  });
+
+  it('T-FE-13 A.2: el input de archivo se limpia para poder repetir la captura', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:foto');
+    const input = fixture.nativeElement.querySelector(
+      '[data-testid="input-foto-acta"]',
+    ) as HTMLInputElement;
+    const archivo = new File(['x'], 'acta.webp', { type: 'image/webp' });
+
+    // El navegador deja el valor del input apuntando al archivo elegido.
+    Object.defineProperty(input, 'value', {
+      value: 'C:\\fakepath\\acta.webp',
+      writable: true,
+      configurable: true,
+    });
+    Object.defineProperty(input, 'files', {
+      value: [archivo],
+      configurable: true,
+    });
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    // Si el input no queda vacío, elegir de nuevo el mismo archivo no
+    // dispara `change` y el acta se quedaría con la foto anterior.
+    expect(input.value).toBe('');
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // T-FE-13 B.1 / B.2 / B.3 — cotas de sufragantes y cuadre estricto
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('T-FE-13 B.1: con 380 sufragantes hay advertencia, no bloqueo', () => {
+    component.totalSufragantes = 380;
+
+    expect(component.alertaSufragantes).toBe(
+      'Advertencia: El padrón estándar es de 350 electores. Verifique si es una mesa especial.',
+    );
+    expect(component.nivelAlertaSufragantes).toBe('warning');
+    expect(component.esSufragantesValido).toBe(true);
+    expect(component.excedeTopeSufragantes).toBe(false);
+  });
+
+  it('T-FE-13 B.1: con 501 sufragantes hay error y el envío queda bloqueado', () => {
+    component.totalSufragantes = 501;
+
+    expect(component.alertaSufragantes).toBe(
+      'Límite CNE excedido: ninguna JRV puede superar 500 sufragantes.',
+    );
+    expect(component.nivelAlertaSufragantes).toBe('error');
+    expect(component.esSufragantesValido).toBe(false);
+    expect(component.excedeTopeSufragantes).toBe(true);
+
+    component.enviarActaFinal();
+
+    expect(observerServiceSpy.enviarActaDirecta).not.toHaveBeenCalled();
+    expect(component.error()).toContain('Límite CNE excedido');
+  });
+
+  it('T-FE-13 B.1: con 2500 sufragantes (error de tipeo) el envío queda bloqueado', () => {
+    component.totalSufragantes = 2500;
+
+    expect(component.alertaSufragantes).toBe(
+      'Límite CNE excedido: ninguna JRV puede superar 500 sufragantes.',
+    );
+    expect(component.nivelAlertaSufragantes).toBe('error');
+    expect(component.esSufragantesValido).toBe(false);
+    expect(component.excedeTopeSufragantes).toBe(true);
+
+    component.enviarActaFinal();
+
+    expect(observerServiceSpy.enviarActaDirecta).not.toHaveBeenCalled();
+    expect(component.error()).toContain('Límite CNE excedido');
+  });
+
+  it('T-FE-13 B.1: con 500 sufragantes la cota todavía se cumple', () => {
+    component.totalSufragantes = 500;
+
+    expect(component.alertaSufragantes).toBe(
+      'Advertencia: El padrón estándar es de 350 electores. Verifique si es una mesa especial.',
+    );
+    expect(component.esSufragantesValido).toBe(true);
+    expect(component.excedeTopeSufragantes).toBe(false);
+  });
+
+  it('T-FE-13 S3: con 380 sufragantes y la suma cuadrada, el acta se transmite', async () => {
+    component.totalSufragantes = 380;
+    component.votosPorCandidato.set(1, 380); // 380 == 380 → cuadra
+
+    observerServiceSpy.enviarActaDirecta.and.returnValue(
+      of({
+        id: 99,
+        jrvId: 101,
+        cargoId: 2,
+        estado: 'ENVIADA',
+        totalSufragantes: 380,
+        votosBlancos: 0,
+        votosNulos: 0,
+        detalles: [],
+      }),
+    );
+    offlineStorageSpy.eliminarBorrador.and.returnValue(Promise.resolve());
+
+    component.enviarActaFinal();
+
+    // S3 no es sólo "muestra un aviso": una mesa especial se puede
+    // transmitir si la suma cuadra exactamente.
+    expect(observerServiceSpy.enviarActaDirecta).toHaveBeenCalled();
+    expect(component.error()).toBeNull();
+
+    // La navegación final se dispara con setTimeout(1800ms).
+    await new Promise((resolve) => setTimeout(resolve, 1900));
+  });
+
+  it('T-FE-13 B.2: el cuadre es 1:1 estricto, sin margen ni 3x', () => {
+    component.totalSufragantes = 100;
+    component.votosPorCandidato.set(1, 100);
+    expect(component.isChecksumValid).toBe(true);
+
+    // Un voto de más no vale.
+    component.votosPorCandidato.set(1, 101);
+    expect(component.isChecksumValid).toBe(false);
+
+    // El triple tampoco: la fórmula de 3x no existe (D3).
+    component.votosPorCandidato.set(1, 300);
+    expect(component.isChecksumValid).toBe(false);
+
+    // Ni la mitad.
+    component.votosPorCandidato.set(1, 50);
+    expect(component.isChecksumValid).toBe(false);
+  });
+
+  it('T-FE-13 B.3: el banner de cota se pinta con el nivel correcto', () => {
+    irADigitarVotos();
+    escribirPadron(380);
+
+    let banner = fixture.nativeElement.querySelector(
+      '[data-testid="cota-banner"]',
+    );
+    expect(banner).toBeTruthy();
+    expect(banner.textContent).toContain('El padrón estándar es de 350');
+    expect(banner.getAttribute('data-nivel')).toBe('warning');
+    // Un aviso no interrumpe: se anuncia con `role="status"`.
+    expect(banner.getAttribute('role')).toBe('status');
+
+    escribirPadron(501);
+
+    banner = fixture.nativeElement.querySelector('[data-testid="cota-banner"]');
+    expect(banner.getAttribute('data-nivel')).toBe('error');
+    expect(banner.textContent).toContain('ninguna JRV puede superar 500');
+    // Un error sí interrumpe: `role="alert"`.
+    expect(banner.getAttribute('role')).toBe('alert');
+  });
+
+  it('T-FE-13 B.3: la revisión muestra la cota y bloquea "Transmitir Acta"', () => {
+    component.totalSufragantes = 501;
+    component.votosPorCandidato.set(1, 501);
+    component.continuarARevision();
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-testid="cota-banner-revision"]',
+      ),
+    ).toBeTruthy();
+    expect(innerButton('btn-transmitir-acta')?.disabled).toBe(true);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
   // S4 · S5 · S6 — la pantalla de campo del veedor
   // ─────────────────────────────────────────────────────────────────────
+
+  /**
+   * Lleva la pantalla al paso de dígitos.
+   *
+   * El flujo arranca en IMAGEN (T-FE-13 A.1), así que las pruebas de la
+   * pantalla de conteo tienen que pasar por la foto primero.
+   */
+  function irADigitarVotos(): void {
+    component.continuarAVotos();
+    fixture.detectChanges();
+  }
 
   /** Input de votos del candidato indicado. */
   function voteInput(nombre: string): HTMLInputElement {
@@ -399,7 +727,43 @@ describe('RegistrarActaPage', () => {
     return botones.find((b) => (b.textContent ?? '').includes(texto)) ?? null;
   }
 
+  /** Host `<app-button>` con el `data-testid` dado, o null. */
+  function hostButton(testid: string): HTMLElement | null {
+    return fixture.nativeElement.querySelector(
+      `[data-testid="${testid}"]`,
+    ) as HTMLElement | null;
+  }
+
+  /** Botón nativo dentro de un `<app-button>` (p-button lo renderiza). */
+  function innerButton(testid: string): HTMLButtonElement | null {
+    return (hostButton(testid)?.querySelector('button') ??
+      null) as HTMLButtonElement | null;
+  }
+
+  /**
+   * Elige una foto como lo haría el navegador: un `change` real sobre el
+   * input de archivo.
+   *
+   * No se llama al método del componente directamente: al mutar el estado
+   * fuera del ciclo de eventos, Angular en modo desarrollo detecta el
+   * cambio entre la pasada de actualización y la de verificación
+   * (NG0100) y el test mide un artefacto del framework, no el flujo.
+   */
+  function seleccionarFoto(archivo: File): void {
+    const input = fixture.nativeElement.querySelector(
+      '[data-testid="input-foto-acta"]',
+    ) as HTMLInputElement;
+    expect(input).toBeTruthy();
+    Object.defineProperty(input, 'files', {
+      value: [archivo],
+      configurable: true,
+    });
+    input.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
   it('S4: un acta encolada se anuncia en una región role="status", no en la de error', async () => {
+    irADigitarVotos();
     escribirPadron(100);
     escribirVotos('Candidato A', 50);
     escribirVotos('Candidato B', 50);
@@ -427,6 +791,7 @@ describe('RegistrarActaPage', () => {
   });
 
   it('S5: el valor del modelo y el del DOM son siempre el mismo', () => {
+    irADigitarVotos();
     const input = voteInput('Candidato A');
 
     // Caso del bug: desde 0, "-5" se registraba como 0 mientras el campo
@@ -442,6 +807,7 @@ describe('RegistrarActaPage', () => {
   });
 
   it('S5: el campo de votos no admite decimales ni negativos y declara su rango', () => {
+    irADigitarVotos();
     const input = voteInput('Candidato A');
 
     escribir(input, '1.5');
@@ -458,12 +824,14 @@ describe('RegistrarActaPage', () => {
   });
 
   it('S6: con cero votos el camino de escape está disponible en el DOM', () => {
+    irADigitarVotos();
     escribirPadron(15);
 
     expect(buttonWith('Continuar con Inconsistencia')).toBeTruthy();
   });
 
   it('S6: se muestra la diferencia concreta entre la suma y el padrón', () => {
+    irADigitarVotos();
     escribirPadron(15);
     escribirVotos('Candidato A', 12);
 
@@ -473,9 +841,10 @@ describe('RegistrarActaPage', () => {
   });
 
   it('S6: el botón principal explica por qué no deja continuar', () => {
+    irADigitarVotos();
     escribirPadron(15);
 
-    const principal = buttonWith('Continuar a Evidencia Fotográfica');
+    const principal = buttonWith('Continuar a Revisión Final');
     expect(principal).toBeTruthy();
     expect(principal?.disabled).toBe(false);
 
@@ -488,6 +857,7 @@ describe('RegistrarActaPage', () => {
   });
 
   it('S6: salir con votos escritos pide confirmación antes de descartar', () => {
+    irADigitarVotos();
     escribirPadron(15);
     escribirVotos('Candidato A', 12);
 
@@ -500,6 +870,7 @@ describe('RegistrarActaPage', () => {
   });
 
   it('S6: confirmar la salida vuelve a la lista de dignidades', () => {
+    irADigitarVotos();
     escribirPadron(15);
     escribirVotos('Candidato A', 12);
 
@@ -515,7 +886,8 @@ describe('RegistrarActaPage', () => {
     ]);
   });
 
-  it('S6: el paso 1 persiste un borrador para no perder los votos escritos', async () => {
+  it('S6: el paso de votos persiste un borrador para no perder lo escrito', async () => {
+    irADigitarVotos();
     offlineStorageSpy.guardarBorrador.and.returnValue(Promise.resolve());
 
     const input = voteInput('Candidato A');
@@ -532,7 +904,26 @@ describe('RegistrarActaPage', () => {
     );
   });
 
+  it('S6: al cambiar de paso se guarda el borrador antes de navegar', async () => {
+    offlineStorageSpy.guardarBorrador.and.returnValue(Promise.resolve());
+    component.totalSufragantes = 100;
+    component.votosPorCandidato.set(1, 45);
+
+    component.continuarAVotos();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(component.currentStep()).toBe('VOTOS');
+    expect(offlineStorageSpy.guardarBorrador).toHaveBeenCalledWith(
+      expect.objectContaining({
+        draftId: 'draft_101_2',
+        totalSufragantes: 100,
+        votosPorCandidato: { 1: 45, 2: 0 },
+      }),
+    );
+  });
+
   it('S5: un voto por encima del padrón se marca inválido sin recortarlo', () => {
+    irADigitarVotos();
     escribirPadron(10);
     const input = voteInput('Candidato A');
 
@@ -551,12 +942,17 @@ describe('RegistrarActaPage', () => {
    * S11: the stepper is PrimeNG's `p-steps`. The hand-rolled step, number and
    * label that used to live in the stylesheet were never rendered, and the
    * app's own labels ran together as "VotosEvidenciaRevisión".
+   *
+   * T-FE-13 A.1: el orden es Foto → Votos → Revisión.
    */
-  it('S11: el stepper muestra los tres pasos con etiquetas separadas', () => {
-    const labels = Array.from(
-      fixture.nativeElement.querySelectorAll('.p-steps-item-label'),
-    ).map((element) => (element.textContent ?? '').trim());
+  it('S11: el stepper muestra los tres pasos en el orden Foto Primero', () => {
+    const nodos = fixture.nativeElement.querySelectorAll(
+      '.p-steps-item-label',
+    ) as NodeListOf<Element>;
+    const labels = Array.from(nodos).map((element) =>
+      (element.textContent ?? '').trim(),
+    );
 
-    expect(labels).toEqual(['Votos', 'Evidencia', 'Revisión']);
+    expect(labels).toEqual(['Foto', 'Votos', 'Revisión']);
   });
 });
