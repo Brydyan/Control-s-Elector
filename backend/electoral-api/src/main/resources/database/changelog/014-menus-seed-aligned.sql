@@ -8,12 +8,25 @@
 -- Actualizar rutas y labels canónicos
 UPDATE menu SET label = 'Dashboard', icono = 'home', ruta = '/dashboard', orden = 1 WHERE codigo = 'dashboard';
 UPDATE menu SET label = 'Actas', icono = 'document', ruta = '/actas', orden = 2 WHERE codigo = 'actas';
-UPDATE menu SET label = 'Evidencias', icono = 'image', ruta = '/evidencias', orden = 3 WHERE codigo = 'evidencias';
-UPDATE menu SET label = 'Administración', icono = 'settings', ruta = '/admin', orden = 5 WHERE codigo = 'admin';
+UPDATE menu SET label = 'Evidencias', icono = 'image', ruta = '/evidencias', orden = 5 WHERE codigo = 'evidencias';
+UPDATE menu SET label = 'Administración', icono = 'settings', ruta = '/admin', orden = 6 WHERE codigo = 'admin';
 
--- Registrar acta en flujo Observer
-UPDATE menu SET label = 'Registrar Acta', icono = 'add-circle', ruta = '/observer/mis-jrvs', orden = 1 WHERE codigo = 'actas.registrar';
-UPDATE menu SET label = 'Aprobar / Rechazar', icono = 'checkmark', ruta = '/coordinator/actas', orden = 2 WHERE codigo = 'actas.aprobar';
+-- Reorganizar submenús bajo Operación Electoral (OBSERVER)
+-- actas.registrar y evidencias.subir se mueven bajo "observer"
+UPDATE menu SET label = 'Registrar Acta', icono = 'add-circle', ruta = '/observer/registrar',
+  parent_id = (SELECT id FROM menu WHERE codigo = 'observer' AND borrado_en IS NULL), orden = 2
+  WHERE codigo = 'actas.registrar';
+
+UPDATE menu SET label = 'Subir Evidencia', icono = 'cloud-upload', ruta = '/observer/evidencia',
+  parent_id = (SELECT id FROM menu WHERE codigo = 'observer' AND borrado_en IS NULL), orden = 3
+  WHERE codigo = 'evidencias.subir';
+
+-- Reordenar Aprobar/Rechazar bajo Actas (COORDINATOR/MASTER)
+UPDATE menu SET label = 'Aprobar / Rechazar', icono = 'checkmark', ruta = '/coordinator/actas', orden = 1
+  WHERE codigo = 'actas.aprobar';
+
+-- Actualizar orden de Operación Electoral a 3
+UPDATE menu SET orden = 3 WHERE codigo = 'observer' AND borrado_en IS NULL;
 
 -- changeset electoral:014-02-insertar-menus-faltantes
 INSERT INTO menu (public_id, codigo, label, icono, ruta, orden, parent_id) VALUES
