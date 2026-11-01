@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { providePrimeNG } from 'primeng/config';
 import { ErrorStateComponent } from './error-state.component';
 
 describe('ErrorStateComponent', () => {
@@ -8,6 +9,7 @@ describe('ErrorStateComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ErrorStateComponent],
+      providers: [providePrimeNG()],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ErrorStateComponent);
@@ -29,9 +31,7 @@ describe('ErrorStateComponent', () => {
     fixture.componentRef.setInput('showRetry', true);
     fixture.detectChanges();
 
-    const button = fixture.nativeElement.querySelector(
-      '.error-state__retry-btn',
-    );
+    const button = fixture.nativeElement.querySelector('.p-button');
     button.click();
 
     expect(component.retry.emit).toHaveBeenCalled();

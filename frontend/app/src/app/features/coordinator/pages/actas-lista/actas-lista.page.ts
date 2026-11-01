@@ -1,8 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { IonIcon } from '@ionic/angular/standalone';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
+import { InputText } from 'primeng/inputtext';
+import { Select } from 'primeng/select';
+import { Skeleton } from 'primeng/skeleton';
+import { Tab, TabList, Tabs } from 'primeng/tabs';
+import { TableModule } from 'primeng/table';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
   BadgeComponent,
@@ -14,6 +20,7 @@ import {
 } from '../../../../shared/ui';
 import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import { mapError } from '../../../../shared/errors/error-handler';
+import { AuthStore } from '../../../../core/auth/auth.store';
 import {
   ActaFiltros,
   ActaItem,
@@ -29,13 +36,21 @@ import { CoordinatorService } from '../../services/coordinator.service';
   imports: [
     CommonModule,
     FormsModule,
-    IonIcon,
     BadgeComponent,
     ButtonComponent,
     EmptyStateComponent,
     ErrorStateComponent,
     PaginatorComponent,
     SkeletonComponent,
+    IconField,
+    InputIcon,
+    InputText,
+    Select,
+    Skeleton,
+    Tab,
+    TabList,
+    Tabs,
+    TableModule,
   ],
   templateUrl: './actas-lista.page.html',
   styleUrls: ['./actas-lista.page.scss'],
@@ -43,16 +58,26 @@ import { CoordinatorService } from '../../services/coordinator.service';
 export class ActasListaPage implements OnInit, OnDestroy {
   private readonly coordinatorService = inject(CoordinatorService);
   private readonly router = inject(Router);
+  private readonly authStore = inject(AuthStore);
   private readonly busqueda$ = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
-  actas: ActaItem[] = [];
-  cargos: CargoResumen[] = [];
-  cantones: CantonResumen[] = [];
-  loading = true;
-  error: string | null = null;
+  readonly actas = signal<ActaItem[]>([]);
+  readonly cargos = signal<CargoResumen[]>([]);
+  readonly cantones = signal<CantonResumen[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
 
-  esMaster = false;
+  /**
+   * MASTER-only controls ("Anular" in the tray). The role comes from the
+   * in-memory session, so a session restored after a reload lights the
+   * controls up on its own.
+   *
+   * La autoridad real la aplica el backend con
+   * @PreAuthorize("hasAuthority('acta:anular')"); esto sólo controla la
+   * visibilidad en la UI y nunca es un control de seguridad.
+   */
+  readonly esMaster = this.authStore.isMaster;
   estadoSeleccionado: EstadoActa | 'TODAS' = 'TODAS';
   cargoSeleccionado: number | null = null;
   cantonSeleccionado: number | null = null;
@@ -60,8 +85,8 @@ export class ActasListaPage implements OnInit, OnDestroy {
 
   page = 0;
   size = 20;
-  totalElements = 0;
-  totalPages = 0;
+  readonly totalElements = signal(0);
+  readonly totalPages = signal(0);
 
   readonly tabsEstado: Array<{
     estado: EstadoActa | 'TODAS';
@@ -75,7 +100,6 @@ export class ActasListaPage implements OnInit, OnDestroy {
   ];
 
   ngOnInit(): void {
-    this.esMaster = this.detectarRolMaster();
     this.cargarCargos();
     this.cargarCantones();
     this.busqueda$
@@ -95,7 +119,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   cargarCargos(): void {
     this.coordinatorService.getCargos().subscribe({
       next: (cargos) => {
-        this.cargos = cargos;
+        this.cargos.set(cargos);
       },
       error: (err) => {
         console.error('Error cargando cargos:', err);
@@ -106,7 +130,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   cargarCantones(): void {
     this.coordinatorService.getCantones().subscribe({
       next: (cantones) => {
-        this.cantones = cantones;
+        this.cantones.set(cantones);
       },
       error: (err) => {
         console.error('Error cargando cantones:', err);
@@ -114,28 +138,9 @@ export class ActasListaPage implements OnInit, OnDestroy {
     });
   }
 
-  /**
-   * Determina si el usuario actual tiene rol MASTER para mostrar la acción
-   * "Anular" en la bandeja. La autoridad real la aplica el backend con
-   * @PreAuthorize("hasAuthority('acta:anular')"); este método sólo controla
-   * la visibilidad en la UI y nunca es un control de seguridad.
-   */
-  private detectarRolMaster(): boolean {
-    try {
-      const sources = [
-        sessionStorage.getItem('app.user.roles'),
-        localStorage.getItem('app.user.roles'),
-      ];
-      const joined = sources.filter(Boolean).join(',').toUpperCase();
-      return joined.includes('MASTER');
-    } catch {
-      return false;
-    }
-  }
-
   cargarActas(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
 
     const filtros: ActaFiltros = {
       estado: this.estadoSeleccionado,
@@ -153,16 +158,17 @@ export class ActasListaPage implements OnInit, OnDestroy {
 
     this.coordinatorService.getActas(filtros).subscribe({
       next: (paged) => {
-        this.actas = paged.data;
-        this.totalElements = paged.meta.totalElements;
-        this.totalPages = paged.meta.totalPages;
-        this.loading = false;
+        this.actas.set(paged.data);
+        this.totalElements.set(paged.meta.totalElements);
+        this.totalPages.set(paged.meta.totalPages);
+        this.loading.set(false);
       },
       error: (err) => {
-        this.error =
+        this.error.set(
           err?.error?.message ||
-          'No se pudieron cargar las actas para supervisión.';
-        this.loading = false;
+            'No se pudieron cargar las actas para supervisión.',
+        );
+        this.loading.set(false);
       },
     });
   }
@@ -174,18 +180,44 @@ export class ActasListaPage implements OnInit, OnDestroy {
     this.cargarActas();
   }
 
-  cambiarCargo(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.cargoSeleccionado = select.value ? Number(select.value) : null;
+  /** The tab strip reports the value as a loose string; narrow it back. */
+  onEstadoTabChange(value: string | number | undefined): void {
+    const estado = String(value ?? 'TODAS') as EstadoActa | 'TODAS';
+    this.cambiarEstado(estado);
+  }
+
+  cambiarCargo(value: number | null): void {
+    this.cargoSeleccionado = value === null ? null : Number(value);
     this.page = 0;
     this.cargarActas();
   }
 
-  cambiarCanton(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    this.cantonSeleccionado = select.value ? Number(select.value) : null;
+  cambiarCanton(value: number | null): void {
+    this.cantonSeleccionado = value === null ? null : Number(value);
     this.page = 0;
     this.cargarActas();
+  }
+
+  /** Options of the dignity filter, for the PrimeNG select. */
+  get cargoOptions(): Array<{ label: string; value: number | null }> {
+    return [
+      { label: 'Todas las Dignidades', value: null },
+      ...this.cargos().map((c) => ({
+        label: `${c.nombre} (${c.nivel})`,
+        value: c.id,
+      })),
+    ];
+  }
+
+  /** Options of the canton filter, for the PrimeNG select. */
+  get cantonOptions(): Array<{ label: string; value: number | null }> {
+    return [
+      { label: 'Todos los Cantones', value: null },
+      ...this.cantones().map((c) => ({
+        label: `${c.nombre} (${c.codigo})`,
+        value: c.id,
+      })),
+    ];
   }
 
   onBusquedaChange(): void {
@@ -217,7 +249,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   }
 
   puedeAnular(acta: ActaItem): boolean {
-    return this.esMaster && acta.estado === 'APROBADA';
+    return this.esMaster() && acta.estado === 'APROBADA';
   }
 
   anular(actaId: number): void {
@@ -226,16 +258,16 @@ export class ActasListaPage implements OnInit, OnDestroy {
       'Datos verificados como fraudulentos',
     );
     if (!motivo || !motivo.trim()) {
-      this.error = 'El motivo de anulación es obligatorio.';
+      this.error.set('El motivo de anulación es obligatorio.');
       return;
     }
-    this.loading = true;
+    this.loading.set(true);
     this.coordinatorService.anularActa(actaId, motivo.trim()).subscribe({
       next: () => this.cargarActas(),
       error: (err) => {
         const mapped = mapError(err);
-        this.error = mapped.message;
-        this.loading = false;
+        this.error.set(mapped.message);
+        this.loading.set(false);
 
         // W4 FIX (S7): 409 Conflict — auto-reload like dispute/correct actions
         // When another session annuls the acta concurrently, reload the list
@@ -260,20 +292,20 @@ export class ActasListaPage implements OnInit, OnDestroy {
 
   get actasFiltradas(): ActaItem[] {
     // Server-side filtering: the backend already applied estado/cargo/search.
-    return this.actas;
+    return this.actas();
   }
 
   contarPorEstado(estado: EstadoActa): number {
     // Page-local count only. Exact global per-tab counts need a counts
     // endpoint (follow-up); see conteoTab for the active-tab total.
-    return this.actas.filter((a) => a.estado === estado).length;
+    return this.actas().filter((a) => a.estado === estado).length;
   }
 
   conteoTab(tab: EstadoActa | 'TODAS'): number {
     // The active filter's badge is exact (meta.totalElements of the current
     // query). Inactive tabs fall back to the page-local count.
-    if (tab === this.estadoSeleccionado) return this.totalElements;
-    if (tab === 'TODAS') return this.actas.length;
+    if (tab === this.estadoSeleccionado) return this.totalElements();
+    if (tab === 'TODAS') return this.actas().length;
     return this.contarPorEstado(tab);
   }
 
@@ -284,7 +316,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
   obtenerNombreCargo(acta: ActaItem): string {
     // Prefer the backend-provided denominative (no per-row lookup needed).
     if (acta.nombreCargo) return acta.nombreCargo;
-    const cargo = this.cargos.find((c) => c.id === acta.cargoId);
+    const cargo = this.cargos().find((c) => c.id === acta.cargoId);
     return cargo ? cargo.nombre : `Cargo #${acta.cargoId}`;
   }
 

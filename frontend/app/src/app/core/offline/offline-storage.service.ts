@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { DBSchema, IDBPDatabase, openDB } from 'idb';
 
 /**
@@ -7,6 +7,8 @@ import { DBSchema, IDBPDatabase, openDB } from 'idb';
  * - DB: `ElectoralOfflineDB` v1
  * - Store `pending_actas`: actas que no pudieron transmitirse por falta de red.
  *   Se eliminan tras confirmación 2xx de `POST /actas` y `POST /actas/:id/imagen`.
+ *   Un rechazo permanente (4xx) NO borra el registro: lo deja en estado
+ *   `failed`, con su blob, a la espera de una decisión del operador.
  * - Store `acta_drafts`: borradores preventivos por (jrvId, cargoId).
  *   Persiste el estado del formulario antes de invocar la cámara nativa
  *   (Android LMK mata el proceso Chrome al abrir cámara).
@@ -15,6 +17,15 @@ import { DBSchema, IDBPDatabase, openDB } from 'idb';
  * Decisión: las imágenes se almacenan en IndexedDB como Blob nativo (no
  * Base64) para preservar D1 de T-FE-08.
  */
+
+/**
+ * Estado de un item de la cola.
+ *
+ * - `queued`: en espera de envío (o esperando su turno de reintento).
+ * - `failed`: el servidor lo rechazó de forma permanente. El registro se
+ *   conserva y el operador decide si se reintenta o se descarta.
+ */
+export type EstadoActaPendiente = 'queued' | 'failed';
 
 export interface PendingActa {
   id: string; // UUID generado en cliente
@@ -25,7 +36,36 @@ export interface PendingActa {
   createdAt: number;
   retries: number;
   lastError: string | null;
+  /**
+   * Estado del item en la cola. Ausente en los registros escritos antes de
+   * esta versión: se interpreta como `queued`.
+   */
+  estado?: EstadoActaPendiente;
+  /**
+   * `true` cuando el POST del acta ya tuvo éxito. Es el antiduplicado local:
+   * un reintento solo vuelve a subir la imagen, nunca vuelve a crear el acta.
+   */
+  actaEnviada?: boolean;
+  /**
+   * Id del acta ya creada en el servidor. Permite reintentar solo la imagen.
+   */
+  actaIdRemota?: number | null;
+  /** Epoch (ms) del próximo intento permitido: backoff exponencial. */
+  proximoIntentoAt?: number | null;
 }
+
+/** Acta nueva en cola: la incompletan los valores que calcula el almacén. */
+export type NuevaActaPendiente = Omit<
+  PendingActa,
+  | 'id'
+  | 'createdAt'
+  | 'retries'
+  | 'lastError'
+  | 'estado'
+  | 'actaEnviada'
+  | 'actaIdRemota'
+  | 'proximoIntentoAt'
+>;
 
 export interface ActaDraft {
   draftId: string; // `draft_${jrvId}_${cargoId}`
@@ -79,6 +119,14 @@ const DB_VERSION = 1;
 export class OfflineStorageService {
   private dbPromise: Promise<IDBPDatabase<ElectoralOfflineDB>> | null = null;
 
+  /**
+   * Versión de la cola. Se incrementa en cada mutación para que quien la
+   * consume (el SyncService, la topbar) se entere de que el estado cambió sin
+   * tener que pollar el almacén.
+   */
+  private readonly _colaVersion = signal(0);
+  readonly colaVersion = this._colaVersion.asReadonly();
+
   private getDB(): Promise<IDBPDatabase<ElectoralOfflineDB>> {
     if (!this.dbPromise) {
       this.dbPromise = openDB<ElectoralOfflineDB>(DB_NAME, DB_VERSION, {
@@ -111,18 +159,21 @@ export class OfflineStorageService {
   // Cola de actas pendientes
   // -----------------------------------------------------------------
 
-  async encolarActa(
-    acta: Omit<PendingActa, 'id' | 'createdAt' | 'retries' | 'lastError'>,
-  ): Promise<string> {
+  async encolarActa(acta: NuevaActaPendiente): Promise<string> {
     const full: PendingActa = {
       id: this.uuid(),
       createdAt: Date.now(),
       retries: 0,
       lastError: null,
+      estado: 'queued',
+      actaEnviada: false,
+      actaIdRemota: null,
+      proximoIntentoAt: null,
       ...acta,
     };
     const db = await this.getDB();
     await db.put('pending_actas', full);
+    this.marcarCambio();
     return full.id;
   }
 
@@ -134,6 +185,7 @@ export class OfflineStorageService {
   async eliminarPendiente(id: string): Promise<void> {
     const db = await this.getDB();
     await db.delete('pending_actas', id);
+    this.marcarCambio();
   }
 
   async actualizarIntentos(
@@ -141,10 +193,54 @@ export class OfflineStorageService {
     retries: number,
     lastError: string | null,
   ): Promise<void> {
+    await this.actualizarPendiente(id, { retries, lastError });
+  }
+
+  /**
+   * Actualiza campos sueltos de un item de la cola. Es la única vía de
+   * escritura parcial: preserva el resto del registro (payload y blob).
+   */
+  async actualizarPendiente(
+    id: string,
+    cambios: Partial<PendingActa>,
+  ): Promise<void> {
     const db = await this.getDB();
     const current = await db.get('pending_actas', id);
     if (!current) return;
-    await db.put('pending_actas', { ...current, retries, lastError });
+    await db.put('pending_actas', { ...current, ...cambios });
+    this.marcarCambio();
+  }
+
+  /**
+   * Marca el acta como ya creada en el servidor. A partir de aquí, un
+   * reintento solo vuelve a subir la imagen: nunca vuelve a crear el acta.
+   */
+  async marcarActaEnviada(id: string, actaIdRemota: number): Promise<void> {
+    await this.actualizarPendiente(id, { actaEnviada: true, actaIdRemota });
+  }
+
+  /**
+   * Marca el item como rechazado de forma permanente. El registro y su blob
+   * se conservan: la eliminación exige una confirmación explícita.
+   */
+  async marcarFallida(id: string, lastError: string): Promise<void> {
+    await this.actualizarPendiente(id, {
+      estado: 'failed',
+      lastError,
+      proximoIntentoAt: null,
+    });
+  }
+
+  /** Devuelve un item fallido a la cola: el operador pidió reintentarlo. */
+  async marcarEnCola(id: string): Promise<void> {
+    await this.actualizarPendiente(id, {
+      estado: 'queued',
+      proximoIntentoAt: null,
+    });
+  }
+
+  private marcarCambio(): void {
+    this._colaVersion.update((version) => version + 1);
   }
 
   // -----------------------------------------------------------------

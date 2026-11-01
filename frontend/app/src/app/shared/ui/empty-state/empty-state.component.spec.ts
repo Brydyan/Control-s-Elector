@@ -1,5 +1,4 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { EmptyStateComponent } from './empty-state.component';
 
 describe('EmptyStateComponent', () => {
@@ -9,7 +8,6 @@ describe('EmptyStateComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [EmptyStateComponent],
-      schemas: [CUSTOM_ELEMENTS_SCHEMA],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EmptyStateComponent);
@@ -19,6 +17,15 @@ describe('EmptyStateComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should translate the Ionic icon name to a PrimeIcons class', () => {
+    fixture.componentRef.setInput('icon', 'document');
+    fixture.detectChanges();
+
+    const icon = fixture.nativeElement.querySelector('.empty-state__icon');
+    expect(icon.classList).toContain('pi');
+    expect(icon.classList).toContain('pi-file');
   });
 
   it('should render default title', () => {

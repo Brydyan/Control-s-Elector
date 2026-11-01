@@ -1,6 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Dialog } from 'primeng/dialog';
+import { InputText } from 'primeng/inputtext';
+import { Message } from 'primeng/message';
+import { Select } from 'primeng/select';
+import { Skeleton } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
 import {
   ButtonComponent,
   EmptyStateComponent,
@@ -8,7 +14,7 @@ import {
   SkeletonComponent,
 } from '../../../shared/ui';
 import { PaginatorComponent } from '../../../shared/components/paginator/paginator.component';
-import { FocusTrapDirective } from '../../../shared/a11y/focus-trap.directive';
+import { AuthStore } from '../../../core/auth/auth.store';
 import { AdminService } from '../services/admin.service';
 import {
   RolUsuario,
@@ -28,24 +34,34 @@ import {
     ErrorStateComponent,
     SkeletonComponent,
     PaginatorComponent,
-    FocusTrapDirective,
+    Dialog,
+    InputText,
+    Message,
+    Select,
+    Skeleton,
+    TableModule,
   ],
   templateUrl: './admin-usuarios.page.html',
   styleUrls: ['./admin-usuarios.page.scss'],
 })
 export class AdminUsuariosPage implements OnInit {
   private readonly service = inject(AdminService);
-  usuarios: UsuarioResponseDto[] = [];
-  loading = true;
-  submitting = false;
-  error: string | null = null;
-  esMaster = false;
+  private readonly authStore = inject(AuthStore);
+  readonly usuarios = signal<UsuarioResponseDto[]>([]);
+  readonly loading = signal(true);
+  readonly submitting = signal(false);
+  readonly error = signal<string | null>(null);
+  /**
+   * MASTER-only controls. The role comes from the in-memory session, so a
+   * session restored after a reload lights the controls up on its own.
+   */
+  readonly esMaster = this.authStore.isMaster;
   terminoBusqueda = '';
   rolSeleccionado: RolUsuario | '' = '';
   habilitadoSeleccionado: 'TODOS' | 'HABILITADOS' | 'DESHABILITADOS' = 'TODOS';
   page = 0;
   size = 20;
-  totalElements = 0;
+  readonly totalElements = signal(0);
   modalAbierto = false;
   modalDetalles = false;
   modoEdicion = false;
@@ -56,14 +72,30 @@ export class AdminUsuariosPage implements OnInit {
   passwordTemporal: string | null = null;
   readonly roles: RolUsuario[] = ['MASTER', 'COORDINATOR', 'OBSERVER', 'ADMIN'];
 
+  /** Filter options for the enabled state. */
+  readonly estadoOptions: Array<{ label: string; value: string }> = [
+    { label: 'Todos', value: 'TODOS' },
+    { label: 'Habilitados', value: 'HABILITADOS' },
+    { label: 'Deshabilitados', value: 'DESHABILITADOS' },
+  ];
+
+  /** Filter options for the role, with the "all roles" entry first. */
+  readonly rolFilterOptions: Array<{ label: string; value: RolUsuario | '' }> =
+    [
+      { label: 'Todos los roles', value: '' },
+      { label: 'MASTER', value: 'MASTER' },
+      { label: 'COORDINATOR', value: 'COORDINATOR' },
+      { label: 'OBSERVER', value: 'OBSERVER' },
+      { label: 'ADMIN', value: 'ADMIN' },
+    ];
+
   ngOnInit(): void {
-    this.esMaster = this.detectarRolMaster();
     this.cargarUsuarios();
   }
 
   cargarUsuarios(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
     const filtros: UsuarioFiltros = {
       search: this.terminoBusqueda.trim() || undefined,
       rol: this.rolSeleccionado || undefined,
@@ -76,33 +108,19 @@ export class AdminUsuariosPage implements OnInit {
     };
     this.service.listarUsuarios(filtros).subscribe({
       next: (res) => {
-        this.usuarios = res.data;
-        this.totalElements = res.meta.totalElements;
-        this.loading = false;
+        this.usuarios.set(res.data);
+        this.totalElements.set(res.meta.totalElements);
+        this.loading.set(false);
       },
       error: (err) => {
-        this.error = err?.message || 'No se pudieron cargar los usuarios.';
-        this.loading = false;
+        this.error.set(err?.message || 'No se pudieron cargar los usuarios.');
+        this.loading.set(false);
       },
     });
   }
 
-  private detectarRolMaster(): boolean {
-    try {
-      return [
-        sessionStorage.getItem('app.user.roles'),
-        localStorage.getItem('app.user.roles'),
-      ]
-        .filter(Boolean)
-        .join(',')
-        .toUpperCase()
-        .includes('MASTER');
-    } catch {
-      return false;
-    }
-  }
   puedeAnular(usuario: UsuarioResponseDto): boolean {
-    return this.esMaster && usuario.habilitado;
+    return this.esMaster() && usuario.habilitado;
   }
   tieneFiltrosActivos(): boolean {
     return (
@@ -139,33 +157,33 @@ export class AdminUsuariosPage implements OnInit {
     this.apellido = '';
     this.rol = 'OBSERVER';
     this.passwordTemporal = null;
-    this.error = null;
+    this.error.set(null);
     this.modalAbierto = true;
   }
   abrirEditar(usuario: UsuarioResponseDto): void {
-    if (!this.esMaster) return;
+    if (!this.esMaster()) return;
     this.modoEdicion = true;
     this.usuarioSeleccionado = usuario;
     this.nombre = usuario.nombre;
     this.apellido = usuario.apellido;
     this.rol = usuario.rolNombre as RolUsuario;
     this.passwordTemporal = null;
-    this.error = null;
+    this.error.set(null);
     this.modalAbierto = true;
   }
   cerrarModal(): void {
-    if (!this.submitting) this.modalAbierto = false;
+    if (!this.submitting()) this.modalAbierto = false;
   }
   cerrarDetalles(): void {
     this.modalDetalles = false;
   }
   guardar(): void {
     if (!this.nombre.trim() || !this.apellido.trim()) {
-      this.error = 'Nombre y apellido son obligatorios.';
+      this.error.set('Nombre y apellido son obligatorios.');
       return;
     }
-    this.submitting = true;
-    this.error = null;
+    this.submitting.set(true);
+    this.error.set(null);
     const payload = {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
@@ -180,7 +198,7 @@ export class AdminUsuariosPage implements OnInit {
         : this.service.crearUsuario(payload);
     request.subscribe({
       next: (usuario) => {
-        this.submitting = false;
+        this.submitting.set(false);
         if (!this.modoEdicion)
           this.passwordTemporal =
             (usuario as UsuarioConPasswordTemporal).passwordTemporal ?? null;
@@ -188,8 +206,8 @@ export class AdminUsuariosPage implements OnInit {
         if (this.modoEdicion) this.modalAbierto = false;
       },
       error: (err) => {
-        this.submitting = false;
-        this.error = err?.message || 'No se pudo guardar el usuario.';
+        this.submitting.set(false);
+        this.error.set(err?.message || 'No se pudo guardar el usuario.');
       },
     });
   }
@@ -199,18 +217,18 @@ export class AdminUsuariosPage implements OnInit {
       !confirm(`¿Deshabilitar a ${usuario.email}?`)
     )
       return;
-    this.submitting = true;
+    this.submitting.set(true);
     this.service.deshabilitarUsuario(usuario.publicId).subscribe({
       next: () => this.cargarUsuarios(),
       error: (err) => {
-        this.submitting = false;
-        this.error = err?.message || 'No se pudo deshabilitar el usuario.';
+        this.submitting.set(false);
+        this.error.set(err?.message || 'No se pudo deshabilitar el usuario.');
       },
     });
   }
   rehabilitar(usuario: UsuarioResponseDto): void {
     if (
-      !this.esMaster ||
+      !this.esMaster() ||
       usuario.habilitado ||
       !confirm(`¿Re-habilitar a ${usuario.email}?`)
     )
@@ -225,7 +243,7 @@ export class AdminUsuariosPage implements OnInit {
       .subscribe({
         next: () => this.cargarUsuarios(),
         error: (err) =>
-          (this.error = err?.message || 'No se pudo re-habilitar el usuario.'),
+          this.error.set(err?.message || 'No se pudo re-habilitar el usuario.'),
       });
   }
 }

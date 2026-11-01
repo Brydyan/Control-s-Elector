@@ -1,22 +1,17 @@
-<div class="layout">
-  <div
-    class="sidebar-backdrop"
-    [class.visible]="layout.sidebarOpen()"
-    (click)="layout.closeSidebar()"
-    aria-hidden="true"
-  ></div>
+<div class="layout-wrapper" [ngClass]="containerClass()">
+  <app-topbar
+    [title]="meta().title"
+    [subtitle]="meta().subtitle"
+    [notifications]="meta().notifications"
+  />
 
-  <app-sidebar></app-sidebar>
+  <app-sidebar />
 
-  <div class="main">
-    <app-topbar
-      [title]="meta().title"
-      [subtitle]="meta().subtitle"
-      [notifications]="meta().notifications"
-    ></app-topbar>
-
-    <main class="content">
-      <router-outlet></router-outlet>
+  <div class="layout-main-container">
+    <main class="layout-main">
+      <router-outlet />
     </main>
   </div>
+
+  <div class="layout-mask" (click)="layout.closeSidebar()"></div>
 </div>

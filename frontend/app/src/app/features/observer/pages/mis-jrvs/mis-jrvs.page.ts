@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { Tab, TabList, Tabs } from 'primeng/tabs';
 import {
   BadgeComponent,
   ButtonComponent,
@@ -25,6 +26,9 @@ type FilterTab = 'TODAS' | 'PENDIENTES' | 'COMPLETADAS';
     LoadingStateComponent,
     EmptyStateComponent,
     ErrorStateComponent,
+    Tab,
+    TabList,
+    Tabs,
   ],
   templateUrl: './mis-jrvs.page.html',
   styleUrls: ['./mis-jrvs.page.scss'],
@@ -33,29 +37,35 @@ export class MisJrvsPage implements OnInit {
   private readonly observerService = inject(ObserverService);
   private readonly router = inject(Router);
 
-  jrvs: JrvConEstado[] = [];
+  readonly jrvs = signal<JrvConEstado[]>([]);
   filteredJrvs: JrvConEstado[] = [];
   activeFilter: FilterTab = 'TODAS';
-  loading = true;
-  error: string | null = null;
+
+  /** The tab strip reports a loose value; narrow it back. */
+  onFilterTabChange(value: string | number | undefined): void {
+    this.applyFilter(String(value ?? 'TODAS') as FilterTab);
+  }
+  readonly loading = signal(true);
+  readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
     this.cargarJrvs();
   }
 
   cargarJrvs(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
     this.observerService.getMisJrvs().subscribe({
       next: (data) => {
-        this.jrvs = data;
+        this.jrvs.set(data);
         this.applyFilter(this.activeFilter);
-        this.loading = false;
+        this.loading.set(false);
       },
       error: (err) => {
-        this.error =
-          'No se pudieron cargar las mesas asignadas. Verifica tu conexión.';
-        this.loading = false;
+        this.error.set(
+          'No se pudieron cargar las mesas asignadas. Verifica tu conexión.',
+        );
+        this.loading.set(false);
         console.error('Error fetching JRVs:', err);
       },
     });
@@ -64,24 +74,24 @@ export class MisJrvsPage implements OnInit {
   applyFilter(filter: FilterTab): void {
     this.activeFilter = filter;
     if (filter === 'PENDIENTES') {
-      this.filteredJrvs = this.jrvs.filter((j) => j.cargosPendientes > 0);
+      this.filteredJrvs = this.jrvs().filter((j) => j.cargosPendientes > 0);
     } else if (filter === 'COMPLETADAS') {
-      this.filteredJrvs = this.jrvs.filter((j) => j.cargosPendientes === 0);
+      this.filteredJrvs = this.jrvs().filter((j) => j.cargosPendientes === 0);
     } else {
-      this.filteredJrvs = [...this.jrvs];
+      this.filteredJrvs = [...this.jrvs()];
     }
   }
 
   get totalJrvs(): number {
-    return this.jrvs.length;
+    return this.jrvs().length;
   }
 
   get totalPendientes(): number {
-    return this.jrvs.filter((j) => j.cargosPendientes > 0).length;
+    return this.jrvs().filter((j) => j.cargosPendientes > 0).length;
   }
 
   get totalCompletadas(): number {
-    return this.jrvs.filter((j) => j.cargosPendientes === 0).length;
+    return this.jrvs().filter((j) => j.cargosPendientes === 0).length;
   }
 
   seleccionarJrv(jrv: JrvConEstado): void {

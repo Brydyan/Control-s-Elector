@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map } from 'rxjs';
+import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type { PagedResponse } from '../../../shared/models/page.model';
 import {
@@ -199,16 +199,30 @@ export class CoordinatorService {
     // T-FE-10 E.2: el backend expone endpoint único que retorna
     // ActaDetalleCompletoDto con `detalles` (votos reales por candidato),
     // `urlEvidencia` (URL prefirmada S3), `motivoDisputa`, etc.
-    // Antes: forkJoin de 5 GETs (getActaById + getCargos + getJrvs +
-    // getCandidatosPorCargo + getHistorial) con hardcode `votos: 0`.
+    // Cruzamos con el catálogo de candidatos del cargo para completar
+    // nombre, partido y lista.
     return this.http
       .get<BackendActaDetalleCompleto>(`${this.baseUrl}/actas/${actaId}`)
-      .pipe(map((raw) => this.toActaDetalleCompleto(raw)));
+      .pipe(
+        switchMap((raw) => {
+          if (!raw.cargoId || !raw.detalles || raw.detalles.length === 0) {
+            return of(this.toActaDetalleCompleto(raw, []));
+          }
+          return this.getCandidatosPorCargo(raw.cargoId).pipe(
+            map((candidatosCargo) =>
+              this.toActaDetalleCompleto(raw, candidatosCargo),
+            ),
+          );
+        }),
+      );
   }
 
   private toActaDetalleCompleto(
     raw: BackendActaDetalleCompleto,
+    candidatosCatalogo: CandidatoResumen[] = [],
   ): ActaDetalleCompleto {
+    const catalogoMap = new Map(candidatosCatalogo.map((c) => [c.id, c]));
+
     const acta: ActaItem = {
       id: raw.id,
       jrvId: raw.jrvId,
@@ -228,14 +242,20 @@ export class CoordinatorService {
       detalles: raw.detalles ?? null,
     };
 
-    const candidatos: CandidatoResumen[] = (raw.detalles ?? []).map((d) => ({
-      id: d.candidatoId,
-      nombre: '',
-      orden: 0,
-      cargoId: raw.cargoId,
-      partidoId: 0,
-      votos: d.votos,
-    }));
+    const candidatos: CandidatoResumen[] = (raw.detalles ?? []).map((d) => {
+      const match = catalogoMap.get(d.candidatoId);
+      return {
+        id: d.candidatoId,
+        nombre: match?.nombre || '',
+        orden: match?.orden || 0,
+        cargoId: raw.cargoId,
+        partidoId: match?.partidoId || 0,
+        partidoNombre: match?.partidoNombre,
+        partidoSiglas: match?.partidoSiglas,
+        partidoNumeroLista: match?.partidoNumeroLista,
+        votos: d.votos,
+      };
+    });
 
     const jrv: JrvResumen | undefined = raw.numeroJrv
       ? { id: raw.jrvId, numero: raw.numeroJrv, parroquia: null }

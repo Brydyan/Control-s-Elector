@@ -1,7 +1,7 @@
 <div class="jrv-cargos-container">
   <div class="page-topbar">
     <app-button variant="ghost" size="sm" (clicked)="volver()">
-      ← Volver a Mis JRVs
+      <i class="pi pi-arrow-left" aria-hidden="true"></i> Volver a Mis JRVs
     </app-button>
   </div>
 
@@ -13,28 +13,31 @@
   </header>
 
   <app-loading-state
-    *ngIf="loading"
-    message="Cargando cargos electorales de la mesa..."
+    *ngIf="loading()"
+    message="Cargando cargos() electorales de la mesa..."
   ></app-loading-state>
 
   <app-error-state
-    *ngIf="!loading && error"
-    title="Error al cargar cargos"
-    [message]="error"
+    *ngIf="!loading() && error()"
+    title="Error al cargar cargos()"
+    [message]="error() ?? undefined"
     [showRetry]="true"
     retryLabel="Reintentar"
     (retry)="cargarCargos()"
   ></app-error-state>
 
   <app-empty-state
-    *ngIf="!loading && !error && cargos.length === 0"
-    title="No hay cargos configurados"
+    *ngIf="!loading() && !error() && cargos().length === 0"
+    title="No hay cargos() configurados"
     description="Esta JRV no tiene dignidades electorales activas registradas."
   ></app-empty-state>
 
-  <div class="cargos-list" *ngIf="!loading && !error && cargos.length > 0">
+  <div
+    class="cargos-list"
+    *ngIf="!loading() && !error() && cargos().length > 0"
+  >
     <app-card
-      *ngFor="let cargo of cargos"
+      *ngFor="let cargo of cargos()"
       [elevated]="true"
       class="cargo-item-card"
     >

@@ -1,0 +1,50 @@
+# =============================================================================
+# Liquibase Master Changelog — Control Electoral
+# =============================================================================
+# NOTA: El orden de los changesets es CRÍTICO.
+# Un changeset NO puede referenciar una tabla o columna creada en un changelog
+# posterior. Por ejemplo, 002-rbac-seed.sql hace JOIN a la tabla "rol" creada
+# en 001-06-rol. Por esto, 001 DEBE ejecutarse antes de 002.
+# Ver: openspec/changes/back/2026-09-07-fix-liquibase-rbac-order/
+# =============================================================================
+
+databaseChangeLog:
+  - include: { file: database/changelog/001-initial-schema.sql }
+  - include: { file: database/changelog/002-rbac-seed.sql }
+  - include: { file: database/changelog/003-menus.sql }
+  - include: { file: database/changelog/004-public-ids.sql }
+  - include: { file: database/changelog/005-fks.sql }
+  - include: { file: database/changelog/006-geografia.sql }
+  - include: { file: database/changelog/007-usuario-nombre-apellido.sql }
+  - include: { file: database/changelog/008-configuracion.sql }
+  - include: { file: database/changelog/009-acta-observer-permisos.sql }
+  - include: { file: database/changelog/010-tablas-jpa.sql }
+  - include: { file: database/changelog/011-rls.sql }
+  - include: { file: database/changelog/012-acta-anular-permiso.sql }
+  - include: { file: database/changelog/013-t-be-14-16.sql }
+  - include: { file: database/changelog/014-menus-seed-aligned.sql }
+  - include: { file: database/changelog/016-drop-refresh-token.sql }
+  - include: { file: database/changelog/017-complete-data-seed.sql }
+  - include: { file: database/changelog/018-notification-seed.sql }
+  - include: { file: database/changelog/019-drop-acta-storage-url.sql }
+  - include: { file: database/changelog/020-evidencia-observaciones.sql }
+  - include: { file: database/changelog/021-permiso-evidencia-update.sql }
+  - include: { file: database/changelog/023-create-incidencia-jrv.sql }
+  - include: { file: database/changelog/024-widen-audit-log-accion.sql }
+  # El seed de datos de referencia va al FINAL, no por número de archivo sino por
+  # orden de ejecución. Escribes para un punto del esquema en el que aun existia
+  # `acta.storage_url` (columna que dropea 019) y sobre `usuario.public_id`, que
+  # 004 dejo NOT NULL sin default. Correlo antes de un 016/019 te rompe las bases
+  # ya migradas; correrlo al final funciona igual en bases nuevas y existentes.
+  - include: { file: database/changelog/025-00-usuario-public-id-default.sql }
+  - include: { file: database/changelog/025-data-seed.sql }
+  # El admin inicial va al final: necesita `rol` con nombre MASTER, que crea el
+  # seed de RBAC. Lleva `context: seed` explicito para poder excluirlo con
+  # QUARKUS_LIQUIDASE_CONTEXTS vacio en staging/produccion. Ver el aviso de
+  # seguridad en el archivo.
+  - include: { file: database/changelog/026-admin-inicial.sql }
+  # Repara el hash de las cuentas de referencia del 025, que se creo con un
+  # placeholder de 61 caracteres en vez de un BCrypt de 60 y por lo tanto no
+  # dejaba iniciar sesion. Va aparte porque un changeset corre una sola vez:
+  # editar el 025 arregla bases nuevas, no las ya migradas.
+  - include: { file: database/changelog/027-repara-hash-cuentas-referencia.sql }

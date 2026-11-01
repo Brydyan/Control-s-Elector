@@ -108,57 +108,6 @@ if (
   });
 }
 
-import { addIcons } from 'ionicons';
-import {
-  alertCircleOutline,
-  analyticsOutline,
-  arrowBackOutline,
-  cameraOutline,
-  checkmarkCircleOutline,
-  checkmarkDoneOutline,
-  closeCircle,
-  closeOutline,
-  createOutline,
-  documentTextOutline,
-  gridOutline,
-  homeOutline,
-  logOutOutline,
-  menuOutline,
-  notificationsOutline,
-  peopleOutline,
-  searchOutline,
-  settingsOutline,
-} from 'ionicons/icons';
-
-// Guard: addIcons accesses Vite module runner, which closes after tests complete.
-// Wrap in try-catch to prevent unhandled rejection during teardown.
-try {
-  addIcons({
-    'menu-outline': menuOutline,
-    'close-outline': closeOutline,
-    'home-outline': homeOutline,
-    'document-text-outline': documentTextOutline,
-    'grid-outline': gridOutline,
-    'checkmark-circle-outline': checkmarkCircleOutline,
-    'checkmark-done-outline': checkmarkDoneOutline,
-    'alert-circle-outline': alertCircleOutline,
-    'camera-outline': cameraOutline,
-    'settings-outline': settingsOutline,
-    'people-outline': peopleOutline,
-    'analytics-outline': analyticsOutline,
-    'log-out-outline': logOutOutline,
-    'notifications-outline': notificationsOutline,
-    'search-outline': searchOutline,
-    'close-circle': closeCircle,
-    'create-outline': createOutline,
-    'arrow-back-outline': arrowBackOutline,
-  });
-} catch (e) {
-  // Ionic module registration during teardown may fail after Vite runner closes.
-  // Non-fatal in test environment; only affects icon display in browser tests.
-  console.warn('Icon registration error (test environment):', e);
-}
-
 getTestBed().initTestEnvironment(
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting(),

@@ -8,12 +8,12 @@ Sistema de Control Electoral — Docker en este proyecto se usa **solo para los 
 |------|-----------|----------------------|
 | PostgreSQL | Docker (`compose.yaml`) | Supabase (managed) |
 | RustFS / S3 | Docker (`compose.yaml`) | Supabase Object Storage |
-| Backend Spring Boot | `mvn spring-boot:run` en el host | Docker (imagen JAR ejecutable, JVM 21) |
+| Backend Quarkus | `mvn quarkus:dev` en el host | Docker (imagen `quarkus-app` sobre JRE 21) |
 | Frontend Angular | `ng serve` en el host | Vercel (build de Node 20) |
 
 **¿Por qué?** Buildar GraalVM Native Image consume ~3-4 GB heap durante AOT, lo cual satura Docker Desktop con el límite por defecto. Correr JVM y dev server en el host da hot-reload instantáneo y deja RAM del VM Docker libre para las DBs.
 
-> **Para prod (Railway)**: existe `backend/electoral-api/Dockerfile` que arma una imagen con JRE Alpine + JAR ejecutable. Para GraalVM nativo en prod, hay un approach documentado pero no aplicado por ahora (su RAM de build lo permite).
+> **Para prod (Railway)**: existe `backend/electoral-api-quarkus/Dockerfile` que arma una imagen con JRE Alpine + JAR ejecutable. Para GraalVM nativo en prod, hay un approach documentado pero no aplicado por ahora (su RAM de build lo permite).
 
 ---
 
@@ -24,7 +24,7 @@ Sistema de Control Electoral — Docker en este proyecto se usa **solo para los 
 | Software | Versión mínima | Notas |
 |----------|----------------|-------|
 | Java JDK | 21 | Temurin (host) |
-| Maven | vía `mvnw` | Wrapper incluido en el repo |
+| Maven | vía `mvn` | Wrapper incluido en el repo |
 | Docker | 24.0+ | [Install Docker](https://docs.docker.com/get-docker/) |
 | Docker Compose | v2.20+ | Incluido en Docker Desktop |
 | Node | 20.x | Solo si vas a tocar el frontend |
@@ -66,10 +66,10 @@ docker compose --profile dev ps
 ### 2.2 Levantar el backend (en una terminal aparte)
 
 ```bash
-cd backend/electoral-api
+cd backend/electoral-api-quarkus
 
-# Dev con hot-reload via spring-boot:run
-mvn spring-boot:run
+# Dev con hot-reload via quarkus:dev
+mvn quarkus:dev
 
 # Alternativa: package + ejecutar el JAR
 mvn clean package -DskipTests
@@ -93,7 +93,7 @@ El frontend queda disponible en **http://localhost:4200**.
 | Servicio | URL | Credenciales |
 |----------|-----|--------------|
 | Frontend (Angular) | http://localhost:4200 | — |
-| API REST Spring Boot | http://localhost:8081 | — |
+| API REST Quarkus | http://localhost:8081 | — |
 | Health Check | http://localhost:8081/actuator/health | — |
 | RustFS Console | http://localhost:9001 | rustfsadmin / rustfsadmin123 |
 | RustFS API | http://localhost:9000 | rustfsadmin / rustfsadmin123 |
@@ -129,9 +129,9 @@ Ver `.env.example` para la lista completa. Defaults seguros para dev.
 | `APP_ENV` | dev | Sufijo de contenedores/volúmenes |
 | `POSTGRES_MEM_LIMIT` | 512M | Mem limit del container Postgres |
 
-### Para el backend Spring Boot (cuando corre con `mvn spring-boot:run`)
+### Para el backend Quarkus (cuando corre con `mvn quarkus:dev`)
 
-Las variables se toman de `backend/electoral-api/src/main/resources/application.properties` o se sobreescriben con env vars:
+Las variables se toman de `backend/electoral-api-quarkus/src/main/resources/application.properties` o se sobreescriben con env vars:
 
 | Variable | Default | Descripción |
 |----------|---------|-------------|
@@ -163,12 +163,12 @@ docker compose --profile dev ps  # debería mostrar "healthy"
 
 ### Backend no arranca: "OutOfMemoryError"
 
-No confundir con el OOM de GraalVM Native Image (ya resuelto corriendo JVM directo). Si pasa con `mvn spring-boot:run`:
+No confundir con el OOM de GraalVM Native Image (ya resuelto corriendo JVM directo). Si pasa con `mvn quarkus:dev`:
 
 ```bash
 # Reducir heap de la JVM
 export MAVEN_OPTS="-Xmx1g"
-mvn spring-boot:run
+mvn quarkus:dev
 ```
 
 ### PostgreSQL no levanta
@@ -210,7 +210,7 @@ docker compose --profile dev up -d
 docker compose --profile dev up -d
 
 # Terminal 2: Backend (hot-reload en cambios Java)
-cd backend/electoral-api && mvn spring-boot:run
+cd backend/electoral-api-quarkus && mvn quarkus:dev
 
 # Terminal 3: Frontend (hot-reload en cambios Angular)
 cd frontend/app && ng serve
@@ -231,7 +231,7 @@ Con este setup los cambios Java y TypeScript se reflejan al instante (no hay reb
 ### Backend a imagen Docker
 
 ```bash
-cd backend/electoral-api
+cd backend/electoral-api-quarkus
 docker build -t electoral-api:latest .
 ```
 
@@ -268,7 +268,7 @@ docker exec electoral-postgres pg_dump -U electoral_user electoral_db > backup.s
 # Restaurar PostgreSQL
 cat backup.sql | docker exec -i electoral-postgres psql -U electoral_user electoral_db
 
-# Ver logs del backend (cuando corre con mvn spring-boot:run en el host)
+# Ver logs del backend (cuando corre con mvn quarkus:dev en el host)
 # están en la terminal donde lo levantaste
 ```
 
@@ -276,7 +276,7 @@ cat backup.sql | docker exec -i electoral-postgres psql -U electoral_user electo
 
 ## 8. Recursos adicionales
 
-- [Spring Boot Docker](https://spring.io/guides/gs/spring-boot-docker/)
+- [Quarkus container images](https://quarkus.io/guides/container-images)
 - [Eclipse Temurin JRE](https://hub.docker.com/_/eclipse-temurin)
 - [Docker Compose docs](https://docs.docker.com/compose/)
 - [RustFS](https://github.com/rustfs/rustfs)

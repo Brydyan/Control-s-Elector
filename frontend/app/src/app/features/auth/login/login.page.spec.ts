@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -41,6 +41,7 @@ describe('LoginPage (T-FE-05)', () => {
   });
 
   let component: LoginPage;
+  let fixture: ComponentFixture<LoginPage>;
   let authService: { login: ReturnType<typeof vi.fn> };
   let router: { navigateByUrl: ReturnType<typeof vi.fn> };
 
@@ -60,7 +61,7 @@ describe('LoginPage (T-FE-05)', () => {
       ],
     });
 
-    const fixture = TestBed.createComponent(LoginPage);
+    fixture = TestBed.createComponent(LoginPage);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
@@ -179,5 +180,28 @@ describe('LoginPage (T-FE-05)', () => {
 
     expect(authService.login).not.toHaveBeenCalled();
     expect(router.navigateByUrl).not.toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // S11: el error se sigue viendo. La clase `.form-error` del stylesheet
+  // estaba muerta (ningún template la llevaba) y se retiró; el mensaje lo
+  // pinta `p-message`.
+  // -------------------------------------------------------------------------
+
+  it('S11: el error del login se muestra en el mensaje', () => {
+    const err = new HttpErrorResponse({
+      status: 401,
+      statusText: 'Unauthorized',
+      error: { message: 'Credenciales inválidas' },
+    });
+    authService.login.mockReturnValue(throwError(() => err));
+    component.form.setValue({ email: 'bad@test.local', password: 'wrong1234' });
+
+    component.submit();
+    fixture.detectChanges();
+
+    const mensaje = fixture.nativeElement.querySelector('p-message');
+    expect(mensaje).toBeTruthy();
+    expect(mensaje.textContent).toContain('Credenciales inválidas');
   });
 });

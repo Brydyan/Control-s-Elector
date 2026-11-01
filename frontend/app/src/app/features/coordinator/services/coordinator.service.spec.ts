@@ -153,6 +153,8 @@ describe('CoordinatorService', () => {
         0,
       );
       expect(votosPorCandidato).toBe(95);
+      expect(detalle.candidatos[0].nombre).toBe('Candidato A');
+      expect(detalle.candidatos[0].partidoSiglas).toBe('PA');
     });
 
     const actaReq = httpTesting.expectOne(
@@ -176,6 +178,22 @@ describe('CoordinatorService', () => {
       ],
       urlEvidencia: 'https://s3.example.com/acta-7.webp',
     });
+
+    const candReq = httpTesting.expectOne(
+      `${environment.apiUrl}/configuracion/candidatos?cargoId=1`,
+    );
+    candReq.flush([
+      { id: 100, nombre: 'Candidato A', orden: 1, cargoId: 1, partidoId: 10 },
+      { id: 101, nombre: 'Candidato B', orden: 2, cargoId: 1, partidoId: 20 },
+    ]);
+
+    const partidosReq = httpTesting.expectOne(
+      `${environment.apiUrl}/configuracion/partidos`,
+    );
+    partidosReq.flush([
+      { id: 10, nombre: 'Partido A', siglas: 'PA', numeroLista: 1 },
+      { id: 20, nombre: 'Partido B', siglas: 'PB', numeroLista: 2 },
+    ]);
   });
 
   /**
