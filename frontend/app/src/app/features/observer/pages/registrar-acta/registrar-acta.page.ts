@@ -26,9 +26,9 @@ import {
   ActaDetalleItem,
   ActaRequest,
   CandidatoInfo,
-} from '../../models/observer.model';
-import { ActaStorageService } from '../../services/acta-storage.service';
-import { ObserverService } from '../../services/observer.service';
+} from '../../domain/models/observer.model';
+import { ActaStorageService } from '../../data/acta-storage.service';
+import { ObserverApi } from '../../data/observer.api';
 
 type Step = 'VOTOS' | 'IMAGEN' | 'REVISION';
 
@@ -111,7 +111,7 @@ function escribirCantidad(input: HTMLInputElement, valor: number): void {
 export class RegistrarActaPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly observerService = inject(ObserverService);
+  private readonly observerService = inject(ObserverApi);
   private readonly storageService = inject(ActaStorageService);
   private readonly imageCompression = inject(ImageCompressionService);
   private readonly offlineStorage = inject(OfflineStorageService);

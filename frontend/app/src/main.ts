@@ -13,7 +13,7 @@ import { providePrimeNG } from 'primeng/config';
 
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
-import { authInterceptor } from './app/core/auth/auth.interceptor';
+import { authInterceptor } from './app/core/interceptors/auth.interceptor';
 import { SyncService } from './app/core/offline/sync.service';
 import { primengTheme } from './theme/primeng-theme';
 import { environment } from './environments/environment';

@@ -15,12 +15,12 @@ import {
   ErrorStateComponent,
   SkeletonComponent,
 } from '../../../../shared/ui';
-import { CatalogoService } from '../../services/catalogo.service';
+import { CatalogoApi } from '../../data/catalogo.api';
 import {
   CargoRequestDto,
   CargoResponseDto,
   NivelCargo,
-} from '../../models/catalogo.model';
+} from '../../domain/models/catalogo.model';
 
 @Component({
   selector: 'app-master-cargos',
@@ -44,7 +44,7 @@ import {
   styleUrls: ['./master-cargos.page.scss'],
 })
 export class MasterCargosPage implements OnInit {
-  private readonly service = inject(CatalogoService);
+  private readonly service = inject(CatalogoApi);
 
   readonly cargos = signal<CargoResponseDto[]>([]);
   readonly loading = signal(true);

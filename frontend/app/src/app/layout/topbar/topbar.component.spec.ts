@@ -3,7 +3,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { providePrimeNG } from 'primeng/config';
 import { afterEach } from 'vitest';
 import { TopbarComponent } from './topbar.component';
-import { AuthStore } from '../../core/auth/auth.store';
+import { AuthStore } from '../../features/auth/services/auth.store';
 import { LayoutService } from '../layout.service';
 import { NetworkStatusService } from '../../core/network/network-status.service';
 import { ThemeService } from '../../../theme/theme.service';

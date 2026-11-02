@@ -40,10 +40,10 @@ const SOURCE = {
     'src/app/features/coordinator/pages/acta-detalle/acta-detalle.page.scss',
   ),
   adminUsuarios: read(
-    'src/app/features/admin/usuarios/admin-usuarios.page.scss',
+    'src/app/features/admin/pages/usuarios/admin-usuarios.page.scss',
   ),
   adminSesiones: read(
-    'src/app/features/admin/sesiones/admin-sesiones.page.scss',
+    'src/app/features/admin/pages/sesiones/admin-sesiones.page.scss',
   ),
 };
 

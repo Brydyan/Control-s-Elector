@@ -3,13 +3,13 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, of } from 'rxjs';
 import { vi } from 'vitest';
 import { RegistrarActaPage } from './registrar-acta.page';
-import { ObserverService } from '../../services/observer.service';
+import { ObserverApi } from '../../data/observer.api';
 import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
 
 describe('RegistrarActaPage', () => {
   let component: RegistrarActaPage;
   let fixture: ComponentFixture<RegistrarActaPage>;
-  let observerServiceSpy: jasmine.SpyObj<ObserverService>;
+  let observerServiceSpy: jasmine.SpyObj<ObserverApi>;
   let routerSpy: jasmine.SpyObj<Router>;
   let offlineStorageSpy: jasmine.SpyObj<OfflineStorageService>;
 
@@ -64,7 +64,7 @@ describe('RegistrarActaPage', () => {
     await TestBed.configureTestingModule({
       imports: [RegistrarActaPage],
       providers: [
-        { provide: ObserverService, useValue: observerServiceSpy },
+        { provide: ObserverApi, useValue: observerServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: OfflineStorageService, useValue: offlineStorageSpy },
         {
