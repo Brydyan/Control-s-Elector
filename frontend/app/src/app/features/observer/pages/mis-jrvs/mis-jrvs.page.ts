@@ -10,8 +10,8 @@ import {
   ErrorStateComponent,
   LoadingStateComponent,
 } from '../../../../shared/ui';
-import { JrvConEstado } from '../../models/observer.model';
-import { ObserverService } from '../../services/observer.service';
+import { JrvConEstado } from '../../domain/models/observer.model';
+import { ObserverApi } from '../../data/observer.api';
 
 type FilterTab = 'TODAS' | 'PENDIENTES' | 'COMPLETADAS';
 
@@ -34,7 +34,7 @@ type FilterTab = 'TODAS' | 'PENDIENTES' | 'COMPLETADAS';
   styleUrls: ['./mis-jrvs.page.scss'],
 })
 export class MisJrvsPage implements OnInit {
-  private readonly observerService = inject(ObserverService);
+  private readonly observerService = inject(ObserverApi);
   private readonly router = inject(Router);
 
   readonly jrvs = signal<JrvConEstado[]>([]);

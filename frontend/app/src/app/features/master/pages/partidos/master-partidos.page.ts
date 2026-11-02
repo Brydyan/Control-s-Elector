@@ -14,11 +14,11 @@ import {
   ErrorStateComponent,
   SkeletonComponent,
 } from '../../../../shared/ui';
-import { CatalogoService } from '../../services/catalogo.service';
+import { CatalogoApi } from '../../data/catalogo.api';
 import {
   PartidoRequestDto,
   PartidoResponseDto,
-} from '../../models/catalogo.model';
+} from '../../domain/models/catalogo.model';
 
 @Component({
   selector: 'app-master-partidos',
@@ -41,7 +41,7 @@ import {
   styleUrls: ['./master-partidos.page.scss'],
 })
 export class MasterPartidosPage implements OnInit {
-  private readonly service = inject(CatalogoService);
+  private readonly service = inject(CatalogoApi);
 
   readonly partidos = signal<PartidoResponseDto[]>([]);
   readonly loading = signal(true);

@@ -4,7 +4,7 @@ import { Dialog } from 'primeng/dialog';
 import { InputOtp } from 'primeng/inputotp';
 import { Message } from 'primeng/message';
 import { ButtonComponent } from '../../ui/button/button.component';
-import { PinAuthService } from '../../../core/auth/pin-auth.service';
+import { PinAuthService } from '../../../features/auth/services/pin-auth.service';
 
 /**
  * Local PIN unlock dialog (T-FE-09, A.2, design D1).

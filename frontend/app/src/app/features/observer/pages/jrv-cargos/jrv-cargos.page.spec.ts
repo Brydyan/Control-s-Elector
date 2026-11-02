@@ -2,12 +2,12 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { JrvCargosPage } from './jrv-cargos.page';
-import { ObserverService } from '../../services/observer.service';
+import { ObserverApi } from '../../data/observer.api';
 
 describe('JrvCargosPage', () => {
   let component: JrvCargosPage;
   let fixture: ComponentFixture<JrvCargosPage>;
-  let observerServiceSpy: jasmine.SpyObj<ObserverService>;
+  let observerServiceSpy: jasmine.SpyObj<ObserverApi>;
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
@@ -32,7 +32,7 @@ describe('JrvCargosPage', () => {
     await TestBed.configureTestingModule({
       imports: [JrvCargosPage],
       providers: [
-        { provide: ObserverService, useValue: observerServiceSpy },
+        { provide: ObserverApi, useValue: observerServiceSpy },
         { provide: Router, useValue: routerSpy },
         {
           provide: ActivatedRoute,

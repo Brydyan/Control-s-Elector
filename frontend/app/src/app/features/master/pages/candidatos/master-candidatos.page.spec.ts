@@ -2,12 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { MasterCandidatosPage } from './master-candidatos.page';
-import { CatalogoService } from '../../services/catalogo.service';
+import { CatalogoApi } from '../../data/catalogo.api';
 import {
   CandidatoResponseDto,
   CargoResponseDto,
   PartidoResponseDto,
-} from '../../models/catalogo.model';
+} from '../../domain/models/catalogo.model';
 
 describe('MasterCandidatosPage', () => {
   let component: MasterCandidatosPage;
@@ -62,7 +62,7 @@ describe('MasterCandidatosPage', () => {
     TestBed.configureTestingModule({
       providers: [
         MasterCandidatosPage,
-        { provide: CatalogoService, useValue: catalogoServiceMock },
+        { provide: CatalogoApi, useValue: catalogoServiceMock },
       ],
     });
 

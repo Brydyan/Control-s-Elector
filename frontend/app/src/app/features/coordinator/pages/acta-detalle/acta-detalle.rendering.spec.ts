@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { Subject } from 'rxjs';
 import { providePrimeNG } from 'primeng/config';
 import { ActaDetalleCompleto } from '../../models/coordinator.model';
-import { CoordinatorService } from '../../services/coordinator.service';
+import { CoordinatorApi } from '../../data/coordinator.api';
 import { ActaDetallePage } from './acta-detalle.page';
 
 /**
@@ -54,7 +54,7 @@ describe('ActaDetallePage (rendering)', () => {
       imports: [ActaDetallePage],
       providers: [
         {
-          provide: CoordinatorService,
+          provide: CoordinatorApi,
           useValue: {
             getActaDetalleCompleto: vi
               .fn()
