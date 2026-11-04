@@ -3,13 +3,13 @@ import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActaDetalleCompleto } from '../../models/coordinator.model';
-import { CoordinatorService } from '../../services/coordinator.service';
+import { CoordinatorApi } from '../../data/coordinator.api';
 import { ActaDetallePage } from './acta-detalle.page';
 
 describe('ActaDetallePage', () => {
   let component: ActaDetallePage;
   let fixture: ComponentFixture<ActaDetallePage>;
-  let coordinatorServiceMock: Partial<CoordinatorService>;
+  let coordinatorServiceMock: Partial<CoordinatorApi>;
   let routerMock: Partial<Router>;
 
   const mockDetalle: ActaDetalleCompleto = {
@@ -86,7 +86,7 @@ describe('ActaDetallePage', () => {
     await TestBed.configureTestingModule({
       imports: [ActaDetallePage],
       providers: [
-        { provide: CoordinatorService, useValue: coordinatorServiceMock },
+        { provide: CoordinatorApi, useValue: coordinatorServiceMock },
         { provide: Router, useValue: routerMock },
         {
           provide: ActivatedRoute,

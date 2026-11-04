@@ -48,6 +48,10 @@
   }
 }
 
+.dispute-alert {
+  margin-bottom: var(--space-4);
+}
+
 /*
  * The stepper of the page is PrimeNG's `p-steps` (see the template). The
  * hand-rolled step, number and label that used to live here were never

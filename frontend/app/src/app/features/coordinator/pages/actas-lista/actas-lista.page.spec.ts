@@ -7,9 +7,9 @@ import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActaItem, CargoResumen } from '../../models/coordinator.model';
 import type { PagedResponse } from '../../../../shared/models/page.model';
-import { CoordinatorService } from '../../services/coordinator.service';
-import { AuthStore } from '../../../../core/auth/auth.store';
-import type { Role } from '../../../../core/auth/domain/user.model';
+import { CoordinatorApi } from '../../data/coordinator.api';
+import { AuthStore } from '../../../auth/services/auth.store';
+import type { Role } from '../../../auth/domain/models/user.model';
 import { ActasListaPage } from './actas-lista.page';
 
 /**
@@ -32,7 +32,7 @@ function loginAs(role: Role): void {
 describe('ActasListaPage', () => {
   let component: ActasListaPage;
   let fixture: ComponentFixture<ActasListaPage>;
-  let coordinatorServiceMock: Partial<CoordinatorService>;
+  let coordinatorServiceMock: Partial<CoordinatorApi>;
   let routerMock: Partial<Router>;
 
   const mockActas: ActaItem[] = [
@@ -86,7 +86,7 @@ describe('ActasListaPage', () => {
     await TestBed.configureTestingModule({
       imports: [ActasListaPage],
       providers: [
-        { provide: CoordinatorService, useValue: coordinatorServiceMock },
+        { provide: CoordinatorApi, useValue: coordinatorServiceMock },
         { provide: Router, useValue: routerMock },
       ],
     }).compileComponents();
@@ -251,7 +251,7 @@ describe('ActasListaPage', () => {
 describe('ActasListaPage (rendered contract)', () => {
   let component: ActasListaPage;
   let fixture: ComponentFixture<ActasListaPage>;
-  let coordinatorServiceMock: Partial<CoordinatorService>;
+  let coordinatorServiceMock: Partial<CoordinatorApi>;
 
   const actaAprobada: ActaItem = {
     id: 3,
@@ -285,7 +285,7 @@ describe('ActasListaPage (rendered contract)', () => {
     await TestBed.configureTestingModule({
       imports: [ActasListaPage],
       providers: [
-        { provide: CoordinatorService, useValue: coordinatorServiceMock },
+        { provide: CoordinatorApi, useValue: coordinatorServiceMock },
         { provide: Router, useValue: { navigate: vi.fn() } },
         { provide: LOCALE_ID, useValue: 'es' },
       ],
@@ -305,16 +305,16 @@ describe('ActasListaPage (rendered contract)', () => {
     ).map((button) => (button.textContent ?? '').trim());
   }
 
-  it('muestra el botón Anular solo con una sesión MASTER', () => {
+  it('muestra la acción Anular solo con una sesión MASTER', () => {
     loginAs('MASTER');
     fixture.detectChanges();
-
-    expect(buttonLabels()).toContain('Anular');
+    const accionesMaster = component.obtenerAccionesActa(actaAprobada);
+    expect(accionesMaster.some((item) => item.label === 'Anular')).toBe(true);
 
     loginAs('COORDINATOR');
     fixture.detectChanges();
-
-    expect(buttonLabels()).not.toContain('Anular');
+    const accionesCoord = component.obtenerAccionesActa(actaAprobada);
+    expect(accionesCoord.some((item) => item.label === 'Anular')).toBe(false);
   });
 
   it('muestra las fechas en formato español dd/MM/yyyy HH:mm', () => {

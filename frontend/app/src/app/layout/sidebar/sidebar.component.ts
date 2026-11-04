@@ -14,8 +14,8 @@ import {
 } from '@angular/router';
 import { filter, Subject, takeUntil } from 'rxjs';
 
-import { AuthService } from '../../core/auth/services/auth.service';
-import { AuthStore } from '../../core/auth/auth.store';
+import { AuthService } from '../../features/auth/services/auth.service';
+import { AuthStore } from '../../features/auth/services/auth.store';
 import { MenuNode } from '../../core/menu/menu.model';
 import { MenuService } from '../../core/menu/menu.service';
 import { toPrimeIcon } from '../../shared/ui/icon-map';

@@ -24,6 +24,8 @@ export class ButtonComponent {
   @Input() disabled = false;
   @Input() loading = false;
   @Input() block = false;
+  @Input() icon?: string;
+  @Input() rounded = false;
 
   @Output() clicked = new EventEmitter<MouseEvent>();
 

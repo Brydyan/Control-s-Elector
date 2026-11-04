@@ -1,12 +1,12 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guard';
+import { authGuard, guestGuard, roleGuard } from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
     path: 'login',
     canActivate: [guestGuard],
     loadComponent: () =>
-      import('./features/auth/login/login.page').then((m) => m.LoginPage),
+      import('./features/auth/pages/login/login.page').then((m) => m.LoginPage),
   },
   {
     path: '',
@@ -19,13 +19,12 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('./features/dashboard/dashboard.page').then(
+          import('./features/dashboard/pages/dashboard/dashboard.page').then(
             (m) => m.DashboardPage,
           ),
         data: {
           title: 'Resumen General',
           subtitle: 'Elecciones Seccionales 2027 · Provincia Santa Elena',
-          notifications: 3,
         },
       },
       {
@@ -135,7 +134,7 @@ export const routes: Routes = [
         path: 'admin/usuarios',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/admin/usuarios/admin-usuarios.page').then(
+          import('./features/admin/pages/usuarios/admin-usuarios.page').then(
             (m) => m.AdminUsuariosPage,
           ),
         data: {
@@ -150,7 +149,7 @@ export const routes: Routes = [
         path: 'admin/sesiones',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/admin/sesiones/admin-sesiones.page').then(
+          import('./features/admin/pages/sesiones/admin-sesiones.page').then(
             (m) => m.AdminSesionesPage,
           ),
         data: {
@@ -165,8 +164,8 @@ export const routes: Routes = [
         path: 'master/cargos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/master/pages/cargos/master-cargos.page').then(
+            (m) => m.MasterCargosPage,
           ),
         data: {
           roles: ['MASTER'],
@@ -180,8 +179,8 @@ export const routes: Routes = [
         path: 'master/partidos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/master/pages/partidos/master-partidos.page').then(
+            (m) => m.MasterPartidosPage,
           ),
         data: {
           roles: ['MASTER'],
@@ -195,8 +194,8 @@ export const routes: Routes = [
         path: 'master/candidatos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/master/pages/candidatos/master-candidatos.page').then(
+            (m) => m.MasterCandidatosPage,
           ),
         data: {
           roles: ['MASTER'],
