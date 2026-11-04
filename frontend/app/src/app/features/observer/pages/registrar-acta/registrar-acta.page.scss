@@ -443,3 +443,38 @@
     font-size: var(--font-size-sm);
   }
 }
+
+/*
+ * Cota de sufragantes (T-FE-13 B.1/B.3).
+ * -----------------------------------
+ *
+ * Dos banners con la misma forma y distinto color porque son dos hechos
+ * distintos: superar el padrón estándar (350) es una mesa especial y el
+ * veedor sólo tiene que confirmarlo; superar el tope duro (500) es un error
+ * de tipeo y el acta no se puede registrar.
+ *
+ * El color no lo decide la plantilla sino el getter `nivelAlertaSufragantes`:
+ * una sola fuente de verdad para el nivel, que es la que también decide si
+ * el banner se anuncia con `role="alert"` o con `role="status"`.
+ */
+.cota-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+
+  &--warning {
+    background-color: var(--color-status-warning-bg);
+    border: 1px solid var(--color-status-warning-border);
+    color: var(--color-status-warning);
+  }
+
+  &--error {
+    background-color: var(--color-status-danger-bg);
+    border: 1px solid var(--color-status-danger-border);
+    color: var(--color-status-danger);
+  }
+}

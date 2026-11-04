@@ -1,4 +1,4 @@
-<div class="registrar-acta-container">
+<div class="registrar-acta-container" data-testid="registrar-acta">
   <div class="page-topbar">
     <app-button
       variant="ghost"
@@ -106,11 +106,97 @@
     [message]="error() ?? undefined"
   ></app-error-state>
 
-  <!-- ==================== PASO 1: VOTOS ==================== -->
-  <div
-    class="step-content"
-    *ngIf="!loading() && !submitSuccess() && currentStep() === 'VOTOS'"
-  >
+  <!--
+    ==================== PASO 1: FOTO PRIMERO ====================
+    T-FE-13 D1: la evidencia se captura antes de escribir un solo voto.
+  -->
+  @if (!loading() && !submitSuccess() && currentStep() === 'IMAGEN') {
+  <div class="step-content" data-testid="step-imagen">
+    <app-card [elevated]="true" headerTitle="Captura de Acta Física">
+      <div class="image-upload-zone">
+        @if (imagePreviewUrl) {
+        <div class="image-preview">
+          <img
+            [src]="imagePreviewUrl"
+            alt="Previsualización de acta física"
+            class="preview-img"
+          />
+        </div>
+        }
+
+        <div class="upload-controls">
+          <input
+            id="inputFotoActa"
+            data-testid="input-foto-acta"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            #fileInput
+            (change)="onFileSelected($event)"
+            style="display: none"
+          />
+          <app-button
+            variant="secondary"
+            size="md"
+            data-testid="btn-capturar-foto"
+            (clicked)="abrirCamara(fileInput)"
+          >
+            <i class="pi pi-camera" aria-hidden="true"></i>
+            {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o subir
+            archivo' }}
+          </app-button>
+          <p class="upload-tip">
+            Asegúrate de que los números y firmas sean claramente legibles.
+          </p>
+          @if (captureCancelled) {
+          <p class="form-hint" data-testid="aviso-captura-cancelada">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            No se seleccionó ninguna fotografía. Puedes tomarla de nuevo o
+            continuar con "Digitar votos primero".
+          </p>
+          }
+        </div>
+      </div>
+    </app-card>
+
+    <div class="step-actions step-actions--between">
+      <!--
+        Excepción documentada en D1: sin cámara (o con la cámara ocupada) el
+        veedor digita los votos primero. Es un enlace de texto, no un botón
+        principal: la vía normal es la foto.
+      -->
+      <app-button
+        variant="ghost"
+        size="md"
+        data-testid="btn-digitar-votos-primero"
+        (clicked)="digitarVotosPrimero()"
+      >
+        <i class="pi pi-pencil" aria-hidden="true"></i>
+        Digitar votos primero
+      </app-button>
+
+      <!--
+        La vía principal sólo aparece cuando la foto ya está capturada: es
+        el punto del flujo "Foto Primero".
+      -->
+      @if (selectedImageFile) {
+      <app-button
+        variant="primary"
+        size="lg"
+        data-testid="btn-continuar-votos"
+        (clicked)="continuarAVotos()"
+      >
+        Continuar a Digitación de Votos
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
+      </app-button>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- ==================== PASO 2: VOTOS ==================== -->
+  @if (!loading() && !submitSuccess() && currentStep() === 'VOTOS') {
+  <div class="step-content" data-testid="step-votos">
     <app-card [elevated]="true" headerTitle="Totales de Mesa">
       <div class="form-grid">
         <div class="form-group">
@@ -119,6 +205,7 @@
           >
           <input
             id="totalSufragantes"
+            data-testid="input-padron"
             pInputText
             type="number"
             inputmode="numeric"
@@ -128,11 +215,38 @@
             [value]="totalSufragantes"
             (input)="onTotalSufragantesChange($event)"
             aria-describedby="explicacion-checksum"
+            [attr.aria-invalid]="
+              excedeTopeSufragantes ? 'true' : null
+            "
             placeholder="0"
           />
         </div>
       </div>
     </app-card>
+
+    <!--
+      Cota de sufragantes (T-FE-13 B.1/B.3): dos niveles, dos hechos.
+      - warning (>350): mesa especial, el veedor confirma.
+      - error (>500): error de tipeo, el acta no se puede registrar.
+    -->
+    @if (alertaSufragantes; as aviso) {
+    <div
+      class="cota-banner"
+      data-testid="cota-banner"
+      [class.cota-banner--warning]="nivelAlertaSufragantes === 'warning'"
+      [class.cota-banner--error]="nivelAlertaSufragantes === 'error'"
+      [attr.role]="nivelAlertaSufragantes === 'error' ? 'alert' : 'status'"
+      [attr.data-nivel]="nivelAlertaSufragantes"
+    >
+      <i
+        class="pi"
+        [class.pi-exclamation-triangle]="nivelAlertaSufragantes === 'warning'"
+        [class.pi-ban]="nivelAlertaSufragantes === 'error'"
+        aria-hidden="true"
+      ></i>
+      <span>{{ aviso }}</span>
+    </div>
+    }
 
     <app-card [elevated]="true" headerTitle="Votos por Candidato">
       <div class="candidates-list">
@@ -212,6 +326,7 @@
       tabindex="-1"
       [class.checksum-banner--valid]="isChecksumValid"
       [class.checksum-banner--invalid]="!isChecksumValid"
+      data-testid="checksum-banner"
     >
       <div class="checksum-info">
         <strong>Suma de Votos: {{ totalVotosComputados }}</strong> /
@@ -240,79 +355,30 @@
       <app-button
         variant="secondary"
         size="lg"
+        data-testid="btn-continuar-inconsistencia"
         (clicked)="continuarConInconsistencia()"
       >
         <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
-        Continuar con Inconsistencia (Foto Requerida)
+        Continuar con Inconsistencia
         <i class="pi pi-arrow-right" aria-hidden="true"></i>
       </app-button>
       }
-      <app-button variant="primary" size="lg" (clicked)="continuarAEvidencia()">
-        Continuar a Evidencia Fotográfica
+      <app-button
+        variant="primary"
+        size="lg"
+        data-testid="btn-continuar-revision"
+        (clicked)="continuarARevision()"
+      >
+        Continuar a Revisión Final
         <i class="pi pi-arrow-right" aria-hidden="true"></i>
       </app-button>
     </div>
   </div>
-
-  <!-- ==================== PASO 2: EVIDENCIA DE IMAGEN ==================== -->
-  <div
-    class="step-content"
-    *ngIf="!loading() && !submitSuccess() && currentStep() === 'IMAGEN'"
-  >
-    <app-card [elevated]="true" headerTitle="Captura de Acta Física">
-      <div class="image-upload-zone">
-        @if (imagePreviewUrl) {
-        <div class="image-preview">
-          <img
-            [src]="imagePreviewUrl"
-            alt="Previsualización de acta física"
-            class="preview-img"
-          />
-        </div>
-        }
-
-        <div class="upload-controls">
-          <input
-            type="file"
-            accept="image/*"
-            capture="environment"
-            #fileInput
-            (change)="onFileSelected($event)"
-            style="display: none"
-          />
-          <app-button
-            variant="secondary"
-            size="md"
-            (clicked)="fileInput.click()"
-          >
-            <i class="pi pi-camera" aria-hidden="true"></i>
-            {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o subir
-            archivo' }}
-          </app-button>
-          <p class="upload-tip">
-            Asegúrate de que los números y firmas sean claramente legibles.
-          </p>
-        </div>
-      </div>
-    </app-card>
-
-    <div class="step-actions step-actions--between">
-      <app-button variant="ghost" size="md" (clicked)="volverAVotos()">
-        <i class="pi pi-arrow-left" aria-hidden="true"></i>
-        Volver a Votos
-      </app-button>
-      <app-button variant="primary" size="lg" (clicked)="irARevision()">
-        Ir a Revisión Final
-        <i class="pi pi-arrow-right" aria-hidden="true"></i>
-      </app-button>
-    </div>
-  </div>
+  }
 
   <!-- ==================== PASO 3: REVISIÓN Y ENVÍO ==================== -->
-  <div
-    class="step-content"
-    *ngIf="!loading() && !submitSuccess() && currentStep() === 'REVISION'"
-  >
+  @if (!loading() && !submitSuccess() && currentStep() === 'REVISION') {
+  <div class="step-content" data-testid="step-revision">
     <app-card [elevated]="true" headerTitle="Resumen de Escrutinio">
       <div class="review-table">
         <div class="review-row">
@@ -351,7 +417,24 @@
         </div>
       </div>
 
-      @if (!isChecksumValid) {
+      @if (alertaSufragantes; as aviso) {
+      <div
+        class="cota-banner"
+        data-testid="cota-banner-revision"
+        [class.cota-banner--warning]="nivelAlertaSufragantes === 'warning'"
+        [class.cota-banner--error]="nivelAlertaSufragantes === 'error'"
+        [attr.role]="nivelAlertaSufragantes === 'error' ? 'alert' : 'status'"
+        [attr.data-nivel]="nivelAlertaSufragantes"
+      >
+        <i
+          class="pi"
+          [class.pi-exclamation-triangle]="nivelAlertaSufragantes === 'warning'"
+          [class.pi-ban]="nivelAlertaSufragantes === 'error'"
+          aria-hidden="true"
+        ></i>
+        <span>{{ aviso }}</span>
+      </div>
+      } @if (!isChecksumValid) {
       <p class="form-hint form-hint--error" role="alert">
         <i class="pi pi-info-circle" aria-hidden="true"></i>
         {{ descripcionDiferencia }}. El acta no se puede transmitir al servidor
@@ -367,15 +450,21 @@
     ></app-loading-state>
 
     <div class="step-actions step-actions--between" *ngIf="!submitting()">
-      <app-button variant="ghost" size="md" (clicked)="volverAImagen()">
+      <app-button
+        variant="ghost"
+        size="md"
+        data-testid="btn-volver-imagen"
+        (clicked)="irAPasoImagen()"
+      >
         <i class="pi pi-arrow-left" aria-hidden="true"></i>
-        Volver
+        Volver a la Foto
       </app-button>
 
       <div class="submit-buttons">
         <app-button
           variant="secondary"
           size="md"
+          data-testid="btn-guardar-borrador"
           [disabled]="actaEncolada()"
           (clicked)="guardarComoBorrador()"
         >
@@ -385,7 +474,8 @@
         <app-button
           variant="primary"
           size="lg"
-          [disabled]="actaEncolada()"
+          data-testid="btn-transmitir-acta"
+          [disabled]="actaEncolada() || excedeTopeSufragantes"
           (clicked)="enviarActaFinal()"
         >
           <i class="pi pi-send" aria-hidden="true"></i>
@@ -395,4 +485,5 @@
       </div>
     </div>
   </div>
+  }
 </div>
