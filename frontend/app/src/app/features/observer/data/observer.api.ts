@@ -116,6 +116,24 @@ export class ObserverApi {
     );
   }
 
+  /**
+   * Obtiene los detalles completos de un acta en disputa para su corrección.
+   *
+   * @param actaId ID del acta a corregir
+   * @returns Observable con el detalle completo del acta (votos, motivo, URL evidencia)
+   */
+  getActaParaCorregir(actaId: number): Observable<ActaResponse> {
+    return this.http.get<ActaResponse>(`${this.baseUrl}/actas/${actaId}`);
+  }
+
+  /**
+   * Envía la corrección de un acta disputada al backend.
+   * Valida que el acta esté en estado EN_DISPUTA antes de enviar.
+   *
+   * @param actaId ID del acta a corregir
+   * @param payload Detalles nuevos de votos y sufragantes
+   * @returns Observable con la respuesta del backend (estado CORREGIDA)
+   */
   corregirActa(actaId: number, payload: ActaRequest): Observable<ActaResponse> {
     return this.http.put<ActaResponse>(
       `${this.baseUrl}/actas/${actaId}/corregir`,
