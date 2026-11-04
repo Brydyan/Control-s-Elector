@@ -55,6 +55,11 @@ export const routes: Routes = [
         data: { roles: ['OBSERVER', 'MASTER'], title: 'Registrar Acta' },
       },
       {
+        path: 'observer/registrar-acta',
+        redirectTo: '/observer/mis-jrvs',
+        pathMatch: 'full',
+      },
+      {
         path: 'actas',
         canActivate: [roleGuard],
         loadComponent: () =>

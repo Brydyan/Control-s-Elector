@@ -162,6 +162,22 @@ Antes de marcar una tarea como "done":
 
 Cualquier violación **bloquea merge**. Si encuentras deuda técnica fuera de scope, anótala en `apply-progress.md` bajo "Hallazgos".
 
+### 2.1. Calidad UX/UI — Frontend (TypeScript/Angular/Ionic)
+
+**Obligatorio para cambios visuales o de componentes:**
+
+- **ux-designer**: Auditar usabilidad, accesibilidad, claridad de interacción. Trigger al implementar:
+  - Nuevas pantallas o flujos de usuario
+  - Cambios en componentes Ionic (botones, inputs, modales, layout)
+  - Revisión de propuestas de diseño antes de código
+  
+- **taste-skill**: Elevar art direction y calidad visual (no genérico). Trigger al implementar:
+  - Cambios en paleta de colores, tipografía, espaciado
+  - Nuevas vistas que requieran dirección visual de referencia
+  - Polish de componentes para evitar "slop"
+
+Usar ambas skills en paralelo si el change toca UI. Incaporate findings en `apply-progress.md` bajo "QA Visual".
+
 ### 3. Procedimientos de QA — Carga y Volumen
 
 **A 500+ usuarios concurrentes + 2x volumen de datos:**

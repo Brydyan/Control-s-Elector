@@ -3,6 +3,21 @@
     <app-button variant="ghost" size="sm" (clicked)="volver()">
       <i class="pi pi-arrow-left" aria-hidden="true"></i> Volver a Mis JRVs
     </app-button>
+
+    <!--
+      T-FE-13 C.1 — Captura Rápida de Actas (Foto Primero).
+      Es la acción de cabecera de la mesa: fotografiar las actas de todas las
+      dignidades antes de digitar una sola.
+    -->
+    <app-button
+      variant="primary"
+      size="sm"
+      data-testid="btn-captura-rapida"
+      (clicked)="abrirCapturaRapida()"
+    >
+      <i class="pi pi-camera" aria-hidden="true"></i>
+      Captura Rápida de Actas (Foto Primero)
+    </app-button>
   </div>
 
   <header class="page-header">
@@ -68,4 +83,91 @@
       </div>
     </app-card>
   </div>
+
+  <!--
+    Captura Rápida de Actas (T-FE-13 C.1): flujo secuencial de toma de fotos
+    por dignidad. Es un `p-dialog` porque trae el focus trap, el manejo del
+    Escape y la capa de overlay, que es exactamente lo que necesita un panel
+    que se abre encima de la lista.
+  -->
+  <p-dialog
+    header="Captura Rápida de Actas (Foto Primero)"
+    [visible]="capturaRapidaVisible()"
+    (visibleChange)="capturaRapidaVisible.set($event)"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [closable]="true"
+    [style]="{ width: '32rem' }"
+    data-testid="dialogo-captura-rapida"
+  >
+    <p class="captura-rapida__intro">
+      Fotografía el acta física de cada dignidad. La imagen se guarda en este
+      dispositivo, así que queda asegurada aunque cierres la aplicación.
+    </p>
+
+    <app-loading-state
+      *ngIf="capturaCargando()"
+      message="Buscando actas ya fotografiadas..."
+    ></app-loading-state>
+
+    <ul class="captura-rapida__lista">
+      @for (cargo of cargos(); track cargo.cargoId) {
+      <li class="captura-rapida__item">
+        <div class="captura-rapida__datos">
+          <span class="captura-rapida__nombre">{{ cargo.nombre }}</span>
+          @if (tieneFoto(cargo.cargoId)) {
+          <span class="captura-rapida__estado" data-testid="estado-foto">
+            <i class="pi pi-check-circle" aria-hidden="true"></i>
+            Foto capturada
+          </span>
+          } @else {
+          <span
+            class="captura-rapida__estado captura-rapida__estado--pendiente"
+          >
+            <i class="pi pi-camera" aria-hidden="true"></i>
+            Sin foto
+          </span>
+          }
+        </div>
+
+        @if (previewDe(cargo.cargoId); as preview) {
+        <img
+          [src]="preview"
+          class="captura-rapida__preview"
+          alt="Previsualización del acta fotografiada"
+        />
+        }
+
+        <div class="captura-rapida__acciones">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            #fotoInput
+            (change)="onFotoCapturada($event)"
+            style="display: none"
+          />
+          <app-button
+            variant="secondary"
+            size="sm"
+            [attr.data-testid]="'btn-capturar-cargo-' + cargo.cargoId"
+            (clicked)="prepararCaptura(cargo, fotoInput)"
+          >
+            <i class="pi pi-camera" aria-hidden="true"></i>
+            {{ tieneFoto(cargo.cargoId) ? 'Retomar foto' : 'Tomar foto' }}
+          </app-button>
+          <app-button
+            variant="ghost"
+            size="sm"
+            [attr.data-testid]="'btn-ir-registro-' + cargo.cargoId"
+            (clicked)="registrarActa(cargo)"
+          >
+            Digitar votos
+          </app-button>
+        </div>
+      </li>
+      }
+    </ul>
+  </p-dialog>
 </div>
