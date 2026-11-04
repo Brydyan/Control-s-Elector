@@ -3,6 +3,10 @@
 		"idb": "^8.0.3"
 	},
 	"devDependencies": {
-		"fake-indexeddb": "^6.2.5"
+		"fake-indexeddb": "^6.2.5",
+		"husky": "^9.1.7"
+	},
+	"scripts": {
+		"prepare": "husky"
 	}
 }
