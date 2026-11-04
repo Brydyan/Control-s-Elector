@@ -11,9 +11,9 @@ import { Avatar } from 'primeng/avatar';
 import { Badge } from 'primeng/badge';
 import { Popover } from 'primeng/popover';
 
-import { AuthService } from '../../core/auth/services/auth.service';
-import { AuthStore } from '../../core/auth/auth.store';
-import { Role } from '../../core/auth/domain/user.model';
+import { AuthService } from '../../features/auth/services/auth.service';
+import { AuthStore } from '../../features/auth/services/auth.store';
+import { Role } from '../../features/auth/domain/models/user.model';
 import { NetworkStatusService } from '../../core/network/network-status.service';
 import { SyncService } from '../../core/offline/sync.service';
 import { LayoutService } from '../layout.service';

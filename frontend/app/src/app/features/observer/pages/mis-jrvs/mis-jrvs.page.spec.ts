@@ -3,12 +3,12 @@ import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { MisJrvsPage } from './mis-jrvs.page';
-import { ObserverService } from '../../services/observer.service';
+import { ObserverApi } from '../../data/observer.api';
 
 describe('MisJrvsPage', () => {
   let component: MisJrvsPage;
   let fixture: ComponentFixture<MisJrvsPage>;
-  let observerServiceSpy: jasmine.SpyObj<ObserverService>;
+  let observerServiceSpy: jasmine.SpyObj<ObserverApi>;
   let routerSpy: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
@@ -39,7 +39,7 @@ describe('MisJrvsPage', () => {
     await TestBed.configureTestingModule({
       imports: [MisJrvsPage],
       providers: [
-        { provide: ObserverService, useValue: observerServiceSpy },
+        { provide: ObserverApi, useValue: observerServiceSpy },
         { provide: Router, useValue: routerSpy },
       ],
     }).compileComponents();
@@ -86,7 +86,7 @@ describe('MisJrvsPage', () => {
     await TestBed.configureTestingModule({
       imports: [MisJrvsPage],
       providers: [
-        { provide: ObserverService, useValue: errorServiceSpy },
+        { provide: ObserverApi, useValue: errorServiceSpy },
         { provide: Router, useValue: routerSpy },
       ],
     }).compileComponents();

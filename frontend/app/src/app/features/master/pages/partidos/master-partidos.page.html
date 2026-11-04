@@ -1,0 +1,174 @@
+<div class="catalog-page">
+  <header class="page-header">
+    <div>
+      <h1>Partidos y Movimientos Políticos</h1>
+      <span>{{ partidosFiltrados().length }} organizaciones registradas</span>
+    </div>
+    <app-button (clicked)="abrirCrear()">Crear partido</app-button>
+  </header>
+
+  <div class="filters">
+    <input
+      type="text"
+      [ngModel]="terminoBusqueda()"
+      (ngModelChange)="terminoBusqueda.set($event)"
+      placeholder="Buscar por nombre, siglas o lista"
+      aria-label="Buscar partidos"
+      pInputText
+    />
+    @if (tieneFiltrosActivos()) {
+    <app-button variant="ghost" size="sm" (clicked)="limpiarFiltros()">
+      Limpiar filtros
+    </app-button>
+    }
+  </div>
+
+  <app-skeleton
+    name="master-partidos"
+    [loading]="loading()"
+    animate="shimmer"
+    [transition]="true"
+    [loadingBoundary]="true"
+  >
+    <div class="skeleton-list">
+      @for (row of [1, 2, 3, 4]; track row) {
+      <p-skeleton height="2.5rem" />
+      }
+    </div>
+  </app-skeleton>
+
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Error al cargar partidos"
+    [message]="error() ?? undefined"
+  >
+    <app-button variant="primary" (clicked)="cargarPartidos()"
+      >Reintentar</app-button
+    >
+  </app-error-state>
+
+  <app-empty-state
+    *ngIf="!loading() && !error() && !partidosFiltrados().length"
+    icon="flag"
+    title="No se encontraron partidos"
+    description="No hay partidos o movimientos políticos registrados con los filtros seleccionados."
+  ></app-empty-state>
+
+  @if (!loading() && !error() && partidosFiltrados().length) {
+  <div class="table-wrap desktop-only">
+    <p-table
+      [value]="partidosFiltrados()"
+      [rowHover]="true"
+      styleClass="catalog-table"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Lista</th>
+          <th>Siglas</th>
+          <th>Nombre de la Organización</th>
+          <th>Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-partido>
+        <tr>
+          <td>
+            <span class="badge">Lista {{ partido.numeroLista }}</span>
+          </td>
+          <td>
+            <strong>{{ partido.siglas }}</strong>
+          </td>
+          <td>{{ partido.nombre }}</td>
+          <td class="actions">
+            <p-menu
+              #menu
+              [model]="obtenerAccionesPartido(partido)"
+              [popup]="true"
+              appendTo="body"
+            />
+            <app-button
+              variant="ghost"
+              size="sm"
+              icon="pi pi-ellipsis-v"
+              [rounded]="true"
+              aria-label="Acciones de partido"
+              (clicked)="menu.toggle($event)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <div class="cards mobile-only">
+    @for (partido of partidosFiltrados(); track partido.id) {
+    <article>
+      <strong>Lista {{ partido.numeroLista }} · {{ partido.siglas }}</strong>
+      <span>{{ partido.nombre }}</span>
+      <div class="actions">
+        <app-button variant="ghost" size="sm" (clicked)="abrirEditar(partido)">
+          Editar
+        </app-button>
+        <app-button
+          variant="danger"
+          size="sm"
+          (clicked)="eliminarPartido(partido)"
+        >
+          Eliminar
+        </app-button>
+      </div>
+    </article>
+    }
+  </div>
+  }
+</div>
+
+<p-dialog
+  [(visible)]="modalAbierto"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '32rem' }"
+  [header]="modoEdicion ? 'Editar partido' : 'Crear partido'"
+  (onHide)="cerrarModal()"
+>
+  <label class="field">
+    <span>Número de Lista</span>
+    <input
+      type="number"
+      [(ngModel)]="numeroLista"
+      min="1"
+      placeholder="Ej. 5"
+      pInputText
+    />
+  </label>
+  <label class="field">
+    <span>Siglas</span>
+    <input type="text" [(ngModel)]="siglas" placeholder="Ej. RC" pInputText />
+  </label>
+  <label class="field">
+    <span>Nombre Oficial del Partido / Movimiento</span>
+    <input
+      type="text"
+      [(ngModel)]="nombre"
+      placeholder="Ej. Revolución Ciudadana"
+      pInputText
+    />
+  </label>
+
+  @if (modalError()) {
+  <p-message severity="error" [text]="modalError() ?? ''" />
+  }
+
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      [disabled]="submitting()"
+      (clicked)="cerrarModal()"
+    >
+      Cancelar
+    </app-button>
+    <app-button [disabled]="submitting()" (clicked)="guardar()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </ng-template>
+</p-dialog>

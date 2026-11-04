@@ -11,8 +11,8 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
-import { CargoConEstado } from '../../models/observer.model';
-import { ObserverService } from '../../services/observer.service';
+import { CargoConEstado } from '../../domain/models/observer.model';
+import { ObserverApi } from '../../data/observer.api';
 
 @Component({
   selector: 'app-jrv-cargos',
@@ -33,7 +33,7 @@ import { ObserverService } from '../../services/observer.service';
 export class JrvCargosPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly observerService = inject(ObserverService);
+  private readonly observerService = inject(ObserverApi);
   private readonly offlineStorage = inject(OfflineStorageService);
 
   jrvId!: number;
@@ -90,13 +90,20 @@ export class JrvCargosPage implements OnInit, OnDestroy {
   }
 
   registrarActa(cargo: CargoConEstado): void {
-    this.router.navigate([
+    const route = [
       '/observer/jrv',
       this.jrvId,
       'cargo',
       cargo.cargoId,
       'registrar',
-    ]);
+    ];
+    if (cargo.estadoActa === 'EN_DISPUTA' && cargo.actaId) {
+      this.router.navigate(route, {
+        queryParams: { actaId: cargo.actaId, modo: 'disputa' },
+      });
+    } else {
+      this.router.navigate(route);
+    }
   }
 
   // -----------------------------------------------------------------

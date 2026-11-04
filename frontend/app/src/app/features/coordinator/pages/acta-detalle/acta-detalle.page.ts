@@ -24,8 +24,8 @@ import {
   CorregirActaPayload,
   DisputarActaPayload,
   EstadoActa,
-} from '../../models/coordinator.model';
-import { CoordinatorService } from '../../services/coordinator.service';
+} from '../../domain/models/coordinator.model';
+import { CoordinatorApi } from '../../data/coordinator.api';
 
 type ErrorTarget = 'main' | 'disputa' | 'corregir';
 
@@ -53,7 +53,7 @@ type ErrorTarget = 'main' | 'disputa' | 'corregir';
 export class ActaDetallePage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly coordinatorService = inject(CoordinatorService);
+  private readonly coordinatorService = inject(CoordinatorApi);
 
   /** Cuánto tiempo permanece visible el mensaje de éxito antes de auto-limpiarse. */
   private static readonly SUCCESS_VISIBLE_MS = 4000;

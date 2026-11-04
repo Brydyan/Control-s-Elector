@@ -46,7 +46,10 @@
 
   <header class="page-header">
     <div class="header-titles">
-      <h1 class="page-title">Registro de Acta de Escrutinio</h1>
+      <h1 class="page-title">
+        {{ esModoDisputa() ? 'Subsanación de Acta en Disputa' : 'Registro de
+        Acta de Escrutinio' }}
+      </h1>
       <p class="page-subtitle">JRV #{{ jrvId }} · Dignidad ID #{{ cargoId }}</p>
     </div>
 
@@ -86,6 +89,16 @@
     </p>
     }
   </div>
+
+  @if (esModoDisputa()) {
+  <div class="dispute-alert">
+    <p-message
+      severity="warn"
+      icon="pi pi-exclamation-triangle"
+      [text]="motivoDisputa() ? ('Acta en disputa: ' + motivoDisputa()) : 'Esta acta fue marcada en disputa por el coordinador. Por favor revisa y corrige las cifras observadas.'"
+    />
+  </div>
+  }
 
   <app-error-state
     *ngIf="error() && !loading()"
@@ -466,7 +479,8 @@
           (clicked)="enviarActaFinal()"
         >
           <i class="pi pi-send" aria-hidden="true"></i>
-          {{ actaEncolada() ? 'Acta en cola' : 'Transmitir Acta' }}
+          {{ actaEncolada() ? 'Acta en cola' : esModoDisputa() ? 'Enviar
+          Corrección' : 'Transmitir Acta' }}
         </app-button>
       </div>
     </div>
