@@ -54,6 +54,8 @@ export interface ActaResponse {
   votosBlancos: number;
   votosNulos: number;
   motivoDisputa?: string;
+  coordinadorNombre?: string;
+  urlEvidencia?: string | null;
   detalles: Array<{
     id: number;
     candidatoId: number;
