@@ -55,6 +55,18 @@ export const routes: Routes = [
         data: { roles: ['OBSERVER', 'MASTER'], title: 'Registrar Acta' },
       },
       {
+        path: 'observer/acta/:id/corregir',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/observer/pages/correccion-acta/correccion-acta.page').then(
+            (m) => m.CorreccionActaPage,
+          ),
+        data: {
+          roles: ['OBSERVER', 'MASTER'],
+          title: 'Corregir Acta Disputada',
+        },
+      },
+      {
         path: 'observer/registrar-acta',
         redirectTo: '/observer/mis-jrvs',
         pathMatch: 'full',

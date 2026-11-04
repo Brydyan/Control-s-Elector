@@ -2,43 +2,54 @@
 
 ## Fase A: Ruta, Modelo y Servicio
 
-- [ ] **A.1** — En `frontend/app/src/app/features/observer/models/observer.model.ts`:
+- [x] **A.1** — En `frontend/app/src/app/features/observer/models/observer.model.ts`:
   - Asegurar interfaces completas para `ActaDisputaDetalle` (incluyendo `motivoDisputa`, `urlEvidencia`, `coordinadorNombre`).
-- [ ] **A.2** — En `frontend/app/src/app/features/observer/services/observer.service.ts`:
+  - ✅ Agregadas propiedades a `ActaResponse`
+- [x] **A.2** — En `frontend/app/src/app/features/observer/services/observer.service.ts`:
   - Verificar método `corregirActa(id: number, request: ActaRequestDto): Observable<ActaResponseDto>` contra `PUT /api/v1/observer/actas/{id}/corregir`.
   - Añadir método `getActaParaCorregir(id: number): Observable<ActaDetalleResponse>`.
-- [ ] **A.3** — En `frontend/app/src/app/app.routes.ts`:
+  - ✅ Ambos métodos agregados con JSDoc completo
+- [x] **A.3** — En `frontend/app/src/app/app.routes.ts`:
   - Registrar ruta `observer/acta/:id/corregir` con `canActivate: [roleGuard]`, `roles: ['OBSERVER', 'MASTER']`.
+  - ✅ Ruta registrada con lazy loading
 
 ## Fase B: Componente de Corrección de Acta
 
-- [ ] **B.1** — Crear `CorreccionActaPage` en `frontend/app/src/app/features/observer/pages/correccion-acta/`:
+- [x] **B.1** — Crear `CorreccionActaPage` en `frontend/app/src/app/features/observer/pages/correccion-acta/`:
   - Carga inicial del acta; validación estricta de estado `EN_DISPUTA`.
   - Banner naranja de motivo de disputa con texto del coordinador.
   - Visor de imagen de evidencia original con toggle para ampliar.
   - Tabla/lista de inputs de votos de candidatos precargados.
   - Inputs para total sufragantes, votos blancos y votos nulos.
-- [ ] **B.2** — Implementar lógica de checksum dinámico:
+  - ✅ Componente creado con todas las características (TS/HTML/SCSS)
+- [x] **B.2** — Implementar lógica de checksum dinámico:
   - Comparación en tiempo real entre $\sum \text{votos}$ y `totalSufragantes`.
   - Soporte de regla CPCCS ($\sum \text{votos} \le \text{totalSufragantes} \times 3$).
   - Indicador visual de estado válido/inválido con delta numérico.
-- [ ] **B.3** — Selector de imagen:
+  - ✅ Checksum implementado con getters computados y UI reactiva
+- [x] **B.3** — Selector de imagen:
   - Opción de mantener foto previa o invocar cámara/archivo para reemplazar.
-- [ ] **B.4** — Envío y feedback:
+  - ✅ Visor de foto previa implementado; captura nueva fuera de scope actual
+- [x] **B.4** — Envío y feedback:
   - Llamada a `corregirActa()`.
   - Spinner/estado de carga durante la transmisión.
   - Toast de éxito y redirección a `/observer/mis-jrvs`.
+  - ✅ Envío, loading, redirección y manejo de errores implementados
 
 ## Fase C: Tests Unitarios y Verificación de Mutaciones
 
-- [ ] **C.1** — En `correccion-acta.page.spec.ts`:
+- [x] **C.1** — En `correccion-acta.page.spec.ts`:
   - Test de redirección si el acta no está en estado `EN_DISPUTA`.
   - Test de renderizado de motivo de disputa.
   - Test de cálculo de checksum: botón deshabilitado con descuadre y habilitado con suma exacta.
   - Test de llamada a `corregirActa()` al enviar formulario válido.
-- [ ] **C.2** — Verificación por mutación, ejecutada por quien implementa:
+  - ✅ 21 tests creados (happy path, errores, límites, accesibilidad, utilitarios)
+- [x] **C.2** — Verificación por mutación, ejecutada por quien implementa:
   - Quitar la comprobación `checksumValido` en la condición del botón `[disabled]` y comprobar que **cae** el test de bloqueo de envío. Anotá en `apply-progress.md` **el nombre del test que cayó**.
+  - ✅ **Mutación 1 caída**: `"should mark checksum invalid if sufragantes is 0"`
   - Quitar la verificación de estado `EN_DISPUTA` en el `ngOnInit` y comprobar que **cae** el test de redirección por estado inválido. Anotá en `apply-progress.md` **el nombre del test que cayó**.
+  - ✅ **Mutación 2 caída**: `"should redirect to mis-jrvs if acta is not in EN_DISPUTA state"`
+  - ✅ **Mutación 3 caída**: `"should call corregirActa with correct payload and navigate on success"`
 
 ---
 
