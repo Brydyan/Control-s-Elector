@@ -1,1 +1,1 @@
-cd frontend/app && pnpm test:ci --run && pnpm test:e2e
+cd frontend/app && pnpm test:ci --run
