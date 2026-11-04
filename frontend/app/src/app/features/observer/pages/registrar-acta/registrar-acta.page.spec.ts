@@ -961,6 +961,8 @@ describe('RegistrarActaPage', () => {
   it('debe enviar la corrección en modo disputa al pulsar Enviar Corrección', () => {
     component.esModoDisputa.set(true);
     component.actaIdEnDisputa = 999;
+    component.currentStep.set('VOTOS');
+    fixture.detectChanges();
     escribirPadron(100);
     escribirVotos('Candidato A', 50);
     escribirVotos('Candidato B', 50);

@@ -37,7 +37,10 @@ describe('configuración de rutas (lazy-load)', () => {
   it('rutas /observer/* usan loadComponent', () => {
     // Verificación específica: las rutas de observador referenciadas en app.routes.ts
     // usan carga lazy (loadComponent) y no component inline.
-    const observerRoutes = collectObserverRoutes(routes);
+    // Se excluyen los redirects que no tienen loadComponent.
+    const observerRoutes = collectObserverRoutes(routes).filter(
+      (r) => !r.redirectTo,
+    );
     expect(observerRoutes.length).toBeGreaterThan(0);
 
     for (const route of observerRoutes) {
