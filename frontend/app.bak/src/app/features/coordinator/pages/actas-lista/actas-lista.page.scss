@@ -1,0 +1,327 @@
+.actas-lista-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--color-text-on-surface);
+}
+
+.page-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  @media (min-width: 768px) {
+    justify-content: space-between;
+  }
+}
+
+.page-title-area {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+
+  .page-title {
+    margin: 0;
+    font-size: 24px;
+    color: var(--color-text-on-surface);
+  }
+
+  .total-indicator {
+    font-size: 13px;
+    color: var(--color-text-muted-on-surface);
+  }
+}
+
+.search-and-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+
+  @media (min-width: 768px) {
+    flex: 1;
+    justify-content: flex-end;
+  }
+}
+
+.search-input-wrapper {
+  min-width: 260px;
+}
+
+.cargo-select,
+.canton-select {
+  min-width: 220px;
+}
+
+/* Status tabs ----------------------------------------------------------- */
+
+/*
+ * S3 — palanca 2: el strip de estados es el filtro más apretado de la página.
+ *
+ * `p-tab` lleva `role="tab"` y `tabindex`: es un target de primera clase y
+ * mide menos de 44px de alto con su padding por defecto. El piso lo pone esta
+ * hoja y no la global de `theme/base.scss` porque sólo esta página (y la de
+ * mis JRVs, que no es parte de esta unidad) tiene strip de estados.
+ *
+ * Los chevrons del propio strip —`.p-tablist-nav-button`, que aparecen sólo
+ * cuando la lista desborda— se quedan en su ancho: son un overlay sobre la
+ * primera y la última tab, y ensancharlos a 44px interceptaría el toque justo
+ * donde el operador quiere tocar.
+ */
+.p-tab {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-raised);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted-on-surface);
+}
+
+.desktop-only {
+  display: none;
+
+  @media (min-width: 768px) {
+    display: block;
+  }
+}
+
+.mobile-only {
+  display: flex;
+  flex-direction: column;
+
+  @media (min-width: 768px) {
+    display: none;
+  }
+}
+
+.table-container {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-on-surface);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-surface);
+}
+
+/*
+ * The table is rendered by PrimeNG, so its internals are reached through the
+ * encapsulation boundary. The cells that carry a class are projected from this
+ * template and keep this component's scope, so they are styled directly.
+ */
+:host ::ng-deep .actas-table {
+  thead th {
+    background: var(--color-surface-card);
+    color: var(--color-text-muted-on-surface);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border-on-surface);
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--color-border-on-surface);
+    transition: background-color 0.15s ease-in-out;
+  }
+
+  tbody td {
+    padding: 14px 16px;
+    font-size: 14px;
+    color: var(--color-text-on-surface);
+    vertical-align: middle;
+  }
+}
+
+.row-estado-en_disputa {
+  border-left: 4px solid var(--color-status-warning);
+}
+.row-estado-corregida {
+  border-left: 4px solid var(--color-status-neutral);
+}
+.row-estado-enviada {
+  border-left: 4px solid var(--color-brand-primary);
+}
+.row-estado-aprobada {
+  border-left: 4px solid var(--color-status-success);
+}
+
+/*
+ * Las cifras de la bandeja se alinean dígito a dígito: el padrón, los
+ * blancos y los nulos son cantidades que el operador compara entre filas.
+ */
+.td-numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * El identificador del acta es un código, no una cantidad: va en la familia
+ * monoespaciada, la misma voz que usa el resto de identificadores.
+ */
+.td-id {
+  font-family: var(--font-family-mono);
+  font-weight: 600;
+  color: var(--color-text-muted-on-surface);
+}
+
+.td-jrv {
+  font-weight: 700;
+}
+
+.td-muted {
+  color: var(--color-text-muted-on-surface);
+  font-size: 12px;
+}
+
+.td-actions {
+  text-align: right;
+}
+
+/* Mobile Card View ------------------------------------------------------ */
+
+.acta-card {
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-on-surface);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--shadow-surface);
+  cursor: pointer;
+  transition:
+    transform 0.1s ease-in-out,
+    box-shadow 0.1s ease-in-out;
+
+  /*
+   * S3 — palanca 2: en el teléfono la card ES el target —su `(click)` abre el
+   * detalle del acta— y su superficie de toque depende del padding y del gap
+   * que cada ajuste posterior le cambie. `position: relative` más una banda
+   * `::before` la deja explícita y estable sin mover un pixel del layout
+   * visual: la banda no tiene fondo ni borde y todo lo que hay dentro se
+   * sigue pintando en su sitio.
+   */
+  position: relative;
+  min-height: 44px;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  &.card-estado-en_disputa {
+    border-left: 5px solid var(--color-status-warning);
+  }
+  &.card-estado-corregida {
+    border-left: 5px solid var(--color-status-neutral);
+  }
+  &.card-estado-enviada {
+    border-left: 5px solid var(--color-brand-primary);
+  }
+  &.card-estado-aprobada {
+    border-left: 5px solid var(--color-status-success);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .jrv-number {
+        font-weight: 700;
+        font-size: 16px;
+        color: var(--color-text-on-surface);
+      }
+
+      .acta-id {
+        font-size: 12px;
+        color: var(--color-text-muted-on-surface);
+        font-family: var(--font-family-mono);
+      }
+    }
+  }
+
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .cargo-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--color-text-on-surface);
+    }
+
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--color-text-muted-on-surface);
+      font-variant-numeric: tabular-nums;
+    }
+  }
+
+  .card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border-on-surface);
+
+    .fecha-text {
+      font-size: 12px;
+      color: var(--color-text-muted-on-surface);
+    }
+
+    .review-link {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--color-brand-primary);
+    }
+  }
+}
+
+/* Skeletons de carga (tabla desktop + cards mobile) --------------------- */
+
+.actas-skeleton-table {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.actas-skeleton-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actas-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--color-border-on-surface);
+  border-radius: 12px;
+}

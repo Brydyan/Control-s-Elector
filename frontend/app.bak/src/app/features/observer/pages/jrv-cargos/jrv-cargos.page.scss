@@ -1,0 +1,143 @@
+.jrv-cargos-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-4) 0;
+}
+
+.page-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.page-header {
+  .page-title {
+    margin: 0;
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+  }
+
+  .page-subtitle {
+    margin: var(--space-1) 0 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+}
+
+.cargos-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.cargo-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.cargo-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cargo-title-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+
+  .cargo-name {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+}
+
+.cargo-nivel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+/*
+ * Captura Rápida de Actas (T-FE-13 C.1).
+ * -----------------------------------
+ *
+ * El panel recorre las dignidades de la mesa en orden: el veedor va
+ * fotografiando acta por acta, sin volver a la lista ni al formulario. La
+ * vista previa es efímera (`URL.createObjectURL`): no copia la imagen, sólo
+ * la referencia al Blob que ya está en IndexedDB.
+ */
+.captura-rapida__intro {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.captura-rapida__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.captura-rapida__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.captura-rapida__datos {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.captura-rapida__nombre {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.captura-rapida__estado {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-status-success);
+
+  &--pendiente {
+    color: var(--color-text-secondary);
+  }
+}
+
+.captura-rapida__preview {
+  width: 100%;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-subtle);
+}
+
+.captura-rapida__acciones {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}

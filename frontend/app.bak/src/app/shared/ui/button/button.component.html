@@ -1,0 +1,15 @@
+<p-button
+  [type]="type"
+  [severity]="severity"
+  [text]="isGhost"
+  [outlined]="isSecondary"
+  [size]="primeSize"
+  [loading]="loading"
+  [disabled]="disabled"
+  [fluid]="block"
+  [icon]="icon"
+  [rounded]="rounded"
+  (onClick)="onClick($event)"
+>
+  <ng-content></ng-content>
+</p-button>
