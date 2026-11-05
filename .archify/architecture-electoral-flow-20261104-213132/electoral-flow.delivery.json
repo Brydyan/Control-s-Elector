@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "10406277-d62d-4a60-beed-6ede2cd287cd",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/candidate.json",
+  "output": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
+  "specification": {
+    "sha256": "b7cc9228b4be40f6f5ab18241eb81b8dfad53bcf1682fa83a9f009ed697eaa5e",
+    "bytes": 5775
+  },
+  "artifact": {
+    "sha256": "512e3ad59178ce542df49694f6043209ba99dad3135e1076132dafea2468817e",
+    "bytes": 768686
+  }
+}

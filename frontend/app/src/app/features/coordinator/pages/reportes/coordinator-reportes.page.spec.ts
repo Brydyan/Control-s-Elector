@@ -1,9 +1,5 @@
-import {
-  ComponentFixture,
-  TestBed,
-  fakeAsync,
-  tick,
-} from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 import { CoordinatorReportesPage } from './coordinator-reportes.page';
 import { CoordinatorApi } from '../../data/coordinator.api';
@@ -92,7 +88,7 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     ]);
 
     await TestBed.configureTestingModule({
-      imports: [CoordinatorReportesPage],
+      imports: [CoordinatorReportesPage, BrowserAnimationsModule],
       providers: [{ provide: CoordinatorApi, useValue: coordinatorApiMock }],
     }).compileComponents();
 
@@ -110,13 +106,12 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     expect(component.actas().length).toBe(0);
   });
 
-  it('should load metrics on ngOnInit and display dashboard', fakeAsync(() => {
+  it('should load metrics on ngOnInit and display dashboard', () => {
     coordinatorApiMock.getActas.and.returnValue(of(mockPagedResponse));
     coordinatorApiMock.getJrvs.and.returnValue(of(mockJrvs));
     coordinatorApiMock.getCargos.and.returnValue(of(mockCargos));
 
     fixture.detectChanges();
-    tick();
 
     expect(component.loading()).toBe(false);
     expect(component.error()).toBeNull();
@@ -125,40 +120,38 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     expect(component.metricas().realtimeStatus).toBe('connected');
     expect(component.estadosCount().APROBADA).toBe(1);
     expect(component.estadosCount()['EN_DISPUTA']).toBe(1);
-  }));
+  });
 
-  it('should calculate actas per hour correctly from timestamps', fakeAsync(() => {
+  it('should calculate actas per hour correctly from timestamps', () => {
     coordinatorApiMock.getActas.and.returnValue(of(mockPagedResponse));
     coordinatorApiMock.getJrvs.and.returnValue(of(mockJrvs));
     coordinatorApiMock.getCargos.and.returnValue(of(mockCargos));
 
     fixture.detectChanges();
-    tick();
 
     const tasaPorHora = component.metricas().actasPorHora;
     expect(tasaPorHora).toBeGreaterThanOrEqual(0);
     expect(tasaPorHora).toBeLessThanOrEqual(100); // Reasonable bound
-  }));
+  });
 
   // ============================================================================
   // ERROR PATH TESTS (2 tests mínimo)
   // ============================================================================
 
-  it('should show error state when metrics fail to load', fakeAsync(() => {
+  it('should show error state when metrics fail to load', () => {
     const mockError = { status: 500, message: 'Server error' };
     coordinatorApiMock.getActas.and.returnValue(throwError(() => mockError));
     coordinatorApiMock.getJrvs.and.returnValue(of(mockJrvs));
     coordinatorApiMock.getCargos.and.returnValue(of(mockCargos));
 
     fixture.detectChanges();
-    tick();
 
     expect(component.loading()).toBe(false);
     expect(component.error()).toBeTruthy();
     expect(component.error()).toContain('métricas');
-  }));
+  });
 
-  it('should handle 401 Unauthorized during download and show auth message', fakeAsync(() => {
+  it('should handle 401 Unauthorized during download and show auth message', () => {
     const mockActa = mockActas[0];
     const mockError401 = { status: 401, message: 'Unauthorized' };
     coordinatorApiMock.descargarExpedientePdf.and.returnValue(
@@ -170,7 +163,7 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
 
     expect(component.error()).toContain('Sesión expirada');
     expect(component.downloadingId()).toBeNull();
-  }));
+  });
 
   // ============================================================================
   // LÍMITES Y VALIDACIÓN (2 tests mínimo)
@@ -188,7 +181,7 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     expect(coordinatorApiMock.descargarExpedientePdf).not.toHaveBeenCalled();
   });
 
-  it('should validate MIME type of downloaded blob and reject non-PDF', fakeAsync(() => {
+  it('should validate MIME type of downloaded blob and reject non-PDF', () => {
     const mockActa = mockActas[0];
     const mockBlobNonPdf = new Blob(['<html></html>'], {
       type: 'text/html',
@@ -199,17 +192,15 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     );
 
     component.descargarExpediente(mockActa);
-    tick();
-
     expect(component.error()).toContain('PDF válido');
     expect(component.downloadingId()).toBeNull();
-  }));
+  });
 
   // ============================================================================
   // CLEANUP & MEMORY TESTS (2 tests mínimo)
   // ============================================================================
 
-  it('should revoke Object URL after download to prevent memory leak', fakeAsync(() => {
+  it('should revoke Object URL after download to prevent memory leak', () => {
     const mockActa = mockActas[0];
     const mockPdfBlob = new Blob(['PDF content'], {
       type: 'application/pdf',
@@ -223,18 +214,16 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     coordinatorApiMock.descargarExpedientePdf.and.returnValue(of(mockPdfBlob));
 
     component.descargarExpediente(mockActa);
-    tick();
 
     expect(window.URL.revokeObjectURL).toHaveBeenCalled();
-  }));
+  });
 
-  it('should unsubscribe from observables on ngOnDestroy', fakeAsync(() => {
+  it('should unsubscribe from observables on ngOnDestroy', () => {
     coordinatorApiMock.getActas.and.returnValue(of(mockPagedResponse));
     coordinatorApiMock.getJrvs.and.returnValue(of(mockJrvs));
     coordinatorApiMock.getCargos.and.returnValue(of(mockCargos));
 
     fixture.detectChanges();
-    tick();
 
     spyOn(component['destroy$'], 'next');
     spyOn(component['destroy$'], 'complete');
@@ -243,13 +232,13 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
 
     expect(component['destroy$'].next).toHaveBeenCalled();
     expect(component['destroy$'].complete).toHaveBeenCalled();
-  }));
+  });
 
   // ============================================================================
   // ADDITIONAL TESTS (to reach 9+ tests total)
   // ============================================================================
 
-  it('should handle 403 Forbidden during download', fakeAsync(() => {
+  it('should handle 403 Forbidden during download', () => {
     const mockActa = mockActas[0];
     const mockError403 = { status: 403, message: 'Forbidden' };
     coordinatorApiMock.descargarExpedientePdf.and.returnValue(
@@ -260,9 +249,9 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     tick();
 
     expect(component.error()).toContain('permiso');
-  }));
+  });
 
-  it('should handle 404 Not Found during download', fakeAsync(() => {
+  it('should handle 404 Not Found during download', () => {
     const mockActa = mockActas[0];
     const mockError404 = { status: 404, message: 'Not Found' };
     coordinatorApiMock.descargarExpedientePdf.and.returnValue(
@@ -273,7 +262,7 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     tick();
 
     expect(component.error()).toContain('no encontrada');
-  }));
+  });
 
   it('should return correct color and symbol for each estado', () => {
     const estados = [

@@ -332,6 +332,7 @@
   --color-status-warning-border: rgba(245, 158, 11, 0.38);
 
   --color-status-danger: var(--primitive-red-300);
+  --color-status-danger-strong: var(--primitive-red-200);
   --color-status-danger-bg: rgba(239, 68, 68, 0.14);
   --color-status-danger-border: rgba(239, 68, 68, 0.4);
 
@@ -363,6 +364,7 @@
   --color-veil-88: rgba(255, 255, 255, 0.88);
   --color-veil-90: rgba(255, 255, 255, 0.9);
   --color-shade-05: rgba(0, 0, 0, 0.05);
+  --color-shade-10: rgba(0, 0, 0, 0.1);
   --color-shade-30: rgba(0, 0, 0, 0.3);
   --color-scrim: rgba(15, 23, 42, 0.75);
   --color-text-on-scrim: var(--primitive-white);

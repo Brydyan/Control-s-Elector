@@ -1,8 +1,0 @@
-{
-  "schemaVersion": 1,
-  "command": "deliver",
-  "status": "pending",
-  "receiptId": "9eeb10cf-d412-4b7f-8276-bea199c70551",
-  "input": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/candidate.json",
-  "output": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html"
-}

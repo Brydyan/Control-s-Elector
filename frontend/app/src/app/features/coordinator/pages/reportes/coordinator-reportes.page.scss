@@ -31,7 +31,7 @@
     .btn-retry {
       padding: 0.5rem 1rem;
       background-color: var(--color-status-danger);
-      color: #fff;
+      color: var(--color-text-on-brand);
       border: 0;
       border-radius: 0.375rem;
       cursor: pointer;
@@ -49,7 +49,7 @@
       var(--color-brand-primary),
       var(--color-brand-primary-strong)
     );
-    color: #fff;
+    color: var(--color-text-on-brand);
     padding: 2rem;
     border-radius: 0.75rem;
     box-shadow: 0 2px 8px var(--color-shade-10);
@@ -336,7 +336,7 @@
               .btn-descargar {
                 padding: 0.5rem 1rem;
                 background-color: var(--color-brand-primary);
-                color: #fff;
+                color: var(--color-text-on-brand);
                 border: 0;
                 border-radius: 0.375rem;
                 cursor: pointer;
