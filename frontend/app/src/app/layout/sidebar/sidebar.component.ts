@@ -16,10 +16,10 @@ import { filter, Subject, takeUntil } from 'rxjs';
 
 import { AuthService } from '../../features/auth/services/auth.service';
 import { AuthStore } from '../../features/auth/services/auth.store';
-import { MenuNode } from '../../core/menu/menu.model';
 import { MenuService } from '../../core/menu/menu.service';
 import { toPrimeIcon } from '../../shared/ui/icon-map';
 import { LayoutService } from '../layout.service';
+import { NAV_CONFIG, sanitizeNavSections, type UserRole } from '../nav.config';
 
 export interface DynamicNavSection {
   label: string;
@@ -63,6 +63,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   ngOnInit(): void {
+    // Initialize sections from canonical NAV_CONFIG based on current role.
+    // This ensures immediate, offline-first rendering without waiting for HTTP.
+    const role = this.user()?.role as UserRole | undefined;
+    if (role) {
+      this._sections.set(NAV_CONFIG[role]);
+    }
+
+    // Attempt to load from backend and sanitize/deduplicate against NAV_CONFIG.
     this.cargarMenus();
 
     this.router.events
@@ -84,162 +92,27 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   cargarMenus(): void {
+    const role = this.user()?.role as UserRole | undefined;
+    if (!role) {
+      return;
+    }
+
     this.menuService.getMyMenus().subscribe({
       next: (nodes) => {
-        const sections = this.mapNodesToSections(nodes);
+        // Sanitize and deduplicate backend response against canonical NAV_CONFIG.
+        const sections = sanitizeNavSections(role, nodes);
         this._sections.set(sections);
       },
       error: (err) => {
         console.warn(
-          'No se pudieron cargar los menús dinámicos, usando fallback',
+          '[sidebar] Error loading menus from backend, keeping canonical NAV_CONFIG',
           err,
         );
-        this._sections.set(this.getFallbackSections());
+        // On error (HTTP 500, timeout, offline), fallback to canonical NAV_CONFIG
+        // which was already set in ngOnInit() → zero flicker, always functional.
+        this._sections.set(NAV_CONFIG[role]);
       },
     });
-  }
-
-  private mapNodesToSections(nodes: MenuNode[]): DynamicNavSection[] {
-    if (!nodes || nodes.length === 0) {
-      return this.getFallbackSections();
-    }
-
-    const sections: DynamicNavSection[] = [];
-
-    nodes.forEach((node) => {
-      // Si el nodo padre tiene hijos, el padre es la sección
-      if (node.children && node.children.length > 0) {
-        sections.push({
-          label: node.label,
-          items: node.children.map((child) => ({
-            label: child.label,
-            icon: this.mapIcon(child.icono),
-            route: this.mapRoute(child.ruta),
-            disabled: !child.activo,
-          })),
-        });
-      } else {
-        // Nodo raíz sin hijos (ej: Dashboard)
-        let mainSection = sections.find((s) => s.label === 'Principal');
-        if (!mainSection) {
-          mainSection = { label: 'Principal', items: [] };
-          sections.unshift(mainSection);
-        }
-        mainSection.items.push({
-          label: node.label,
-          icon: this.mapIcon(node.icono),
-          route: this.mapRoute(node.ruta),
-          disabled: !node.activo,
-        });
-      }
-    });
-
-    // Deduplicar: si el menú dinámico del backend ya incluye la sección o la ruta, no volver a inyectarla
-    const alreadyHasMisJrvs = sections.some(
-      (s) =>
-        s.label.toLowerCase() === 'operación electoral' ||
-        s.items.some((item) => item.route === '/observer/mis-jrvs'),
-    );
-
-    // Agregar sección de operación electoral solo a roles con acceso al flujo (OBSERVER y MASTER)
-    // si no vino provista ya por el backend
-    const role = this.user()?.role;
-    if (!alreadyHasMisJrvs && (role === 'OBSERVER' || role === 'MASTER')) {
-      sections.push({
-        label: 'Operación Electoral',
-        items: [
-          {
-            label: 'Mis JRVs',
-            icon: 'pi pi-th-large',
-            route: '/observer/mis-jrvs',
-          },
-        ],
-      });
-    }
-
-    return sections;
-  }
-
-  private mapRoute(ruta: string): string {
-    if (ruta === '/home') return '/dashboard';
-    if (ruta === '/actas/nueva') return '/observer/mis-jrvs';
-    if (ruta === '/actas/aprobar') return '/coordinator/actas';
-    return ruta;
-  }
-
-  /**
-   * Maps the `menu.icono` catalog values to PrimeIcons.
-   *
-   * The backend stores stable icon keys ("home", "document", "people", …), not
-   * a library-specific name, so the mapping lives in the frontend and the
-   * catalog needs no change when the icon library does. The table is the one
-   * of `shared/ui/icon-map.ts`.
-   */
-  private mapIcon(icono?: string): string {
-    return toPrimeIcon(icono);
-  }
-
-  private getFallbackSections(): DynamicNavSection[] {
-    const sections: DynamicNavSection[] = [
-      {
-        label: 'Dashboard',
-        items: [
-          {
-            label: 'Resumen General',
-            icon: 'pi pi-home',
-            route: '/dashboard',
-          },
-        ],
-      },
-    ];
-
-    const role = this.user()?.role;
-    if (role === 'OBSERVER' || role === 'MASTER') {
-      sections.push({
-        label: 'Operación Electoral',
-        items: [
-          {
-            label: 'Mis JRVs',
-            icon: 'pi pi-th-large',
-            route: '/observer/mis-jrvs',
-          },
-        ],
-      });
-    }
-
-    if (role === 'COORDINATOR' || role === 'MASTER') {
-      sections.push({
-        label: 'Supervisión',
-        items: [
-          {
-            label: 'Aprobar Actas',
-            icon: 'pi pi-check-circle',
-            route: '/coordinator/actas',
-          },
-        ],
-      });
-    }
-
-    // T-FE-15: Analítica electoral para ADMIN, MASTER, COORDINATOR
-    if (role === 'ADMIN' || role === 'MASTER' || role === 'COORDINATOR') {
-      sections.push({
-        label: 'Analítica',
-        items: [
-          {
-            label: 'Resultados por Cargo',
-            icon: 'pi pi-chart-bar',
-            route: '/dashboard/resultados',
-          },
-          {
-            label: 'Progreso de Escrutinio',
-            icon: 'pi pi-map',
-            route: '/dashboard/progreso',
-          },
-        ],
-      });
-    }
-
-    return sections;
   }
 
   /** "ana.delgado@cne.gob.ec" -> "Ana Delgado". Falls back to the email. */

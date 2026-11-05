@@ -1,0 +1,281 @@
+.progreso-cantones-container {
+  padding: 2rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+
+  .header-titles {
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin: 0.25rem 0 0 0;
+    }
+  }
+}
+
+// ============================================================================
+// Tarjetas cantonales
+// ============================================================================
+
+.cantones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .canton-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid var(--color-border-subtle);
+
+    &:hover {
+      border-color: var(--color-border-medium);
+      box-shadow: 0 4px 12px var(--color-shade-30);
+    }
+
+    &.active {
+      border-color: var(--primitive-green-800);
+      background: var(--primitive-green-50);
+    }
+
+    .canton-content {
+      padding: 1.5rem;
+
+      .canton-nombre {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 1rem 0;
+        color: var(--color-text-primary);
+      }
+
+      .barra-progreso {
+        height: 12px;
+        background: var(--color-surface-raised);
+        border-radius: 6px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+
+        .barra-fill {
+          height: 100%;
+          transition: width 0.3s ease;
+        }
+
+        &.fill-green .barra-fill {
+          background: linear-gradient(
+            90deg,
+            var(--primitive-green-800) 0%,
+            var(--primitive-green-200) 100%
+          );
+        }
+
+        &.fill-blue .barra-fill {
+          background: linear-gradient(
+            90deg,
+            var(--primitive-blue-500) 0%,
+            var(--primitive-blue-200) 100%
+          );
+        }
+
+        &.fill-amber .barra-fill {
+          background: linear-gradient(
+            90deg,
+            var(--primitive-amber-800) 0%,
+            var(--primitive-amber-200) 100%
+          );
+        }
+      }
+
+      .canton-stats {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        justify-content: center;
+
+        .stat {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+
+          .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            line-height: 1;
+          }
+
+          .stat-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.25rem;
+            text-align: center;
+          }
+
+          &.stat-porcentaje {
+            .stat-value {
+              font-size: 1.75rem;
+              color: var(--primitive-green-800);
+            }
+          }
+        }
+
+        .divider {
+          color: var(--color-border-medium);
+          font-weight: 300;
+          font-size: 1.25rem;
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Tabla de parroquias
+// ============================================================================
+
+.parroquias-card {
+  .parroquias-header {
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--color-border-subtle);
+    padding-bottom: 1rem;
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+  }
+
+  .parroquias-table-wrapper {
+    overflow-x: auto;
+
+    .parroquias-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+
+      thead {
+        background: var(--color-surface-raised);
+        border-bottom: 2px solid var(--color-border-subtle);
+
+        tr {
+          th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.8rem;
+
+            &.col-nombre {
+              width: 40%;
+
+              @media (max-width: 640px) {
+                width: 50%;
+              }
+            }
+
+            &.col-escrutadas,
+            &.col-total {
+              width: 15%;
+              text-align: center;
+
+              @media (max-width: 640px) {
+                width: 20%;
+              }
+            }
+
+            &.col-avance {
+              width: 30%;
+
+              @media (max-width: 640px) {
+                width: 30%;
+              }
+            }
+          }
+        }
+      }
+
+      tbody {
+        tr {
+          border-bottom: 1px solid var(--color-border-subtle);
+          transition: background 0.2s ease;
+
+          &:hover {
+            background: var(--color-surface-raised);
+          }
+
+          &:last-child {
+            border-bottom: none;
+          }
+
+          td {
+            padding: 1rem;
+            color: var(--color-text-primary);
+
+            &.col-nombre {
+              font-weight: 500;
+            }
+
+            &.col-escrutadas,
+            &.col-total {
+              text-align: center;
+              font-weight: 600;
+            }
+
+            &.col-avance {
+              .avance-cell {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+
+                .mini-barra {
+                  flex: 1;
+                  height: 6px;
+                  background: var(--color-surface-raised);
+                  border-radius: 3px;
+                  overflow: hidden;
+                  min-width: 100px;
+
+                  .mini-barra-fill {
+                    height: 100%;
+                    background: linear-gradient(
+                      90deg,
+                      var(--primitive-green-800) 0%,
+                      var(--primitive-green-200) 100%
+                    );
+                  }
+                }
+
+                .avance-texto {
+                  font-weight: 600;
+                  color: var(--primitive-green-800);
+                  min-width: 50px;
+                  text-align: right;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

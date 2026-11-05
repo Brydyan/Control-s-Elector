@@ -1,0 +1,489 @@
+<div class="registrar-acta-container" data-testid="registrar-acta">
+  <div class="page-topbar">
+    <app-button
+      variant="ghost"
+      size="sm"
+      (clicked)="cancelar()"
+      [disabled]="submitting()"
+    >
+      <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      Cancelar y volver
+    </app-button>
+  </div>
+
+  <!-- Confirmación de salida: hay votos escritos que no se han enviado. -->
+  @if (confirmarSalida()) {
+  <div
+    #panelConfirmacion
+    class="confirm-panel"
+    role="alertdialog"
+    aria-labelledby="confirmar-salida-titulo"
+    aria-describedby="confirmar-salida-texto"
+    tabindex="-1"
+  >
+    <p id="confirmar-salida-titulo" class="confirm-panel__title">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      El acta no se ha enviado
+    </p>
+    <p id="confirmar-salida-texto" class="confirm-panel__text">
+      @if (totalVotosComputados > 0) { Escribiste {{ totalVotosComputados }}
+      votos que todavía no se han enviado al servidor. } @else { Todavía no has
+      enviado el acta de esta dignidad. } Si vuelves ahora queda como borrador
+      en este dispositivo, para retomarlo cuando regreses.
+    </p>
+    <div class="confirm-panel__actions">
+      <app-button variant="ghost" size="md" (clicked)="seguirEscribiendo()">
+        <i class="pi pi-pencil" aria-hidden="true"></i>
+        Seguir escribiendo
+      </app-button>
+      <app-button variant="primary" size="md" (clicked)="salirDelFormulario()">
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Volver sin enviar
+      </app-button>
+    </div>
+  </div>
+  }
+
+  <header class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">
+        {{ esModoDisputa() ? 'Subsanación de Acta en Disputa' : 'Registro de
+        Acta de Escrutinio' }}
+      </h1>
+      <p class="page-subtitle">JRV #{{ jrvId }} · Dignidad ID #{{ cargoId }}</p>
+    </div>
+
+    <!-- Stepper visual -->
+    <p-steps
+      class="stepper"
+      [model]="stepModel"
+      [activeIndex]="stepIndex"
+      [readonly]="true"
+    />
+  </header>
+
+  <!-- Estado de carga inicial -->
+  <app-loading-state
+    *ngIf="loading()"
+    message="Cargando candidatos y papeleta..."
+  ></app-loading-state>
+
+  <!--
+    Región de estado no urgente (role="status"): avisos de borrador y
+    mensajes de éxito. La región vive siempre en el DOM y sólo cambia su
+    texto, para que el lector de pantalla la anuncie. El error vive en
+    app-error-state, con role="alert": un éxito no se pinta como error.
+  -->
+  <div
+    class="status-region"
+    role="status"
+    aria-live="polite"
+    [class.status-region--vacio]="!draftSavedMessage() && !success()"
+  >
+    @if (draftSavedMessage(); as aviso) {
+    <p class="draft-pill-notification">{{ aviso }}</p>
+    } @if (success(); as exito) {
+    <p class="success-banner">
+      <i class="pi pi-check-circle" aria-hidden="true"></i>
+      <span>{{ exito }}</span>
+    </p>
+    }
+  </div>
+
+  @if (esModoDisputa()) {
+  <div class="dispute-alert">
+    <p-message
+      severity="warn"
+      icon="pi pi-exclamation-triangle"
+      [text]="motivoDisputa() ? ('Acta en disputa: ' + motivoDisputa()) : 'Esta acta fue marcada en disputa por el coordinador. Por favor revisa y corrige las cifras observadas.'"
+    />
+  </div>
+  }
+
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Atención"
+    [message]="error() ?? undefined"
+  ></app-error-state>
+
+  <!--
+    ==================== PASO 1: FOTO PRIMERO ====================
+    T-FE-13 D1: la evidencia se captura antes de escribir un solo voto.
+  -->
+  @if (!loading() && !submitSuccess() && currentStep() === 'IMAGEN') {
+  <div class="step-content" data-testid="step-imagen">
+    <app-card [elevated]="true" headerTitle="Captura de Acta Física">
+      <div class="image-upload-zone">
+        @if (imagePreviewUrl) {
+        <div class="image-preview">
+          <img
+            [src]="imagePreviewUrl"
+            alt="Previsualización de acta física"
+            class="preview-img"
+          />
+        </div>
+        }
+
+        <div class="upload-controls">
+          <input
+            id="inputFotoActa"
+            data-testid="input-foto-acta"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            #fileInput
+            (change)="onFileSelected($event)"
+            style="display: none"
+          />
+          <app-button
+            variant="secondary"
+            size="md"
+            data-testid="btn-capturar-foto"
+            (clicked)="abrirCamara(fileInput)"
+          >
+            <i class="pi pi-camera" aria-hidden="true"></i>
+            {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o subir
+            archivo' }}
+          </app-button>
+          <p class="upload-tip">
+            Asegúrate de que los números y firmas sean claramente legibles.
+          </p>
+          @if (captureCancelled) {
+          <p class="form-hint" data-testid="aviso-captura-cancelada">
+            <i class="pi pi-info-circle" aria-hidden="true"></i>
+            No se seleccionó ninguna fotografía. Puedes tomarla de nuevo o
+            continuar con "Digitar votos primero".
+          </p>
+          }
+        </div>
+      </div>
+    </app-card>
+
+    <div class="step-actions step-actions--between">
+      <!--
+        Excepción documentada en D1: sin cámara (o con la cámara ocupada) el
+        veedor digita los votos primero. Es un enlace de texto, no un botón
+        principal: la vía normal es la foto.
+      -->
+      <app-button
+        variant="ghost"
+        size="md"
+        data-testid="btn-digitar-votos-primero"
+        (clicked)="digitarVotosPrimero()"
+      >
+        <i class="pi pi-pencil" aria-hidden="true"></i>
+        Digitar votos primero
+      </app-button>
+
+      <!--
+        La vía principal sólo aparece cuando la foto ya está capturada: es
+        el punto del flujo "Foto Primero".
+      -->
+      @if (selectedImageFile) {
+      <app-button
+        variant="primary"
+        size="lg"
+        data-testid="btn-continuar-votos"
+        (clicked)="continuarAVotos()"
+      >
+        Continuar a Digitación de Votos
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
+      </app-button>
+      }
+    </div>
+  </div>
+  }
+
+  <!-- ==================== PASO 2: VOTOS ==================== -->
+  @if (!loading() && !submitSuccess() && currentStep() === 'VOTOS') {
+  <div class="step-content" data-testid="step-votos">
+    <app-card [elevated]="true" headerTitle="Totales de Mesa">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="totalSufragantes"
+            >Total de Sufragantes en Padrón:</label
+          >
+          <input
+            id="totalSufragantes"
+            data-testid="input-padron"
+            pInputText
+            type="number"
+            inputmode="numeric"
+            min="0"
+            step="1"
+            [max]="maxSufragantes"
+            [value]="totalSufragantes"
+            (input)="onTotalSufragantesChange($event)"
+            aria-describedby="explicacion-checksum"
+            [attr.aria-invalid]="
+              excedeTopeSufragantes ? 'true' : null
+            "
+            placeholder="0"
+          />
+        </div>
+      </div>
+    </app-card>
+
+    <!--
+      Cota de sufragantes (T-FE-13 B.1/B.3): dos niveles, dos hechos.
+      - warning (>350): mesa especial, el veedor confirma.
+      - error (>500): error de tipeo, el acta no se puede registrar.
+    -->
+    @if (alertaSufragantes; as aviso) {
+    <div
+      class="cota-banner"
+      data-testid="cota-banner"
+      [class.cota-banner--warning]="nivelAlertaSufragantes === 'warning'"
+      [class.cota-banner--error]="nivelAlertaSufragantes === 'error'"
+      [attr.role]="nivelAlertaSufragantes === 'error' ? 'alert' : 'status'"
+      [attr.data-nivel]="nivelAlertaSufragantes"
+    >
+      <i
+        class="pi"
+        [class.pi-exclamation-triangle]="nivelAlertaSufragantes === 'warning'"
+        [class.pi-ban]="nivelAlertaSufragantes === 'error'"
+        aria-hidden="true"
+      ></i>
+      <span>{{ aviso }}</span>
+    </div>
+    }
+
+    <app-card [elevated]="true" headerTitle="Votos por Candidato">
+      <div class="candidates-list">
+        @for (c of candidatos; track c.id) {
+        <div class="candidate-row">
+          <div class="candidate-info">
+            <span class="candidate-name">{{ c.nombre }}</span>
+            <span class="candidate-party"
+              >{{ c.partidoSiglas || c.partidoNombre || 'Independiente' }}
+              (Lista {{ c.partidoNumeroLista || 'N/A' }})</span
+            >
+          </div>
+          <div class="candidate-input">
+            <input
+              pInputText
+              type="number"
+              inputmode="numeric"
+              min="0"
+              step="1"
+              [max]="maxVotos"
+              class="form-input--center"
+              [value]="getVoto(c.id)"
+              (input)="setVoto(c.id, $event)"
+              placeholder="0"
+              [attr.aria-label]="'Votos para ' + c.nombre"
+              aria-describedby="explicacion-checksum"
+              [attr.aria-invalid]="votoFueraDeRango(c.id) ? 'true' : null"
+            />
+          </div>
+        </div>
+        }
+      </div>
+    </app-card>
+
+    <app-card [elevated]="true" headerTitle="Votos Blancos y Nulos">
+      <div class="form-grid form-grid--2col">
+        <div class="form-group">
+          <label class="form-label" for="votosBlancos">Votos en Blanco:</label>
+          <input
+            id="votosBlancos"
+            pInputText
+            type="number"
+            inputmode="numeric"
+            min="0"
+            step="1"
+            [max]="maxVotos"
+            [value]="votosBlancos"
+            (input)="onVotosBlancosChange($event)"
+            aria-describedby="explicacion-checksum"
+            placeholder="0"
+          />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="votosNulos">Votos Nulos:</label>
+          <input
+            id="votosNulos"
+            pInputText
+            type="number"
+            inputmode="numeric"
+            min="0"
+            step="1"
+            [max]="maxVotos"
+            [value]="votosNulos"
+            (input)="onVotosNulosChange($event)"
+            aria-describedby="explicacion-checksum"
+            placeholder="0"
+          />
+        </div>
+      </div>
+    </app-card>
+
+    <!-- Balance Checksum en vivo -->
+    <div
+      #explicacionChecksum
+      id="explicacion-checksum"
+      class="checksum-banner"
+      tabindex="-1"
+      [class.checksum-banner--valid]="isChecksumValid"
+      [class.checksum-banner--invalid]="!isChecksumValid"
+      data-testid="checksum-banner"
+    >
+      <div class="checksum-info">
+        <strong>Suma de Votos: {{ totalVotosComputados }}</strong> /
+        <span>Total Sufragantes: {{ totalSufragantes }}</span>
+      </div>
+      <div class="checksum-status">
+        @if (isChecksumValid) {
+        <i class="pi pi-check" aria-hidden="true"></i> Balance electoral exacto
+        } @else {
+        <i class="pi pi-times" aria-hidden="true"></i>
+        <span class="checksum-difference">{{ descripcionDiferencia }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- Razón del bloqueo: el botón principal no se apaga en silencio. -->
+    @if (motivoBloqueo(); as motivo) {
+    <p class="form-hint form-hint--error" role="alert">
+      <i class="pi pi-info-circle" aria-hidden="true"></i>
+      {{ motivo }}
+    </p>
+    }
+
+    <div class="step-actions">
+      @if (!isChecksumValid) {
+      <app-button
+        variant="secondary"
+        size="lg"
+        data-testid="btn-continuar-inconsistencia"
+        (clicked)="continuarConInconsistencia()"
+      >
+        <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+        Continuar con Inconsistencia
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
+      </app-button>
+      }
+      <app-button
+        variant="primary"
+        size="lg"
+        data-testid="btn-continuar-revision"
+        (clicked)="continuarARevision()"
+      >
+        Continuar a Revisión Final
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
+      </app-button>
+    </div>
+  </div>
+  }
+
+  <!-- ==================== PASO 3: REVISIÓN Y ENVÍO ==================== -->
+  @if (!loading() && !submitSuccess() && currentStep() === 'REVISION') {
+  <div class="step-content" data-testid="step-revision">
+    <app-card [elevated]="true" headerTitle="Resumen de Escrutinio">
+      <div class="review-table">
+        <div class="review-row">
+          <span>Total Sufragantes:</span>
+          <strong>{{ totalSufragantes }}</strong>
+        </div>
+        <div class="review-row">
+          <span>Votos Blancos:</span>
+          <strong>{{ votosBlancos }}</strong>
+        </div>
+        <div class="review-row">
+          <span>Votos Nulos:</span>
+          <strong>{{ votosNulos }}</strong>
+        </div>
+        @for (c of candidatos; track c.id) {
+        <div class="review-row">
+          <span
+            >{{ c.nombre }} ({{ c.partidoSiglas || 'Independiente' }}):</span
+          >
+          <strong>{{ getVoto(c.id) }}</strong>
+        </div>
+        }
+        <div class="review-row" [class.review-row--invalid]="!isChecksumValid">
+          <span>Balance electoral:</span>
+          <strong>
+            @if (isChecksumValid) { Cuadra ({{ totalVotosComputados }} de {{
+            totalSufragantes }}) } @else { {{ descripcionDiferencia }} }
+          </strong>
+        </div>
+        <div class="review-row review-row--highlight">
+          <span>Evidencia adjunta:</span>
+          <strong
+            >{{ selectedImageFile ? selectedImageFile.name : 'Sin fotografía
+            adjunta' }}</strong
+          >
+        </div>
+      </div>
+
+      @if (alertaSufragantes; as aviso) {
+      <div
+        class="cota-banner"
+        data-testid="cota-banner-revision"
+        [class.cota-banner--warning]="nivelAlertaSufragantes === 'warning'"
+        [class.cota-banner--error]="nivelAlertaSufragantes === 'error'"
+        [attr.role]="nivelAlertaSufragantes === 'error' ? 'alert' : 'status'"
+        [attr.data-nivel]="nivelAlertaSufragantes"
+      >
+        <i
+          class="pi"
+          [class.pi-exclamation-triangle]="nivelAlertaSufragantes === 'warning'"
+          [class.pi-ban]="nivelAlertaSufragantes === 'error'"
+          aria-hidden="true"
+        ></i>
+        <span>{{ aviso }}</span>
+      </div>
+      } @if (!isChecksumValid) {
+      <p class="form-hint form-hint--error" role="alert">
+        <i class="pi pi-info-circle" aria-hidden="true"></i>
+        {{ descripcionDiferencia }}. El acta no se puede transmitir al servidor
+        todavía: se puede guardar como borrador para que la coordinación la
+        revise con la evidencia fotográfica.
+      </p>
+      }
+    </app-card>
+
+    <app-loading-state
+      *ngIf="submitting()"
+      message="Transmitiendo acta y evidencia al servidor..."
+    ></app-loading-state>
+
+    <div class="step-actions step-actions--between" *ngIf="!submitting()">
+      <app-button
+        variant="ghost"
+        size="md"
+        data-testid="btn-volver-imagen"
+        (clicked)="irAPasoImagen()"
+      >
+        <i class="pi pi-arrow-left" aria-hidden="true"></i>
+        Volver a la Foto
+      </app-button>
+
+      <div class="submit-buttons">
+        <app-button
+          variant="secondary"
+          size="md"
+          data-testid="btn-guardar-borrador"
+          [disabled]="actaEncolada()"
+          (clicked)="guardarComoBorrador()"
+        >
+          <i class="pi pi-save" aria-hidden="true"></i>
+          Guardar Borrador
+        </app-button>
+        <app-button
+          variant="primary"
+          size="lg"
+          data-testid="btn-transmitir-acta"
+          [disabled]="actaEncolada() || excedeTopeSufragantes"
+          (clicked)="enviarActaFinal()"
+        >
+          <i class="pi pi-send" aria-hidden="true"></i>
+          {{ actaEncolada() ? 'Acta en cola' : esModoDisputa() ? 'Enviar
+          Corrección' : 'Transmitir Acta' }}
+        </app-button>
+      </div>
+    </div>
+  </div>
+  }
+</div>
