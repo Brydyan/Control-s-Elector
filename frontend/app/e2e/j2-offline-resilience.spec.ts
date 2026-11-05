@@ -79,11 +79,11 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
     await page.context().setOffline(true);
 
     // User should still be able to enter votos offline (form remains functional)
-    await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
+    await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
     await page.getByLabel(/rodríguez/i).fill(String(VOTOS.rodriguez));
     await page.getByLabel(/lópez/i).fill(String(VOTOS.lopez));
-    await page.getByLabel(/blancos/i).fill(String(VOTOS.blancos));
-    await page.getByLabel(/nulos/i).fill(String(VOTOS.nulos));
+    await page.getByRole('spinbutton', { name: /blanco/i }).fill(String(VOTOS.blancos));
+    await page.getByRole('spinbutton', { name: /nulo/i }).fill(String(VOTOS.nulos));
 
     // "Guardar" button should work offline (saves to IndexedDB)
     const guardarBtn = page.getByRole('button', { name: /guardar/i });
