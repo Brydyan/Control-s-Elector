@@ -51,13 +51,17 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     observerPage: page,
   }) => {
     await page.goto('/observer/mis-jrvs');
-    await page
-      .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.numero })
-      .click()
-      .catch(() => page.getByText(STUB_JRV_1.numero).click());
 
-    await expect(page).toHaveURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`));
+    // Click on JRV card and wait for navigation
+    await Promise.all([
+      page.waitForURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`)),
+      page
+        .getByRole('listitem')
+        .filter({ hasText: STUB_JRV_1.numero })
+        .click()
+        .catch(() => page.getByText(STUB_JRV_1.numero).click()),
+    ]);
+
     await page.getByText(STUB_CARGO_1.nombre).click();
 
     // Navigate to registrar-acta (IMAGEN step)
@@ -113,11 +117,16 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     observerPage: page,
   }) => {
     await page.goto('/observer/mis-jrvs');
-    await page
-      .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.numero })
-      .click()
-      .catch(() => page.getByText(STUB_JRV_1.numero).click());
+
+    // Click on JRV card and wait for navigation
+    await Promise.all([
+      page.waitForURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`)),
+      page
+        .getByRole('listitem')
+        .filter({ hasText: STUB_JRV_1.numero })
+        .click()
+        .catch(() => page.getByText(STUB_JRV_1.numero).click()),
+    ]);
 
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
@@ -167,11 +176,16 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await mockImagenUpload(page, 200);
 
     await page.goto('/observer/mis-jrvs');
-    await page
-      .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.numero })
-      .click()
-      .catch(() => page.getByText(STUB_JRV_1.numero).click());
+
+    // Click on JRV card and wait for navigation
+    await Promise.all([
+      page.waitForURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`)),
+      page
+        .getByRole('listitem')
+        .filter({ hasText: STUB_JRV_1.numero })
+        .click()
+        .catch(() => page.getByText(STUB_JRV_1.numero).click()),
+    ]);
 
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
@@ -257,11 +271,16 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     observerPage: page,
   }) => {
     await page.goto('/observer/mis-jrvs');
-    await page
-      .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.numero })
-      .click()
-      .catch(() => page.getByText(STUB_JRV_1.numero).click());
+
+    // Click on JRV card and wait for navigation
+    await Promise.all([
+      page.waitForURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`)),
+      page
+        .getByRole('listitem')
+        .filter({ hasText: STUB_JRV_1.numero })
+        .click()
+        .catch(() => page.getByText(STUB_JRV_1.numero).click()),
+    ]);
 
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,

@@ -53,6 +53,8 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
     await mockActaBorrador(page);
     await mockActaEnvio(page, 201); // Initial submit succeeds
     await mockImagenUpload(page, 200);
+    // Actas list mock on observerPage (tests navigate here on observerPage)
+    await mockCoordinatorMisActas(page);
 
     // Same for coordinator page
     await mockObserverJrvs(coordPage);
@@ -71,11 +73,15 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
   }) => {
     await page.goto('/observer/mis-jrvs');
 
-    await page
-      .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.numero })
-      .click()
-      .catch(() => page.getByText(STUB_JRV_1.numero).click());
+    // Click on JRV card and wait for navigation
+    await Promise.all([
+      page.waitForURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`)),
+      page
+        .getByRole('listitem')
+        .filter({ hasText: STUB_JRV_1.numero })
+        .click()
+        .catch(() => page.getByText(STUB_JRV_1.numero).click()),
+    ]);
 
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
