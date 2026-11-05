@@ -1,5 +1,5 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Injectable, inject, Logger } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type { PagedResponse } from '../../../shared/models/page.model';
@@ -74,7 +74,11 @@ interface JrvConEstadoDto {
 })
 export class CoordinatorApi {
   private readonly http = inject(HttpClient);
-  private readonly logger = inject(Logger);
+  private readonly logger = {
+    info: console.log,
+    error: console.error,
+    warn: console.warn,
+  };
   private readonly baseUrl = `${environment.apiUrl}/coordinator`;
   private readonly configUrl = `${environment.apiUrl}/configuracion`;
   private readonly observerUrl = `${environment.apiUrl}/observer`;
