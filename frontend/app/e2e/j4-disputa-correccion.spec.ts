@@ -44,8 +44,8 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
     nulos: 10,
   };
 
-  test.beforeEach(async ({ observerPage: page, coordinatorPage: coordPage }) => {
-    // Register all API mocks for both OBSERVER and COORDINATOR
+  test.beforeEach(async ({ observerPage: page }) => {
+    // Register all API mocks for OBSERVER
     await mockObserverJrvs(page);
     await mockObserverCargos(page);
     await mockConfiguracionCandidatos(page);
@@ -55,13 +55,6 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
     await mockImagenUpload(page, 200);
     // Actas list mock on observerPage (tests navigate here on observerPage)
     await mockCoordinatorMisActas(page);
-
-    // Same for coordinator page
-    await mockObserverJrvs(coordPage);
-    await mockObserverCargos(coordPage);
-    await mockConfiguracionCandidatos(coordPage);
-    await mockConfiguracionPartidos(coordPage);
-    await mockCoordinatorMisActas(coordPage);
   });
 
   // -------------------------------------------------------------------------
