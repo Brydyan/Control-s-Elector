@@ -80,20 +80,21 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await expect(continueBtn).toBeEnabled({ timeout: 5000 });
     await continueBtn.click({ timeout: 10_000 });
 
-    // Fill sufragantes
-    await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
+    // Fill sufragantes using spinbutton role for reliability
+    await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
 
     // Fill an UNBALANCED acta: votos sum to 150 (missing 100)
     const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByLabel(/sufragantes|blancos|nulos/i) });
+    const candInputs = inputs.filter({ hasNot: page.getByRole('spinbutton', { name: /sufragantes|blancos|nulos/i }) });
     const count = await candInputs.count();
     if (count >= 2) {
       await candInputs.nth(0).fill('75');  // 75 instead of 150
       await candInputs.nth(1).fill('40');  // 40 instead of 80
     }
 
-    await page.getByLabel(/blancos/i).fill('10');
-    await page.getByLabel(/nulos/i).fill('10');
+    // Use spinbutton roles for blancos/nulos to avoid locator ambiguity
+    await page.getByRole('spinbutton', { name: /blanco/i }).fill('10');
+    await page.getByRole('spinbutton', { name: /nulo/i }).fill('10');
     // Total: 75 + 40 + 10 + 10 = 135, expected 250. Falta 115.
 
     // Try to advance to REVISION
@@ -133,8 +134,12 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
-    // Wait for image processing
-    await page.waitForTimeout(1000);
+    // Wait for image preview to load and compression to complete
+    await page
+      .locator('img[alt*="foto"], img[alt*="acta"], img[alt*="preview"]')
+      .first()
+      .waitFor({ timeout: 10_000 })
+      .catch(() => page.waitForTimeout(2000)); // Fallback if preview element not found
 
     // Advance to VOTOS
     const continueBtn1 = page
@@ -144,18 +149,18 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await continueBtn1.click({ timeout: 10_000 });
 
     // Fill BALANCED acta
-    await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
+    await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
 
     const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByLabel(/sufragantes|blancos|nulos/i) });
+    const candInputs = inputs.filter({ hasNot: page.getByRole('spinbutton', { name: /sufragantes|blancos|nulos/i }) });
     const count = await candInputs.count();
     if (count >= 2) {
       await candInputs.nth(0).fill(String(VOTOS_VALIDOS.rodriguez));
       await candInputs.nth(1).fill(String(VOTOS_VALIDOS.lopez));
     }
 
-    await page.getByLabel(/blancos/i).fill(String(VOTOS_VALIDOS.blancos));
-    await page.getByLabel(/nulos/i).fill(String(VOTOS_VALIDOS.nulos));
+    await page.getByRole('spinbutton', { name: /blanco/i }).fill(String(VOTOS_VALIDOS.blancos));
+    await page.getByRole('spinbutton', { name: /nulo/i }).fill(String(VOTOS_VALIDOS.nulos));
     // Total: 150 + 80 + 10 + 10 = 250 ✓
 
     // Advance should succeed
@@ -185,8 +190,12 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
-    // Wait for image processing
-    await page.waitForTimeout(1000);
+    // Wait for image preview to load and compression to complete
+    await page
+      .locator('img[alt*="foto"], img[alt*="acta"], img[alt*="preview"]')
+      .first()
+      .waitFor({ timeout: 10_000 })
+      .catch(() => page.waitForTimeout(2000)); // Fallback if preview element not found
 
     const continueBtn = page
       .getByRole('button', { name: /continuar|votos/i })
@@ -194,18 +203,18 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await expect(continueBtn).toBeEnabled({ timeout: 5000 });
     await continueBtn.click({ timeout: 10_000 });
 
-    await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
+    await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
 
     const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByLabel(/sufragantes|blancos|nulos/i) });
+    const candInputs = inputs.filter({ hasNot: page.getByRole('spinbutton', { name: /sufragantes|blancos|nulos/i }) });
     const count = await candInputs.count();
     if (count >= 2) {
       await candInputs.nth(0).fill(String(VOTOS_VALIDOS.rodriguez));
       await candInputs.nth(1).fill(String(VOTOS_VALIDOS.lopez));
     }
 
-    await page.getByLabel(/blancos/i).fill(String(VOTOS_VALIDOS.blancos));
-    await page.getByLabel(/nulos/i).fill(String(VOTOS_VALIDOS.nulos));
+    await page.getByRole('spinbutton', { name: /blanco/i }).fill(String(VOTOS_VALIDOS.blancos));
+    await page.getByRole('spinbutton', { name: /nulo/i }).fill(String(VOTOS_VALIDOS.nulos));
 
     await page.getByRole('button', { name: /revisión|continuar/i }).click({ timeout: 8_000 });
 
@@ -272,8 +281,12 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
-    // Wait for image processing
-    await page.waitForTimeout(1000);
+    // Wait for image preview to load and compression to complete
+    await page
+      .locator('img[alt*="foto"], img[alt*="acta"], img[alt*="preview"]')
+      .first()
+      .waitFor({ timeout: 10_000 })
+      .catch(() => page.waitForTimeout(2000)); // Fallback if preview element not found
 
     const continueBtn2 = page
       .getByRole('button', { name: /continuar|votos/i })
@@ -282,18 +295,18 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await continueBtn2.click({ timeout: 10_000 });
 
     // Edge case: 250 sufragantes, all blancos (valid, but unusual)
-    await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
+    await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
 
     const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByLabel(/sufragantes|blancos|nulos/i) });
+    const candInputs = inputs.filter({ hasNot: page.getByRole('spinbutton', { name: /sufragantes|blancos|nulos/i }) });
     const count = await candInputs.count();
     if (count >= 2) {
       await candInputs.nth(0).fill('0');
       await candInputs.nth(1).fill('0');
     }
 
-    await page.getByLabel(/blancos/i).fill('240');
-    await page.getByLabel(/nulos/i).fill('10');
+    await page.getByRole('spinbutton', { name: /blanco/i }).fill('240');
+    await page.getByRole('spinbutton', { name: /nulo/i }).fill('10');
     // Total: 0 + 0 + 240 + 10 = 250 ✓ (valid but unusual)
 
     // Should allow advance (checksum is valid)
