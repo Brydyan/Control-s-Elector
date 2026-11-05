@@ -53,16 +53,16 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await page.goto('/observer/mis-jrvs');
     await page
       .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.nombre })
+      .filter({ hasText: STUB_JRV_1.numero })
       .click()
-      .catch(() => page.getByText(STUB_JRV_1.nombre).click());
+      .catch(() => page.getByText(STUB_JRV_1.numero).click());
 
-    await expect(page).toHaveURL(new RegExp(`/observer/jrv/${STUB_JRV_1.id}/cargos`));
+    await expect(page).toHaveURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`));
     await page.getByText(STUB_CARGO_1.nombre).click();
 
     // Navigate to registrar-acta (IMAGEN step)
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     // Attach image
@@ -115,12 +115,12 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await page.goto('/observer/mis-jrvs');
     await page
       .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.nombre })
+      .filter({ hasText: STUB_JRV_1.numero })
       .click()
-      .catch(() => page.getByText(STUB_JRV_1.nombre).click());
+      .catch(() => page.getByText(STUB_JRV_1.numero).click());
 
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     // Attach image
@@ -169,12 +169,12 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await page.goto('/observer/mis-jrvs');
     await page
       .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.nombre })
+      .filter({ hasText: STUB_JRV_1.numero })
       .click()
-      .catch(() => page.getByText(STUB_JRV_1.nombre).click());
+      .catch(() => page.getByText(STUB_JRV_1.numero).click());
 
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     // Complete form
@@ -259,12 +259,12 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await page.goto('/observer/mis-jrvs');
     await page
       .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.nombre })
+      .filter({ hasText: STUB_JRV_1.numero })
       .click()
-      .catch(() => page.getByText(STUB_JRV_1.nombre).click());
+      .catch(() => page.getByText(STUB_JRV_1.numero).click());
 
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     const fileInput = page.locator('input[type="file"]');

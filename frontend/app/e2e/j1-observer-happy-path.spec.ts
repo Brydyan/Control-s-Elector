@@ -72,7 +72,7 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
   test('should display assigned JRVs for observer', async ({ observerPage: page }) => {
     await page.goto('/observer/mis-jrvs');
 
-    await expect(page.getByText(STUB_JRV_1.nombre)).toBeVisible();
+    await expect(page.getByText(STUB_JRV_1.numero)).toBeVisible();
     await expect(page.getByText(STUB_JRV_1.parroquia)).toBeVisible();
   });
 
@@ -86,15 +86,15 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
     // Click on the JRV card / row / button
     await page
       .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.nombre })
+      .filter({ hasText: STUB_JRV_1.numero })
       .click()
       .catch(() =>
         // Fallback: some designs use a plain div or link
-        page.getByText(STUB_JRV_1.nombre).click(),
+        page.getByText(STUB_JRV_1.numero).click(),
       );
 
     await expect(page).toHaveURL(
-      new RegExp(`/observer/jrv/${STUB_JRV_1.id}/cargos`),
+      new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`),
     );
     await expect(page.getByText(STUB_CARGO_1.nombre)).toBeVisible();
   });
@@ -107,7 +107,7 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
     observerPage: page,
   }) => {
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     // Paso 0 "Foto" should be active in PrimeNG Steps
@@ -122,7 +122,7 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
     observerPage: page,
   }) => {
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     // Wait for candidatos to load
@@ -149,7 +149,7 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
     observerPage: page,
   }) => {
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     // Attach image to unlock "Continuar" button
@@ -164,12 +164,9 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
     // Fill sufragantes
     await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
 
-    // Fill candidatos — look for input rows near candidato names
-    const rodriguezRow = page.locator(':has-text("Rodríguez")').filter({ has: page.locator('input[type="number"]') }).first();
-    await rodriguezRow.locator('input[type="number"]').fill(String(VOTOS.rodriguez));
-
-    const lopezRow = page.locator(':has-text("López")').filter({ has: page.locator('input[type="number"]') }).first();
-    await lopezRow.locator('input[type="number"]').fill(String(VOTOS.lopez));
+    // Fill candidatos — use accessible spinbutton roles to avoid strict mode violations
+    await page.getByRole('spinbutton', { name: /votos.*Rodríguez|Carlos/i }).fill(String(VOTOS.rodriguez));
+    await page.getByRole('spinbutton', { name: /votos.*López|Ana/i }).fill(String(VOTOS.lopez));
 
     // Fill blancos / nulos
     await page.getByLabel(/blancos/i).fill(String(VOTOS.blancos));
@@ -191,7 +188,7 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
     observerPage: page,
   }) => {
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     // --- IMAGEN step ---
@@ -253,7 +250,7 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
     observerPage: page,
   }) => {
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     await page.locator('input[type="file"]').setInputFiles(FIXTURE_IMAGE);
@@ -291,7 +288,7 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
     observerPage: page,
   }) => {
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     await page.locator('input[type="file"]').setInputFiles(FIXTURE_IMAGE);

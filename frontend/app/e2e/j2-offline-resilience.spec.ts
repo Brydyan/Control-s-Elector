@@ -51,11 +51,11 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
     await page.goto('/observer/mis-jrvs');
     await page
       .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.nombre })
+      .filter({ hasText: STUB_JRV_1.numero })
       .click()
-      .catch(() => page.getByText(STUB_JRV_1.nombre).click());
+      .catch(() => page.getByText(STUB_JRV_1.numero).click());
 
-    await expect(page).toHaveURL(new RegExp(`/observer/jrv/${STUB_JRV_1.id}/cargos`));
+    await expect(page).toHaveURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`));
     await page.getByText(STUB_CARGO_1.nombre).click();
 
     // Phase 2: Go offline (simulate network failure)
@@ -95,9 +95,9 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
     await page.goto('/observer/mis-jrvs');
     await page
       .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.nombre })
+      .filter({ hasText: STUB_JRV_1.numero })
       .click()
-      .catch(() => page.getByText(STUB_JRV_1.nombre).click());
+      .catch(() => page.getByText(STUB_JRV_1.numero).click());
 
     // Go offline
     await page.context().setOffline(true);

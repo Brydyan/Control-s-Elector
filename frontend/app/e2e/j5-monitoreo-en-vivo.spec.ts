@@ -3,6 +3,7 @@ import {
   mockObserverJrvs,
   mockConfiguracionCandidatos,
   mockConfiguracionPartidos,
+  mockCantonReportes,
   STUB_JRV_1,
 } from './support/api-mocks';
 
@@ -30,6 +31,7 @@ test.describe('J5 — Monitoreo en Vivo (ADMIN/MASTER Dashboard)', () => {
     await mockObserverJrvs(page);
     await mockConfiguracionCandidatos(page);
     await mockConfiguracionPartidos(page);
+    await mockCantonReportes(page);
   });
 
   // -------------------------------------------------------------------------

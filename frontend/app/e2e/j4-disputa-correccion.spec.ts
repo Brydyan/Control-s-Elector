@@ -7,6 +7,7 @@ import {
   mockActaBorrador,
   mockActaEnvio,
   mockImagenUpload,
+  mockCoordinatorMisActas,
   STUB_JRV_1,
   STUB_CARGO_1,
 } from './support/api-mocks';
@@ -58,6 +59,7 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
     await mockObserverCargos(coordPage);
     await mockConfiguracionCandidatos(coordPage);
     await mockConfiguracionPartidos(coordPage);
+    await mockCoordinatorMisActas(coordPage);
   });
 
   // -------------------------------------------------------------------------
@@ -71,12 +73,12 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
 
     await page
       .getByRole('listitem')
-      .filter({ hasText: STUB_JRV_1.nombre })
+      .filter({ hasText: STUB_JRV_1.numero })
       .click()
-      .catch(() => page.getByText(STUB_JRV_1.nombre).click());
+      .catch(() => page.getByText(STUB_JRV_1.numero).click());
 
     await page.goto(
-      `/observer/jrv/${STUB_JRV_1.id}/cargo/${STUB_CARGO_1.id}/registrar`,
+      `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
     // Attach image
@@ -134,7 +136,7 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
             actas: [
               {
                 id: 999,
-                jrvId: STUB_JRV_1.id,
+                jrvId: STUB_JRV_1.jrvId,
                 cargoId: STUB_CARGO_1.id,
                 estado: 'ENVIADA',
                 totalSufragantes: SUFRAGANTES,
@@ -173,7 +175,7 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
             actas: [
               {
                 id: 999,
-                jrvId: STUB_JRV_1.id,
+                jrvId: STUB_JRV_1.jrvId,
                 cargoId: STUB_CARGO_1.id,
                 estado: 'DISPUTADA',
                 disputeReason: 'Suma de votos no coincide con padrón',
@@ -215,7 +217,7 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
         contentType: 'application/json',
         body: JSON.stringify({
           id: 999,
-          jrvId: STUB_JRV_1.id,
+          jrvId: STUB_JRV_1.jrvId,
           cargoId: STUB_CARGO_1.id,
           estado: 'DISPUTADA',
           disputeReason,
@@ -247,7 +249,7 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             id: 999,
-            jrvId: STUB_JRV_1.id,
+            jrvId: STUB_JRV_1.jrvId,
             cargoId: STUB_CARGO_1.id,
             estado: 'DISPUTADA',
             disputeReason: 'Votos no cuadran con padrón',
@@ -263,7 +265,7 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             id: 999,
-            jrvId: STUB_JRV_1.id,
+            jrvId: STUB_JRV_1.jrvId,
             cargoId: STUB_CARGO_1.id,
             estado: 'ACEPTADA',
             totalSufragantes: SUFRAGANTES,
@@ -328,7 +330,7 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
             actas: [
               {
                 id: 999,
-                jrvId: STUB_JRV_1.id,
+                jrvId: STUB_JRV_1.jrvId,
                 cargoId: STUB_CARGO_1.id,
                 estado: 'ACEPTADA',
                 totalSufragantes: SUFRAGANTES,
@@ -364,7 +366,7 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
           contentType: 'application/json',
           body: JSON.stringify({
             id: 999,
-            jrvId: STUB_JRV_1.id,
+            jrvId: STUB_JRV_1.jrvId,
             cargoId: STUB_CARGO_1.id,
             estado: 'ACEPTADA',
             totalSufragantes: SUFRAGANTES,
