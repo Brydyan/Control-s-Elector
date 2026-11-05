@@ -1,11 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { Subject, takeUntil, forkJoin } from 'rxjs';
-import {
-  CardComponent,
-  ErrorStateComponent,
-  LoadingStateComponent,
-} from '../../../../shared/ui';
+import { CardComponent, LoadingStateComponent } from '../../../../shared/ui';
 import { CoordinatorApi } from '../../data/coordinator.api';
 import { ActaItem } from '../../domain/models/coordinator.model';
 
@@ -47,12 +43,7 @@ interface CargoProgress {
 @Component({
   selector: 'app-coordinator-reportes',
   standalone: true,
-  imports: [
-    CommonModule,
-    CardComponent,
-    LoadingStateComponent,
-    ErrorStateComponent,
-  ],
+  imports: [CommonModule, CardComponent, LoadingStateComponent],
   templateUrl: './coordinator-reportes.page.html',
   styleUrls: ['./coordinator-reportes.page.scss'],
 })
