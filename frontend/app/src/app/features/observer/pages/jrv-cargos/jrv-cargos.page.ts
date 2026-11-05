@@ -11,6 +11,7 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
+import { ImageCompressionService } from '../../../../core/services/image-compression.service';
 import { CargoConEstado } from '../../domain/models/observer.model';
 import { ObserverApi } from '../../data/observer.api';
 
@@ -35,6 +36,7 @@ export class JrvCargosPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly observerService = inject(ObserverApi);
   private readonly offlineStorage = inject(OfflineStorageService);
+  private readonly imageCompression = inject(ImageCompressionService);
 
   jrvId!: number;
   readonly cargos = signal<CargoConEstado[]>([]);
@@ -149,11 +151,17 @@ export class JrvCargosPage implements OnInit, OnDestroy {
   }
 
   /**
-   * Guarda la foto de la dignidad en captura como `Blob` binario.
+   * T-FE-20 C.2: Guarda la foto de la dignidad en captura con compresión WebP.
    *
    * Se escribe en `acta_drafts` con la misma clave que usa el formulario de
    * registro (`draft_{jrvId}_{cargoId}`): la captura rápida y el formulario
    * comparten un único borrador por dignidad.
+   *
+   * Pasos:
+   * 1. Preview INMEDIATO del archivo original (0ms latencia percibida).
+   * 2. Compresión en background.
+   * 3. Guardar en IndexedDB el archivo comprimido.
+   * 4. Manejar errores sin romper la UX.
    */
   async onFotoCapturada(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
@@ -162,22 +170,34 @@ export class JrvCargosPage implements OnInit, OnDestroy {
     this.cargoEnCaptura = null;
     if (!file || !cargo) return;
 
+    // T-FE-20 C.2: Preview INMEDIATO del archivo original.
+    this.crearPreview(cargo.cargoId, file);
+
+    // T-FE-20 C.2: Comprimir en background y guardar comprimido.
     try {
+      const comprimido = await this.imageCompression.compress(file);
+      // Asegurar que es File comprimido (con nombre .webp).
+      if (!(comprimido instanceof File)) {
+        throw new Error('Compresión retornó Blob, se esperaba File');
+      }
+
       await this.offlineStorage.guardarFotoBorrador(
         OfflineStorageService.draftId(this.jrvId, cargo.cargoId),
         this.jrvId,
         cargo.cargoId,
-        file,
-        file.name,
+        comprimido,
+        comprimido.name,
       );
       this.cargosConFoto.update((actuales) =>
         new Set(actuales).add(cargo.cargoId),
       );
-      this.crearPreview(cargo.cargoId, file);
     } catch (error) {
-      console.error('Error al guardar la foto de la captura rápida:', error);
+      console.error(
+        'Error al comprimir/guardar la foto de captura rápida:',
+        error,
+      );
       this.error.set(
-        'No se pudo guardar la fotografía de esta dignidad en el dispositivo.',
+        'No se pudo optimizar la fotografía de esta dignidad. Intenta de nuevo.',
       );
     } finally {
       // Se limpia el input para que volver a elegir el mismo archivo dispare

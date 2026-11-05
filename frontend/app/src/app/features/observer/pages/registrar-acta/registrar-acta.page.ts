@@ -195,6 +195,12 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   /** Pide confirmación antes de abandonar el formulario con datos sin enviar. */
   readonly confirmarSalida = signal(false);
 
+  /**
+   * T-FE-20 B.1: Compresión de imagen en curso.
+   * Usado para deshabilitar botón envío y mostrar badge "Optimizando...".
+   */
+  readonly comprimiendoImagen = signal(false);
+
   /** Panel de confirmación de salida (recibe el foco al abrirse). */
   private readonly panelConfirmacion =
     viewChild<ElementRef<HTMLElement>>('panelConfirmacion');
@@ -735,7 +741,6 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     const target = event.target as HTMLInputElement;
     if (target.files && target.files[0]) {
       const file = target.files[0];
-      this.selectedImageFile = file;
       this.captureCancelled = false;
       this.error.set(null);
 
@@ -744,11 +749,13 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
       if (this.imagePreviewUrl) {
         this.imageCompression.revokePreviewUrl(this.imagePreviewUrl);
       }
+
+      // T-FE-20 B.1: Preview INMEDIATO del archivo original (latencia 0ms percibida).
       this.imagePreviewUrl = this.imageCompression.createPreviewUrl(file);
 
-      // La foto entra al disco de inmediato y por su propio canal: no espera
-      // al autoguardado de los votos ni pisa lo ya escrito.
-      void this.guardarFotoOffline(file);
+      // T-FE-20 B.1: Inicia compresión en background.
+      this.comprimiendoImagen.set(true);
+      this.procesarCompresionConGuardado(file);
 
       // Se limpia el input: si el veedor elige de nuevo el MISMO archivo (o
       // la cámara genera uno con el mismo nombre), el navegador no dispara
@@ -765,6 +772,33 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     this.error.set(null);
   }
 
+  /**
+   * T-FE-20 B.1: Procesa la compresión de imagen y guardarla offline.
+   * Maneja errores sin borrar votos digitados.
+   * @private
+   */
+  private async procesarCompresionConGuardado(file: File): Promise<void> {
+    try {
+      // Comprimir archivo.
+      const comprimido = await this.imageCompression.compress(file);
+      // Asegurar que es File (con nombre .webp).
+      if (!(comprimido instanceof File)) {
+        throw new Error('Compresión retornó Blob, se esperaba File');
+      }
+      this.selectedImageFile = comprimido;
+      // Guardar en IndexedDB.
+      await this.guardarFotoOffline(comprimido);
+    } catch (err) {
+      console.error('Error en compresión:', err);
+      this.error.set(
+        'No se pudo optimizar la fotografía. Intenta de nuevo o usa otra foto.',
+      );
+      // NO limpiar votos digitados; el usuario puede reintentar sin perder progreso.
+    } finally {
+      this.comprimiendoImagen.set(false);
+    }
+  }
+
   ngOnDestroy(): void {
     if (this.temporizadorGuardado !== null) {
       clearTimeout(this.temporizadorGuardado);
@@ -779,6 +813,14 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   }
 
   guardarComoBorrador(): void {
+    // T-FE-20 B.1: Bloquear envío mientras la compresión esté en curso.
+    if (this.comprimiendoImagen()) {
+      this.error.set(
+        'Espera a que se termine de optimizar la fotografía antes de guardar.',
+      );
+      return;
+    }
+
     if (this.excedeTopeSufragantes) {
       this.error.set(this.mensajeTopeExcedido());
       return;
@@ -815,6 +857,14 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   }
 
   enviarActaFinal(): void {
+    // T-FE-20 B.1: Bloquear envío mientras la compresión esté en curso.
+    if (this.comprimiendoImagen()) {
+      this.error.set(
+        'Espera a que se termine de optimizar la fotografía antes de enviar.',
+      );
+      return;
+    }
+
     // Tope duro del CNE (T-FE-13 B.1): un padrón de 501 sufragantes no
     // describe ninguna JRV posible. Se bloquea antes de tocar el servidor.
     if (this.excedeTopeSufragantes) {
