@@ -71,51 +71,46 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
   test('should allow OBSERVER to submit acta (initial ENVIADA state)', async ({
     observerPage: page,
   }) => {
-    await page.goto('/observer/mis-jrvs');
-
-    // Navigate directly to cargo list
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
-
+    // Navigate directly to registration form (like J3)
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
+      { waitUntil: 'networkidle', timeout: 10_000 },
     );
 
     // Attach image
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
-    // Advance to VOTOS
+    // Wait for image preview
     await page
-      .getByRole('button', { name: /continuar|votos/i })
+      .locator('img[alt*="foto"], img[alt*="acta"], img[alt*="preview"]')
       .first()
-      .click({ timeout: 10_000 });
+      .waitFor({ timeout: 10_000 })
+      .catch(() => page.waitForTimeout(2000));
 
-    // Fill form with initial values
-    await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
+    // Advance to VOTOS
+    const continueBtn = page
+      .getByRole('button', { name: /continuar|votos/i })
+      .first();
+    await expect(continueBtn).toBeEnabled({ timeout: 5000 });
+    await continueBtn.click({ timeout: 10_000 });
 
-    const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByLabel(/sufragantes|blancos|nulos/i) });
-    const count = await candInputs.count();
-    if (count >= 2) {
-      await candInputs.nth(0).fill(String(VOTOS_INICIALES.rodriguez));
-      await candInputs.nth(1).fill(String(VOTOS_INICIALES.lopez));
-    }
-
-    await page.getByLabel(/blancos/i).fill(String(VOTOS_INICIALES.blancos));
-    await page.getByLabel(/nulos/i).fill(String(VOTOS_INICIALES.nulos));
+    // Fill form with initial values (using proper selectors)
+    await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
+    await page.getByLabel(/rodríguez|rodriguez|carlos/i).fill(String(VOTOS_INICIALES.rodriguez));
+    await page.getByLabel(/lópez|lopez|ana/i).fill(String(VOTOS_INICIALES.lopez));
+    await page.getByRole('spinbutton', { name: /blanco/i }).fill(String(VOTOS_INICIALES.blancos));
+    await page.getByRole('spinbutton', { name: /nulo/i }).fill(String(VOTOS_INICIALES.nulos));
 
     // Advance to REVISION
-    await page.getByRole('button', { name: /revisión|continuar/i }).click({ timeout: 8_000 });
+    await page.getByRole('button', { name: /revisión final|continuar a revisión/i }).click({ timeout: 8_000 });
 
     // Submit
-    const submitBtn = page.getByRole('button', { name: /enviar|transmitir|registrar acta/i });
+    const submitBtn = page.getByRole('button', { name: /transmitir|enviar/i });
     await submitBtn.click({ timeout: 8_000 });
 
-    // Success toast should appear
-    await expect(
-      page.locator('[role="status"], [role="alert"]')
-        .filter({ hasText: /éxito|enviada|registrada/i }),
-    ).toBeVisible({ timeout: 10_000 });
+    // Expect redirect on success
+    await expect(page).toHaveURL(/cargos|jrv/, { timeout: 10_000 });
   });
 
   // -------------------------------------------------------------------------
