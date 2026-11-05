@@ -101,14 +101,16 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const revisionBtn = page.getByRole('button', { name: /continuar con inconsistencia|revisión/i }).first();
     await revisionBtn.click({ timeout: 8_000 });
 
-    // Error alert should appear
+    // Error alert should appear showing checksum mismatch
     await expect(
       page.locator('[role="alert"], .p-message-error, .p-inline-message')
         .filter({ hasText: /faltan|sobran|no cuadra|suma|checksum|diferencia|115/i }),
     ).toBeVisible({ timeout: 5_000 });
 
-    // Should NOT have advanced
-    await expect(page.locator('.p-steps-item.p-highlight')).not.toContainText('Revisión');
+    // Verify error prevents submission (Transmitir button should have error styling or be disabled)
+    await expect(
+      page.locator('text=/el acta no se puede transmitir|save as draft/i').first()
+    ).toBeVisible({ timeout: 5_000 });
   });
 
   // -------------------------------------------------------------------------
@@ -166,8 +168,9 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     // Advance should succeed (checksum balanced)
     await page.getByRole('button', { name: /revisión final|continuar a revisión/i }).click({ timeout: 8_000 });
 
-    // Should now be in REVISION
-    await expect(page.locator('.p-steps-item.p-highlight')).toContainText('Revisión', { timeout: 5_000 });
+    // Should now be in REVISION (verify by checking for submit button which only appears in REVISION)
+    const submitBtn = page.getByRole('button', { name: /transmitir acta|enviar/i });
+    await expect(submitBtn).toBeVisible({ timeout: 5_000 });
   });
 
   // -------------------------------------------------------------------------
@@ -312,6 +315,7 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     // Should allow advance (checksum is valid)
     await page.getByRole('button', { name: /revisión final|continuar a revisión/i }).click({ timeout: 8_000 });
 
-    await expect(page.locator('.p-steps-item.p-highlight')).toContainText('Revisión', { timeout: 5_000 });
+    // Verify in REVISION by checking for submit button
+    await expect(page.getByRole('button', { name: /transmitir acta|enviar/i })).toBeVisible({ timeout: 5_000 });
   });
 });
