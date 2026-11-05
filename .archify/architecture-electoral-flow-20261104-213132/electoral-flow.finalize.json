@@ -2,23 +2,26 @@
   "schemaVersion": 1,
   "ok": false,
   "command": "finalize",
-  "status": "fail",
+  "status": "skipped",
   "type": "architecture",
   "quality": "showcase",
-  "startedAt": "2026-11-05T02:32:38.877Z",
+  "startedAt": "2026-11-05T02:34:38.544Z",
   "specification": {
     "path": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/candidate.json",
-    "sha256": "e2c7c1c3daa7446fe36524ca4cddb10be211a7b076de57cdb41b3f41947287fb",
-    "bytes": 5596
+    "sha256": "b7cc9228b4be40f6f5ab18241eb81b8dfad53bcf1682fa83a9f009ed697eaa5e",
+    "bytes": 5775
   },
   "artifact": {
-    "path": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html"
+    "path": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
+    "sha256": "512e3ad59178ce542df49694f6043209ba99dad3135e1076132dafea2468817e",
+    "bytes": 768686
   },
   "stages": {
     "validate": {
-      "status": "fail",
-      "exitCode": 1,
+      "status": "pass",
+      "exitCode": 0,
       "durationMs": null,
+      "execution": "embedded-in-deliver",
       "command": [
         "/usr/bin/node",
         "/home/andy/.agents/skills/archify/bin/archify.mjs",
@@ -34,160 +37,69 @@
       ],
       "receipt": {
         "schemaVersion": 1,
-        "ok": false,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "b7cc9228b4be40f6f5ab18241eb81b8dfad53bcf1682fa83a9f009ed697eaa5e",
+          "bytes": 5775
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 234,
+      "command": [
+        "/usr/bin/node",
+        "/home/andy/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/candidate.json",
+        "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "10406277-d62d-4a60-beed-6ede2cd287cd",
+        "ok": true,
         "command": "deliver",
-        "receiptId": "9eeb10cf-d412-4b7f-8276-bea199c70551",
-        "stage": "render",
         "type": "architecture",
         "input": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/candidate.json",
         "output": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
-        "error": "architecture schema validation failed:\n  /meta/repository must have required property 'revision' {\"missingProperty\":\"revision\"}\n  /meta/repository must NOT have additional properties {\"additionalProperty\":\"commit\"}\n  /components/3/sources/0 (id/label: \"pipeline_compress\") must be object {\"type\":\"object\"}\n  /components/4/sources/0 (id/label: \"idb_storage\") must be object {\"type\":\"object\"}\n  /components/6/sources/0 (id/label: \"quarkus_api\") must be object {\"type\":\"object\"}\n  /boundaries/0/kind (id/label: \"Dispositivo del Delegado (Offline-First)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}\n  /boundaries/1/kind (id/label: \"Cloudflare Edge Global (Alta Disponibilidad)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}\n  /boundaries/3/kind (id/label: \"Servidor Local (Proxmox Home Server)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}",
-        "diagnostics": [
-          {
-            "code": "schema/required",
-            "severity": "error",
-            "message": "/meta/repository must have required property 'revision' {\"missingProperty\":\"revision\"}",
-            "subject": {
-              "diagramType": "architecture",
-              "path": "/meta/repository"
-            },
-            "evidence": {
-              "keyword": "required",
-              "missingProperty": "revision"
-            },
-            "supportedFixes": [
-              "add required property \"revision\""
-            ]
-          },
-          {
-            "code": "schema/additionalProperties",
-            "severity": "error",
-            "message": "/meta/repository must NOT have additional properties {\"additionalProperty\":\"commit\"}",
-            "subject": {
-              "diagramType": "architecture",
-              "path": "/meta/repository"
-            },
-            "evidence": {
-              "keyword": "additionalProperties",
-              "additionalProperty": "commit"
-            },
-            "supportedFixes": [
-              "remove unsupported property \"commit\""
-            ]
-          },
-          {
-            "code": "schema/type",
-            "severity": "error",
-            "message": "/components/3/sources/0 (id/label: \"pipeline_compress\") must be object {\"type\":\"object\"}",
-            "subject": {
-              "diagramType": "architecture",
-              "path": "/components/3/sources/0",
-              "identity": "pipeline_compress"
-            },
-            "evidence": {
-              "keyword": "type",
-              "type": "object"
-            },
-            "supportedFixes": [
-              "use \"object\" at /components/3/sources/0"
-            ]
-          },
-          {
-            "code": "schema/type",
-            "severity": "error",
-            "message": "/components/4/sources/0 (id/label: \"idb_storage\") must be object {\"type\":\"object\"}",
-            "subject": {
-              "diagramType": "architecture",
-              "path": "/components/4/sources/0",
-              "identity": "idb_storage"
-            },
-            "evidence": {
-              "keyword": "type",
-              "type": "object"
-            },
-            "supportedFixes": [
-              "use \"object\" at /components/4/sources/0"
-            ]
-          },
-          {
-            "code": "schema/type",
-            "severity": "error",
-            "message": "/components/6/sources/0 (id/label: \"quarkus_api\") must be object {\"type\":\"object\"}",
-            "subject": {
-              "diagramType": "architecture",
-              "path": "/components/6/sources/0",
-              "identity": "quarkus_api"
-            },
-            "evidence": {
-              "keyword": "type",
-              "type": "object"
-            },
-            "supportedFixes": [
-              "use \"object\" at /components/6/sources/0"
-            ]
-          },
-          {
-            "code": "schema/enum",
-            "severity": "error",
-            "message": "/boundaries/0/kind (id/label: \"Dispositivo del Delegado (Offline-First)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}",
-            "subject": {
-              "diagramType": "architecture",
-              "path": "/boundaries/0/kind",
-              "identity": "Dispositivo del Delegado (Offline-First)"
-            },
-            "evidence": {
-              "keyword": "enum",
-              "allowedValues": [
-                "region",
-                "security-group"
-              ]
-            },
-            "supportedFixes": [
-              "choose one of [\"region\",\"security-group\"]"
-            ]
-          },
-          {
-            "code": "schema/enum",
-            "severity": "error",
-            "message": "/boundaries/1/kind (id/label: \"Cloudflare Edge Global (Alta Disponibilidad)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}",
-            "subject": {
-              "diagramType": "architecture",
-              "path": "/boundaries/1/kind",
-              "identity": "Cloudflare Edge Global (Alta Disponibilidad)"
-            },
-            "evidence": {
-              "keyword": "enum",
-              "allowedValues": [
-                "region",
-                "security-group"
-              ]
-            },
-            "supportedFixes": [
-              "choose one of [\"region\",\"security-group\"]"
-            ]
-          },
-          {
-            "code": "schema/enum",
-            "severity": "error",
-            "message": "/boundaries/3/kind (id/label: \"Servidor Local (Proxmox Home Server)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}",
-            "subject": {
-              "diagramType": "architecture",
-              "path": "/boundaries/3/kind",
-              "identity": "Servidor Local (Proxmox Home Server)"
-            },
-            "evidence": {
-              "keyword": "enum",
-              "allowedValues": [
-                "region",
-                "security-group"
-              ]
-            },
-            "supportedFixes": [
-              "choose one of [\"region\",\"security-group\"]"
-            ]
-          }
-        ],
-        "provenance": "absent",
+        "specification": {
+          "sha256": "b7cc9228b4be40f6f5ab18241eb81b8dfad53bcf1682fa83a9f009ed697eaa5e",
+          "bytes": 5775
+        },
+        "artifact": {
+          "sha256": "512e3ad59178ce542df49694f6043209ba99dad3135e1076132dafea2468817e",
+          "bytes": 768686
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "https://github.com/Brydyan/Control-s-Elector",
+          "revision": "4e1322b7bbd39f572cda1dc118543030a2ddaa00",
+          "references": 3
+        },
         "update": {
           "status": "unavailable",
           "installedVersion": null,
@@ -199,167 +111,274 @@
           "noticeText": null,
           "reason": "disabled"
         }
-      },
-      "execution": "embedded-in-deliver"
+      }
     },
-    "deliver": {
-      "status": "not-run",
-      "execution": "blocked-by-validate"
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 95,
+      "command": [
+        "/usr/bin/node",
+        "/home/andy/.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
+        "artifact": {
+          "sha256": "512e3ad59178ce542df49694f6043209ba99dad3135e1076132dafea2468817e",
+          "bytes": 768686
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 40,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 7.150066401062417,
+            "maxBends": 4,
+            "routesOverSuggestedBends": 1,
+            "maxStretch": 1.395,
+            "routesOverSuggestedStretch": 1,
+            "minSegmentPx": 16,
+            "minInteriorSegmentPx": 16,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": [
+              {
+                "relationship": {
+                  "from": "cf_r2",
+                  "to": "proxmox_vm",
+                  "label": "sync rclone",
+                  "collectionIndex": 7,
+                  "artifactIndex": 8
+                },
+                "bends": 4,
+                "stretch": 1.395
+              }
+            ]
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 106,
+            "emptyTopRatio": 0.196,
+            "occupiedTop": 106,
+            "viewBoxTop": 0,
+            "canvasHeight": 542,
+            "typicalNodeHeight": 64,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "recognized-declared-wide",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 1346,
+            "actualBudgetPx": 1346,
+            "actualReaderWidth": 1376,
+            "desiredReaderWidth": 1441.875,
+            "viewportCap": 1376,
+            "limit": "viewport-cap",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": false,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": null,
+              "from": "obs_mobile",
+              "to": "cf_pages"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 7.150066401062417,
+            "semanticTextCount": 33
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "10406277-d62d-4a60-beed-6ede2cd287cd"
+      }
+    },
+    "browser-check": {
+      "status": "skipped",
+      "exitCode": 2,
+      "durationMs": 10,
+      "command": [
+        "/usr/bin/node",
+        "/home/andy/.agents/skills/archify/bin/archify.mjs",
+        "browser-check",
+        "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
+        "--json",
+        "--require-provenance"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "skipped",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "10406277-d62d-4a60-beed-6ede2cd287cd",
+        "artifact": {
+          "path": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
+          "sha256": "512e3ad59178ce542df49694f6043209ba99dad3135e1076132dafea2468817e",
+          "bytes": 768686
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "unavailable",
+          "executable": null
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/chrome-unavailable",
+            "severity": "warning",
+            "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+            "subject": {
+              "artifact": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html"
+            },
+            "evidence": {
+              "executable": null
+            },
+            "supportedFixes": [
+              "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "skipped",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "readability": {
+          "status": "skipped",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "skipped",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "receipt": "electoral-flow.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path."
+      }
     }
   },
   "diagnostics": [
     {
-      "code": "schema/required",
-      "severity": "error",
-      "message": "/meta/repository must have required property 'revision' {\"missingProperty\":\"revision\"}",
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
       "subject": {
-        "diagramType": "architecture",
-        "path": "/meta/repository"
+        "artifact": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.html"
       },
       "evidence": {
-        "keyword": "required",
-        "missingProperty": "revision"
+        "executable": null
       },
       "supportedFixes": [
-        "add required property \"revision\""
-      ]
-    },
-    {
-      "code": "schema/additionalProperties",
-      "severity": "error",
-      "message": "/meta/repository must NOT have additional properties {\"additionalProperty\":\"commit\"}",
-      "subject": {
-        "diagramType": "architecture",
-        "path": "/meta/repository"
-      },
-      "evidence": {
-        "keyword": "additionalProperties",
-        "additionalProperty": "commit"
-      },
-      "supportedFixes": [
-        "remove unsupported property \"commit\""
-      ]
-    },
-    {
-      "code": "schema/type",
-      "severity": "error",
-      "message": "/components/3/sources/0 (id/label: \"pipeline_compress\") must be object {\"type\":\"object\"}",
-      "subject": {
-        "diagramType": "architecture",
-        "path": "/components/3/sources/0",
-        "identity": "pipeline_compress"
-      },
-      "evidence": {
-        "keyword": "type",
-        "type": "object"
-      },
-      "supportedFixes": [
-        "use \"object\" at /components/3/sources/0"
-      ]
-    },
-    {
-      "code": "schema/type",
-      "severity": "error",
-      "message": "/components/4/sources/0 (id/label: \"idb_storage\") must be object {\"type\":\"object\"}",
-      "subject": {
-        "diagramType": "architecture",
-        "path": "/components/4/sources/0",
-        "identity": "idb_storage"
-      },
-      "evidence": {
-        "keyword": "type",
-        "type": "object"
-      },
-      "supportedFixes": [
-        "use \"object\" at /components/4/sources/0"
-      ]
-    },
-    {
-      "code": "schema/type",
-      "severity": "error",
-      "message": "/components/6/sources/0 (id/label: \"quarkus_api\") must be object {\"type\":\"object\"}",
-      "subject": {
-        "diagramType": "architecture",
-        "path": "/components/6/sources/0",
-        "identity": "quarkus_api"
-      },
-      "evidence": {
-        "keyword": "type",
-        "type": "object"
-      },
-      "supportedFixes": [
-        "use \"object\" at /components/6/sources/0"
-      ]
-    },
-    {
-      "code": "schema/enum",
-      "severity": "error",
-      "message": "/boundaries/0/kind (id/label: \"Dispositivo del Delegado (Offline-First)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}",
-      "subject": {
-        "diagramType": "architecture",
-        "path": "/boundaries/0/kind",
-        "identity": "Dispositivo del Delegado (Offline-First)"
-      },
-      "evidence": {
-        "keyword": "enum",
-        "allowedValues": [
-          "region",
-          "security-group"
-        ]
-      },
-      "supportedFixes": [
-        "choose one of [\"region\",\"security-group\"]"
-      ]
-    },
-    {
-      "code": "schema/enum",
-      "severity": "error",
-      "message": "/boundaries/1/kind (id/label: \"Cloudflare Edge Global (Alta Disponibilidad)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}",
-      "subject": {
-        "diagramType": "architecture",
-        "path": "/boundaries/1/kind",
-        "identity": "Cloudflare Edge Global (Alta Disponibilidad)"
-      },
-      "evidence": {
-        "keyword": "enum",
-        "allowedValues": [
-          "region",
-          "security-group"
-        ]
-      },
-      "supportedFixes": [
-        "choose one of [\"region\",\"security-group\"]"
-      ]
-    },
-    {
-      "code": "schema/enum",
-      "severity": "error",
-      "message": "/boundaries/3/kind (id/label: \"Servidor Local (Proxmox Home Server)\") must be equal to one of the allowed values {\"allowedValues\":[\"region\",\"security-group\"]}",
-      "subject": {
-        "diagramType": "architecture",
-        "path": "/boundaries/3/kind",
-        "identity": "Servidor Local (Proxmox Home Server)"
-      },
-      "evidence": {
-        "keyword": "enum",
-        "allowedValues": [
-          "region",
-          "security-group"
-        ]
-      },
-      "supportedFixes": [
-        "choose one of [\"region\",\"security-group\"]"
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
       ]
     }
   ],
   "evidence": {
     "receipt": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.finalize.json",
-    "summaryReceipt": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.finalize-summary.json"
+    "summaryReceipt": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.finalize-summary.json",
+    "browserCheckReceipt": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-electoral-flow-20261104-213132/electoral-flow.browser-check.json"
   },
   "visualReview": "not-requested",
-  "failedStage": "validate",
-  "finishedAt": "2026-11-05T02:32:39.022Z",
-  "durationMs": 144,
+  "failedStage": "browser-check",
+  "finishedAt": "2026-11-05T02:34:38.959Z",
+  "durationMs": 415,
   "update": {
     "status": "update_available",
     "installedVersion": "3.0.1",
@@ -367,9 +386,9 @@
     "releaseNotes": "https://github.com/tt-a1i/archify/releases/tag/v3.2.0",
     "severity": "normal",
     "checkedAt": "2026-11-05T02:32:38.928Z",
-    "source": "network",
+    "source": "cache",
     "noticeRequired": true,
-    "noticeText": "Archify update: 3.0.1 → 3.2.0. A newer release is available. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
+    "noticeText": "Archify update: 3.0.1 → 3.2.0. A previous check at 2026-11-05T02:32:38.928Z found a newer release. Release notes: https://github.com/tt-a1i/archify/releases/tag/v3.2.0. The installed Skill has not changed; ask to snooze or ignore this reminder.",
     "eventKey": "archify@sha256:70e210265c59f24dcbdf2a502ff671104b5454e7ee7d3554aecd86bad32384f5"
   }
 }

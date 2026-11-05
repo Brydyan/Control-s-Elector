@@ -3,13 +3,13 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Arquitectura y Flujos Electorales del Sistema",
-    "subtitle": "Captura en cliente, R2, API transaccional y respaldo asíncrono",
+    "subtitle": "Captura en cliente, Cloudflare R2, API transaccional y respaldo local",
     "output": ".archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
     "quality_profile": "showcase",
     "animation": "trace",
     "repository": {
       "url": "https://github.com/Brydyan/Control-s-Elector",
-      "commit": "4e1322b7bbd39f572cda1dc118543030a2ddaa00"
+      "revision": "4e1322b7bbd39f572cda1dc118543030a2ddaa00"
     }
   },
   "components": [
@@ -18,7 +18,7 @@
       "type": "external",
       "label": "Delegados Móviles",
       "sublabel": "Cámara / PWA",
-      "pos": [40, 180],
+      "pos": [40, 150],
       "size": [140, 60]
     },
     {
@@ -26,7 +26,7 @@
       "type": "external",
       "label": "Directivos / Admin",
       "sublabel": "Dashboard analítico",
-      "pos": [40, 360],
+      "pos": [40, 390],
       "size": [140, 60]
     },
     {
@@ -44,23 +44,27 @@
       "sublabel": "WebP 2048px (500 KB)",
       "pos": [490, 150],
       "size": [160, 64],
-      "sources": ["frontend/app/src/app/core/services/image-compression.service.ts"]
+      "sources": [
+        { "path": "frontend/app/src/app/core/services/image-compression.service.ts", "line": 16, "label": "ImageCompression" }
+      ]
     },
     {
       "id": "idb_storage",
       "type": "database",
       "label": "IndexedDB Offline",
       "sublabel": "Cola duradera de actas",
-      "pos": [490, 270],
+      "pos": [740, 150],
       "size": [160, 64],
-      "sources": ["frontend/app/src/app/core/offline/sync.service.ts"]
+      "sources": [
+        { "path": "frontend/app/src/app/core/offline/sync.service.ts", "line": 40, "label": "SyncService" }
+      ]
     },
     {
       "id": "cf_r2",
       "type": "cloud",
       "label": "Cloudflare R2",
       "sublabel": "10 GB Free / S3 Bucket",
-      "pos": [740, 150],
+      "pos": [1030, 150],
       "size": [150, 64]
     },
     {
@@ -68,16 +72,18 @@
       "type": "backend",
       "label": "Quarkus REST API",
       "sublabel": "Podman en VPS Cloud",
-      "pos": [740, 360],
-      "size": [150, 64],
-      "sources": ["backend/electoral-api-quarkus/src/main/java/com/twintail/electoral/acta/infrastructure/ActaResource.java"]
+      "pos": [490, 390],
+      "size": [160, 64],
+      "sources": [
+        { "path": "backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/acta/web/ObserverResource.java", "line": 30, "label": "ObserverResource" }
+      ]
     },
     {
       "id": "postgres_db",
       "type": "database",
       "label": "PostgreSQL 16",
       "sublabel": "Transaccional + RLS",
-      "pos": [970, 360],
+      "pos": [740, 390],
       "size": [150, 64]
     },
     {
@@ -85,7 +91,7 @@
       "type": "backend",
       "label": "Mirror / Hot Standby",
       "sublabel": "rclone cron cada 15m",
-      "pos": [970, 150],
+      "pos": [1030, 290],
       "size": [160, 64]
     },
     {
@@ -93,19 +99,19 @@
       "type": "database",
       "label": "HDD 500 GB Proxmox",
       "sublabel": "Copia fría histórica $0",
-      "pos": [1210, 150],
+      "pos": [1290, 290],
       "size": [160, 64]
     }
   ],
   "boundaries": [
     {
-      "kind": "cluster",
+      "kind": "security-group",
       "label": "Dispositivo del Delegado (Offline-First)",
       "wraps": ["pipeline_compress", "idb_storage"],
       "pad": 16
     },
     {
-      "kind": "cloud",
+      "kind": "region",
       "label": "Cloudflare Edge Global (Alta Disponibilidad)",
       "wraps": ["cf_pages", "cf_r2"],
       "pad": 16
@@ -117,7 +123,7 @@
       "pad": 16
     },
     {
-      "kind": "datacenter",
+      "kind": "region",
       "label": "Servidor Local (Proxmox Home Server)",
       "wraps": ["proxmox_vm", "hdd_local"],
       "pad": 16
@@ -145,16 +151,13 @@
     {
       "from": "pipeline_compress",
       "to": "idb_storage",
-      "label": "guarda WebP",
-      "fromSide": "bottom",
-      "toSide": "top"
+      "label": "guarda WebP"
     },
     {
       "from": "idb_storage",
       "to": "cf_r2",
       "label": "upload WebP (~500KB)",
-      "variant": "emphasis",
-      "route": "orthogonal-h"
+      "variant": "emphasis"
     },
     {
       "from": "cf_pages",
@@ -173,7 +176,9 @@
       "from": "cf_r2",
       "to": "proxmox_vm",
       "label": "sync rclone",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "top"
     },
     {
       "from": "proxmox_vm",
