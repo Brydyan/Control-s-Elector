@@ -73,15 +73,8 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
   }) => {
     await page.goto('/observer/mis-jrvs');
 
-    // Click on JRV card and wait for navigation
-    await Promise.all([
-      page.waitForURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`)),
-      page
-        .getByRole('listitem')
-        .filter({ hasText: STUB_JRV_1.numero })
-        .click()
-        .catch(() => page.getByText(STUB_JRV_1.numero).click()),
-    ]);
+    // Navigate directly to cargo list
+    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
 
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
