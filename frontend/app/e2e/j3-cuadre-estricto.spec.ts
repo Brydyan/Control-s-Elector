@@ -53,6 +53,13 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     // Navigate directly to registration form
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
+      { waitUntil: 'networkidle', timeout: 10_000 },
+    );
+
+    // Verify we're on the registration form
+    await expect(page).toHaveURL(
+      new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`),
+      { timeout: 5_000 },
     );
 
     // Attach image
@@ -109,6 +116,13 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     // Navigate directly to registration form
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
+      { waitUntil: 'networkidle', timeout: 10_000 },
+    );
+
+    // Verify we're on the registration form
+    await expect(page).toHaveURL(
+      new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`),
+      { timeout: 5_000 },
     );
 
     // Attach image

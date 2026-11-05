@@ -48,7 +48,14 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
 
   test('should persist data to IndexedDB when offline', async ({ observerPage: page }) => {
     // Navigate to form and complete first step (IMAGEN) while online
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`);
+    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`, {
+      waitUntil: 'networkidle',
+      timeout: 10_000,
+    });
+    await expect(page).toHaveURL(
+      new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`),
+      { timeout: 5_000 },
+    );
 
     // Attach image (required to advance to VOTOS step)
     const fileInput = page.locator('input[type="file"]');
