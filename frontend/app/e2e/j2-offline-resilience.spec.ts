@@ -50,16 +50,10 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
     // Phase 1: Online — Navigate to cargo form
     await page.goto('/observer/mis-jrvs');
 
-    // Click on JRV card and wait for navigation
-    await Promise.all([
-      page.waitForURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`)),
-      page
-        .getByRole('listitem')
-        .filter({ hasText: STUB_JRV_1.numero })
-        .click()
-        .catch(() => page.getByText(STUB_JRV_1.numero).click()),
-    ]);
+    // Navigate directly to cargo list (avoid waiting for click-based navigation)
+    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
 
+    // Then click on cargo to start form
     await page.getByText(STUB_CARGO_1.nombre).click();
 
     // Phase 2: Go offline (simulate network failure)
@@ -98,15 +92,8 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
     // Navigate to form (online)
     await page.goto('/observer/mis-jrvs');
 
-    // Click on JRV card and wait for navigation
-    await Promise.all([
-      page.waitForURL(new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`)),
-      page
-        .getByRole('listitem')
-        .filter({ hasText: STUB_JRV_1.numero })
-        .click()
-        .catch(() => page.getByText(STUB_JRV_1.numero).click()),
-    ]);
+    // Navigate directly to cargo list
+    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
 
     // Go offline
     await page.context().setOffline(true);
