@@ -50,12 +50,7 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
   test('should show checksum error and block REVISION when votes do not sum to sufragantes', async ({
     observerPage: page,
   }) => {
-    await page.goto('/observer/mis-jrvs');
-
     // Navigate directly to registration form
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`);
-
-    // Navigate to registrar-acta (IMAGEN step)
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
@@ -107,11 +102,7 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
   test('should allow advance to REVISION when checksum balances perfectly', async ({
     observerPage: page,
   }) => {
-    await page.goto('/observer/mis-jrvs');
-
-    // Navigate directly to cargo list
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
-
+    // Navigate directly to registration form
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
@@ -159,11 +150,7 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await mockActaEnvio(page, 201);
     await mockImagenUpload(page, 200);
 
-    await page.goto('/observer/mis-jrvs');
-
-    // Navigate directly to cargo list
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
-
+    // Navigate directly to registration form
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
@@ -247,11 +234,7 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
   test('should validate edge case: all votes are blancos/nulos', async ({
     observerPage: page,
   }) => {
-    await page.goto('/observer/mis-jrvs');
-
-    // Navigate directly to cargo list
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
-
+    // Navigate directly to registration form
     await page.goto(
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
