@@ -178,6 +178,73 @@ Cualquier violación **bloquea merge**. Si encuentras deuda técnica fuera de sc
 
 Usar ambas skills en paralelo si el change toca UI. Incaporate findings en `apply-progress.md` bajo "QA Visual".
 
+### 2.2. Estándares de Diseño UI/UX (Visual + Interacción)
+
+**Obligatorio para todo cambio de frontend. Validar durante implementación:**
+
+#### Estados de Carga
+- **Esqueletos visuales** (skeleton loaders): Usar en lugar de spinners o espacios vacíos. Comunica claramente que el contenido está cargando y mejora percepción de velocidad.
+- Implementación: componentes `Skeleton` de PrimeNG/Ionic o custom con altura/ancho realista del contenido esperado.
+- Validación en test: renderizar loading state, verificar que skeleton es visible mientras data llega.
+
+#### Diseño Responsive
+- **Mobile-first**: Diseñar para mobile, luego extender a tablet y desktop.
+- **No encoger desktop a mobile**: cada viewport tiene su layout específico, no solo escala.
+- Breakpoints standard: `xs: 0px, sm: 576px, md: 768px, lg: 1024px, xl: 1280px`
+- Validación: testear en `setViewportSize({ width: 375, height: 667 })` (mobile), `{ width: 768, height: 1024 }` (tablet), `{ width: 1280, height: 720 }` (desktop).
+- Evitar: tablas con scroll horizontal obligatorio, inputs sin click-target de 44px mínimo.
+
+#### Jerarquía Visual
+- **Acción principal destacada**: Botón primary en color brand, sin competencia visual.
+- **Reduce texto innecesario**: cada palabra debe justificarse. Usa labels descriptivos, no genéricos ("Guardar" es débil, "Guardar cambios" es mejor).
+- **Escaneo rápido**: títulos, subtítulos, listas bullet. Evita párrafos largos en UI.
+- Validación: un observador sin contexto debe entender la acción en <2 segundos.
+
+#### Tokens de Diseño
+- **Colores**: definidos como CSS variables (`--color-primary`, `--color-surface`, `--color-error`, etc.) con esquema light + dark.
+- **Tipografía**: `--font-family-base`, `--font-size-body`, `--font-weight-bold`, etc.
+- **Espaciado**: `--spacing-xs` (4px), `--spacing-sm` (8px), `--spacing-md` (16px), `--spacing-lg` (24px), `--spacing-xl` (32px).
+- **Bordes y sombras**: `--border-radius-small`, `--shadow-elevation-1`, `--shadow-elevation-2`, etc.
+- **Validación**: Grep `#[0-9a-f]{3,6}` (hex colors) y `rgb\(` (inline colors) — deben estar vacíos. Todo en tokens.
+
+#### Consistencia Entre Componentes
+- Botones, cards, campos de entrada, modales: mismo lenguaje visual en toda la app.
+- **Dark mode**: si light + dark tokens, ambos deben ser accesibles y visualmente coherentes. No "invertir colores", diseñar ambas paletas.
+- **Variantes**: primaria/secundaria/peligro/éxito con comportamiento uniforme en hover, focus, disabled.
+- Validación: tomar una card, botón e input. ¿Pertenecen a la misma familia visual? Si no, inconsistencia.
+
+#### Accesibilidad (WCAG 2.1 AA)
+- **Texto alternativo**: `alt=""` en imágenes, `aria-label` en iconos interactivos.
+- **Contraste**: mínimo 4.5:1 en texto normal, 3:1 en texto grande. Usar herramientas tipo WebAIM.
+- **Navegación teclado**: Tab, Enter, Escape funcionan en botones, inputs, menus. `tabindex` solo si es necesario.
+- **Roles semánticos**: `role="button"` en divs clicables, `role="alert"` en notificaciones.
+- Validación: navegación solo con teclado, pantalla sin CSS (estructura sigue siendo comprensible).
+
+#### Estados de la Interfaz
+- **Sin datos**: no dejar blanco vacío. Renderizar `EmptyStateComponent` con icono, título, descripción breve y acción primaria ("Crear el primer usuario").
+- **Error**: Renderizar `ErrorStateComponent` con icono, mensaje claro, botón "Reintentar" o "Volver".
+- **Éxito**: Toast o banner confirmando la acción. Desaparecer tras 3-5 segundos o con botón dismiss.
+- Validación: cada ruta de éxito/fallo/vacío tiene su UI propia. Nunca dejar estado ambiguo.
+
+#### Estados de Interacción
+- **Hover**: cambio de color, elevación (shadow) o fondo. Transición suave (0.2s).
+- **Focus**: outline o ring visible, mínimo 3px. No ocultar focus outline.
+- **Active**: presión visual, color más oscuro o invert.
+- **Disabled**: opacidad 50%, cursor `not-allowed`, sin hover effect.
+- **Loading en botón**: deshabilitar, mostrar spinner dentro o cambiar texto a "Guardando...".
+- Validación: cada botón, input, link en devtools: `:hover`, `:focus`, `:active`, `:disabled` tienen estilos diferenciados.
+
+**Checklist antes de marcar done:**
+- [ ] Skeleton loaders en todas las cargas async
+- [ ] Responsive probado en 3+ viewports
+- [ ] Texto: sin genéricos, jerarquía clara
+- [ ] Tokens: 0 colores hardcoded, todo CSS variables
+- [ ] Componentes: mismo lenguaje en botón/card/input/modal
+- [ ] Accesibilidad: aria-label, alt, contraste 4.5:1, navegación teclado
+- [ ] Estados: empty, error, success, loading visualizados
+- [ ] Interacción: hover/focus/active/disabled diferenciados
+- [ ] Dark mode: probado si aplica, sin solo invertir colores
+
 ### 3. Procedimientos de QA — Carga y Volumen
 
 **A 500+ usuarios concurrentes + 2x volumen de datos:**
