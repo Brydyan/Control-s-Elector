@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import { RegistrarActaPage } from './registrar-acta.page';
 import { ObserverApi } from '../../data/observer.api';
 import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
+import { ImageCompressionService } from '../../../../core/services/image-compression.service';
 
 describe('RegistrarActaPage', () => {
   let component: RegistrarActaPage;
@@ -12,6 +13,7 @@ describe('RegistrarActaPage', () => {
   let observerServiceSpy: jasmine.SpyObj<ObserverApi>;
   let routerSpy: jasmine.SpyObj<Router>;
   let offlineStorageSpy: jasmine.SpyObj<OfflineStorageService>;
+  let imageCompressionSpy: jasmine.SpyObj<ImageCompressionService>;
 
   beforeEach(async () => {
     observerServiceSpy = jasmine.createSpyObj('ObserverService', [
@@ -44,6 +46,27 @@ describe('RegistrarActaPage', () => {
     // contaminaría el siguiente al restaurar.
     localStorage.clear();
 
+    imageCompressionSpy = jasmine.createSpyObj('ImageCompressionService', [
+      'compress',
+      'createPreviewUrl',
+      'revokePreviewUrl',
+    ]);
+    // Default: compress retorna el archivo sin cambios (para tests T-FE-13 A.2).
+    // Tests T-FE-20 pueden sobrescribir esto con archivo comprimido.
+    imageCompressionSpy.compress.and.callFake((file: File | Blob) => {
+      if (file instanceof File) {
+        return Promise.resolve(file);
+      }
+      return Promise.resolve(file);
+    });
+    // createPreviewUrl + revokePreviewUrl delegan a URL APIs para que tests puedan mockearlo
+    imageCompressionSpy.createPreviewUrl.and.callFake((blob: Blob) =>
+      URL.createObjectURL(blob),
+    );
+    imageCompressionSpy.revokePreviewUrl.and.callFake((url: string) => {
+      if (url) URL.revokeObjectURL(url);
+    });
+
     observerServiceSpy.getCandidatosPorCargo.and.returnValue(
       of([
         {
@@ -71,6 +94,7 @@ describe('RegistrarActaPage', () => {
         { provide: ObserverApi, useValue: observerServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: OfflineStorageService, useValue: offlineStorageSpy },
+        { provide: ImageCompressionService, useValue: imageCompressionSpy },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -199,7 +223,7 @@ describe('RegistrarActaPage', () => {
     );
   });
 
-  it('should preview image via URL.createObjectURL, NOT readAsDataURL (T-FE-08 D1, V.4)', () => {
+  it('should preview image via URL.createObjectURL, NOT readAsDataURL (T-FE-08 D1, V.4)', async () => {
     const revokeSpy = vi
       .spyOn(URL, 'revokeObjectURL')
       .mockReturnValue(undefined);
@@ -215,6 +239,8 @@ describe('RegistrarActaPage', () => {
     } as unknown as Event;
 
     component.onFileSelected(event);
+    // T-FE-20: onFileSelected ahora es async (compress en background).
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(createSpy).toHaveBeenCalledWith(fakeFile);
     expect(component.imagePreviewUrl).toBe('blob:mock-uuid-xyz');
@@ -246,7 +272,7 @@ describe('RegistrarActaPage', () => {
     expect(component.candidatos.length).toBe(2);
   });
 
-  it('should clear captureCancelled when user selects a file after cancelling (D7)', () => {
+  it('should clear captureCancelled when user selects a file after cancelling (D7)', async () => {
     component.captureCancelled = true; // estado previo de cancelación
 
     const fakeFile = new File(['x'], 'acta.webp', { type: 'image/webp' });
@@ -254,6 +280,9 @@ describe('RegistrarActaPage', () => {
     component.onFileSelected({
       target: { files: [fakeFile] },
     } as unknown as Event);
+
+    // T-FE-20: onFileSelected ahora es async.
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(component.captureCancelled).toBe(false);
     expect(component.selectedImageFile).toBe(fakeFile);
@@ -336,12 +365,15 @@ describe('RegistrarActaPage', () => {
     ).toBeNull();
   });
 
-  it('T-FE-13 A.1: tras capturar la foto aparece "Continuar a Digitación de Votos"', () => {
+  it('T-FE-13 A.1: tras capturar la foto aparece "Continuar a Digitación de Votos"', async () => {
     // Sin foto, la vía principal todavía no está disponible.
     expect(hostButton('btn-continuar-votos')).toBeNull();
 
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:foto');
     seleccionarFoto(new File(['x'], 'acta.webp', { type: 'image/webp' }));
+
+    // T-FE-20: onFileSelected ahora es async (compress en background).
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(hostButton('btn-continuar-votos')).toBeTruthy();
 
@@ -982,5 +1014,116 @@ describe('RegistrarActaPage', () => {
         totalSufragantes: 100,
       }),
     );
+  });
+
+  // ── T-FE-20 B.3: Tests de compresión de imagen ──────────────────────────
+
+  it('B.3: llama a imageCompression.compress() obligatoriamente al seleccionar archivo', async () => {
+    const mockCompressed = new File(['compressed'], 'acta.webp', {
+      type: 'image/webp',
+    });
+    imageCompressionSpy.compress.and.returnValue(
+      Promise.resolve(mockCompressed),
+    );
+    imageCompressionSpy.createPreviewUrl.and.returnValue('blob:mock-123');
+    offlineStorageSpy.guardarFotoBorrador.and.returnValue(Promise.resolve());
+
+    const file = new File(['original'], 'acta.jpg', { type: 'image/jpeg' });
+    component.onFileSelected({
+      target: { files: [file] },
+    } as unknown as Event);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(imageCompressionSpy.compress).toHaveBeenCalledWith(file);
+  });
+
+  it('B.3: asigna el archivo comprimido WebP a selectedImageFile', async () => {
+    const mockCompressed = new File(['compressed'], 'acta.webp', {
+      type: 'image/webp',
+    });
+    imageCompressionSpy.compress.and.returnValue(
+      Promise.resolve(mockCompressed),
+    );
+    imageCompressionSpy.createPreviewUrl.and.returnValue('blob:mock-123');
+    offlineStorageSpy.guardarFotoBorrador.and.returnValue(Promise.resolve());
+
+    const file = new File(['original'], 'acta.jpg', { type: 'image/jpeg' });
+    component.onFileSelected({
+      target: { files: [file] },
+    } as unknown as Event);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(component.selectedImageFile).toBe(mockCompressed);
+    expect(component.selectedImageFile?.name).toBe('acta.webp');
+  });
+
+  it('B.3: maneja error de compresión sin borrar datos digitados (votos)', async () => {
+    imageCompressionSpy.compress.and.returnValue(
+      Promise.reject(new Error('Compression failed')),
+    );
+    imageCompressionSpy.createPreviewUrl.and.returnValue('blob:mock-123');
+
+    // Precargar datos.
+    component.totalSufragantes = 350;
+    component.votosPorCandidato.set(1, 100);
+
+    const file = new File(['original'], 'acta.jpg', { type: 'image/jpeg' });
+    component.onFileSelected({
+      target: { files: [file] },
+    } as unknown as Event);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Votos NO se borraron a pesar del error de compresión.
+    expect(component.totalSufragantes).toBe(350);
+    expect(component.votosPorCandidato.get(1)).toBe(100);
+    // Error mostrado.
+    expect(component.error()).toContain('optimizar');
+  });
+
+  it('B.3: bloquea envío mientras comprimiendoImagen esté activo', async () => {
+    component.comprimiendoImagen.set(true);
+
+    component.enviarActaFinal();
+
+    // No debe dispararse el envío.
+    expect(observerServiceSpy.enviarActaDirecta).not.toHaveBeenCalled();
+    // Error mostrado.
+    expect(component.error()).toContain('Espera a que se termine');
+  });
+
+  it('B.3: bloquea guardar borrador mientras comprimiendoImagen esté activo', async () => {
+    component.comprimiendoImagen.set(true);
+
+    component.guardarComoBorrador();
+
+    // No debe dispararse el guardado.
+    expect(observerServiceSpy.guardarBorrador).not.toHaveBeenCalled();
+    // Error mostrado.
+    expect(component.error()).toContain('Espera a que se termine');
+  });
+
+  it('B.3: desactiva comprimiendoImagen tras completar compresión exitosa', async () => {
+    const mockCompressed = new File(['compressed'], 'acta.webp', {
+      type: 'image/webp',
+    });
+    imageCompressionSpy.compress.and.returnValue(
+      Promise.resolve(mockCompressed),
+    );
+    imageCompressionSpy.createPreviewUrl.and.returnValue('blob:mock-123');
+    offlineStorageSpy.guardarFotoBorrador.and.returnValue(Promise.resolve());
+
+    component.comprimiendoImagen.set(true);
+
+    const file = new File(['original'], 'acta.jpg', { type: 'image/jpeg' });
+    component.onFileSelected({
+      target: { files: [file] },
+    } as unknown as Event);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(component.comprimiendoImagen()).toBe(false);
   });
 });

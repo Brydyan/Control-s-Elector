@@ -478,3 +478,19 @@
     color: var(--color-status-danger);
   }
 }
+
+/* ── T-FE-20 B.2: Compresión badge ────────────────────────────────────── */
+
+.compression-badge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-status-info-bg);
+  border: 1px solid var(--color-status-info-border);
+  color: var(--color-status-info);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-bottom: var(--space-3);
+}
