@@ -20,10 +20,50 @@ export interface ResultadoCandidato {
   votos: number;
 }
 
+/**
+ * T-FE-15 B.1: Resultado detallado de candidato con estado provisional y foto.
+ * Extiende ResultadoCandidato con campos visuales para dashboard.
+ */
+export interface CandidatoResultadoDto extends ResultadoCandidato {
+  /** Proporción de votos respecto a votos válidos (0..100). */
+  porcentaje: number;
+  /** Estado provisional: 'GANADOR_PROVISIONAL', 'EN_CONTEO', 'PERDEDOR_PROVISIONAL', etc. */
+  estado: string;
+  /** URL de foto del candidato (opcional). */
+  fotoUrl?: string | null;
+}
+
 export interface ResultadoCargo {
   cargoId: number;
   cargoNombre: string;
   candidatos: ResultadoCandidato[];
+}
+
+/**
+ * T-FE-15 B.1: Resultado de cargo con desglose de votos válidos, blancos, nulos.
+ * Extiende ResultadoCargo para dashboard analítico.
+ */
+export interface ResultadoCargoDto extends ResultadoCargo {
+  /** Candidatos con detalles adicionales (estado, foto, porcentaje). */
+  candidatos: CandidatoResultadoDto[];
+  /** Total de votos válidos (suma de votos candidatos). */
+  votosValidos: number;
+  /** Total de votos en blanco. */
+  votosBlancos: number;
+  /** Total de votos nulos. */
+  votosNulos: number;
+}
+
+/**
+ * T-FE-15 C.1: Progreso a nivel de parroquia.
+ */
+export interface ParroquiaProgresoDto {
+  parroquiaId: number;
+  parroquiaNombre: string;
+  jrvsEscrutadas: number;
+  jrvsTotal: number;
+  /** Porcentaje de avance (0..100). */
+  avance: number;
 }
 
 export interface ProgresoCanton {
@@ -33,6 +73,15 @@ export interface ProgresoCanton {
   jrvsConActa: number;
   /** 0..100 (double). */
   porcentaje: number;
+}
+
+/**
+ * T-FE-15 C.1: Progreso cantonal detallado con desglose de parroquias.
+ * Extiende ProgresoCanton con detalles territoriales.
+ */
+export interface ProgresoCantonDto extends ProgresoCanton {
+  /** Métricas agrupadas por parroquia. */
+  parroquias: ParroquiaProgresoDto[];
 }
 
 export interface Novedad {

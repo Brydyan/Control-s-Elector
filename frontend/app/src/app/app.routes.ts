@@ -67,6 +67,58 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'dashboard/resultados',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/dashboard/pages/resultados-cargo/resultados-cargo.page').then(
+            (m) => m.ResultadosCargoPage,
+          ),
+        data: {
+          roles: ['ADMIN', 'MASTER', 'COORDINATOR'],
+          title: 'Resultados por Cargo',
+          subtitle: 'Análisis Electoral · Votos por Dignidad y Candidato',
+        },
+      },
+      {
+        path: 'admin/resultados',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/dashboard/pages/resultados-cargo/resultados-cargo.page').then(
+            (m) => m.ResultadosCargoPage,
+          ),
+        data: {
+          roles: ['ADMIN', 'MASTER', 'COORDINATOR'],
+          title: 'Resultados por Cargo',
+          subtitle: 'Análisis Electoral · Votos por Dignidad y Candidato',
+        },
+      },
+      {
+        path: 'dashboard/progreso',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/dashboard/pages/progreso-cantones/progreso-cantones.page').then(
+            (m) => m.ProgresoCantonesPage,
+          ),
+        data: {
+          roles: ['ADMIN', 'MASTER', 'COORDINATOR'],
+          title: 'Progreso de Escrutinio',
+          subtitle: 'Avance Territorial · Cantones y Parroquias',
+        },
+      },
+      {
+        path: 'admin/progreso',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/dashboard/pages/progreso-cantones/progreso-cantones.page').then(
+            (m) => m.ProgresoCantonesPage,
+          ),
+        data: {
+          roles: ['ADMIN', 'MASTER', 'COORDINATOR'],
+          title: 'Progreso de Escrutinio',
+          subtitle: 'Avance Territorial · Cantones y Parroquias',
+        },
+      },
+      {
         path: 'observer/registrar-acta',
         redirectTo: '/observer/mis-jrvs',
         pathMatch: 'full',
