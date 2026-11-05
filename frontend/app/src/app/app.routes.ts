@@ -166,6 +166,21 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'coordinator/reportes',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/coordinator/pages/reportes/coordinator-reportes.page').then(
+            (m) => m.CoordinatorReportesPage,
+          ),
+        data: {
+          roles: ['COORDINATOR', 'MASTER', 'ADMIN'],
+          title: 'Centro de Reportes',
+          subtitle:
+            'Métricas operativas y generación de expedientes electorales',
+          icon: 'pie-chart-outline',
+        },
+      },
+      {
         path: 'evidencias',
         canActivate: [roleGuard],
         loadComponent: () =>

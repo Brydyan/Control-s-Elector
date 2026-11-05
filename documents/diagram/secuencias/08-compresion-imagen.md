@@ -1,41 +1,48 @@
 # Flujo 08 — Pipeline de Compresión de Imagen en el Cliente
 
-Escenario: detalle interno del proceso de captura y compresión antes de transmitir la evidencia.
+Escenario: captura de fotografía de alta resolución (celulares modernos 48-108 MP) y compresión adaptativa a WebP 2048px antes de almacenar o transmitir.
 
 ```mermaid
 sequenceDiagram
-    actor OBS as Observador
-    participant CAM as Cámara / Galería
-    participant APP as App Angular/Ionic
-    participant CANVAS as Canvas API
-    participant BLOB as Blob / File API
-    participant VAL as Validador Local
+    actor OBS as Observador Electoral
+    participant CAM as Cámara / Galería (Móvil)
+    participant UI as Vista Angular (Registrar/Corregir)
+    participant SVC as ImageCompressionService
+    participant GPU as createImageBitmap (GPU/C++)
+    participant CANVAS as OffscreenCanvas (2D Context)
+    participant IDB as IndexedDB (Offline Storage)
 
-    OBS->>CAM: Captura foto del acta física
-    CAM-->>APP: File {type: image/jpeg, size: ~5MB}
+    OBS->>CAM: Captura fotografía del acta física
+    CAM-->>UI: File {type: image/jpeg, size: ~18MB, 6000x4000}
 
-    APP->>VAL: Verifica tipo MIME permitido
-    VAL-->>APP: ✅ image/jpeg | image/png | image/heic
+    UI->>UI: URL.createObjectURL(file) -> Preview visual instantáneo (0ms lag)
+    UI->>UI: comprimiendoImagen.set(true) -> Bloquea envío temporal
 
-    APP->>CANVAS: createImageBitmap(file)
-    CANVAS-->>APP: ImageBitmap cargado
+    UI->>SVC: compress(file)
+    SVC->>GPU: createImageBitmap(blob, { resizeWidth: 2048, resizeQuality: 'medium' })
+    GPU-->>SVC: ImageBitmap decodificado y escalado (buffer GPU)
 
-    APP->>CANVAS: Calcula dimensiones target<br/>max 1920x1080, mantiene aspect ratio
-    APP->>CANVAS: drawImage(bitmap, 0, 0, w_target, h_target)
+    SVC->>CANVAS: drawImage(bitmap, 0, 0)
+    Note over SVC,GPU: bitmap.close() liberando memoria GPU de inmediato
 
-    APP->>BLOB: canvas.toBlob(callback, "image/webp", 0.82)
-    BLOB-->>APP: Blob WebP
+    SVC->>CANVAS: convertToBlob({ type: 'image/webp', quality: 0.80 })
+    CANVAS-->>SVC: Blob WebP (~520 KB)
 
-    APP->>VAL: Verifica tamaño resultado
-    alt Tamaño > 500KB
-        VAL-->>APP: ⚠️ Requiere mayor compresión
-        APP->>BLOB: canvas.toBlob(callback, "image/webp", 0.65)
-        BLOB-->>APP: Blob WebP recomprimido
-    else Tamaño <= 500KB
-        VAL-->>APP: ✅ Tamaño aceptable
+    alt Tamaño > 650 KB (foto con mucho ruido o sombra)
+        SVC->>CANVAS: convertToBlob({ type: 'image/webp', quality: 0.65 })
+        CANVAS-->>SVC: Blob WebP recomprimido (~450 KB)
     end
 
-    APP->>APP: Crea FormData con WebP + metadatos
-    APP-->>OBS: Vista previa de imagen comprimida
-    Note over APP: Lista para adjuntar al POST /api/actas
+    SVC-->>UI: File {name: "acta.webp", type: "image/webp", size: ~500KB}
+    UI->>UI: selectedImageFile = compressedFile
+    UI->>UI: comprimiendoImagen.set(false) -> Habilita envío
+
+    UI->>IDB: guardarFotoOffline(compressedFile)
+    IDB-->>UI: ✅ Foto WebP segura en disco local
+
+    alt Transmisión Online
+        UI->>UI: enviarActaDirecta() con WebP ligero (~500 KB)
+    else Sin Conexión
+        UI->>IDB: encolarActa(payload, compressedFile)
+    end
 ```
