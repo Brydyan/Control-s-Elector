@@ -2,6 +2,7 @@ import { test as base, Page } from '@playwright/test';
 import {
   mockAuthLogin,
   mockAuthMe,
+  mockAuthRefresh,
   mockMenusMe,
   MASTER_USER,
   OBSERVER_USER,
@@ -18,27 +19,34 @@ const USERS = {
 };
 
 /**
- * Injects a valid JWT into localStorage so Angular's authGuard lets the user
- * through WITHOUT hitting the real backend for /auth/login.
+ * Pre-authenticates a page as the specified role.
  *
- * Also mocks /auth/me and /api/v1/menus/me so the shell and sidebar load.
+ * Flow:
+ * 1. Register all API mocks BEFORE any navigation (critical for route interception)
+ * 2. Navigate to / (Angular initializes, guard checks session)
+ * 3. authGuard detects empty store, calls restoreSession() → /auth/refresh (mocked)
+ * 4. /auth/refresh returns a valid session, AuthStore populates
+ * 5. Guard allows navigation, page may redirect based on role
+ * 6. Test can then navigate to protected routes (mocks already registered)
+ *
+ * Why not inject into localStorage?
+ * - AuthStore never reads from localStorage (token lives only in-memory)
+ * - On page reload, the guard MUST call /auth/refresh to restore the session
+ * - E2E simulates this by having an empty store after page load
  */
 async function loginAs(page: Page, rol: UserRole): Promise<void> {
   const user = USERS[rol];
-  const token = TOKENS[rol];
 
-  // Set token before navigation so the guard finds it immediately.
-  const args: [string, string] = [token, rol];
-  await page.addInitScript(
-    (arr: string[]) => {
-      localStorage.setItem('access_token', arr[0]);
-      localStorage.setItem('user_rol', arr[1]);
-    },
-    args,
-  );
-
+  // Register mocks BEFORE any navigation (critical for route interception)
+  await mockAuthRefresh(page, user);
   await mockAuthMe(page, user);
   await mockMenusMe(page, rol);
+
+  // Navigate to app root — triggers authGuard to restore session via /auth/refresh
+  // Mocks are in place; auth guard will call /auth/refresh (mocked) and populate session
+  await page.goto('/', { waitUntil: 'networkidle', timeout: 15_000 });
+
+  // AuthStore is now populated. Subsequent test navigations will pass the guard.
 }
 
 // ---------------------------------------------------------------------------
