@@ -92,20 +92,55 @@
           <td>{{ usuario.habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
           <td>{{ usuario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions">
-            <p-menu
-              #menu
-              [model]="obtenerAccionesUsuario(usuario)"
-              [popup]="true"
-              appendTo="body"
-            />
-            <app-button
-              variant="ghost"
-              size="sm"
-              icon="pi pi-ellipsis-v"
-              [rounded]="true"
-              aria-label="Acciones de usuario"
-              (clicked)="menu.toggle($event)"
-            />
+            <!-- Ver detalles (siempre visible) -->
+            <button
+              type="button"
+              class="icon-btn btn-view"
+              (click)="verDetalles(usuario)"
+              title="Ver detalles del usuario"
+              aria-label="Ver detalles del usuario"
+            >
+              <i class="pi pi-eye" aria-hidden="true"></i>
+            </button>
+
+            <!-- Editar (solo MASTER) -->
+            @if (esMaster()) {
+            <button
+              type="button"
+              class="icon-btn btn-edit"
+              (click)="abrirEditar(usuario)"
+              title="Editar usuario"
+              aria-label="Editar usuario"
+            >
+              <i class="pi pi-pencil" aria-hidden="true"></i>
+            </button>
+            }
+
+            <!-- Deshabilitar (solo MASTER y habilitado) -->
+            @if (puedeAnular(usuario)) {
+            <button
+              type="button"
+              class="icon-btn btn-delete"
+              (click)="deshabilitar(usuario)"
+              title="Deshabilitar usuario"
+              aria-label="Deshabilitar usuario"
+            >
+              <i class="pi pi-trash" aria-hidden="true"></i>
+            </button>
+            }
+
+            <!-- Restaurar (solo MASTER y deshabilitado) -->
+            @if (esMaster() && !usuario.habilitado) {
+            <button
+              type="button"
+              class="icon-btn btn-restore"
+              (click)="rehabilitar(usuario)"
+              title="Re-habilitar usuario"
+              aria-label="Re-habilitar usuario"
+            >
+              <i class="pi pi-refresh" aria-hidden="true"></i>
+            </button>
+            }
           </td>
         </tr>
       </ng-template>
@@ -121,22 +156,55 @@
         >{{ usuario.rolNombre }} · {{ usuario.habilitado ? 'Habilitado' :
         'Deshabilitado' }}</span
       >
-      <div class="actions">
-        <app-button variant="ghost" size="sm" (clicked)="verDetalles(usuario)">
-          Ver detalles
-        </app-button>
-        @if (esMaster()) {
-        <app-button variant="ghost" size="sm" (clicked)="abrirEditar(usuario)">
-          Editar
-        </app-button>
-        } @if (puedeAnular(usuario)) {
-        <app-button
-          variant="danger"
-          size="sm"
-          (clicked)="deshabilitar(usuario)"
+      <div class="actions icons-row">
+        <!-- Ver detalles (siempre visible) -->
+        <button
+          type="button"
+          class="icon-btn btn-view"
+          (click)="verDetalles(usuario)"
+          title="Ver detalles del usuario"
+          aria-label="Ver detalles del usuario"
         >
-          Deshabilitar
-        </app-button>
+          <i class="pi pi-eye" aria-hidden="true"></i>
+        </button>
+
+        <!-- Editar (solo MASTER) -->
+        @if (esMaster()) {
+        <button
+          type="button"
+          class="icon-btn btn-edit"
+          (click)="abrirEditar(usuario)"
+          title="Editar usuario"
+          aria-label="Editar usuario"
+        >
+          <i class="pi pi-pencil" aria-hidden="true"></i>
+        </button>
+        }
+
+        <!-- Deshabilitar (solo MASTER y habilitado) -->
+        @if (puedeAnular(usuario)) {
+        <button
+          type="button"
+          class="icon-btn btn-delete"
+          (click)="deshabilitar(usuario)"
+          title="Deshabilitar usuario"
+          aria-label="Deshabilitar usuario"
+        >
+          <i class="pi pi-trash" aria-hidden="true"></i>
+        </button>
+        }
+
+        <!-- Restaurar (solo MASTER y deshabilitado) -->
+        @if (esMaster() && !usuario.habilitado) {
+        <button
+          type="button"
+          class="icon-btn btn-restore"
+          (click)="rehabilitar(usuario)"
+          title="Re-habilitar usuario"
+          aria-label="Re-habilitar usuario"
+        >
+          <i class="pi pi-refresh" aria-hidden="true"></i>
+        </button>
         }
       </div>
     </article>

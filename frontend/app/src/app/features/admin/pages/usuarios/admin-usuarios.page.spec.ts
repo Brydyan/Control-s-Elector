@@ -136,20 +136,94 @@ describe('AdminUsuariosPage (rendered contract)', () => {
     ).map((button) => (button.textContent ?? '').trim());
   }
 
+  /** Count action icon buttons by their class. */
+  function countIconButtons(className: string): number {
+    return fixture.nativeElement.querySelectorAll(`button.${className}`).length;
+  }
+
   it('muestra los controles de MASTER solo con una sesión MASTER', () => {
     loginAs('MASTER');
     fixture.detectChanges();
 
     expect(buttonLabels()).toContain('Crear usuario');
-    expect(buttonLabels()).toContain('Editar');
-    expect(buttonLabels()).toContain('Deshabilitar');
+    // Icon buttons: MASTER should see view, edit, delete, restore
+    expect(countIconButtons('btn-view')).toBeGreaterThan(0);
+    expect(countIconButtons('btn-edit')).toBeGreaterThan(0);
+    expect(countIconButtons('btn-delete')).toBeGreaterThan(0);
 
     loginAs('ADMIN');
     fixture.detectChanges();
 
     expect(buttonLabels()).not.toContain('Crear usuario');
-    expect(buttonLabels()).not.toContain('Editar');
-    expect(buttonLabels()).not.toContain('Deshabilitar');
+    // ADMIN should only see view button, no edit/delete/restore
+    expect(countIconButtons('btn-view')).toBeGreaterThan(0);
+    expect(countIconButtons('btn-edit')).toBe(0);
+    expect(countIconButtons('btn-delete')).toBe(0);
+  });
+
+  // ── D.1 Icon Button Tests ───────────────────────────────────────────────
+
+  it('D.1: renderiza todos los iconos de acción para MASTER', () => {
+    loginAs('MASTER');
+    fixture.detectChanges();
+
+    // Eye button (always visible)
+    expect(countIconButtons('btn-view')).toBeGreaterThan(0);
+    // Edit button (only MASTER)
+    expect(countIconButtons('btn-edit')).toBeGreaterThan(0);
+    // Delete button (only if habilitado and MASTER)
+    expect(countIconButtons('btn-delete')).toBeGreaterThan(0);
+  });
+
+  it('D.1: renderiza solo el ícono eye-outline para ADMIN', () => {
+    loginAs('ADMIN');
+    fixture.detectChanges();
+
+    // Eye button (always visible)
+    expect(countIconButtons('btn-view')).toBeGreaterThan(0);
+    // No edit, delete, or restore buttons
+    expect(countIconButtons('btn-edit')).toBe(0);
+    expect(countIconButtons('btn-delete')).toBe(0);
+    expect(countIconButtons('btn-restore')).toBe(0);
+  });
+
+  it('D.1: llama a AdminService.deshabilitarUsuario al confirmar soft-delete', () => {
+    loginAs('MASTER');
+    spyOn(window, 'confirm').and.returnValue(true);
+    spyOn(service, 'deshabilitarUsuario').and.returnValue(of(undefined));
+
+    page.deshabilitar(usuario);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(service.deshabilitarUsuario).toHaveBeenCalledWith('u1');
+  });
+
+  it('D.1: llama a AdminService.actualizarUsuario con habilitado:true al restaurar', () => {
+    loginAs('MASTER');
+    const disabledUser = { ...usuario, habilitado: false };
+    spyOn(window, 'confirm').and.returnValue(true);
+    spyOn(service, 'actualizarUsuario').and.returnValue(of({}));
+
+    page.rehabilitar(disabledUser);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(service.actualizarUsuario).toHaveBeenCalledWith('u1', {
+      nombre: 'Ana',
+      apellido: 'Perez',
+      rol: 'ADMIN',
+      habilitado: true,
+    });
+  });
+
+  it('D.1: no llama al servicio si el usuario cancela la confirmación', () => {
+    loginAs('MASTER');
+    spyOn(window, 'confirm').and.returnValue(false);
+    spyOn(service, 'deshabilitarUsuario').and.returnValue(of(undefined));
+
+    page.deshabilitar(usuario);
+
+    expect(window.confirm).toHaveBeenCalled();
+    expect(service.deshabilitarUsuario).not.toHaveBeenCalled();
   });
 
   it('muestra las fechas en formato español dd/MM/yyyy HH:mm', async () => {

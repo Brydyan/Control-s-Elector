@@ -215,11 +215,9 @@ export class AdminUsuariosPage implements OnInit {
     });
   }
   deshabilitar(usuario: UsuarioResponseDto): void {
-    if (
-      !this.puedeAnular(usuario) ||
-      !confirm(`¿Deshabilitar a ${usuario.email}?`)
-    )
-      return;
+    if (!this.puedeAnular(usuario)) return;
+    const mensaje = `¿Estás seguro de que deseas deshabilitar a ${usuario.email}? Perderá el acceso al sistema.`;
+    if (!confirm(mensaje)) return;
     this.submitting.set(true);
     this.service.deshabilitarUsuario(usuario.publicId).subscribe({
       next: () => this.cargarUsuarios(),
