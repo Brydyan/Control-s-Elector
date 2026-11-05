@@ -220,6 +220,25 @@ export class SidebarComponent implements OnInit, OnDestroy {
       });
     }
 
+    // T-FE-15: Analítica electoral para ADMIN, MASTER, COORDINATOR
+    if (role === 'ADMIN' || role === 'MASTER' || role === 'COORDINATOR') {
+      sections.push({
+        label: 'Analítica',
+        items: [
+          {
+            label: 'Resultados por Cargo',
+            icon: 'pi pi-chart-bar',
+            route: '/dashboard/resultados',
+          },
+          {
+            label: 'Progreso de Escrutinio',
+            icon: 'pi pi-map',
+            route: '/dashboard/progreso',
+          },
+        ],
+      });
+    }
+
     return sections;
   }
 
