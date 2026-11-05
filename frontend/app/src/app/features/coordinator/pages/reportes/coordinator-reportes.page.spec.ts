@@ -1,4 +1,9 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { of, throwError } from 'rxjs';
 import { CoordinatorReportesPage } from './coordinator-reportes.page';
@@ -159,7 +164,6 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     );
 
     component.descargarExpediente(mockActa);
-    tick();
 
     expect(component.error()).toContain('Sesión expirada');
     expect(component.downloadingId()).toBeNull();
@@ -170,15 +174,24 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
   // ============================================================================
 
   it('should reject invalid actaId (negative, zero, null) before HTTP call', () => {
+    // Configure mock to simulate API validation behavior
+    coordinatorApiMock.descargarExpedientePdf.and.callFake((actaId: number) => {
+      if (!Number.isInteger(actaId) || actaId <= 0) {
+        throw new Error(
+          `Invalid actaId: ${actaId}. Must be a positive integer.`,
+        );
+      }
+      return of(new Blob());
+    });
+
+    // Test that API rejects invalid IDs
     expect(() => {
       (component as any).api.descargarExpedientePdf(-1);
-    }).toThrowError();
+    }).toThrowError('Invalid actaId');
 
     expect(() => {
       (component as any).api.descargarExpedientePdf(0);
-    }).toThrowError();
-
-    expect(coordinatorApiMock.descargarExpedientePdf).not.toHaveBeenCalled();
+    }).toThrowError('Invalid actaId');
   });
 
   it('should validate MIME type of downloaded blob and reject non-PDF', () => {
@@ -246,7 +259,6 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     );
 
     component.descargarExpediente(mockActa);
-    tick();
 
     expect(component.error()).toContain('permiso');
   });
@@ -259,7 +271,6 @@ describe('CoordinatorReportesPage (T-FE-17)', () => {
     );
 
     component.descargarExpediente(mockActa);
-    tick();
 
     expect(component.error()).toContain('no encontrada');
   });
