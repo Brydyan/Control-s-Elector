@@ -50,11 +50,8 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
     // Phase 1: Online — Navigate to cargo form
     await page.goto('/observer/mis-jrvs');
 
-    // Navigate directly to cargo list (avoid waiting for click-based navigation)
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
-
-    // Then click on cargo to start form
-    await page.getByText(STUB_CARGO_1.nombre).click();
+    // Navigate directly to form (skip click-based navigation)
+    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`);
 
     // Phase 2: Go offline (simulate network failure)
     await page.context().setOffline(true);
@@ -89,11 +86,8 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
   });
 
   test('should disable submit button when offline', async ({ observerPage: page }) => {
-    // Navigate to form (online)
-    await page.goto('/observer/mis-jrvs');
-
-    // Navigate directly to cargo list
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
+    // Navigate directly to registration form
+    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`);
 
     // Go offline
     await page.context().setOffline(true);
