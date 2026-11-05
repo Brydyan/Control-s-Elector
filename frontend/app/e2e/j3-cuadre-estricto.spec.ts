@@ -59,10 +59,14 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
+    // Wait for image preview or button to be ready
+    await page.waitForTimeout(1000);
+
     // Advance to VOTOS step
     const continueBtn = page
       .getByRole('button', { name: /continuar|votos/i })
       .first();
+    await expect(continueBtn).toBeEnabled({ timeout: 5000 });
     await continueBtn.click({ timeout: 10_000 });
 
     // Fill sufragantes
@@ -111,11 +115,15 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
+    // Wait for image processing
+    await page.waitForTimeout(1000);
+
     // Advance to VOTOS
-    await page
+    const continueBtn1 = page
       .getByRole('button', { name: /continuar|votos/i })
-      .first()
-      .click({ timeout: 10_000 });
+      .first();
+    await expect(continueBtn1).toBeEnabled({ timeout: 5000 });
+    await continueBtn1.click({ timeout: 10_000 });
 
     // Fill BALANCED acta
     await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
@@ -159,10 +167,14 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
-    await page
+    // Wait for image processing
+    await page.waitForTimeout(1000);
+
+    const continueBtn = page
       .getByRole('button', { name: /continuar|votos/i })
-      .first()
-      .click({ timeout: 10_000 });
+      .first();
+    await expect(continueBtn).toBeEnabled({ timeout: 5000 });
+    await continueBtn.click({ timeout: 10_000 });
 
     await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
 
@@ -242,10 +254,14 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
-    await page
+    // Wait for image processing
+    await page.waitForTimeout(1000);
+
+    const continueBtn2 = page
       .getByRole('button', { name: /continuar|votos/i })
-      .first()
-      .click({ timeout: 10_000 });
+      .first();
+    await expect(continueBtn2).toBeEnabled({ timeout: 5000 });
+    await continueBtn2.click({ timeout: 10_000 });
 
     // Edge case: 250 sufragantes, all blancos (valid, but unusual)
     await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
