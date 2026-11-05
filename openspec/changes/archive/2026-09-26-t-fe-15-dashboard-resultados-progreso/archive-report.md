@@ -10,6 +10,42 @@
 
 ---
 
+## 0. Estructura del Archivo
+
+```
+openspec/changes/archive/2026-09-26-t-fe-15-dashboard-resultados-progreso/
+├── proposal.md                          (Propuesta inicial)
+├── design.md                            (Decisiones de diseño D1-D4)
+├── specs/
+│   └── spec.md                          (Escenarios funcionales y mutaciones)
+├── tasks.md                             (Todas las tareas [x] completadas)
+├── verify-report.md                     (Reporte de verificación)
+├── apply-progress.md                    (Progress de implementación + mutaciones)
+├── fixes-required.md                    (CRITICAL 1 & 2 resueltos)
+├── archive-report.md                    (Este archivo)
+└── implementation/
+    ├── domain/models/
+    │   └── dashboard.model.ts           (Fase A: interfaces nuevas)
+    ├── data/
+    │   └── dashboard.api.ts             (Fase A: métodos con caché)
+    └── pages/
+        ├── resultados-cargo/            (Fase B: 8 tests, barras proporcionales)
+        │   ├── resultados-cargo.page.ts
+        │   ├── resultados-cargo.page.html
+        │   ├── resultados-cargo.page.scss
+        │   └── resultados-cargo.page.spec.ts
+        └── progreso-cantones/           (Fase C: 6 tests, color dinámico)
+            ├── progreso-cantones.page.ts
+            ├── progreso-cantones.page.html
+            ├── progreso-cantones.page.scss
+            └── progreso-cantones.page.spec.ts
+
+**Nota**: Los archivos de routing (app.routes.ts, sidebar.component.ts) no se archivan
+ya que pertenecen a la estructura global del proyecto, no a esta SDD específica.
+```
+
+---
+
 ## 1. Resumen Ejecutivo del Ciclo SDD
 
 Este informe sella el ciclo completo de Spec-Driven Development para **T-FE-15: Analítica Electoral — Resultados por Cargo y Progreso Cantonal (ADMIN/MASTER)**. El cambio fue propuesto inicialmente el 2026-09-26, estructurado, diseñado, implementado y rigurosamente verificado hasta alcanzar el veredicto definitivo de **PASS (14 tests nuevos, 3 mutaciones efectivas, 0 blockers)** el 2026-11-04.

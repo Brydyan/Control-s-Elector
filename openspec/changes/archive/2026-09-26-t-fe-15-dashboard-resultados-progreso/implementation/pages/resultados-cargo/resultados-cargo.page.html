@@ -1,0 +1,179 @@
+<div class="resultados-cargo-container" data-testid="resultados-cargo">
+  <header class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Resultados por Cargo</h1>
+      <p class="page-subtitle">
+        Análisis Electoral · Votos por Dignidad y Candidato
+      </p>
+    </div>
+  </header>
+
+  <!-- Estado de carga -->
+  <app-loading-state
+    *ngIf="loading()"
+    message="Cargando datos de resultados..."
+    data-testid="loading-state"
+  ></app-loading-state>
+
+  <!-- Banner de error -->
+  <app-error-state
+    *ngIf="error()"
+    [message]="error()!"
+    (retry)="cargarResultados()"
+    data-testid="error-state"
+  ></app-error-state>
+
+  <!-- Región principal (solo si no está cargando ni hay error fatal) -->
+  @if (!loading() && !error()) {
+
+  <!-- Tabs de cargos -->
+  <div class="tabs-section" data-testid="tabs-section">
+    <div class="tabs-list" role="tablist">
+      @for (cargo of cargosData(); track cargo.cargoId; let idx = $index) {
+      <button
+        (click)="cambiarCargo(idx)"
+        [class.active]="cargoSeleccionado() === idx"
+        [attr.aria-label]="'Resultados de ' + cargo.cargoNombre"
+        [attr.aria-selected]="cargoSeleccionado() === idx"
+        class="tab-button"
+        [attr.data-testid]="'tab-cargo-' + cargo.cargoId"
+        role="tab"
+      >
+        {{ cargo.cargoNombre }}
+      </button>
+      }
+    </div>
+  </div>
+
+  @if (cargoActual; as cargo) {
+
+  <!-- Candidato/a líder -->
+  @if (candidatoLider; as lider) {
+  <app-card class="candidato-lider-card" data-testid="candidato-lider">
+    <div class="lider-content">
+      <div class="lider-foto">
+        @if (lider.fotoUrl) {
+        <img
+          [src]="lider.fotoUrl"
+          [alt]="'Foto de ' + lider.candidatoNombre"
+          class="lider-image"
+          data-testid="lider-foto"
+        />
+        } @else {
+        <div
+          class="lider-foto-placeholder"
+          data-testid="lider-foto-placeholder"
+        >
+          <i class="pi pi-user" aria-hidden="true"></i>
+        </div>
+        }
+      </div>
+      <div class="lider-info">
+        <h2 class="lider-nombre">{{ lider.candidatoNombre }}</h2>
+        @if (lider.partidoNombre) {
+        <p class="lider-partido">{{ lider.partidoNombre }}</p>
+        }
+        <div class="lider-stats">
+          <div class="stat">
+            <span class="stat-label">Votos</span>
+            <span class="stat-value">{{ lider.votos }}</span>
+          </div>
+          <div class="stat">
+            <span class="stat-label">Porcentaje</span>
+            <span class="stat-value"
+              >{{ lider.porcentaje | number: '1.1-1' }}%</span
+            >
+          </div>
+          <div class="stat">
+            <span class="stat-label">Estado</span>
+            <span [class]="'stat-badge status-' + lider.estado.toLowerCase()">
+              {{ lider.estado }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </app-card>
+  }
+
+  <!-- Lista de candidatos -->
+  <app-card class="candidatos-card" data-testid="candidatos-list">
+    <div class="candidatos-header">
+      <h2 class="section-title">Candidatos por Orden de Votos</h2>
+    </div>
+
+    <div class="candidatos-list">
+      @for (candidato of cargo.candidatos; track candidato.candidatoId) {
+      <div
+        class="candidato-row"
+        [attr.data-testid]="'candidato-row-' + candidato.candidatoId"
+      >
+        <div class="candidato-name">
+          <p class="nombre">{{ candidato.candidatoNombre }}</p>
+          @if (candidato.partidoNombre) {
+          <span class="partido">{{ candidato.partidoNombre }}</span>
+          }
+        </div>
+
+        <div class="candidato-barra">
+          <div
+            class="barra-container"
+            role="progressbar"
+            [attr.aria-valuenow]="candidato.votos"
+            [attr.aria-valuemin]="0"
+            [attr.aria-valuemax]="cargo.candidatos[0].votos"
+            [attr.aria-label]="candidato.candidatoNombre + ': ' + candidato.votos + ' votos'"
+          >
+            <div
+              class="barra-fill"
+              [style.width.%]="porcentajeAncho(candidato)"
+              data-testid="barra-fill"
+            ></div>
+          </div>
+          <div class="barra-labels">
+            <span class="votos">{{ candidato.votos }}</span>
+            <span class="porcentaje"
+              >{{ candidato.porcentaje | number: '1.1-1' }}%</span
+            >
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+  </app-card>
+
+  <!-- Tarjetas de resumen -->
+  <div class="resumen-cards" data-testid="resumen-section">
+    <app-card class="resumen-card">
+      <div class="resumen-content">
+        <h3 class="resumen-title">Votos Válidos</h3>
+        <p class="resumen-value">{{ cargo.votosValidos }}</p>
+        <p class="resumen-desc">(100%)</p>
+      </div>
+    </app-card>
+
+    <app-card class="resumen-card">
+      <div class="resumen-content">
+        <h3 class="resumen-title">Votos Blancos</h3>
+        <p class="resumen-value">{{ cargo.votosBlancos }}</p>
+        <p class="resumen-desc">
+          {{ ( (cargo.votosBlancos / (cargo.votosValidos + cargo.votosBlancos +
+          cargo.votosNulos)) * 100 ) | number: '1.1-1' }}%
+        </p>
+      </div>
+    </app-card>
+
+    <app-card class="resumen-card">
+      <div class="resumen-content">
+        <h3 class="resumen-title">Votos Nulos</h3>
+        <p class="resumen-value">{{ cargo.votosNulos }}</p>
+        <p class="resumen-desc">
+          {{ ( (cargo.votosNulos / (cargo.votosValidos + cargo.votosBlancos +
+          cargo.votosNulos)) * 100 ) | number: '1.1-1' }}%
+        </p>
+      </div>
+    </app-card>
+  </div>
+
+  } }
+</div>
