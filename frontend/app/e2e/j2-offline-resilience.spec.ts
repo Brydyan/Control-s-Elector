@@ -61,11 +61,19 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
-    // Advance to VOTOS step
+    // Wait for image preview to load and compression to complete
     await page
-      .getByRole('button', { name: /continuar|votos/i })
+      .locator('img[alt*="foto"], img[alt*="acta"], img[alt*="preview"]')
       .first()
-      .click({ timeout: 10_000 });
+      .waitFor({ timeout: 10_000 })
+      .catch(() => page.waitForTimeout(2000)); // Fallback if preview element not found
+
+    // Advance to VOTOS step
+    const continueBtn = page
+      .getByRole('button', { name: /continuar|votos/i })
+      .first();
+    await expect(continueBtn).toBeEnabled({ timeout: 5000 });
+    await continueBtn.click({ timeout: 10_000 });
 
     // Phase 2: Go offline before filling votes
     await page.context().setOffline(true);
@@ -93,10 +101,19 @@ test.describe('J2 — Resiliencia Offline (recinto sin señal)', () => {
     // Attach image and advance to VOTOS
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
+
+    // Wait for image preview to load and compression to complete
     await page
-      .getByRole('button', { name: /continuar|votos/i })
+      .locator('img[alt*="foto"], img[alt*="acta"], img[alt*="preview"]')
       .first()
-      .click({ timeout: 10_000 });
+      .waitFor({ timeout: 10_000 })
+      .catch(() => page.waitForTimeout(2000)); // Fallback if preview element not found
+
+    const continueBtn2 = page
+      .getByRole('button', { name: /continuar|votos/i })
+      .first();
+    await expect(continueBtn2).toBeEnabled({ timeout: 5000 });
+    await continueBtn2.click({ timeout: 10_000 });
 
     // Fill votes
     await page.getByLabel(/sufragantes|padrón/i).fill(String(SUFRAGANTES));
