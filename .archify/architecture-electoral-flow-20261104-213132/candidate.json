@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Arquitectura y Flujos Electorales del Sistema",
+    "subtitle": "Captura en cliente, R2, API transaccional y respaldo asíncrono",
+    "output": ".archify/architecture-electoral-flow-20261104-213132/electoral-flow.html",
+    "quality_profile": "showcase",
+    "animation": "trace",
+    "repository": {
+      "url": "https://github.com/Brydyan/Control-s-Elector",
+      "commit": "4e1322b7bbd39f572cda1dc118543030a2ddaa00"
+    }
+  },
+  "components": [
+    {
+      "id": "obs_mobile",
+      "type": "external",
+      "label": "Delegados Móviles",
+      "sublabel": "Cámara / PWA",
+      "pos": [40, 180],
+      "size": [140, 60]
+    },
+    {
+      "id": "admin_web",
+      "type": "external",
+      "label": "Directivos / Admin",
+      "sublabel": "Dashboard analítico",
+      "pos": [40, 360],
+      "size": [140, 60]
+    },
+    {
+      "id": "cf_pages",
+      "type": "frontend",
+      "label": "Cloudflare Pages",
+      "sublabel": "Angular 18 + SPA CDN",
+      "pos": [260, 270],
+      "size": [150, 64]
+    },
+    {
+      "id": "pipeline_compress",
+      "type": "frontend",
+      "label": "Pipeline Compresión",
+      "sublabel": "WebP 2048px (500 KB)",
+      "pos": [490, 150],
+      "size": [160, 64],
+      "sources": ["frontend/app/src/app/core/services/image-compression.service.ts"]
+    },
+    {
+      "id": "idb_storage",
+      "type": "database",
+      "label": "IndexedDB Offline",
+      "sublabel": "Cola duradera de actas",
+      "pos": [490, 270],
+      "size": [160, 64],
+      "sources": ["frontend/app/src/app/core/offline/sync.service.ts"]
+    },
+    {
+      "id": "cf_r2",
+      "type": "cloud",
+      "label": "Cloudflare R2",
+      "sublabel": "10 GB Free / S3 Bucket",
+      "pos": [740, 150],
+      "size": [150, 64]
+    },
+    {
+      "id": "quarkus_api",
+      "type": "backend",
+      "label": "Quarkus REST API",
+      "sublabel": "Podman en VPS Cloud",
+      "pos": [740, 360],
+      "size": [150, 64],
+      "sources": ["backend/electoral-api-quarkus/src/main/java/com/twintail/electoral/acta/infrastructure/ActaResource.java"]
+    },
+    {
+      "id": "postgres_db",
+      "type": "database",
+      "label": "PostgreSQL 16",
+      "sublabel": "Transaccional + RLS",
+      "pos": [970, 360],
+      "size": [150, 64]
+    },
+    {
+      "id": "proxmox_vm",
+      "type": "backend",
+      "label": "Mirror / Hot Standby",
+      "sublabel": "rclone cron cada 15m",
+      "pos": [970, 150],
+      "size": [160, 64]
+    },
+    {
+      "id": "hdd_local",
+      "type": "database",
+      "label": "HDD 500 GB Proxmox",
+      "sublabel": "Copia fría histórica $0",
+      "pos": [1210, 150],
+      "size": [160, 64]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "cluster",
+      "label": "Dispositivo del Delegado (Offline-First)",
+      "wraps": ["pipeline_compress", "idb_storage"],
+      "pad": 16
+    },
+    {
+      "kind": "cloud",
+      "label": "Cloudflare Edge Global (Alta Disponibilidad)",
+      "wraps": ["cf_pages", "cf_r2"],
+      "pad": 16
+    },
+    {
+      "kind": "security-group",
+      "label": "Infraestructura Cloud Dedicada (VPS)",
+      "wraps": ["quarkus_api", "postgres_db"],
+      "pad": 16
+    },
+    {
+      "kind": "datacenter",
+      "label": "Servidor Local (Proxmox Home Server)",
+      "wraps": ["proxmox_vm", "hdd_local"],
+      "pad": 16
+    }
+  ],
+  "connections": [
+    {
+      "from": "obs_mobile",
+      "to": "cf_pages",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "from": "admin_web",
+      "to": "cf_pages",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "from": "cf_pages",
+      "to": "pipeline_compress",
+      "label": "captura foto",
+      "route": "orthogonal-h"
+    },
+    {
+      "from": "pipeline_compress",
+      "to": "idb_storage",
+      "label": "guarda WebP",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "from": "idb_storage",
+      "to": "cf_r2",
+      "label": "upload WebP (~500KB)",
+      "variant": "emphasis",
+      "route": "orthogonal-h"
+    },
+    {
+      "from": "cf_pages",
+      "to": "quarkus_api",
+      "label": "REST + JWT",
+      "variant": "emphasis",
+      "route": "orthogonal-h"
+    },
+    {
+      "from": "quarkus_api",
+      "to": "postgres_db",
+      "label": "SQL / RLS",
+      "variant": "security"
+    },
+    {
+      "from": "cf_r2",
+      "to": "proxmox_vm",
+      "label": "sync rclone",
+      "variant": "dashed"
+    },
+    {
+      "from": "proxmox_vm",
+      "to": "hdd_local",
+      "label": "almacena copia",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Optimización Cliente (T-FE-20)",
+      "items": [
+        "Fotos crudas de 15-25 MB bajan a ~500 KB en WebP 2048px",
+        "createImageBitmap en GPU sin inflar el heap de JS",
+        "Subida ágil incluso con mala conectividad móvil 3G/4G"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Zero Cost & Zero Panic",
+      "items": [
+        "Cloudflare Pages + R2 (10 GB gratis) absorben el pico electoral",
+        "4,000 actas provinciales consumen solo ~2.0 GB de almacenamiento",
+        "La API de Quarkus no se satura recibiendo binarios pesados"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Respaldo Asíncrono en Proxmox",
+      "items": [
+        "Tu server Proxmox no está en el camino crítico del día de votación",
+        "Cron job con rclone sincroniza en segundo plano hacia tu HDD de 500 GB",
+        "Copia histórica 100% preservada a costo $0"
+      ]
+    }
+  ]
+}
