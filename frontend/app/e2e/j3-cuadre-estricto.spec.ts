@@ -84,13 +84,9 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
 
     // Fill an UNBALANCED acta: votos sum to 150 (missing 100)
-    const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByRole('spinbutton', { name: /sufragantes|blancos|nulos/i }) });
-    const count = await candInputs.count();
-    if (count >= 2) {
-      await candInputs.nth(0).fill('75');  // 75 instead of 150
-      await candInputs.nth(1).fill('40');  // 40 instead of 80
-    }
+    // Use direct label matching for candidate inputs
+    await page.getByLabel(/rodríguez|rodriguez|carlos/i).fill('75');  // 75 instead of 150
+    await page.getByLabel(/lópez|lopez|ana/i).fill('40');  // 40 instead of 80
 
     // Use spinbutton roles for blancos/nulos to avoid locator ambiguity
     await page.getByRole('spinbutton', { name: /blanco/i }).fill('10');
@@ -153,13 +149,9 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     // Fill BALANCED acta
     await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
 
-    const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByRole('spinbutton', { name: /sufragantes|blancos|nulos/i }) });
-    const count = await candInputs.count();
-    if (count >= 2) {
-      await candInputs.nth(0).fill(String(VOTOS_VALIDOS.rodriguez));
-      await candInputs.nth(1).fill(String(VOTOS_VALIDOS.lopez));
-    }
+    // Use direct label matching for candidate inputs
+    await page.getByLabel(/rodríguez|rodriguez|carlos/i).fill(String(VOTOS_VALIDOS.rodriguez));
+    await page.getByLabel(/lópez|lopez|ana/i).fill(String(VOTOS_VALIDOS.lopez));
 
     await page.getByRole('spinbutton', { name: /blanco/i }).fill(String(VOTOS_VALIDOS.blancos));
     await page.getByRole('spinbutton', { name: /nulo/i }).fill(String(VOTOS_VALIDOS.nulos));
@@ -208,13 +200,9 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
 
     await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
 
-    const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByRole('spinbutton', { name: /sufragantes|blancos|nulos/i }) });
-    const count = await candInputs.count();
-    if (count >= 2) {
-      await candInputs.nth(0).fill(String(VOTOS_VALIDOS.rodriguez));
-      await candInputs.nth(1).fill(String(VOTOS_VALIDOS.lopez));
-    }
+    // Use direct label matching for candidate inputs
+    await page.getByLabel(/rodríguez|rodriguez|carlos/i).fill(String(VOTOS_VALIDOS.rodriguez));
+    await page.getByLabel(/lópez|lopez|ana/i).fill(String(VOTOS_VALIDOS.lopez));
 
     await page.getByRole('spinbutton', { name: /blanco/i }).fill(String(VOTOS_VALIDOS.blancos));
     await page.getByRole('spinbutton', { name: /nulo/i }).fill(String(VOTOS_VALIDOS.nulos));
@@ -300,13 +288,9 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     // Edge case: 250 sufragantes, all blancos (valid, but unusual)
     await page.getByRole('spinbutton', { name: /sufragantes|padrón/i }).fill(String(SUFRAGANTES));
 
-    const inputs = page.locator('input[type="number"]');
-    const candInputs = inputs.filter({ hasNot: page.getByRole('spinbutton', { name: /sufragantes|blancos|nulos/i }) });
-    const count = await candInputs.count();
-    if (count >= 2) {
-      await candInputs.nth(0).fill('0');
-      await candInputs.nth(1).fill('0');
-    }
+    // Use direct label matching for candidate inputs (set to 0)
+    await page.getByLabel(/rodríguez|rodriguez|carlos/i).fill('0');
+    await page.getByLabel(/lópez|lopez|ana/i).fill('0');
 
     await page.getByRole('spinbutton', { name: /blanco/i }).fill('240');
     await page.getByRole('spinbutton', { name: /nulo/i }).fill('10');
