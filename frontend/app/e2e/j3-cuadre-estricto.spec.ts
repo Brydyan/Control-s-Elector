@@ -97,8 +97,8 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await page.getByRole('spinbutton', { name: /nulo/i }).fill('10');
     // Total: 75 + 40 + 10 + 10 = 135, expected 250. Falta 115.
 
-    // Try to advance to REVISION
-    const revisionBtn = page.getByRole('button', { name: /revisión|continuar/i });
+    // Try to advance to REVISION (button will show error)
+    const revisionBtn = page.getByRole('button', { name: /continuar con inconsistencia|revisión/i }).first();
     await revisionBtn.click({ timeout: 8_000 });
 
     // Error alert should appear
@@ -163,8 +163,8 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await page.getByRole('spinbutton', { name: /nulo/i }).fill(String(VOTOS_VALIDOS.nulos));
     // Total: 150 + 80 + 10 + 10 = 250 ✓
 
-    // Advance should succeed
-    await page.getByRole('button', { name: /revisión|continuar/i }).click({ timeout: 8_000 });
+    // Advance should succeed (checksum balanced)
+    await page.getByRole('button', { name: /revisión final|continuar a revisión/i }).click({ timeout: 8_000 });
 
     // Should now be in REVISION
     await expect(page.locator('.p-steps-item.p-highlight')).toContainText('Revisión', { timeout: 5_000 });
@@ -216,7 +216,7 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     await page.getByRole('spinbutton', { name: /blanco/i }).fill(String(VOTOS_VALIDOS.blancos));
     await page.getByRole('spinbutton', { name: /nulo/i }).fill(String(VOTOS_VALIDOS.nulos));
 
-    await page.getByRole('button', { name: /revisión|continuar/i }).click({ timeout: 8_000 });
+    await page.getByRole('button', { name: /revisión final|continuar a revisión/i }).click({ timeout: 8_000 });
 
     // Now in REVISION — submit first time (should succeed)
     const submitBtn = page.getByRole('button', { name: /enviar|transmitir|registrar acta/i });
@@ -310,7 +310,7 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     // Total: 0 + 0 + 240 + 10 = 250 ✓ (valid but unusual)
 
     // Should allow advance (checksum is valid)
-    await page.getByRole('button', { name: /revisión|continuar/i }).click({ timeout: 8_000 });
+    await page.getByRole('button', { name: /revisión final|continuar a revisión/i }).click({ timeout: 8_000 });
 
     await expect(page.locator('.p-steps-item.p-highlight')).toContainText('Revisión', { timeout: 5_000 });
   });
