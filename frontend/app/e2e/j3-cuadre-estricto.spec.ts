@@ -66,8 +66,12 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles('e2e/fixtures/acta-foto.jpg');
 
-    // Wait for image preview or button to be ready
-    await page.waitForTimeout(1000);
+    // Wait for image preview to load and compression to complete
+    await page
+      .locator('img[alt*="foto"], img[alt*="acta"], img[alt*="preview"]')
+      .first()
+      .waitFor({ timeout: 10_000 })
+      .catch(() => page.waitForTimeout(2000)); // Fallback if preview element not found
 
     // Advance to VOTOS step
     const continueBtn = page
