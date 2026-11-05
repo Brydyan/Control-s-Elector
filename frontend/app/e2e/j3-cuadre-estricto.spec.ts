@@ -52,10 +52,8 @@ test.describe('J3 — Cuadre Estricto y Manejo de Errores', () => {
   }) => {
     await page.goto('/observer/mis-jrvs');
 
-    // Navigate directly to cargo list
-    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargos`);
-
-    await page.getByText(STUB_CARGO_1.nombre).click();
+    // Navigate directly to registration form
+    await page.goto(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`);
 
     // Navigate to registrar-acta (IMAGEN step)
     await page.goto(
