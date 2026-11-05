@@ -228,11 +228,12 @@ export const routes: Routes = [
         path: 'master/cargos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/master/pages/cargos/master-cargos.page').then(
-            (m) => m.MasterCargosPage,
+          import('./features/master/pages/configuracion/master-configuracion.page').then(
+            (m) => m.MasterConfiguracionPage,
           ),
         data: {
           roles: ['MASTER'],
+          tab: 'cargos',
           title: 'Cargos Electorales',
           description:
             'Configuración de dignidades y tipos de cargos electorales.',
@@ -243,11 +244,12 @@ export const routes: Routes = [
         path: 'master/partidos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/master/pages/partidos/master-partidos.page').then(
-            (m) => m.MasterPartidosPage,
+          import('./features/master/pages/configuracion/master-configuracion.page').then(
+            (m) => m.MasterConfiguracionPage,
           ),
         data: {
           roles: ['MASTER'],
+          tab: 'partidos',
           title: 'Partidos Políticos',
           description:
             'Registro y administración de organizaciones y movimientos políticos.',
@@ -258,11 +260,12 @@ export const routes: Routes = [
         path: 'master/candidatos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/master/pages/candidatos/master-candidatos.page').then(
-            (m) => m.MasterCandidatosPage,
+          import('./features/master/pages/configuracion/master-configuracion.page').then(
+            (m) => m.MasterConfiguracionPage,
           ),
         data: {
           roles: ['MASTER'],
+          tab: 'candidatos',
           title: 'Candidatos',
           description:
             'Padrón de candidatos postulados por dignidad y lista política.',
