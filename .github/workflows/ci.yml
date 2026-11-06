@@ -426,7 +426,14 @@ jobs:
           node-version: '22'
 
       - name: Install k6
-        run: sudo apt-get update && sudo apt-get install -y k6
+        run: |
+          K6_VERSION=$(curl -s https://api.github.com/repos/grafana/k6/releases/latest | grep tag_name | cut -d'"' -f4)
+          K6_VERSION=${K6_VERSION#v}
+          curl -L "https://github.com/grafana/k6/releases/download/v${K6_VERSION}/k6-v${K6_VERSION}-linux-amd64.tar.gz" -o k6.tar.gz
+          tar xzf k6.tar.gz
+          sudo mv k6-v${K6_VERSION}-linux-amd64/k6 /usr/local/bin/
+          rm -rf k6.tar.gz k6-v${K6_VERSION}-linux-amd64
+          k6 version
 
       - name: Create seed data SQL
         run: |
