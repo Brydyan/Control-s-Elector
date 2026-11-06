@@ -101,6 +101,8 @@ jobs:
             -e APP_JWT_SECRET=ci-only-load-test-secret-at-least-32-chars \
             -e APP_JWT_REFRESH_PEPPER=ci-only-load-test-pepper \
             -e APP_SEED_ADMIN_PASSWORD=admin12345 \
+            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true \
+            -e QUARKUS_HIBERNATE_GENERATION=none \
             -e AWS_ACCESS_KEY_ID=rustfsadmin \
             -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
             -e AWS_S3_ENDPOINT=http://localhost:9000 \
