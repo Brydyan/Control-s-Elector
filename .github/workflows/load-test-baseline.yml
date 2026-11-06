@@ -182,21 +182,18 @@ jobs:
           mkdir -p /tmp/seed
           HASH="${{ steps.hash.outputs.hash }}"
 
-          cat > /tmp/seed/seed.sql << 'EOF'
+          cat > /tmp/seed/seed.sql << EOF
           INSERT INTO usuario (email, nombre, apellido, password_hash, rol_id, habilitado, creado_en) VALUES
-            ('obs1@electoral.ec', 'Observer', '1', 'BCRYPT_PLACEHOLDER', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('obs2@electoral.ec', 'Observer', '2', 'BCRYPT_PLACEHOLDER', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('obs3@electoral.ec', 'Observer', '3', 'BCRYPT_PLACEHOLDER', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('obs4@electoral.ec', 'Observer', '4', 'BCRYPT_PLACEHOLDER', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('obs5@electoral.ec', 'Observer', '5', 'BCRYPT_PLACEHOLDER', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('coord1@electoral.ec', 'Coordinator', '1', 'BCRYPT_PLACEHOLDER', (SELECT id FROM rol WHERE nombre='COORDINATOR'), true, NOW()),
-            ('coord2@electoral.ec', 'Coordinator', '2', 'BCRYPT_PLACEHOLDER', (SELECT id FROM rol WHERE nombre='COORDINATOR'), true, NOW()),
-            ('admin@electoral.ec', 'Admin', 'Electoral', 'BCRYPT_PLACEHOLDER', (SELECT id FROM rol WHERE nombre='MASTER'), true, NOW())
+            ('obs1@electoral.ec', 'Observer', '1', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
+            ('obs2@electoral.ec', 'Observer', '2', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
+            ('obs3@electoral.ec', 'Observer', '3', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
+            ('obs4@electoral.ec', 'Observer', '4', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
+            ('obs5@electoral.ec', 'Observer', '5', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
+            ('coord1@electoral.ec', 'Coordinator', '1', '$HASH', (SELECT id FROM rol WHERE nombre='COORDINATOR'), true, NOW()),
+            ('coord2@electoral.ec', 'Coordinator', '2', '$HASH', (SELECT id FROM rol WHERE nombre='COORDINATOR'), true, NOW()),
+            ('admin@electoral.ec', 'Admin', 'Electoral', '$HASH', (SELECT id FROM rol WHERE nombre='MASTER'), true, NOW())
           ON CONFLICT (email) DO NOTHING;
           EOF
-
-          # Replace placeholder with actual hash
-          sed -i "s|BCRYPT_PLACEHOLDER|${{ steps.hash.outputs.hash }}|g" /tmp/seed/seed.sql
 
           echo "📋 Seed SQL:"
           cat /tmp/seed/seed.sql
