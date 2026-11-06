@@ -103,8 +103,13 @@ test.describe('J1 — Flujo Feliz Observador (online)', () => {
       `/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`,
     );
 
-    // File input should be visible (IMAGEN step shows file upload)
-    await expect(page.locator('input[type="file"]')).toBeVisible();
+    // Verify navigation succeeded (correct URL)
+    await expect(page).toHaveURL(
+      new RegExp(`/observer/jrv/${STUB_JRV_1.jrvId}/cargo/${STUB_CARGO_1.id}/registrar`),
+    );
+
+    // File input exists (hidden by design, browser shows visual button)
+    await expect(page.locator('input[type="file"]')).toHaveCount(1);
   });
 
   // -------------------------------------------------------------------------
