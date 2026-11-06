@@ -167,10 +167,11 @@ jobs:
           CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
           -- Insert users with bcrypt hashes generated in-database
+          -- Cost factor 10: ~1024 iterations (faster than 12 but still secure for load testing)
           INSERT INTO usuario (email, nombre, apellido, password_hash, rol_id, habilitado, creado_en)
           SELECT
             email, nombre, apellido,
-            crypt(password, gen_salt('bf', 12)) as password_hash,
+            crypt(password, gen_salt('bf', 10)) as password_hash,
             (SELECT id FROM rol WHERE nombre = rol_name),
             true,
             NOW()
