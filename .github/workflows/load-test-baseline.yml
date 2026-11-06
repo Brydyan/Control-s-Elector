@@ -141,25 +141,6 @@ jobs:
           rm -rf k6.tar.gz k6-v${K6_VERSION}-linux-amd64
           k6 version
 
-      - name: Generate bcrypt hash for test password
-        id: hash
-        run: |
-          # Asegurar que pgcrypto esté disponible (se necesita para bcrypt)
-          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -c \
-            "CREATE EXTENSION IF NOT EXISTS pgcrypto;" || true
-
-          # Generar hash bcrypt válido para 'SecurePass123!' usando PostgreSQL
-          BCRYPT_HASH=$(PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -t -c \
-            "SELECT crypt('SecurePass123!', gen_salt('bf', 12));")
-
-          if [ -z "$BCRYPT_HASH" ] || [ "$BCRYPT_HASH" == " " ]; then
-            echo "❌ Failed to generate bcrypt hash"
-            exit 1
-          fi
-
-          echo "✅ Generated bcrypt hash: ${BCRYPT_HASH:0:20}..."
-          echo "hash=${BCRYPT_HASH}" >> $GITHUB_OUTPUT
-
       - name: Verify database schema
         run: |
           echo "🔍 Verifying Liquibase migrations..."
@@ -177,33 +158,42 @@ jobs:
           fi
           echo "✅ Schema verified: $TABLE_COUNT tables found"
 
-      - name: Create seed data SQL
+      - name: Seed test users with bcrypt hashes
         run: |
-          mkdir -p /tmp/seed
-          HASH="${{ steps.hash.outputs.hash }}"
+          echo "🌱 Seeding test users with bcrypt-hashed passwords..."
 
-          cat > /tmp/seed/seed.sql << EOF
-          INSERT INTO usuario (email, nombre, apellido, password_hash, rol_id, habilitado, creado_en) VALUES
-            ('obs1@electoral.ec', 'Observer', '1', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('obs2@electoral.ec', 'Observer', '2', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('obs3@electoral.ec', 'Observer', '3', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('obs4@electoral.ec', 'Observer', '4', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('obs5@electoral.ec', 'Observer', '5', '$HASH', (SELECT id FROM rol WHERE nombre='OBSERVER'), true, NOW()),
-            ('coord1@electoral.ec', 'Coordinator', '1', '$HASH', (SELECT id FROM rol WHERE nombre='COORDINATOR'), true, NOW()),
-            ('coord2@electoral.ec', 'Coordinator', '2', '$HASH', (SELECT id FROM rol WHERE nombre='COORDINATOR'), true, NOW()),
-            ('admin@electoral.ec', 'Admin', 'Electoral', '$HASH', (SELECT id FROM rol WHERE nombre='MASTER'), true, NOW())
+          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db << 'SQL'
+          -- Enable pgcrypto if not already enabled
+          CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+          -- Insert users with bcrypt hashes generated in-database
+          INSERT INTO usuario (email, nombre, apellido, password_hash, rol_id, habilitado, creado_en)
+          SELECT
+            email, nombre, apellido,
+            crypt(password, gen_salt('bf', 12)) as password_hash,
+            (SELECT id FROM rol WHERE nombre = rol_name),
+            true,
+            NOW()
+          FROM (
+            VALUES
+              ('obs1@electoral.ec', 'Observer', '1', 'OBSERVER', 'SecurePass123!'),
+              ('obs2@electoral.ec', 'Observer', '2', 'OBSERVER', 'SecurePass123!'),
+              ('obs3@electoral.ec', 'Observer', '3', 'OBSERVER', 'SecurePass123!'),
+              ('obs4@electoral.ec', 'Observer', '4', 'OBSERVER', 'SecurePass123!'),
+              ('obs5@electoral.ec', 'Observer', '5', 'OBSERVER', 'SecurePass123!'),
+              ('coord1@electoral.ec', 'Coordinator', '1', 'COORDINATOR', 'SecurePass123!'),
+              ('coord2@electoral.ec', 'Coordinator', '2', 'COORDINATOR', 'SecurePass123!'),
+              ('admin@electoral.ec', 'Admin', 'Electoral', 'MASTER', 'SecurePass123!')
+          ) AS t(email, nombre, apellido, rol_name, password)
           ON CONFLICT (email) DO NOTHING;
-          EOF
+          SQL
 
-          echo "📋 Seed SQL:"
-          cat /tmp/seed/seed.sql
-
-      - name: Seed test data
-        run: |
-          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -f /tmp/seed/seed.sql || {
+          if [ $? -eq 0 ]; then
+            echo "✅ Seed data inserted successfully"
+          else
             echo "❌ Seed data failed"
             exit 1
-          }
+          fi
 
       - name: Verify test data
         run: |
