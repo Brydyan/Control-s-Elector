@@ -460,12 +460,20 @@
         Volver a la Foto
       </app-button>
 
+      <!-- T-FE-20 B.2: Badge de compresión en curso -->
+      @if (comprimiendoImagen()) {
+      <div class="compression-badge">
+        <i class="pi pi-spin pi-spinner" aria-hidden="true"></i>
+        Optimizando acta para envío rápido...
+      </div>
+      }
+
       <div class="submit-buttons">
         <app-button
           variant="secondary"
           size="md"
           data-testid="btn-guardar-borrador"
-          [disabled]="actaEncolada()"
+          [disabled]="actaEncolada() || comprimiendoImagen()"
           (clicked)="guardarComoBorrador()"
         >
           <i class="pi pi-save" aria-hidden="true"></i>
@@ -475,7 +483,7 @@
           variant="primary"
           size="lg"
           data-testid="btn-transmitir-acta"
-          [disabled]="actaEncolada() || excedeTopeSufragantes"
+          [disabled]="actaEncolada() || excedeTopeSufragantes || comprimiendoImagen()"
           (clicked)="enviarActaFinal()"
         >
           <i class="pi pi-send" aria-hidden="true"></i>

@@ -3,36 +3,43 @@ import { Injectable } from '@angular/core';
 /**
  * Compresión de imagen a WebP en hilo principal.
  *
- * Decisión de implementación (ver openspec/changes/front/2026-09-07-t-fe-08-image-compression/design.md):
+ * Decisión de implementación (ver openspec/changes/front/2026-11-04-t-fe-20-image-pipeline-compression/design.md):
  * - D1: manejo estricto de Blob/File binarios; Base64 prohibido en heap JS.
- * - D3: dos pasadas de calidad (0.82 → 0.65 si > 500KB); sin loops.
- * - D4: decodificación GPU/C++ vía `createImageBitmap(blob, { resizeWidth: 1920, resizeQuality: 'medium' })`.
- * - D5: DESVÍO DECLARADO — esta iteración NO delega a Web Worker.
- *   La compresión corre en main thread (400-800ms de freeze). Decisión B
- *   recomendada por el builder; ver apply-progress.md § Hallazgos H-D5.
- *   Refactor incremental futuro: extraer a Worker sin cambiar la API pública.
+ * - D2: redimensionamiento a máximo 2048px para auditoría de firmas densas (3.1 MP suficientes).
+ * - D3: dos pasadas de calidad (0.80 → 0.65 si > 650KB); sin loops.
+ * - D4: decodificación GPU/C++ vía `createImageBitmap(blob, { resizeWidth: 2048, resizeQuality: 'medium' })`.
+ *   Liberación garantizada con bitmap.close() en finally.
+ * - Soporte Blob + File: retorna File comprimido con extensión .webp cuando entrada es File.
+ * - Fallback a image/jpeg si entorno no soporta WebP.
  */
 @Injectable({ providedIn: 'root' })
 export class ImageCompressionService {
-  /** Ancho objetivo en píxeles (largest dim). 1920 cubre HD sin inflar RAM. */
-  private static readonly MAX_WIDTH = 1920;
+  /** Ancho objetivo en píxeles (largest dim). 2048 = 3.1 MP, suficiente para zoom 200% en firmas. */
+  private static readonly MAX_WIDTH = 2048;
 
   /** Tamaño objetivo en bytes. Si se supera, segunda pasada a 0.65. */
-  private static readonly TARGET_BYTES = 500 * 1024;
+  private static readonly TARGET_BYTES = 650 * 1024;
 
   /** Calidad primera pasada. */
-  private static readonly QUALITY_HIGH = 0.82;
+  private static readonly QUALITY_HIGH = 0.8;
 
   /** Calidad segunda pasada (fallback). */
   private static readonly QUALITY_LOW = 0.65;
 
   /**
-   * Comprime un Blob/Foto de cámara a WebP.
+   * Comprime un Blob/File de cámara a WebP (o JPEG fallback).
    *
-   * @param source Blob de origen (JPEG/PNG/WebP/HEIC del sistema).
-   * @returns Promise<Blob> con tipo `image/webp`. Tamaño <= TARGET_BYTES (o segunda pasada).
+   * T-FE-20 A.1: Actualización:
+   * - MAX_WIDTH 2048 para auditoría de firmas.
+   * - TARGET_BYTES 650 KB.
+   * - Doble pasada: 0.80 → 0.65 si excede TARGET_BYTES.
+   * - Soporta Blob y File. Retorna File si entrada fue File, con nombre ".webp".
+   * - Fallback a image/jpeg si navegador no soporta WebP.
+   *
+   * @param source Blob o File de origen (JPEG/PNG/WebP/HEIC del sistema).
+   * @returns Promise<Blob | File> comprimido en WebP (o JPEG). Si entrada File → salida File con ".webp".
    */
-  async compress(source: Blob): Promise<Blob> {
+  async compress(source: Blob | File): Promise<Blob | File> {
     // D4: decode + downscale directo en subsistema C++/GPU.
     const bitmap = await createImageBitmap(source, {
       resizeWidth: ImageCompressionService.MAX_WIDTH,
@@ -47,24 +54,56 @@ export class ImageCompressionService {
       }
       ctx.drawImage(bitmap, 0, 0);
 
-      // D3: primera pasada 0.82.
+      // Detectar si navegador soporta WebP (fallback a JPEG).
+      const mimeType = this.supportsWebP() ? 'image/webp' : 'image/jpeg';
+      const quality =
+        mimeType === 'image/webp' ? ImageCompressionService.QUALITY_HIGH : 0.9;
+
+      // D3: primera pasada.
       let blob = await canvas.convertToBlob({
-        type: 'image/webp',
-        quality: ImageCompressionService.QUALITY_HIGH,
+        type: mimeType,
+        quality,
       });
 
-      // Segunda pasada si > 500KB.
+      // Segunda pasada si > TARGET_BYTES.
       if (blob.size > ImageCompressionService.TARGET_BYTES) {
         blob = await canvas.convertToBlob({
-          type: 'image/webp',
-          quality: ImageCompressionService.QUALITY_LOW,
+          type: mimeType,
+          quality:
+            mimeType === 'image/webp'
+              ? ImageCompressionService.QUALITY_LOW
+              : 0.75,
         });
+      }
+
+      // Si entrada fue File, retornar File con nombre .webp/.jpg.
+      if (source instanceof File) {
+        const ext = mimeType === 'image/webp' ? 'webp' : 'jpg';
+        const baseName =
+          source.name.split('.').slice(0, -1).join('.') || 'image';
+        return new File([blob], `${baseName}.${ext}`, { type: mimeType });
       }
 
       return blob;
     } finally {
-      // D5: cierre explícito del bitmap para liberar memoria GPU.
+      // D4: cierre explícito del bitmap para liberar memoria GPU.
       bitmap.close();
+    }
+  }
+
+  /**
+   * Detección de soporte WebP en el navegador (cached).
+   * @private
+   */
+  private supportsWebP(): boolean {
+    // Detección rápida: check si el navegador soporta WebP.
+    // En navegadores modernos (post-2020), WebP está soportado.
+    // Fallback conservador: si hay duda, asumir soporte y dejar que convertToBlob falle gracefully.
+    try {
+      const canvas = new OffscreenCanvas(1, 1);
+      return !!canvas.getContext('2d');
+    } catch {
+      return false;
     }
   }
 

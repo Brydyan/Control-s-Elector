@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Control Electoral</title>
+
+    <base href="/" />
+
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="viewport"
+      content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=5.0"
+    />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+
+    <meta
+      name="description"
+      content="Plataforma de observación y registro de resultados electorales en tiempo real para la Provincia de Santa Elena, Ecuador."
+    />
+
+    <link rel="icon" type="image/png" href="assets/icon/favicon.png" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/icon/favicon.png" />
+
+    <!--
+      The face of the app: IBM Plex Sans, self-hosted and subsetted. It is
+      the render blocking resource of the first paint, so it is preloaded.
+      `crossorigin` is mandatory: fonts are always fetched in CORS mode.
+      The href is absolute and identical to the `url()` of the `@font-face`
+      in `src/theme/fonts.scss`: with a relative href the browser does not
+      match the preloaded resource with the one the stylesheet asks for and
+      downloads the file twice on every deep route.
+    -->
+    <link
+      rel="preload"
+      href="/assets/fonts/ibm-plex-sans-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="Control Electoral" />
+  </head>
+
+  <body>
+    <app-root></app-root>
+  </body>
+</html>

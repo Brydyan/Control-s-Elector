@@ -1,0 +1,11 @@
+@if (totalPages > 1) {
+  <p-paginator
+    [first]="firstRecordIndex"
+    [rows]="size"
+    [totalRecords]="totalElements"
+    [rowsPerPageOptions]="pageSizes"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Página {currentPage} de {totalPages}"
+    (onPageChange)="onPageChange($event)"
+  />
+}

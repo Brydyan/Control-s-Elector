@@ -137,6 +137,78 @@
   }
 }
 
+/* ── C.4: Icon Button Styles ────────────────────────────────────────────── */
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-size: 18px;
+
+  &:hover {
+    background: var(--color-surface-raised);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-view {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-brand-primary);
+  }
+}
+
+.btn-edit {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-brand-primary);
+  }
+}
+
+.btn-delete {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-status-danger-bg);
+    color: var(--color-status-danger);
+  }
+}
+
+.btn-restore {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-status-success-bg);
+    color: var(--color-status-success);
+  }
+}
+
+.icons-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .mobile-only {
   display: flex;
   flex-direction: column;

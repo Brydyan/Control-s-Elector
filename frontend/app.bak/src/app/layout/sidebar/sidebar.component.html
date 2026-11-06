@@ -1,0 +1,19 @@
+<aside class="layout-sidebar">
+  <nav aria-label="Navegación principal">
+    @for (section of sections(); track section.label) {
+      <div class="layout-nav-section">{{ section.label }}</div>
+      @for (item of section.items; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: false }"
+          [class.disabled]="item.disabled"
+          [attr.aria-disabled]="item.disabled ? 'true' : null"
+        >
+          <i [class]="item.icon" aria-hidden="true"></i>
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    }
+  </nav>
+</aside>
