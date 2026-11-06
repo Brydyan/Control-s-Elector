@@ -317,6 +317,205 @@ jobs:
       - name: Run the Quarkus backend tests
         working-directory: backend/electoral-api-quarkus
         run: ./mvnw -B clean verify
+
+  # ===========================================================================
+  # LOAD TESTING (Baseline - 20 VUs)
+  # ===========================================================================
+  # Load test en cada PR: baseline 20 VUs para validar que el sistema tolera
+  # carga mínima. Útil para detectar regresos de performance temprano.
+  # SLA: p95 < 1.5s, p99 < 2s, failures < 2%
+  load-test-baseline:
+    name: Load Test Baseline (20 VUs)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: electoral_db
+          POSTGRES_USER: electoral_user
+          POSTGRES_PASSWORD: electoral_pass
+          POSTGRES_INITDB_ARGS: >-
+            --encoding=UTF8
+            --locale-provider=icu
+            --icu-locale=es-EC
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U electoral_user -d electoral_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rustfs:
+        image: rustfs/rustfs:latest
+        env:
+          RUSTFS_ACCESS_KEY: rustfsadmin
+          RUSTFS_SECRET_KEY: rustfsadmin123
+          RUSTFS_ADDRESS: "0.0.0.0:9000"
+          RUSTFS_CONSOLE_ENABLE: "true"
+          RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+          RUSTFS_VOLUMES: /data
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/health"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Create the evidence bucket
+        run: |
+          docker run --rm --network host \
+            -e AWS_ACCESS_KEY_ID=rustfsadmin \
+            -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+            -e AWS_DEFAULT_REGION=us-east-1 \
+            amazon/aws-cli \
+            --endpoint-url http://localhost:9000 \
+            s3api create-bucket --bucket electoral-evidences
+
+      - name: Build the backend image
+        run: docker build -t electoral-api:load-test backend/electoral-api-quarkus
+
+      - name: Start the backend
+        run: |
+          docker run -d --name electoral-api --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=electoral_db \
+            -e DB_USER=electoral_user \
+            -e DB_PASSWORD=electoral_pass \
+            -e SERVER_PORT=8080 \
+            -e APP_JWT_SECRET=ci-only-load-test-secret-at-least-32-chars \
+            -e APP_JWT_REFRESH_PEPPER=ci-only-load-test-pepper \
+            -e APP_SEED_ADMIN_PASSWORD=admin12345 \
+            -e AWS_ACCESS_KEY_ID=rustfsadmin \
+            -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+            -e AWS_S3_ENDPOINT=http://localhost:9000 \
+            -e AWS_S3_REGION=us-east-1 \
+            -e AWS_S3_BUCKET=electoral-evidences \
+            -e AWS_S3_PATH_STYLE=true \
+            electoral-api:load-test
+
+      - name: Wait for backend health
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+              echo "✅ Backend healthy"
+              curl -s http://localhost:8080/actuator/health | jq .
+              exit 0
+            fi
+            echo "Waiting for backend... ($i/90)"
+            sleep 2
+          done
+          echo "❌ Backend did not become healthy"
+          docker logs electoral-api
+          exit 1
+
+      - name: Set up Node.js (for k6)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install k6
+        run: sudo apt-get update && sudo apt-get install -y k6
+
+      - name: Create seed data SQL
+        run: |
+          mkdir -p /tmp/seed
+          cat > /tmp/seed/seed.sql << 'EOF'
+          INSERT INTO usuario (email, nombre, apellido, password_hash, estado_usuario, rol) VALUES
+            ('obs1@electoral.ec', 'Observer', '1', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
+            ('obs2@electoral.ec', 'Observer', '2', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
+            ('obs3@electoral.ec', 'Observer', '3', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
+            ('obs4@electoral.ec', 'Observer', '4', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
+            ('obs5@electoral.ec', 'Observer', '5', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
+            ('coord1@electoral.ec', 'Coordinator', '1', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'COORDINATOR'),
+            ('coord2@electoral.ec', 'Coordinator', '2', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'COORDINATOR'),
+            ('admin@electoral.ec', 'Admin', 'Electoral', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'MASTER')
+          ON CONFLICT (email) DO NOTHING;
+          EOF
+          cat /tmp/seed/seed.sql
+
+      - name: Seed test data
+        run: |
+          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -f /tmp/seed/seed.sql
+
+      - name: Verify test data
+        run: |
+          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -c \
+            "SELECT COUNT(*) as usuarios_test FROM usuario WHERE email LIKE '%@electoral.ec';"
+
+      - name: Run k6 baseline test (20 VUs, 5 min)
+        run: |
+          cd frontend/tests/load
+          k6 run scenarios/login.js \
+            --vus 20 \
+            --duration 5m \
+            --out json=results/baseline-pr-${GITHUB_RUN_ID}.json \
+            -e API_HOST=localhost:8080
+        env:
+          K6_VUS: "20"
+          K6_DURATION: "5m"
+
+      - name: Extract and validate metrics
+        run: |
+          # Parse k6 results y validar SLAs
+          RESULTS_FILE="frontend/tests/load/results/baseline-pr-${GITHUB_RUN_ID}.json"
+
+          # Extract key metrics
+          P95=$(jq -r '.metrics.http_req_duration.values.p95 // 0' "$RESULTS_FILE" | tr ',' '.')
+          P99=$(jq -r '.metrics.http_req_duration.values.p99 // 0' "$RESULTS_FILE" | tr ',' '.')
+          FAILURES=$(jq -r '.metrics.http_req_failed.values.rate // 0' "$RESULTS_FILE")
+
+          echo "📊 Load Test Results (20 VUs, 5 min)"
+          echo "======================================"
+          echo "p95 latency: ${P95}ms (threshold: 1500ms)"
+          echo "p99 latency: ${P99}ms (threshold: 2000ms)"
+          echo "Failure rate: ${FAILURES}% (threshold: 2%)"
+          echo ""
+
+          # Convert to numeric for comparison
+          P95_NUM=$(echo "$P95" | cut -d'.' -f1)
+          P99_NUM=$(echo "$P99" | cut -d'.' -f1)
+
+          if [ "$P95_NUM" -gt 1500 ]; then
+            echo "❌ FAILED: p95 exceeds 1500ms"
+            exit 1
+          fi
+
+          if [ "$P99_NUM" -gt 2000 ]; then
+            echo "❌ FAILED: p99 exceeds 2000ms"
+            exit 1
+          fi
+
+          echo "✅ Load test PASSED all SLAs"
+
+      - name: Upload k6 results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: k6-baseline-results-${{ github.run_id }}
+          path: frontend/tests/load/results/
+          retention-days: 30
+
+      - name: Collect backend logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend logs ==="
+          docker logs electoral-api || true
+          echo ""
+          echo "=== K6 Results ==="
+          cat frontend/tests/load/results/baseline-pr-*.json | jq '.metrics' | head -100
+
   frontend-format:
     name: Frontend Format Check
     runs-on: ubuntu-latest
