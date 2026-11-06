@@ -96,6 +96,7 @@
   // S2 de odd/tasks/frontend-visual-rebalance.md.
   --color-surface-page: #eef2f7;
   --color-surface-card: var(--primitive-white);
+  --color-surface-default: var(--primitive-white);
   --color-surface-raised: var(--primitive-slate-100);
   --color-surface-canvas: var(--primitive-white);
   --color-surface-sidebar: var(--primitive-slate-900);
@@ -157,6 +158,7 @@
   --color-status-warning-border: var(--primitive-amber-200);
 
   --color-status-danger: var(--primitive-red-800);
+  --color-status-danger-strong: #7d1a1a;
   --color-status-danger-bg: var(--primitive-red-50);
   --color-status-danger-border: var(--primitive-red-200);
 
@@ -200,6 +202,7 @@
    * otra la sombra proyectada de un texto sobre fondo oscuro.
    */
   --color-shade-05: rgba(0, 0, 0, 0.05);
+  --color-shade-10: rgba(0, 0, 0, 0.1);
   --color-shade-30: rgba(0, 0, 0, 0.3);
 
   /*
@@ -295,6 +298,7 @@
   --color-surface-card: var(--primitive-slate-900);
   --color-surface-raised: var(--primitive-slate-800);
   --color-surface-canvas: var(--primitive-slate-950);
+  --color-surface-default: var(--primitive-slate-900);
   --color-surface-sidebar: var(--primitive-slate-900);
 
   /* Texto — fuera de blanco, nunca `#fff`. */
@@ -329,6 +333,7 @@
   --color-status-warning-border: rgba(245, 158, 11, 0.38);
 
   --color-status-danger: var(--primitive-red-300);
+  --color-status-danger-strong: var(--primitive-red-200);
   --color-status-danger-bg: rgba(239, 68, 68, 0.14);
   --color-status-danger-border: rgba(239, 68, 68, 0.4);
 
@@ -360,6 +365,7 @@
   --color-veil-88: rgba(255, 255, 255, 0.88);
   --color-veil-90: rgba(255, 255, 255, 0.9);
   --color-shade-05: rgba(0, 0, 0, 0.05);
+  --color-shade-10: rgba(0, 0, 0, 0.1);
   --color-shade-30: rgba(0, 0, 0, 0.3);
   --color-scrim: rgba(15, 23, 42, 0.75);
   --color-text-on-scrim: var(--primitive-white);

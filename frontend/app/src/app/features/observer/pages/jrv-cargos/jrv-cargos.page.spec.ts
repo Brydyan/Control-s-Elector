@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 import { JrvCargosPage } from './jrv-cargos.page';
 import { ObserverApi } from '../../data/observer.api';
 import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
+import { ImageCompressionService } from '../../../../core/services/image-compression.service';
 
 describe('JrvCargosPage', () => {
   let component: JrvCargosPage;
@@ -11,6 +12,7 @@ describe('JrvCargosPage', () => {
   let observerServiceSpy: jasmine.SpyObj<ObserverApi>;
   let routerSpy: jasmine.SpyObj<Router>;
   let offlineStorageSpy: jasmine.SpyObj<OfflineStorageService>;
+  let imageCompressionSpy: jasmine.SpyObj<ImageCompressionService>;
 
   beforeEach(async () => {
     observerServiceSpy = jasmine.createSpyObj('ObserverService', [
@@ -25,6 +27,11 @@ describe('JrvCargosPage', () => {
       Promise.resolve({}),
     );
     offlineStorageSpy.guardarFotoBorrador.and.returnValue(Promise.resolve());
+    imageCompressionSpy = jasmine.createSpyObj('ImageCompressionService', [
+      'compress',
+      'createPreviewUrl',
+      'revokePreviewUrl',
+    ]);
 
     observerServiceSpy.getCargosDeJrv.and.returnValue(
       of([
@@ -45,6 +52,7 @@ describe('JrvCargosPage', () => {
         { provide: ObserverApi, useValue: observerServiceSpy },
         { provide: Router, useValue: routerSpy },
         { provide: OfflineStorageService, useValue: offlineStorageSpy },
+        { provide: ImageCompressionService, useValue: imageCompressionSpy },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -92,13 +100,19 @@ describe('JrvCargosPage', () => {
     expect(boton.textContent).toContain('Captura Rápida de Actas');
   });
 
-  it('T-FE-13 C.1: la captura rápida guarda la foto de la dignidad en IndexedDB', async () => {
+  it('T-FE-13 C.1: la captura rápida guarda la foto de la dignidad en IndexedDB (T-FE-20 comprimida)', async () => {
     await component.abrirCapturaRapida();
     fixture.detectChanges();
 
-    const archivo = new File(['pixeles'], 'alcalde.webp', {
+    const archivo = new File(['pixeles'], 'alcalde.jpg', {
+      type: 'image/jpeg',
+    });
+    const comprimido = new File(['comprimido'], 'alcalde.webp', {
       type: 'image/webp',
     });
+    imageCompressionSpy.compress.and.returnValue(Promise.resolve(comprimido));
+    imageCompressionSpy.createPreviewUrl.and.returnValue('blob:mock-123');
+
     component.prepararCaptura(
       component.cargos()[0],
       document.createElement('input'),
@@ -107,13 +121,13 @@ describe('JrvCargosPage', () => {
       target: { files: [archivo] },
     } as unknown as Event);
 
-    // La foto se escribe como Blob binario en `acta_drafts`, con la misma
-    // clave que usa el formulario de registro de esa dignidad.
+    // T-FE-20: La foto se guarda COMPRIMIDA (WebP) en `acta_drafts`, con la
+    // misma clave que usa el formulario de registro de esa dignidad.
     expect(offlineStorageSpy.guardarFotoBorrador).toHaveBeenCalledWith(
       'draft_42_1',
       42,
       1,
-      archivo,
+      comprimido,
       'alcalde.webp',
     );
     expect(component.tieneFoto(1)).toBe(true);
@@ -155,5 +169,81 @@ describe('JrvCargosPage', () => {
       2,
       'registrar',
     ]);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // T-FE-20 C.3 — Compresión de Imágenes en Captura Rápida
+  // ─────────────────────────────────────────────────────────────────────
+
+  it('C.3: llama a imageCompression.compress() al capturar foto rápida', async () => {
+    const archivo = new File(['pixeles'], 'alcalde.jpg', {
+      type: 'image/jpeg',
+    });
+    const comprimido = new File(['comprimido'], 'alcalde.webp', {
+      type: 'image/webp',
+    });
+    imageCompressionSpy.compress.and.returnValue(Promise.resolve(comprimido));
+    imageCompressionSpy.createPreviewUrl.and.returnValue('blob:mock-123');
+
+    component.prepararCaptura(
+      component.cargos()[0],
+      document.createElement('input'),
+    );
+    await component.onFotoCapturada({
+      target: { files: [archivo] },
+    } as unknown as Event);
+
+    expect(imageCompressionSpy.compress).toHaveBeenCalledWith(archivo);
+  });
+
+  it('C.3: guarda la foto WebP comprimida en IndexedDB', async () => {
+    const archivo = new File(['pixeles'], 'alcalde.jpg', {
+      type: 'image/jpeg',
+    });
+    const comprimido = new File(['comprimido'], 'alcalde.webp', {
+      type: 'image/webp',
+    });
+    imageCompressionSpy.compress.and.returnValue(Promise.resolve(comprimido));
+    imageCompressionSpy.createPreviewUrl.and.returnValue('blob:mock-123');
+
+    component.prepararCaptura(
+      component.cargos()[0],
+      document.createElement('input'),
+    );
+    await component.onFotoCapturada({
+      target: { files: [archivo] },
+    } as unknown as Event);
+
+    // Debe guardarse el archivo comprimido, no el original.
+    expect(offlineStorageSpy.guardarFotoBorrador).toHaveBeenCalledWith(
+      'draft_42_1',
+      42,
+      1,
+      comprimido,
+      'alcalde.webp',
+    );
+  });
+
+  it('C.3: maneja error de compresión sin romper la UX', async () => {
+    const archivo = new File(['pixeles'], 'alcalde.jpg', {
+      type: 'image/jpeg',
+    });
+    imageCompressionSpy.compress.and.returnValue(
+      Promise.reject(new Error('Compression failed')),
+    );
+    imageCompressionSpy.createPreviewUrl.and.returnValue('blob:mock-123');
+
+    component.prepararCaptura(
+      component.cargos()[0],
+      document.createElement('input'),
+    );
+    await component.onFotoCapturada({
+      target: { files: [archivo] },
+    } as unknown as Event);
+
+    // El error se muestra pero no se lanzan excepciones.
+    expect(component.error()).toContain('optimizar');
+    // No se guarda en IndexedDB.
+    expect(offlineStorageSpy.guardarFotoBorrador).not.toHaveBeenCalled();
   });
 });

@@ -1,0 +1,426 @@
+.acta-detalle-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.page-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.acta-detail-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.status-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-surface-card);
+
+  &--enviada {
+    background: var(--color-status-info-bg);
+    border-color: var(--color-status-info-border);
+    .banner-title {
+      color: var(--color-status-info);
+    }
+  }
+
+  &--en_disputa {
+    background: var(--color-status-warning-bg);
+    border-color: var(--color-status-warning-border);
+    .banner-title {
+      color: var(--color-status-warning);
+    }
+  }
+
+  &--corregida {
+    background: var(--color-surface-page);
+    border-color: var(--color-border-medium);
+    .banner-title {
+      color: var(--color-text-secondary);
+    }
+  }
+
+  &--aprobada {
+    background: var(--color-status-success-bg);
+    border-color: var(--color-status-success-border);
+    .banner-title {
+      color: var(--color-status-success);
+    }
+  }
+
+  .banner-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .banner-title {
+    font-size: var(--font-size-base);
+    font-weight: 700;
+  }
+
+  .banner-sub {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+  }
+}
+
+.disputa-motivo-card {
+  background: var(--color-status-warning-bg);
+  border: 1px solid var(--color-status-warning-border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+
+  .motivo-label {
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    color: var(--color-status-warning);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .motivo-content {
+    font-size: var(--font-size-sm);
+    color: var(--color-status-warning);
+    margin-top: 4px;
+  }
+}
+
+.two-col-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+
+  @media (min-width: 992px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  .info-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-muted);
+    }
+
+    .info-value {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-primary);
+
+      &.highlight {
+        color: var(--color-brand-primary);
+        font-size: var(--font-size-base);
+      }
+    }
+  }
+}
+
+.evidence-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+
+  .evidence-preview-wrapper {
+    position: relative;
+    width: 100%;
+    max-height: 300px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--color-backdrop-photo);
+
+    .evidence-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      transition: opacity 0.2s;
+    }
+
+    .zoom-overlay {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: var(--color-scrim);
+      color: var(--color-text-on-scrim);
+      padding: 4px 10px;
+      border-radius: var(--radius-full, 9999px);
+      font-size: var(--font-size-xs);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    &:hover .evidence-image {
+      opacity: 0.9;
+    }
+  }
+
+  .image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    text-align: center;
+    background: var(--color-surface-page);
+    border: 2px dashed var(--color-border-medium);
+    border-radius: var(--radius-md);
+    width: 100%;
+
+    .placeholder-icon {
+      font-size: 40px;
+      color: var(--color-text-muted);
+      margin-bottom: 8px;
+    }
+
+    .placeholder-text {
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      margin: 0 0 4px;
+    }
+
+    .placeholder-sub {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-muted);
+    }
+  }
+}
+
+.votes-table-wrapper {
+  overflow-x: auto;
+}
+
+/*
+ * The table is rendered by PrimeNG, so its internals are reached through the
+ * encapsulation boundary.
+ */
+:host ::ng-deep .votes-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+
+  thead th {
+    background: var(--color-surface-page);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--color-border-subtle);
+  }
+
+  tbody td {
+    padding: 10px 14px;
+    font-size: var(--font-size-sm);
+    border-bottom: 1px solid var(--color-border-subtle);
+    vertical-align: middle;
+  }
+
+  .th-votos,
+  .td-votos {
+    text-align: right;
+  }
+
+  /*
+   * La columna de votos se lee en vertical: las cifras tienen que alinearse
+   * dígito a dígito para que el operador compare de un vistazo.
+   */
+  .td-votos {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .row-subtotal {
+    background: var(--color-surface-page);
+    color: var(--color-text-muted);
+  }
+
+  .row-total {
+    background: var(--color-border-subtle);
+    th,
+    td {
+      padding: 12px 14px;
+      border-top: 2px solid var(--color-border-medium);
+      font-size: var(--font-size-base);
+    }
+
+    .total-count {
+      color: var(--color-brand-primary);
+    }
+  }
+}
+
+.checksum-banner {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+
+  .pi {
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  &--valid {
+    background: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+    color: var(--color-status-success);
+  }
+
+  &--invalid {
+    background: var(--color-status-danger-bg);
+    border: 1px solid var(--color-status-danger-border);
+    color: var(--color-status-danger);
+  }
+
+  .checksum-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .checksum-title {
+    font-weight: 700;
+  }
+
+  .checksum-detail {
+    font-size: var(--font-size-xs);
+    opacity: 0.85;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  .form-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-primary);
+  }
+}
+
+.correction-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.correction-subtitle {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 12px 0 4px;
+}
+
+.candidates-correction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.candidate-correction-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--color-surface-page);
+  border-radius: var(--radius-md);
+
+  /*
+   * S3 — palanca 2: la fila de corrección es una lista densa —el scrolls de
+   * `.candidates-correction-list` la recorta a 250px— y su target es el input
+   * de votos, no la fila: un pseudo-elemento `inset: 0` sobre la fila se
+   * pintaría por encima del input y le robaría el clic. El piso va en el
+   * control, y la fila conserva su altura natural.
+   */
+  min-height: 44px;
+
+  .cand-info {
+    display: flex;
+    flex-direction: column;
+    .cand-name {
+      font-size: var(--font-size-sm);
+    }
+    .cand-sub {
+      font-size: var(--font-size-xs);
+    }
+  }
+
+  .cand-input-wrap {
+    width: 100px;
+    .cand-input {
+      text-align: right;
+      min-height: 44px;
+    }
+  }
+}
+
+.modal-checksum {
+  background: var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  font-size: var(--font-size-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &--valid {
+    background: var(--color-status-success-bg);
+    color: var(--color-status-success);
+  }
+
+  &--invalid {
+    background: var(--color-status-danger-bg);
+    color: var(--color-status-danger);
+  }
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.td-muted {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}

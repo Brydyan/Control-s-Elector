@@ -67,6 +67,58 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'dashboard/resultados',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/dashboard/pages/resultados-cargo/resultados-cargo.page').then(
+            (m) => m.ResultadosCargoPage,
+          ),
+        data: {
+          roles: ['ADMIN', 'MASTER', 'COORDINATOR'],
+          title: 'Resultados por Cargo',
+          subtitle: 'Análisis Electoral · Votos por Dignidad y Candidato',
+        },
+      },
+      {
+        path: 'admin/resultados',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/dashboard/pages/resultados-cargo/resultados-cargo.page').then(
+            (m) => m.ResultadosCargoPage,
+          ),
+        data: {
+          roles: ['ADMIN', 'MASTER', 'COORDINATOR'],
+          title: 'Resultados por Cargo',
+          subtitle: 'Análisis Electoral · Votos por Dignidad y Candidato',
+        },
+      },
+      {
+        path: 'dashboard/progreso',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/dashboard/pages/progreso-cantones/progreso-cantones.page').then(
+            (m) => m.ProgresoCantonesPage,
+          ),
+        data: {
+          roles: ['ADMIN', 'MASTER', 'COORDINATOR'],
+          title: 'Progreso de Escrutinio',
+          subtitle: 'Avance Territorial · Cantones y Parroquias',
+        },
+      },
+      {
+        path: 'admin/progreso',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/dashboard/pages/progreso-cantones/progreso-cantones.page').then(
+            (m) => m.ProgresoCantonesPage,
+          ),
+        data: {
+          roles: ['ADMIN', 'MASTER', 'COORDINATOR'],
+          title: 'Progreso de Escrutinio',
+          subtitle: 'Avance Territorial · Cantones y Parroquias',
+        },
+      },
+      {
         path: 'observer/registrar-acta',
         redirectTo: '/observer/mis-jrvs',
         pathMatch: 'full',
@@ -111,6 +163,21 @@ export const routes: Routes = [
           title: 'Detalle de Acta',
           subtitle: 'Auditoría de escrutinio, balance y evidencia fotográfica',
           icon: 'document-text-outline',
+        },
+      },
+      {
+        path: 'coordinator/reportes',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/coordinator/pages/reportes/coordinator-reportes.page').then(
+            (m) => m.CoordinatorReportesPage,
+          ),
+        data: {
+          roles: ['COORDINATOR', 'MASTER', 'ADMIN'],
+          title: 'Centro de Reportes',
+          subtitle:
+            'Métricas operativas y generación de expedientes electorales',
+          icon: 'pie-chart-outline',
         },
       },
       {
@@ -176,11 +243,12 @@ export const routes: Routes = [
         path: 'master/cargos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/master/pages/cargos/master-cargos.page').then(
-            (m) => m.MasterCargosPage,
+          import('./features/master/pages/configuracion/master-configuracion.page').then(
+            (m) => m.MasterConfiguracionPage,
           ),
         data: {
           roles: ['MASTER'],
+          tab: 'cargos',
           title: 'Cargos Electorales',
           description:
             'Configuración de dignidades y tipos de cargos electorales.',
@@ -191,11 +259,12 @@ export const routes: Routes = [
         path: 'master/partidos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/master/pages/partidos/master-partidos.page').then(
-            (m) => m.MasterPartidosPage,
+          import('./features/master/pages/configuracion/master-configuracion.page').then(
+            (m) => m.MasterConfiguracionPage,
           ),
         data: {
           roles: ['MASTER'],
+          tab: 'partidos',
           title: 'Partidos Políticos',
           description:
             'Registro y administración de organizaciones y movimientos políticos.',
@@ -206,11 +275,12 @@ export const routes: Routes = [
         path: 'master/candidatos',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/master/pages/candidatos/master-candidatos.page').then(
-            (m) => m.MasterCandidatosPage,
+          import('./features/master/pages/configuracion/master-configuracion.page').then(
+            (m) => m.MasterConfiguracionPage,
           ),
         data: {
           roles: ['MASTER'],
+          tab: 'candidatos',
           title: 'Candidatos',
           description:
             'Padrón de candidatos postulados por dignidad y lista política.',

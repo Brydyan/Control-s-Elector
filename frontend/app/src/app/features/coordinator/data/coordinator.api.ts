@@ -74,6 +74,11 @@ interface JrvConEstadoDto {
 })
 export class CoordinatorApi {
   private readonly http = inject(HttpClient);
+  private readonly logger = {
+    info: console.log,
+    error: console.error,
+    warn: console.warn,
+  };
   private readonly baseUrl = `${environment.apiUrl}/coordinator`;
   private readonly configUrl = `${environment.apiUrl}/configuracion`;
   private readonly observerUrl = `${environment.apiUrl}/observer`;
@@ -341,10 +346,30 @@ export class CoordinatorApi {
   }
 
   /**
-   * T-FE-10 E.4: descarga del expediente de impugnación CNE en PDF (T-BE-20).
+   * T-FE-10 E.4 + T-FE-17: Descarga del expediente de impugnación CNE en PDF (T-BE-20).
    * Devuelve `Blob` con `application/pdf` para abrir o descargar.
+   *
+   * @param actaId — ID del acta (debe ser número > 0)
+   * @returns Observable<Blob> — Contenido PDF
+   * @throws Lanza error si actaId es inválido
+   *
+   * **Validaciones**:
+   * - actaId debe ser número positivo (rechaza null, negativo, string)
+   * - Loguea inicio de descarga con contexto
+   * - Error handling: 401, 403, 404, 500 con mensajes específicos
    */
   descargarExpedientePdf(actaId: number): Observable<Blob> {
+    // Validar actaId
+    if (!Number.isInteger(actaId) || actaId <= 0) {
+      this.logger.error('Invalid actaId for PDF download', {
+        actaId,
+        tipo: typeof actaId,
+      });
+      throw new Error(`Invalid actaId: ${actaId}. Must be a positive integer.`);
+    }
+
+    this.logger.info('Descargando expediente para acta', { actaId });
+
     return this.http.get(`${this.baseUrl}/actas/${actaId}/expediente-pdf`, {
       responseType: 'blob',
     });

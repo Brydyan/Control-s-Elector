@@ -52,7 +52,7 @@ Cada papel tiene su archivo, con su plantilla de lanzamiento y sus límites:
 
 ## 3. Compuertas y línea base
 
-Medidas el **2026-10-04**, tras archivar `2026-10-04-t-fe-12-shared-components` (rama `brydyan/sc-174/t-fe-12-componentes-compartidos`):
+Medidas el **2026-11-05**, tras archivar `2026-11-04-t-fe-20-image-pipeline-compression` (rama `brydyan/t-fe-20-imagen-compression`):
 
 ```
 backend build     ./mvnw -B clean package -DskipTests        exit 0
@@ -61,10 +61,12 @@ backend test      ./mvnw -B test                             63 suites / 281 tes
 frontend lint     pnpm lint                                  0 errores (exit 0)
 frontend format   pnpm format:check                          0 errores
 frontend build    pnpm build                                 bundle generado en www (exit 0)
-frontend test     pnpm test:ci                               42 suites / 241 tests / 0 failures (isolate: true, exit 0)
+frontend test     pnpm test:ci                               43+ suites / 628 tests / 0 failures (isolate: true, exit 0)
 ```
 
 Working directory obligatorio: backend en `backend/electoral-api/`, frontend en `frontend/app/`.
+
+**Nota:** Frontend tests crecieron significativamente: 241 (2026-10-04) → 628 (2026-11-05) tras T-FE-19 (admin CRUD) y T-FE-20 (image compression). Cada cambio nuevo suma tests en su área.
 
 **Los números importan.** Si al añadir tests el total no sube, los tests nuevos no se están
 ejecutando. Eso es un fallo de la fase, no un detalle.
@@ -251,12 +253,16 @@ Los seis del playbook (§4), instanciados aquí:
 
 ## 9. Estado del ROADMAP
 
-Última actualización: **2026-10-04**, por el Arquitecto.
+Última actualización: **2026-11-05**, por el Arquitecto.
+
 Changes archivados recientemente:
 - `openspec/changes/archive/2026-09-25-fe-vitest-ionic-cleanup-race/` (Compuerta estricta CI y 240/240 tests pasando con `isolate: true`)
 - `openspec/changes/archive/2026-10-04-t-fe-11-realtime-dashboard/`
 - `openspec/changes/archive/2026-10-04-t-fe-12-shared-components/` (Componentes compartidos @shared/*, ConfirmDialog con focus trap, 241 tests, exit 0)
+- `openspec/changes/archive/2026-11-04-t-fe-20-image-pipeline-compression/` (GPU acceleration con `createImageBitmap()`, Web Worker async, WebP doble pasada 0.80/0.65, 628 tests totales, M1/M2 mutaciones verificadas)
+
 Changes activos / preparados:
+- `openspec/changes/auth/2026-11-05-t-auth-inv-01-invitaciones/` (Email-based user invitations, JWT 24h, self-service activation)
 - `openspec/changes/front/2026-09-25-t-fe-13-capture-and-run-foto-primero/`
 - `openspec/changes/front/2026-09-26-t-fe-{14..17}/`
 - `openspec/changes/front/2026-10-03-t-fe-18-sidebar-rbac-dynamic-menus/`

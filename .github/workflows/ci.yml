@@ -317,6 +317,12 @@ jobs:
       - name: Run the Quarkus backend tests
         working-directory: backend/electoral-api-quarkus
         run: ./mvnw -B clean verify
+
+  # ===========================================================================
+  # FRONTEND JOBS
+  # ===========================================================================
+  # Load testing is in separate workflow: load-test-baseline.yml
+
   frontend-format:
     name: Frontend Format Check
     runs-on: ubuntu-latest

@@ -1,0 +1,182 @@
+<div class="coordinator-reportes-container">
+  <!-- Loading State -->
+  <div *ngIf="loading()">
+    <app-loading-state></app-loading-state>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error()" role="alert" class="error-banner">
+    <p>{{ error() }}</p>
+    <button (click)="cargarMetricas()" type="button" class="btn-retry">
+      Reintentar
+    </button>
+  </div>
+
+  <!-- Main Content (hidden while loading) -->
+  <div *ngIf="!loading() && !error()" class="content">
+    <!-- Banner de Progreso Global -->
+    <section
+      class="banner-progreso"
+      role="region"
+      aria-label="Progreso operativo global"
+    >
+      <div class="banner-content">
+        <div class="progreso-principal">
+          <h1>Avance Electoral Provincial</h1>
+          <div class="percentage-display">
+            <span class="number">{{ metricas().percentageProgress }}%</span>
+            <span class="label"
+              >({{ metricas().jrvsProcessed }} / {{ metricas().jrvsTotal }}
+              JRVs)</span
+            >
+          </div>
+          <div class="progress-bar-container">
+            <div
+              class="progress-bar-fill"
+              [style.width.%]="metricas().percentageProgress"
+            ></div>
+          </div>
+        </div>
+
+        <div class="metricas-banner">
+          <div class="metrica-item">
+            <span class="label">Actas/Hora</span>
+            <span class="value">{{ metricas().actasPorHora }}</span>
+          </div>
+          <div class="metrica-item">
+            <span class="label">Estado Realtime</span>
+            <span
+              class="value status"
+              [class.connected]="metricas().realtimeStatus === 'connected'"
+              [class.disconnected]="metricas().realtimeStatus === 'disconnected'"
+            >
+              {{ metricas().realtimeStatus === 'connected' ? '🟢 En vivo' : '🔴
+              Desconectado' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grid de Métricas Clave (3 columnas) -->
+    <section class="metricas-grid">
+      <!-- Tarjeta 1: Progreso por Cantón -->
+      <app-card
+        class="card-canton"
+        role="region"
+        aria-label="Progreso por cantón"
+      >
+        <h2>Progreso por Cantón</h2>
+        <div class="canton-list">
+          <div *ngFor="let c of cantonProgress()" class="canton-item">
+            <span class="canton-name">{{ c.canton }}</span>
+            <div class="progress-bar-inline">
+              <div class="bar-fill" [style.width.%]="c.percentage"></div>
+            </div>
+            <span class="percentage">{{ c.percentage }}%</span>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Tarjeta 2: Estados de Actas -->
+      <app-card
+        class="card-estados"
+        role="region"
+        aria-label="Distribución de actas por estado"
+      >
+        <h2>Estados de Actas</h2>
+        <div class="estados-list">
+          <div
+            class="estado-item"
+            *ngFor="let key of ['ENVIADA', 'EN_DISPUTA', 'CORREGIDA', 'APROBADA', 'ANULADA']"
+          >
+            <span class="simbolo">{{ obtenerSimboloEstado(key) }}</span>
+            <span class="nombre">{{ key }}</span>
+            <span class="count">{{ obtenerCountEstado(key) }}</span>
+            <span class="percentage">{{ obtenerPorcentajeEstado(key) }}%</span>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Tarjeta 3: Progreso por Cargo -->
+      <app-card
+        class="card-cargo"
+        role="region"
+        aria-label="Progreso por cargo electoral"
+      >
+        <h2>Progreso por Cargo</h2>
+        <div class="cargo-list">
+          <div *ngFor="let c of cargoProgress()" class="cargo-item">
+            <span class="cargo-name">{{ c.cargo }}</span>
+            <div class="progress-bar-inline">
+              <div class="bar-fill" [style.width.%]="c.percentage"></div>
+            </div>
+            <span class="percentage">{{ c.percentage }}%</span>
+          </div>
+        </div>
+      </app-card>
+    </section>
+
+    <!-- Sección Inferior: Tabla de Actas + Métricas -->
+    <section class="actas-section">
+      <!-- Métricas de Resolución -->
+      <div class="resolucion-metrics">
+        <app-card class="metric-card">
+          <h3>Resoluciones del Día</h3>
+          <p class="metric-value">{{ resolucionesDelDia() }}</p>
+        </app-card>
+        <app-card class="metric-card">
+          <h3>Tiempo Promedio de Subsanación</h3>
+          <p class="metric-value">{{ tiempoPromedioHoras() }} horas</p>
+        </app-card>
+      </div>
+
+      <!-- Tabla de Actas -->
+      <app-card class="card-actas">
+        <h2>Actas en Coordinación</h2>
+        <div class="table-container">
+          <table role="grid" aria-label="Actas registradas">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Estado</th>
+                <th>Cargo</th>
+                <th>JRV</th>
+                <th>Sufragantes</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let acta of actas(); let idx = index">
+                <td>{{ acta.id }}</td>
+                <td>
+                  <span [attr.data-testid]="'estado-' + acta.id">
+                    {{ obtenerSimboloEstado(acta.estado) }} {{ acta.estado }}
+                  </span>
+                </td>
+                <td>{{ acta.nombreCargo || '-' }}</td>
+                <td>{{ acta.numeroJrv || '-' }}</td>
+                <td>{{ acta.totalSufragantes || 0 }}</td>
+                <td>
+                  <button
+                    class="btn-descargar"
+                    (click)="descargarExpediente(acta)"
+                    [disabled]="downloadingId() === acta.id"
+                    [attr.aria-label]="'Descargar expediente de acta ' + acta.id"
+                    [attr.data-testid]="'btn-descargar-' + acta.id"
+                  >
+                    {{ downloadingId() === acta.id ? 'Descargando...' : '⬇️
+                    Expediente' }}
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="actas().length === 0">
+                <td colspan="6" class="empty-message">Sin actas registradas</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </app-card>
+    </section>
+  </div>
+</div>
