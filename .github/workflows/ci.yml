@@ -435,31 +435,59 @@ jobs:
           rm -rf k6.tar.gz k6-v${K6_VERSION}-linux-amd64
           k6 version
 
+      - name: Generate bcrypt hash for test password
+        id: hash
+        run: |
+          # Generar hash bcrypt válido para 'SecurePass123!' usando PostgreSQL
+          BCRYPT_HASH=$(PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -t -c \
+            "SELECT crypt('SecurePass123!', gen_salt('bf', 12));")
+          echo "Generated bcrypt hash: ${BCRYPT_HASH:0:20}..."
+          echo "hash=${BCRYPT_HASH}" >> $GITHUB_OUTPUT
+
       - name: Create seed data SQL
         run: |
           mkdir -p /tmp/seed
-          cat > /tmp/seed/seed.sql << 'EOF'
+          HASH="${{ steps.hash.outputs.hash }}"
+
+          cat > /tmp/seed/seed.sql << EOF
           INSERT INTO usuario (email, nombre, apellido, password_hash, estado_usuario, rol) VALUES
-            ('obs1@electoral.ec', 'Observer', '1', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
-            ('obs2@electoral.ec', 'Observer', '2', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
-            ('obs3@electoral.ec', 'Observer', '3', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
-            ('obs4@electoral.ec', 'Observer', '4', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
-            ('obs5@electoral.ec', 'Observer', '5', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'OBSERVER'),
-            ('coord1@electoral.ec', 'Coordinator', '1', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'COORDINATOR'),
-            ('coord2@electoral.ec', 'Coordinator', '2', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'COORDINATOR'),
-            ('admin@electoral.ec', 'Admin', 'Electoral', '$2a$12$E8/48x.jSGHPG/eXOlGG.ORRz51OMhLHkTyQhgGGGXYlQQVMJNfR6', 'ACTIVO', 'MASTER')
+            ('obs1@electoral.ec', 'Observer', '1', '${HASH}', 'ACTIVO', 'OBSERVER'),
+            ('obs2@electoral.ec', 'Observer', '2', '${HASH}', 'ACTIVO', 'OBSERVER'),
+            ('obs3@electoral.ec', 'Observer', '3', '${HASH}', 'ACTIVO', 'OBSERVER'),
+            ('obs4@electoral.ec', 'Observer', '4', '${HASH}', 'ACTIVO', 'OBSERVER'),
+            ('obs5@electoral.ec', 'Observer', '5', '${HASH}', 'ACTIVO', 'OBSERVER'),
+            ('coord1@electoral.ec', 'Coordinator', '1', '${HASH}', 'ACTIVO', 'COORDINATOR'),
+            ('coord2@electoral.ec', 'Coordinator', '2', '${HASH}', 'ACTIVO', 'COORDINATOR'),
+            ('admin@electoral.ec', 'Admin', 'Electoral', '${HASH}', 'ACTIVO', 'MASTER')
           ON CONFLICT (email) DO NOTHING;
           EOF
+
+          echo "📋 Seed SQL:"
           cat /tmp/seed/seed.sql
 
       - name: Seed test data
         run: |
-          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -f /tmp/seed/seed.sql
+          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -f /tmp/seed/seed.sql || {
+            echo "❌ Seed data failed"
+            exit 1
+          }
 
       - name: Verify test data
         run: |
-          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -c \
-            "SELECT COUNT(*) as usuarios_test FROM usuario WHERE email LIKE '%@electoral.ec';"
+          echo "🔍 Checking if users were created..."
+          PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db << 'SQL_CHECK'
+            SELECT COUNT(*) as total_users FROM usuario;
+            SELECT email, rol FROM usuario WHERE email LIKE '%@electoral.ec' ORDER BY email;
+          SQL_CHECK
+
+          USER_COUNT=$(PGPASSWORD=electoral_pass psql -h localhost -U electoral_user -d electoral_db -t -c \
+            "SELECT COUNT(*) FROM usuario WHERE email LIKE '%@electoral.ec';")
+
+          if [ "$USER_COUNT" -lt 5 ]; then
+            echo "❌ Only $USER_COUNT test users created (expected at least 5)"
+            exit 1
+          fi
+          echo "✅ $USER_COUNT test users created successfully"
 
       - name: Run k6 baseline test (20 VUs, 5 min)
         run: |
