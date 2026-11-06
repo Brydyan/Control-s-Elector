@@ -464,6 +464,7 @@ jobs:
       - name: Run k6 baseline test (20 VUs, 5 min)
         run: |
           cd frontend/tests/load
+          mkdir -p results
           k6 run scenarios/login.js \
             --vus 20 \
             --duration 5m \
