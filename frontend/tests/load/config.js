@@ -91,9 +91,9 @@ export const config = {
   // Test scenarios
   scenarios: {
     baseline: {
-      name: 'Baseline - 10 VUs, 5 min',
-      description: 'Verify system is healthy under minimal load',
-      vus: 10,
+      name: 'Baseline - 20 VUs, 5 min',
+      description: 'Verify system is healthy under minimal-to-moderate load (runs in CI)',
+      vus: 20,
       duration: '5m',
     },
     rampUp: {
