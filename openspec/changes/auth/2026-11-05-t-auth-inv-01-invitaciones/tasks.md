@@ -766,18 +766,18 @@ Si compuertas fallan: arreglá antes de avanzar a Sprint 3.
 - Handle per-user failures (list which emails failed)
 
 **Mutación:**
-- [ ] **C.13**  <!-- sin cerrar: el bulk invite del panel (Task 3.3) no se hizo --> Quitá `@RolesAllowed("ADMIN")` check en frontend (no del backend!) y vuelve a compilar.
-  ¿El botón aparece? (Debería aparecer igual; la validación real es en backend). Si no aparece, hay validación frontend incorrecta.
+- [x] **C.13**  <!-- adaptada: el spec pedia quitar un @RolesAllowed("ADMIN") del frontend, que no existe: el control real esta en el backend (`autorizador.exigir("usuario:create","MASTER")`). La mutacion equivalente que si decide es la del filtro de seleccion del frontend: al quitarlo caen `unaCuentaActivaNoSePuedeSeleccionar`, `unaCuentaActivaNoOfreceLaAccionDeReenviar` y `laCasillaDeUnaCuentaActivaVieneDeshabilitadaYExplicaPorQue`. Ver apply-progress.md, M10. --> Quitá el filtro que impide seleccionar cuentas ya activas y ejecutá la suite de la pagina.
+  ¿Cae? Anotá el nombre exacto del test. Si no cae, la pantalla deja invites que el backend va a rechazar con 409.
 
 **Acceptance Criteria:**
-- [ ] Multi-select checkboxes on list
-- [ ] Bulk toolbar appears when users selected
-- [ ] POST /invitaciones called with selected IDs
-- [ ] Progress spinner shown during processing
-- [ ] Success toast: "X invitaciones enviadas, Y errores"
-- [ ] Failed emails listed for retry
-- [ ] Table refreshes after success
-- [ ] "Re-enviar" action available for PENDIENTE_INVITACION users
+- [x] Multi-select checkboxes on list
+- [x] Bulk toolbar appears when users selected
+- [x] POST /invitaciones called with selected IDs
+- [x] Progress spinner shown during processing
+- [x] Success toast: "X invitaciones enviadas, Y errores"  <!-- el repo no tiene servicio de toast: se muestra un estado en linea con role="status" y el mismo contenido -->
+- [x] Failed emails listed for retry  <!-- el envio en lote es atomico: si una cuenta ya esta activa el backend responde 409 con el email en el mensaje y no sale ningun email. La pantalla muestra ese mensaje y deja la cuenta activa sin marcar -->
+- [x] Table refreshes after success
+- [x] "Re-enviar" action available for PENDIENTE_INVITACION users
 
 ---
 
@@ -945,6 +945,12 @@ app.email.queue.rate-limit-window-seconds=60
 **Files:**
 - `frontend/tests/load/scenarios/invitations.js` (NEW or extend existing)
 
+**Qué se hizo (ronda 2):**
+- [x] Escenario escrito: `frontend/tests/load/scenarios/invitations.js`, integrado en el harness (`./run.sh invitations`), con SLA de invitacion (p95 < 5s) y de activacion (p95 < 2s)
+- [x] El escenario lo parsea k6 v0.55.0 (`k6 inspect`, exit 0) con y sin tokens de activacion
+- [ ] **Ejecutado**: no. Requiere backend vivo y Postgres, y el daemon de Docker esta caido
+- [ ] **Tokens de activacion**: la pata `activate` necesita tokens reales (`INVITATION_TOKENS`), que salen en el email; sin ellos el script mide solo el envio y lo dice
+
 **What:**
 ```javascript
 // Simulate: 100 VUs inviting users + 100 VUs activating
@@ -968,16 +974,16 @@ export default function() {
 ```
 
 **Load Test Success Criteria:**
-- [ ] Invite endpoint p95 < 5s
-- [ ] Activate endpoint p95 < 2s
-- [ ] Failure rate < 10%
-- [ ] Email queue: 100 emails/min without bottleneck
-- [ ] DB pool: < 80% utilization
+- [ ] Invite endpoint p95 < 5s  <!-- sin medir: el escenario esta escrito pero no se ejecuto (Docker caido) -->
+- [ ] Activate endpoint p95 < 2s  <!-- sin medir: ademas necesita tokens reales de activacion -->
+- [ ] Failure rate < 10%  <!-- sin medir -->
+- [ ] Email queue: 100 emails/min without bottleneck  <!-- sin medir -->
+- [ ] DB pool: < 80% utilization  <!-- sin medir -->
 
 **Acceptance Criteria:**
-- [ ] k6 scenario executes without errors
-- [ ] Metrics collected and analyzed
-- [ ] Performance acceptable
+- [ ] k6 scenario executes without errors  <!-- el script lo parsea k6 v0.55.0 (k6 inspect, exit 0); la ejecucion esta bloqueada por Docker -->
+- [ ] Metrics collected and analyzed  <!-- sin medir -->
+- [ ] Performance acceptable  <!-- sin medir -->
 
 ---
 
