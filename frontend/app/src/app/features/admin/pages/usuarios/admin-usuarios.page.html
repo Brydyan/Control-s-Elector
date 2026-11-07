@@ -119,7 +119,11 @@
 
   @if (!loading() && !error() && usuarios().length) {
   <div class="table-wrap desktop-only">
-    <p-table [value]="usuarios()" [rowHover]="true" styleClass="admin-table">
+    <p-table
+      [value]="usuarios()"
+      [rowHover]="true"
+      styleClass="app-table admin-table"
+    >
       <ng-template #header>
         <tr>
           <th class="select-col">

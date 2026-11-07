@@ -279,6 +279,66 @@
   --shadow-overlay: 0 24px 64px -12px rgba(15, 23, 42, 0.45);
   /* La sombra de una superficie que apenas se desprende del fondo. */
   --shadow-surface: 0 1px 3px rgb(0 0 0 / 5%);
+
+  /*
+   * 6. Tokens de KPI (la tarjeta de indicador)
+   *
+   * La tarjeta de KPI es un objeto del sistema de diseño, no una página: la
+   * usan el dashboard, la tabla de cargos y el reporte del coordinador, y las
+   * tres leían tokens sueltos con el mismo significado y nombres distintos.
+   * Aquí se declara el vocabulario una sola vez, y el componente `app-kpi-card`
+   * deja de decidir colores.
+   *
+   * `surface`, `border`, `label` y `hint` son la estructura de la tarjeta. Los
+   * pares `accent-*` y `figure-*` son los cinco tonos del tablero electoral:
+   * el filo de color que corona la tarjeta y la cifra que lleva dentro.
+   *
+   * El filo y la cifra no son siempre el mismo token: un acta corregida se
+   * anuncia con el morado fuerte en el filo y con el morado de texto en la
+   * cifra, porque la cifra tiene que seguir leyendo como texto y no como un
+   * color de estado.
+   */
+  --color-kpi-surface: var(--color-surface-card);
+  --color-kpi-border: var(--color-border-on-surface);
+  --color-kpi-label: var(--color-text-muted);
+  --color-kpi-hint: var(--color-text-muted-on-surface);
+
+  --color-kpi-accent-brand: var(--color-brand-primary);
+  --color-kpi-accent-success: var(--color-status-success);
+  --color-kpi-accent-warning: var(--color-status-warning);
+  --color-kpi-accent-corrected: var(--color-status-corrected-strong);
+  --color-kpi-accent-neutral: var(--color-status-neutral);
+
+  --color-kpi-figure-brand: var(--color-brand-primary);
+  --color-kpi-figure-success: var(--color-status-success);
+  --color-kpi-figure-warning: var(--color-status-warning);
+  --color-kpi-figure-corrected: var(--color-status-corrected);
+  --color-kpi-figure-neutral: var(--color-text-primary);
+
+  /*
+   * 7. Tokens de tabla
+   *
+   * Las tablas de PrimeNG las estilaba cada página por su cuenta: dos de
+   * ellas ponían la cabecera en mayúscula con un padding y un borde, las
+   * demás la dejaban como la emitted PrimeNG —que no le pone nada, porque las
+   * cabeceras las escribe el template— y el hover sólo lo tenía una.
+   *
+   * Aquí se declara el vocabulario de la tabla una sola vez. La hoja que lo
+   * consume vive en `src/theme/tables.scss` (`.app-table`).
+   *
+   * `header-bg` es la superficie elevada: en claro es un gris un paso más
+   * oscuro que la tarjeta y en oscuro un gris un paso más claro, así que la
+   * banda de la cabecera se despega de los datos en los dos esquemas con el
+   * mismo signo.
+   */
+  --color-table-surface: var(--color-surface-card);
+  --color-table-header-bg: var(--color-surface-raised);
+  --color-table-header-text: var(--color-text-muted-on-surface);
+  --color-table-header-border: var(--color-border-on-surface);
+  --color-table-cell-text: var(--color-text-on-surface);
+  --color-table-row-border: var(--color-border-on-surface);
+  --color-table-row-hover-bg: var(--color-surface-raised);
+  --color-table-caption-text: var(--color-text-muted);
 }
 
 /*
@@ -382,6 +442,47 @@
   --color-brand-primary-strong: var(--primitive-blue-500);
   --color-brand-primary-active: var(--primitive-blue-600);
   --color-brand-border: rgba(122, 154, 196, 0.65);
+
+  /*
+   * KPI y tabla — el mismo vocabulario, los mismos nombres.
+   *
+   * Estas declaran son alias de tokens que el esquema oscuro ya remapeó: el
+   * `--color-status-success` de abajo es el verde claro, no el verde de
+   * texto, y `--color-surface-raised` es el gris claro. El remapeo ocurre una
+   * sola vez, en el token al que apuntan, así que la tarjeta de KPI y la
+   * tabla cambian de esquema sin que ni el componente ni la hoja tengan que
+   * saber que existe un segundo esquema.
+   *
+   * Se declaran igual en los dos esquemas a propósito: el contrato de tokens
+   * (`primeng-theme.spec.ts`) exige que todo token semántico exista en los
+   * dos, y un token que sólo existe en claro es un token que en oscuro
+   * vuelve a su valor de claro sin que nadie lo decida.
+   */
+  --color-kpi-surface: var(--color-surface-card);
+  --color-kpi-border: var(--color-border-on-surface);
+  --color-kpi-label: var(--color-text-muted);
+  --color-kpi-hint: var(--color-text-muted-on-surface);
+
+  --color-kpi-accent-brand: var(--color-brand-primary);
+  --color-kpi-accent-success: var(--color-status-success);
+  --color-kpi-accent-warning: var(--color-status-warning);
+  --color-kpi-accent-corrected: var(--color-status-corrected-strong);
+  --color-kpi-accent-neutral: var(--color-status-neutral);
+
+  --color-kpi-figure-brand: var(--color-brand-primary);
+  --color-kpi-figure-success: var(--color-status-success);
+  --color-kpi-figure-warning: var(--color-status-warning);
+  --color-kpi-figure-corrected: var(--color-status-corrected);
+  --color-kpi-figure-neutral: var(--color-text-primary);
+
+  --color-table-surface: var(--color-surface-card);
+  --color-table-header-bg: var(--color-surface-raised);
+  --color-table-header-text: var(--color-text-muted-on-surface);
+  --color-table-header-border: var(--color-border-on-surface);
+  --color-table-cell-text: var(--color-text-on-surface);
+  --color-table-row-border: var(--color-border-on-surface);
+  --color-table-row-hover-bg: var(--color-surface-raised);
+  --color-table-caption-text: var(--color-text-muted);
 }
 
 /*

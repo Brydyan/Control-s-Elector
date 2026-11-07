@@ -14,6 +14,7 @@ import {
   ButtonComponent,
   CardComponent,
   ErrorStateComponent,
+  KpiCardComponent,
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import {
@@ -43,6 +44,7 @@ import { DashboardApi } from '../../data/dashboard.api';
     CommonModule,
     ButtonComponent,
     CardComponent,
+    KpiCardComponent,
     BadgeComponent,
     ProgressBar,
     LoadingStateComponent,

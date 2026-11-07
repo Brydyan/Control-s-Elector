@@ -229,7 +229,10 @@
     <!-- Votes Table Breakdown -->
     <app-card [elevated]="true" headerTitle="Escrutinio por Candidato y Cuadre">
       <div class="votes-table-wrapper">
-        <p-table [value]="detalle.candidatos" styleClass="votes-table">
+        <p-table
+          [value]="detalle.candidatos"
+          styleClass="app-table votes-table"
+        >
           <ng-template #header>
             <tr>
               <th scope="col" class="th-candidato">Candidato / Lista</th>

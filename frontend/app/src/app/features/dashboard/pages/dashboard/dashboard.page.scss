@@ -109,71 +109,17 @@
 
 /* Stats row ------------------------------------------------------------- */
 
+/*
+ * The cards of the row are `app-kpi-card`: the label, the figure, the line of
+ * support and the edge of the tone belong to the component, and the colors
+ * come from the tokens of the theme. The page only decides how many cards
+ * fit in a row.
+ */
 .stats-row {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
   margin-bottom: var(--space-6);
-}
-
-/*
- * The stat cards are PrimeNG cards with a coloured top edge, so the card
- * body padding is replaced by the layout of the card itself.
- */
-:host ::ng-deep .stat-card.p-card {
-  border-top: 3px solid transparent;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-}
-
-:host ::ng-deep .stat-card .p-card-body {
-  padding: var(--space-5);
-}
-
-.stat-card-label {
-  font-size: 11px;
-  color: var(--color-text-muted);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--space-2);
-}
-
-.stat-card-value {
-  font-size: 32px;
-  font-weight: var(--font-weight-bold);
-  line-height: 1;
-}
-
-.stat-card-sub {
-  font-size: 11px;
-  color: var(--color-text-muted-on-surface);
-  margin-top: var(--space-1);
-}
-
-.stat-card.c-enviada {
-  border-top-color: var(--color-brand-primary);
-}
-.stat-card.c-disputa {
-  border-top-color: var(--color-status-warning);
-}
-.stat-card.c-corregida {
-  border-top-color: var(--color-status-corrected-strong);
-}
-.stat-card.c-aprobada {
-  border-top-color: var(--color-status-success);
-}
-
-.v-enviada {
-  color: var(--color-brand-primary);
-}
-.v-disputa {
-  color: var(--color-status-warning);
-}
-.v-corregida {
-  color: var(--color-status-corrected);
-}
-.v-aprobada {
-  color: var(--color-status-success);
 }
 
 /* Bottom grid ------------------------------------------------------------ */
