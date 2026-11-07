@@ -25,7 +25,7 @@ Una sola aplicación con control de acceso basado en roles (RBAC). Las vistas se
 
 ```
               ┌──────────────────────────────────────────────────┐
-              │     App Angular + Ionic — control.twintailcs.xyz │
+              │     App Angular+PrimeNG — control.twintailcs.xyz │
               │        Route Guards RBAC por rol JWT             │
               │  /observer  /coordinator  /master  /dashboard    │
               └──────────────────────┬───────────────────────────┘
@@ -107,17 +107,17 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 
 ### Frontend
 
-- **Angular 17+** + **Ionic Framework** (TypeScript)
+- **Angular 21** + **PrimeNG 21** + **Tailwind CSS 4** (TypeScript)
 - RBAC por Route Guards según rol del JWT
 - Compresión nativa WebP en cliente (Canvas API)
 - Estrategia Offline-First: IndexedDB + Private Storage
 
 ### Backend
 
-- **Java 21** / **Quarkus 3.40** (RESTEasy Reactive, Hibernate ORM, SmallRye)
-- **GraalVM Native Image** — pendiente (#114). Hoy el backend corre sobre la JVM: el
-  build nativo no cierra por una dependencia opcional de OpenPDF. El slice de
-  autenticación sí compila nativo (295 ms de arranque, 136 MB RSS).
+- **Java 25** / **Quarkus 3.40** (RESTEasy Reactive, Hibernate ORM, SmallRye)
+- **GraalVM Native Image** — el build nativo cierra y es el artefacto que publica
+  el CD (`Dockerfile.native`). El pipeline lo construye y lo verifica en cada PR
+  que toca el módulo Quarkus (`.github/workflows/ci-native.yml`).
 - RBAC por permisos atómicos sobre JWT stateless: el claim `perms` se proyecta a
   authorities y cada método exige su permiso con una llamada explícita
 - Locking pesimista `SELECT FOR UPDATE` por `jrv_id + cargo_id`
@@ -144,7 +144,7 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 | Subdominio | Servicio | Proveedor |
 | ------------ | --------- | ----------- |
 | `api.twintailcs.xyz` | API REST Quarkus | Railway Pro |
-| `control.twintailcs.xyz` | App Angular+Ionic (todos los roles) | Vercel |
+| `control.twintailcs.xyz` | App Angular+PrimeNG (todos los roles) | Vercel |
 
 CI/CD automático desde la rama `develop` de GitHub hacia Railway.
 
