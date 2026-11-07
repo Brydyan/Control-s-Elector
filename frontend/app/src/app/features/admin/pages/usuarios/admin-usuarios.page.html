@@ -180,77 +180,20 @@
           </td>
           <td>{{ usuario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions">
-            <!-- Ver detalles (siempre visible) -->
-            <button
-              type="button"
-              class="icon-btn btn-view"
-              (click)="verDetalles(usuario)"
-              title="Ver detalles del usuario"
-              aria-label="Ver detalles del usuario"
-            >
-              <i class="pi pi-eye" aria-hidden="true"></i>
-            </button>
-
-            <!-- Enviar / reenviar invitacion (solo MASTER y cuentas pendientes) -->
-            @if (esMaster() && esInvitable(usuario)) {
-            <button
-              type="button"
-              class="icon-btn btn-invitar"
-              (click)="reenviarInvitacion(usuario)"
-              [disabled]="enviandoInvitaciones()"
-              [attr.aria-label]="
-                usuario.invitationSentAt
-                  ? 'Reenviar invitación a ' + usuario.email
-                  : 'Enviar invitación a ' + usuario.email
-              "
-              [title]="
-                usuario.invitationSentAt
-                  ? 'Reenviar invitación'
-                  : 'Enviar invitación'
-              "
-            >
-              <i class="pi pi-envelope" aria-hidden="true"></i>
-            </button>
-            }
-
-            <!-- Editar (solo MASTER) -->
-            @if (esMaster()) {
-            <button
-              type="button"
-              class="icon-btn btn-edit"
-              (click)="abrirEditar(usuario)"
-              title="Editar usuario"
-              aria-label="Editar usuario"
-            >
-              <i class="pi pi-pencil" aria-hidden="true"></i>
-            </button>
-            }
-
-            <!-- Deshabilitar (solo MASTER y habilitado) -->
-            @if (puedeAnular(usuario)) {
-            <button
-              type="button"
-              class="icon-btn btn-delete"
-              (click)="deshabilitar(usuario)"
-              title="Deshabilitar usuario"
-              aria-label="Deshabilitar usuario"
-            >
-              <i class="pi pi-trash" aria-hidden="true"></i>
-            </button>
-            }
-
-            <!-- Restaurar (solo MASTER y deshabilitado) -->
-            @if (esMaster() && !usuario.habilitado) {
-            <button
-              type="button"
-              class="icon-btn btn-restore"
-              (click)="rehabilitar(usuario)"
-              title="Re-habilitar usuario"
-              aria-label="Re-habilitar usuario"
-            >
-              <i class="pi pi-refresh" aria-hidden="true"></i>
-            </button>
-            }
+            <p-menu
+              #menu
+              [model]="obtenerAccionesUsuario(usuario)"
+              [popup]="true"
+              appendTo="body"
+            />
+            <app-button
+              variant="ghost"
+              size="sm"
+              icon="pi pi-ellipsis-v"
+              [rounded]="true"
+              aria-label="Acciones de usuario"
+              (clicked)="menu.toggle($event)"
+            />
           </td>
         </tr>
       </ng-template>
@@ -291,76 +234,21 @@
         [class.state-active]="!esInvitable(usuario)"
         >{{ esInvitable(usuario) ? 'Pendiente de activar' : 'Activa' }}</span
       >
-      <div class="actions icons-row">
-        <!-- Ver detalles (siempre visible) -->
-        <button
-          type="button"
-          class="icon-btn btn-view"
-          (click)="verDetalles(usuario)"
-          title="Ver detalles del usuario"
-          aria-label="Ver detalles del usuario"
-        >
-          <i class="pi pi-eye" aria-hidden="true"></i>
-        </button>
-
-        <!-- Enviar / reenviar invitacion (solo MASTER y cuentas pendientes) -->
-        @if (esMaster() && esInvitable(usuario)) {
-        <button
-          type="button"
-          class="icon-btn btn-invitar"
-          (click)="reenviarInvitacion(usuario)"
-          [disabled]="enviandoInvitaciones()"
-          [attr.aria-label]="
-            usuario.invitationSentAt
-              ? 'Reenviar invitación a ' + usuario.email
-              : 'Enviar invitación a ' + usuario.email
-          "
-          [title]="
-            usuario.invitationSentAt ? 'Reenviar invitación' : 'Enviar invitación'
-          "
-        >
-          <i class="pi pi-envelope" aria-hidden="true"></i>
-        </button>
-        }
-
-        <!-- Editar (solo MASTER) -->
-        @if (esMaster()) {
-        <button
-          type="button"
-          class="icon-btn btn-edit"
-          (click)="abrirEditar(usuario)"
-          title="Editar usuario"
-          aria-label="Editar usuario"
-        >
-          <i class="pi pi-pencil" aria-hidden="true"></i>
-        </button>
-        }
-
-        <!-- Deshabilitar (solo MASTER y habilitado) -->
-        @if (puedeAnular(usuario)) {
-        <button
-          type="button"
-          class="icon-btn btn-delete"
-          (click)="deshabilitar(usuario)"
-          title="Deshabilitar usuario"
-          aria-label="Deshabilitar usuario"
-        >
-          <i class="pi pi-trash" aria-hidden="true"></i>
-        </button>
-        }
-
-        <!-- Restaurar (solo MASTER y deshabilitado) -->
-        @if (esMaster() && !usuario.habilitado) {
-        <button
-          type="button"
-          class="icon-btn btn-restore"
-          (click)="rehabilitar(usuario)"
-          title="Re-habilitar usuario"
-          aria-label="Re-habilitar usuario"
-        >
-          <i class="pi pi-refresh" aria-hidden="true"></i>
-        </button>
-        }
+      <div class="actions">
+        <p-menu
+          #menuCard
+          [model]="obtenerAccionesUsuario(usuario)"
+          [popup]="true"
+          appendTo="body"
+        />
+        <app-button
+          variant="ghost"
+          size="sm"
+          icon="pi pi-ellipsis-v"
+          [rounded]="true"
+          aria-label="Acciones de usuario"
+          (clicked)="menuCard.toggle($event)"
+        />
       </div>
     </article>
     }
