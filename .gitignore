@@ -233,3 +233,18 @@ openapi/generated/
 # verify-report) que el equipo comparte y revisa. Estaba ignorado por estar en
 # el bloque de estado local de herramientas. Ver openspec/ROADMAP.md.
 documents/data
+
+# ─── Artefactos de pandorx ──────────────────────────────────────────────────
+# .pandorx/ y pdd/ SI se versionan, por la misma razon que openspec/: son el
+# trabajo compartido que el equipo revisa.
+#
+#   AGENTS.md              perfil de arquitectura que leen los agentes
+#   .pandorx/MEMORIES.md   memoria compilada del proyecto
+#   pdd/context/           un ADR por etapa de arquitectura + contexto compilado
+#
+# Los tres se regeneran con `pandorx init`: el diff resultante es esperado y
+# debe commitearse junto al cambio de arquitectura que lo origino.
+#
+# Lo que si es transitorio y no se versiona es el estado local de la
+# herramienta, que vive fuera del repositorio (~/.pandorx/projects/).
+# Ver issue #171.
