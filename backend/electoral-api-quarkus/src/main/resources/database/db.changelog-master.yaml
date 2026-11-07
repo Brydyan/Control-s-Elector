@@ -48,3 +48,7 @@ databaseChangeLog:
   # dejaba iniciar sesion. Va aparte porque un changeset corre una sola vez:
   # editar el 025 arregla bases nuevas, no las ya migradas.
   - include: { file: database/changelog/027-repara-hash-cuentas-referencia.sql }
+  # Invitaciones de usuario por email (T-AUTH-INV-01): estado de activacion,
+  # hash del token de activacion y marcas de tiempo. Va al final porque solo
+  # ALTERea `usuario` y no depende del orden de ninguna otra tabla.
+  - include: { file: database/changelog/028-invitaciones.sql }
