@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.auth.application;
 
+import ec.twintailcs.electoral.auth.domain.AccesoNoPermitidoException;
 import ec.twintailcs.electoral.auth.domain.RolPermiso;
 import ec.twintailcs.electoral.auth.domain.Sesion;
 import ec.twintailcs.electoral.auth.domain.Usuario;
@@ -27,6 +28,8 @@ public class LoginUseCase {
 
   @Inject AuthAuditService auditLog;
 
+  @Inject InvitationAuditService invitationAudit;
+
   @Transactional
   public JwtService.TokenPair execute(
       String email, String password, String ipCliente, String userAgent) {
@@ -36,6 +39,17 @@ public class LoginUseCase {
       auditLog.recordLoginFail(email, ipCliente);
       throw new AuthException("Credenciales invalidas");
     }
+
+    // Una cuenta que todavia no eligio su contrasena no puede entrar. El chequeo va
+    // DESPUES del de la contrasena a proposito: si fuera antes, el mensaje "no activaste
+    // tu cuenta" confirmaria que el email existe aunque la contrasena sea incorrecta.
+    // Asi, solo quien ya conoce la contrasena se entera del estado de la cuenta.
+    if (!u.estaActivo()) {
+      invitationAudit.logLoginRejected(u.getId(), "usuario_pendiente_activacion");
+      throw new AccesoNoPermitidoException(
+          "Usuario aún no ha activado su cuenta. Revisa tu email.");
+    }
+
     String sesionId = UUID.randomUUID().toString();
     List<String> permisos = RolPermiso.authorityStringsByUsuarioId(u.getId());
     JwtService.TokenPair pair =

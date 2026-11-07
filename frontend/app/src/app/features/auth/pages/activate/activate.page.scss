@@ -1,0 +1,206 @@
+/* Pantalla de activación de cuenta.
+ *
+ * Solo tokens del tema: el guard de tokens (`src/theme/token-guard.spec.ts`)
+ * rechaza cualquier color crudo fuera de la capa de tema. Un color escrito a
+ * mano acá es un color que no responde al dark mode ni al cambio de tema.
+ */
+
+.activate-container {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: var(--color-surface-page);
+}
+
+.panel {
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-card);
+}
+
+.state-block {
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-title);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+  }
+
+  .subtitle {
+    margin: 0 0 var(--space-6);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+  }
+}
+
+.state-block.success {
+  text-align: center;
+}
+
+.success-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-status-success);
+  color: var(--color-text-on-brand);
+  font-size: var(--font-size-title);
+}
+
+.resumen {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-page);
+  text-align: left;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+  }
+
+  dt {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-meta);
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    word-break: break-all;
+  }
+}
+
+.countdown {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-body);
+}
+
+.form-group {
+  margin-bottom: var(--space-5);
+
+  label {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+  }
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  .input-icon {
+    position: absolute;
+    left: var(--space-3);
+    color: var(--color-text-muted);
+    pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    padding-left: var(--space-10);
+    padding-right: var(--space-10);
+  }
+}
+
+.toggle-password {
+  position: absolute;
+  right: var(--space-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: var(--space-2);
+  line-height: 1;
+
+  &:focus-visible {
+    outline: 3px solid var(--color-brand-primary);
+    outline-offset: 1px;
+  }
+}
+
+.checklist {
+  list-style: none;
+  margin: 0 0 var(--space-5);
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-body);
+    color: var(--color-text-muted);
+  }
+
+  li.cumple {
+    color: var(--color-status-success);
+  }
+}
+
+.field-error {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-meta);
+  color: var(--color-status-danger);
+}
+
+.skeleton-line {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-3);
+  background: linear-gradient(
+    90deg,
+    var(--color-shade-05) 25%,
+    var(--color-veil-20) 50%,
+    var(--color-shade-05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+
+  &.short {
+    width: 60%;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .activate-container {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .panel {
+    border: none;
+    border-radius: 0;
+    padding: var(--space-6) var(--space-5);
+  }
+}

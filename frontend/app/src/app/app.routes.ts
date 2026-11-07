@@ -9,6 +9,17 @@ export const routes: Routes = [
       import('./features/auth/pages/login/login.page').then((m) => m.LoginPage),
   },
   {
+    // Activación de cuenta. Es pública a propósito: el usuario llega por el link
+    // del email y todavía no tiene sesión. `guestGuard` evita que un usuario ya
+    // logueado abra una pantalla que no le corresponde.
+    path: 'auth/activate',
+    canActivate: [guestGuard],
+    loadComponent: () =>
+      import('./features/auth/pages/activate/activate.page').then(
+        (m) => m.ActivatePage,
+      ),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>

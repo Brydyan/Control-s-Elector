@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.auth.application;
 
+import ec.twintailcs.electoral.auth.domain.EstadoUsuario;
 import ec.twintailcs.electoral.auth.domain.RecursoNoEncontradoException;
 import ec.twintailcs.electoral.auth.domain.Rol;
 import ec.twintailcs.electoral.auth.domain.Usuario;
@@ -49,6 +50,8 @@ public class UsuarioAdminService {
 
   @Inject PasswordHasher passwordHasher;
 
+  @Inject InvitacionService invitacionService;
+
   /** Listar usuarios, con filtros opcionales. */
   @Transactional
   public PagedResponse<UsuarioResponseDto> listar(
@@ -96,7 +99,24 @@ public class UsuarioAdminService {
     return mapper.toAdminDto(findUser(publicId));
   }
 
-  /** Crear usuario con password temporal autogenerado. El email se genera solo. */
+  /**
+   * Crear usuario con password temporal autogenerado. El email se genera solo.
+   *
+   * <p>Con {@code invitar=true} la cuenta nace en estado {@code PENDIENTE_INVITACION} y ademas se
+   * manda la invitacion por email: el usuario elige su propia contrasena y la temporal queda
+   * desactivada por el estado de la cuenta. Con {@code invitar=false} el comportamiento es el de
+   * siempre: la cuenta nace activa y el panel devuelve la contrasena temporal para comunicarla.
+   *
+   * <p>En los dos casos se devuelve la contrasena temporal, y en el caso de la invitacion sirve
+   * para una cosa concreta: si el usuario la prueba, el login responde 403 con "revisá tu email" en
+   * vez de "credenciales inválidas". Con credenciales correctas y la cuenta todavia pendiente, el
+   * mensaje util es el que dice que falta activar; uno de credenciales inválidas lo manda a buscar
+   * una contrasena que si existe.
+   *
+   * <p>La distincion entre los dos flujos es explicita a proposito: el default es el comportamiento
+   * anterior, y el flujo por email se pide a mano. Un default que mandara invitaciones cambiaria el
+   * flujo de altas que ya usa el MASTER en cada eleccion.
+   */
   @Transactional
   public UsuarioResponseDto crear(CreateUsuarioRequest request) {
     Rol rol = findRole(request.rolNombre());
@@ -109,8 +129,17 @@ public class UsuarioAdminService {
     usuario.setPasswordHash(passwordHasher.hash(password));
     usuario.setRol(rol);
     usuario.setHabilitado(true);
+    if (request.invitar()) {
+      usuario.setEstadoUsuario(EstadoUsuario.PENDIENTE_INVITACION);
+    }
     usuario.validarDatosObligatorios();
     usuario.persist();
+
+    if (request.invitar()) {
+      // La invitacion se genera con el mismo camino que el envio en lote: un solo
+      // lugar que emite el token, guarda el hash y encola el email.
+      invitacionService.enviarInvitaciones(List.of(usuario.getPublicId()));
+    }
 
     UsuarioResponseDto response = mapper.toAdminDto(usuario);
     return new UsuarioResponseDto(
@@ -121,7 +150,9 @@ public class UsuarioAdminService {
         response.rolNombre(),
         response.habilitado(),
         response.creadoEn(),
-        password);
+        password,
+        response.estadoUsuario(),
+        response.invitationSentAt());
   }
 
   /** Actualizar nombre, apellido, rol y estado de habilitacion. */

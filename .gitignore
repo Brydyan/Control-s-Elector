@@ -2,14 +2,21 @@
 .env
 .env.*
 !.env.example
+!.env.*.example
 *.key
 *.pem
 *.p12
 *.jks
+*.crt
+*.csr
+*.p8
 secrets/
+.secrets/
+vault/
 
-# ─── Java / Spring Boot ───────────────────────────────────────────────────────
+# ─── Java / Quarkus / Maven ───────────────────────────────────────────────────
 target/
+out/
 *.class
 *.jar
 *.war
@@ -20,18 +27,30 @@ replay_pid*
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+.quarkus/
+.gradle/cache/
+build/
+*.o
+*.so
+*.dylib
 
 # ─── Angular / Node.js ────────────────────────────────────────────────────────
 node_modules/
 dist/
+build/
 .angular/
 .cache/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
 .npm
+.yarn/
 .yarn-integrity
 package-lock.json
+pnpm-lock.yaml
+.pnpm-store/
+.next/
 
 # ─── Ionic / Capacitor ────────────────────────────────────────────────────────
 www/
@@ -47,6 +66,24 @@ android/local.properties
 # ─── Docker ───────────────────────────────────────────────────────────────────
 docker-compose.override.yml
 .docker/
+Dockerfile.local
+docker-compose.local.yml
+
+# ─── CI/CD & Build Artifacts ──────────────────────────────────────────────────
+# GitHub Actions
+.github/workflows/local-*
+.github/workflows/*.local.yml
+
+# Build outputs
+dist/
+build/
+release/
+artifacts/
+.artifacts/
+
+# Dependency lock files (except source)
+.lock
+.lockfile
 
 # ─── IDEs ─────────────────────────────────────────────────────────────────────
 # IntelliJ IDEA
@@ -93,24 +130,104 @@ coverage/
 *.lcov
 test-results/
 surefire-reports/
+.vitest/
+playwright-report/
+.test-cache/
+jacoco-report/
+target/jacoco/
+
+# ─── Load Testing (K6) ────────────────────────────────────────────────────────
+k6-results/
+*.html.report
+results.json
+metrics.json
+
+# ─── Tools & Scripts ──────────────────────────────────────────────────────────
+# Local tool outputs, cache
+.rtk/
+.build-cache/
+.tool-outputs/
+extracted-tokens/
+smtp-captured-emails/
 
 # ─── Misceláneos ──────────────────────────────────────────────────────────────
 *.tmp
 *.swp
 *.swo
+*.bak
 .codegraph/
+.DS_Store.local
 
-# ─── Personal ─────────────────────────────────────────────────────────────────
+# ─── Configuración Local & Personal ───────────────────────────────────────────
 CLAUDE.md
 backend.md
 frontend.md
 infra.md
 .claude/
+*.local.*
+local-config/
+.env.local
+.env.*.local
 
+# Local development credentials (if ever committed by accident)
+.credentials
+credentials.json
+auth.json
+
+# ─── Runtime & Cache ──────────────────────────────────────────────────────────
 # Local Pi runtime state
 .atl/
 /.pi
 /.playwright-mcp
+.gradle/
+.m2/
+.rts5/
+
+# ─── Editor Temporal Files ────────────────────────────────────────────────────
+*~
+*.orig
+*.rej
+.*.swp
+.*.swo
+
+# ─── IDE-Specific Local State ─────────────────────────────────────────────────
+.idea/codeStyles/
+.idea/runConfigurations/
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/extensions.json
+!.vscode/extensions.json
+
+# ─── Database & Local Services ────────────────────────────────────────────────
+postgres_data/
+mysql_data/
+mongo_data/
+redis_data/
+.db/
+*.db
+*.sqlite
+*.sqlite3
+*.sql.backup
+
+# ─── Archivos Generados Automáticamente ───────────────────────────────────────
+# Proto buffers, generated code
+*.pb.go
+*.pb.java
+src/generated/
+
+# GraphQL generated files
+generated/
+schema.graphql.generated
+
+# OpenAPI/Swagger generated
+swagger-ui/
+openapi/generated/
+
+# Otros generados
+*.min.js
+*.min.css
+*.map
 
 # openspec/ SI se versiona: es el trabajo de SDD (proposal, design, spec, tasks,
 # verify-report) que el equipo comparte y revisa. Estaba ignorado por estar en

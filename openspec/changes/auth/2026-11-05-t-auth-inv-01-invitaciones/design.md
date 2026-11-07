@@ -39,6 +39,35 @@ Desventajas concretas:
 Descartada porque: JWT escalable, stateless, y 24h es suficiente para "cambiar de opinión"
 ```
 
+**Nota de implementación — la validación es stateless**
+
+La VALIDACIÓN del token no consulta la base: no hay lookup del usuario, ni de la fila, ni de
+ninguna tabla. Se verifica firma y expiración contra la clave configurada
+(`app.jwt.secret`), que es un secreto simétrico de la aplicación, no una clave pública embebida
+ni un caché externo.
+
+```
+Validar token de activación:
+  1. Verificar firma HMAC-SHA256 con app.jwt.secret     ← sin BD
+  2. Verificar issuer                                        ← sin BD
+  3. Verificar exp > NOW                                     ← sin BD
+  4. Verificar typ == "activation"                           ← sin BD
+  5. Extraer sub = publicId (UUID)                           ← sin BD
+```
+
+La consulta a la base aparece después, y es por necesidad del negocio, no del token: recién al
+**activar** hay que leer el usuario para cambiarle la contraseña y consumir el token.
+
+Esto mantiene la garantía de D1: escalable sin session store, y sin que un token válido deje de
+funcionar porque la base esté caída.
+
+**Quién firma.** El token se firma con **Nimbus** (`SignedJWT`, HMAC-SHA256), el mismo mecanismo y
+la misma clave que usa el `JwtService` del módulo para los access y refresh tokens. No se usa
+`io.smallrye.jwt`: el módulo no tiene esa dependencia, y tener dos mecanismos de firma —con dos
+claves— haría que un cambio de secreto rompiera una mitad del sistema sin que ninguna prueba lo
+notara. Un solo firmante, una sola clave, un solo `typ` que separa los dominios
+(`access` / `refresh` / `activation`).
+
 ---
 
 ## D2 — Password setup: Usuario elige vs Temporal generado
@@ -71,6 +100,16 @@ Desventajas concretas:
 Descartada porque: User-chosen password es más seguro, UX mejor, y auditoría clara.
 ```
 
+**El token no se consume al abrir el link, sino al activar**
+
+Abrir el link y mirar el formulario no gasta el token. El token se consume únicamente en el POST
+de activación, y sólo si la activación termina bien.
+
+Esto es lo que permite el flujo de "el usuario abre el email, se equivoca en la contraseña, cierra
+el navegador y vuelve a intentarlo al día siguiente": el token sigue vigente hasta las 24 horas.
+Al revés, consumirlo en el GET obligaría al usuario a pedir una invitación nueva por un error
+de dedo.
+
 ---
 
 ## D3 — Email send: Async con retry vs Síncrono
@@ -80,7 +119,7 @@ Descartada porque: User-chosen password es más seguro, UX mejor, y auditoría c
 ```
 POST /invitaciones {userIds: [1,2,3,...500]}
   → Retorna inmediatamente {status: "processing", sentCount: 500}
-  → Backend publica evento a queue (Kafka/Redis/RabbitMQ)
+  → Backend publica evento a queue
   → Consumer procesa: rate limit 100/min, retry en fallo (1s, 2s, 4s)
   
 Ventajas:
@@ -89,6 +128,34 @@ Ventajas:
   ✓ Retry automático (usuario falló, reintentamos)
   ✓ Auditoría: cada intento logged
 ```
+
+**Queue elegida: cola en memoria del proceso, con worker propio**
+
+La decisión D3 era "async con retry"; faltaba concretar la tecnología, y la concreción tiene que
+poder existir el día del despliegue. La opción elegida es una cola en memoria
+(`LinkedBlockingQueue` acotada) drenada por un hilo daemon propio, con rate limit de 100/min por
+ventana y reintentos con backoff exponencial (1 s, 2 s, 4 s).
+
+```
+POST /api/v1/auth/invitaciones {usuarioIds: [...]}
+  → genera el token, guarda su hash y registra la auditoría
+  → encola el email                          ← la respuesta es 202, no espera al SMTP
+  → el worker drena la cola: envía, reintenta y audita cada intento
+```
+
+**Por qué no Redis Streams.** Redis no está en el stack: la task que lo incorporaría
+(T-COMPLIANCE-06) no está implementada, y atar este change a otro sin cerrar lo convierte en un
+bloqueo. Y la cuestión que Redis resolvería —que un email en vuelo se pierda si el proceso
+muere— ya la resuelve D5: el reenvío es manual, de MASTER, y cada intento fallido queda
+auditado. Si un reinicio pierde un email, MASTER lo ve en el panel y lo reenvía.
+
+**Alternativas descartadas**
+
+| Opción | Por qué no |
+|---|---|
+| Kafka | Overkill para un MVP con 500 usuarios. Un servicio más que desplegar y monitorear |
+| RabbitMQ | Infraestructura extra para el mismo problema |
+| Redis Streams | Depende de un change que no está implementado. Se puede sumar después: la cola es un puerto (`InvitationEmailQueue`) y cambiar de adaptador no toca la lógica |
 
 **Alternativa descartada — Envío síncrono**
 
@@ -183,6 +250,22 @@ Desventajas concretas:
 Descartada porque: MASTER control > auto-reenvío. Es elección consciente por admin.
 ```
 
+**Nota de implementación (ronda 2 — Task 3.3)**
+
+El panel de usuarios no tenía el estado de las cuentas: el DTO de administración no llevaba
+`estado_usuario`, así que la pantalla no podía distinguir a quién se podía invitar. Ahora
+`UsuarioResponseDto` lleva `estado_usuario` e `invitation_sent_at`:
+
+- `estado_usuario` decide la casilla de selección y la acción "Re-enviar Invitación": solo
+  aparecen en cuentas `PENDIENTE_INVITACION`.
+- `invitation_sent_at` distingue "nunca se le invitó" de "se le invitó y no abrió el correo"; el
+  backend usa la misma señal para elegir la plantilla de reenvío.
+
+El envío en lote es **atómico**: si una sola cuenta del lote ya está activa, el backend responde
+409 y no sale ningún email. Por eso la pantalla solo deja marcar cuentas pendientes. No es un
+control de seguridad — el control real es `usuario:create` + MASTER en el backend — es lo que evita
+que el operador mande un lote que ya va a ser rechazado.
+
 ---
 
 ## D6 — Estado del usuario: PENDIENTE_INVITACION → ACTIVO vs Otra transición
@@ -198,13 +281,43 @@ Máquina de estados:
 En LoginUseCase:
   if usuario.estado_usuario != ACTIVO:
     throw BusinessException("Usuario aún no ha activado su cuenta")
+```
+
+**Dónde lo verifica exactamente, y en qué orden**
+
+El chequeo vive en `LoginUseCase.execute()`, **después** del de la contraseña, no antes:
+
+```
+LoginUseCase.execute(email, password, ip, userAgent):
+  Usuario u = usuarioRepository.findByEmail(email)
+
+  if u == null || !u.habilitado || !passwordHasher.matches(password, u.passwordHash):
+    auditar LOGIN_FAIL
+    throw AuthException("Credenciales invalidas")          ← 401
+
+  if u.estadoUsuario != ACTIVO:
+    auditar LOGIN_REJECTED("usuario_pendiente_activacion")
+    throw AccesoNoPermitidoException(
+      "Usuario aún no ha activado su cuenta. Revisa tu email.")  ← 403
+
+  emitir JWT
+```
+
+**Por qué el estado se comprueba después de la contraseña.** Al revés, el mensaje "no activaste
+tu cuenta" confirmaría que ese email existe, aunque la contraseña sea incorrecta: cualquiera
+podría usar el login para enumerar las cuentas que están esperando activación. Con el orden de
+arriba, el 403 solo lo recibe quien ya conoce la contraseña; para el resto la respuesta es la
+misma de siempre.
+
+El 403 (y no el 401) es lo que corresponde: las credenciales eran correctas, lo que falta es un
+paso de activación. Es lo que el `spec.md` pide y lo que el frontend muestra como "revisá tu
+email".
 
 Ventajas:
   ✓ Explicit en código (no ambiguo)
   ✓ Query rápida: SELECT * FROM usuario WHERE estado_usuario = 'PENDIENTE_INVITACION'
   ✓ Admin puede filtrar: "Mostrar usuarios pendientes de activar"
   ✓ Auditoría: estado visible en BD
-```
 
 **Alternativa descartada — activation_token NOT NULL como "indicador"**
 
@@ -382,6 +495,45 @@ Desventajas concretas:
 
 Descartada porque: Auditoría separada es patrón establecido.
 ```
+
+**Nota de implementación — la tabla `invitation_audit` no se creó; se usa `audit_log`**
+
+El razonamiento de esta decisión se mantiene íntegro: la auditoría del flujo de invitaciones **no**
+va mezclada en la tabla `usuario`, y el detalle estructurado va en JSONB. Lo que cambia es dónde
+vive.
+
+`audit_log` ya tiene, desde el changeset 010 y el 024, las cuatro columnas que la tabla propuesta
+iba a aportar:
+
+```
+audit_log (ya existe)
+  entidad        VARCHAR(64)   ← 'INVITACION'
+  entidad_id     BIGINT        ← usuario afectado
+  accion         VARCHAR(64)   ← INVITATION_SENT, ACTIVATION_SUCCESS, ...
+  detalle        JSONB         ← {email, token_exp, error, ...}
+  timestamp      TIMESTAMPTZ
+  registrado_por BIGINT        ← quién hizo la acción
+```
+
+Y hay una razón de casa: el estándar del proyecto es que **la auditoría se escribe siempre por
+`AuditLogService` → JPA → Postgres**, nunca desde el servicio que produce el evento. Una tabla
+propia escribida desde el flujo de invitaciones sería un segundo camino de escritura sobre
+auditoría, que es exactamente la forma de que el rastro se desincronice del estado real.
+
+**Consecuencia práctica:** la consulta del rastro del flujo es
+
+```sql
+SELECT accion, detalle, timestamp
+FROM audit_log
+WHERE entidad = 'INVITACION' AND entidad_id = :usuario_id
+ORDER BY timestamp DESC;
+```
+
+La tabla `invitation_audit` del planteo original **no se crea**. Si más adelante el volumen de
+auditoría justifica separarla, se puede migrar sin perder nada: los datos están todos ahí, con la
+misma forma.
+
+Ver `apply-progress.md` §D.5, donde está declarado como desviación.
 
 ---
 

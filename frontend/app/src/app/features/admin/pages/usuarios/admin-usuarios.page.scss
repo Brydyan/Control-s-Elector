@@ -70,6 +70,16 @@
     border-radius: 10px;
     padding: 16px;
 
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+
+      strong {
+        font-weight: 700;
+      }
+    }
+
     /*
      * S3 — palanca 2: la fila de acciones de la card móvil es la zona más
      * apretada del admin. Los botones ya miden 44px de alto desde
@@ -90,6 +100,92 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* Bulk invitation bar ---------------------------------------------------- */
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-status-info-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-status-info-bg);
+}
+
+.bulk-count {
+  font-weight: 600;
+  color: var(--color-text-on-surface);
+}
+
+/*
+ * The outcome of the last send stays on screen instead of disappearing in a
+ * toast: the operator has to see which accounts failed to be invited.
+ */
+.bulk-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-status-success-border);
+  border-radius: var(--radius-md);
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
+
+  strong {
+    font-weight: 700;
+  }
+
+  ul {
+    margin: var(--space-1) 0 0;
+    padding-left: var(--space-5);
+  }
+}
+
+.bulk-status.is-error {
+  border-color: var(--color-status-danger-border);
+  background: var(--color-status-danger-bg);
+  color: var(--color-status-danger);
+}
+
+/* Selection column and account state ------------------------------------- */
+
+.select-col {
+  width: 44px;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-brand-primary);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.state-badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.state-pending {
+  background: var(--color-status-warning-bg);
+  color: var(--color-status-warning);
+}
+
+.state-active {
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
 }
 
 /* Dialog ---------------------------------------------------------------- */
@@ -182,6 +278,15 @@
   &:hover {
     background: var(--color-surface-raised);
     color: var(--color-brand-primary);
+  }
+}
+
+.btn-invitar {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-status-info-bg);
+    color: var(--color-status-info);
   }
 }
 

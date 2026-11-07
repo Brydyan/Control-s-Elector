@@ -41,6 +41,53 @@
     }
   </div>
 
+  @if (esMaster() && haySeleccion()) {
+  <div
+    class="bulk-bar"
+    role="region"
+    aria-label="Acciones sobre las cuentas seleccionadas"
+  >
+    <span class="bulk-count"
+      >{{ cantidadSeleccionada() }} {{ cantidadSeleccionada() === 1 ? 'cuenta
+      seleccionada' : 'cuentas seleccionadas' }}</span
+    >
+    <app-button
+      icon="pi pi-send"
+      [loading]="enviandoInvitaciones()"
+      [disabled]="enviandoInvitaciones()"
+      (clicked)="enviarInvitaciones()"
+    >
+      {{ enviandoInvitaciones() ? 'Enviando…' : 'Enviar invitación' }}
+    </app-button>
+    <app-button
+      variant="ghost"
+      size="sm"
+      [disabled]="enviandoInvitaciones()"
+      (clicked)="limpiarSeleccion()"
+    >
+      Limpiar selección
+    </app-button>
+  </div>
+  } @if (resultadoInvitacion(); as resultado) {
+  <div
+    class="bulk-status"
+    [class.is-error]="resultado.tipo === 'error'"
+    [attr.role]="resultado.tipo === 'error' ? 'alert' : 'status'"
+    aria-live="polite"
+  >
+    <strong>{{ resultado.titulo }}</strong>
+    @if (resultado.detalle) {
+    <span>{{ resultado.detalle }}</span>
+    } @if (resultado.fallidos.length) {
+    <ul>
+      @for (fallido of resultado.fallidos; track fallido) {
+      <li>{{ fallido }}</li>
+      }
+    </ul>
+    }
+  </div>
+  }
+
   <app-skeleton
     name="admin-usuarios"
     [loading]="loading()"
@@ -75,21 +122,58 @@
     <p-table [value]="usuarios()" [rowHover]="true" styleClass="admin-table">
       <ng-template #header>
         <tr>
+          <th class="select-col">
+            <input
+              type="checkbox"
+              [checked]="todosInvitablesSeleccionados()"
+              [disabled]="!invitablesDeLaPagina().length"
+              aria-label="Seleccionar todas las cuentas pendientes de esta página"
+              title="Seleccionar todas las cuentas pendientes de esta página"
+              (change)="alternarTodosInvitables()"
+            />
+          </th>
           <th>Usuario</th>
           <th>Rol</th>
           <th>Estado</th>
+          <th>Activación</th>
           <th>Creado</th>
           <th>Acciones</th>
         </tr>
       </ng-template>
       <ng-template #body let-usuario>
         <tr>
+          <td class="select-col">
+            <input
+              type="checkbox"
+              [attr.data-usuario]="usuario.publicId"
+              [checked]="estaSeleccionado(usuario.publicId)"
+              [disabled]="!esInvitable(usuario)"
+              [attr.title]="
+                esInvitable(usuario)
+                  ? 'Seleccionar ' + usuario.email
+                  : 'La cuenta ya está activa: no se puede invitar'
+              "
+              [attr.aria-label]="
+                esInvitable(usuario)
+                  ? 'Seleccionar ' + usuario.email
+                  : 'Cuenta ya activa: no se puede invitar'
+              "
+              (change)="alternarSeleccion(usuario)"
+            />
+          </td>
           <td>
             <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong
             ><small>{{ usuario.email }} · {{ usuario.publicId }}</small>
           </td>
           <td>{{ usuario.rolNombre }}</td>
           <td>{{ usuario.habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
+          <td>
+            @if (esInvitable(usuario)) {
+            <span class="state-badge state-pending">Pendiente</span>
+            } @else {
+            <span class="state-badge state-active">Activa</span>
+            }
+          </td>
           <td>{{ usuario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
           <td class="actions">
             <!-- Ver detalles (siempre visible) -->
@@ -102,6 +186,28 @@
             >
               <i class="pi pi-eye" aria-hidden="true"></i>
             </button>
+
+            <!-- Enviar / reenviar invitacion (solo MASTER y cuentas pendientes) -->
+            @if (esMaster() && esInvitable(usuario)) {
+            <button
+              type="button"
+              class="icon-btn btn-invitar"
+              (click)="reenviarInvitacion(usuario)"
+              [disabled]="enviandoInvitaciones()"
+              [attr.aria-label]="
+                usuario.invitationSentAt
+                  ? 'Reenviar invitación a ' + usuario.email
+                  : 'Enviar invitación a ' + usuario.email
+              "
+              [title]="
+                usuario.invitationSentAt
+                  ? 'Reenviar invitación'
+                  : 'Enviar invitación'
+              "
+            >
+              <i class="pi pi-envelope" aria-hidden="true"></i>
+            </button>
+            }
 
             <!-- Editar (solo MASTER) -->
             @if (esMaster()) {
@@ -150,11 +256,36 @@
   <div class="cards mobile-only">
     @for (usuario of usuarios(); track usuario.publicId) {
     <article>
-      <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong
-      ><span>{{ usuario.email }}</span
+      <div class="card-head">
+        <input
+          type="checkbox"
+          [attr.data-usuario]="usuario.publicId"
+          [checked]="estaSeleccionado(usuario.publicId)"
+          [disabled]="!esInvitable(usuario)"
+          [attr.title]="
+            esInvitable(usuario)
+              ? 'Seleccionar ' + usuario.email
+              : 'La cuenta ya está activa: no se puede invitar'
+          "
+          [attr.aria-label]="
+            esInvitable(usuario)
+              ? 'Seleccionar ' + usuario.email
+              : 'Cuenta ya activa: no se puede invitar'
+          "
+          (change)="alternarSeleccion(usuario)"
+        />
+        <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong>
+      </div>
+      <span>{{ usuario.email }}</span
       ><span
         >{{ usuario.rolNombre }} · {{ usuario.habilitado ? 'Habilitado' :
         'Deshabilitado' }}</span
+      >
+      <span
+        class="state-badge"
+        [class.state-pending]="esInvitable(usuario)"
+        [class.state-active]="!esInvitable(usuario)"
+        >{{ esInvitable(usuario) ? 'Pendiente de activar' : 'Activa' }}</span
       >
       <div class="actions icons-row">
         <!-- Ver detalles (siempre visible) -->
@@ -167,6 +298,26 @@
         >
           <i class="pi pi-eye" aria-hidden="true"></i>
         </button>
+
+        <!-- Enviar / reenviar invitacion (solo MASTER y cuentas pendientes) -->
+        @if (esMaster() && esInvitable(usuario)) {
+        <button
+          type="button"
+          class="icon-btn btn-invitar"
+          (click)="reenviarInvitacion(usuario)"
+          [disabled]="enviandoInvitaciones()"
+          [attr.aria-label]="
+            usuario.invitationSentAt
+              ? 'Reenviar invitación a ' + usuario.email
+              : 'Enviar invitación a ' + usuario.email
+          "
+          [title]="
+            usuario.invitationSentAt ? 'Reenviar invitación' : 'Enviar invitación'
+          "
+        >
+          <i class="pi pi-envelope" aria-hidden="true"></i>
+        </button>
+        }
 
         <!-- Editar (solo MASTER) -->
         @if (esMaster()) {

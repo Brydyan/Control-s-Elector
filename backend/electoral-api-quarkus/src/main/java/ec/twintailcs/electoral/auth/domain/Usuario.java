@@ -63,6 +63,33 @@ public class Usuario extends PanacheEntityBase {
   @Column(name = "apellido", nullable = false, length = 100)
   String apellido;
 
+  /**
+   * Estado de activacion de la cuenta.
+   *
+   * <p>Se persiste el nombre del enum ({@link EstadoUsuario}). El default de la columna es
+   * 'ACTIVO': las cuentas preexistentes no se tocan y una cuenta nueva nace activa salvo que se
+   * pida explicitamente que nazca esperando la activacion.
+   */
+  @Column(name = "estado_usuario", nullable = false, length = 32)
+  String estadoUsuario = EstadoUsuario.ACTIVO.valor();
+
+  /**
+   * HMAC del token de activacion vigente.
+   *
+   * <p>NULL cuando no hay invitacion pendiente o cuando el token ya se consumio. Nunca es el token
+   * en claro: la base no debe contener ningun bearer secret utilizable.
+   */
+  @Column(name = "activation_token_hash", length = 64)
+  String activationTokenHash;
+
+  /** Momento de la activacion de la cuenta. NULL mientras sigue pendiente. */
+  @Column(name = "activated_at")
+  Instant activatedAt;
+
+  /** Momento del ultimo envio de invitacion. NULL si nunca se invito. */
+  @Column(name = "invitation_sent_at")
+  Instant invitationSentAt;
+
   public Long getId() {
     return id;
   }
@@ -134,6 +161,58 @@ public class Usuario extends PanacheEntityBase {
 
   public void setHabilitado(boolean habilitado) {
     this.habilitado = habilitado;
+  }
+
+  public String getEstadoUsuario() {
+    return estadoUsuario;
+  }
+
+  /**
+   * Fija el estado de activacion.
+   *
+   * @throws IllegalArgumentException si el valor no es un estado conocido
+   */
+  public void setEstadoUsuario(String estadoUsuario) {
+    this.estadoUsuario = EstadoUsuario.desde(estadoUsuario).valor();
+  }
+
+  /** Fija el estado desde el enum, sin pasar por la cadena. */
+  public void setEstadoUsuario(EstadoUsuario estado) {
+    this.estadoUsuario = estado.valor();
+  }
+
+  /** Estado de activacion tipado. Lanza si el valor persistido es desconocido. */
+  public EstadoUsuario estado() {
+    return EstadoUsuario.desde(estadoUsuario);
+  }
+
+  /** {@code true} si la cuenta ya puede iniciar sesion. */
+  public boolean estaActivo() {
+    return EstadoUsuario.ACTIVO.valor().equals(estadoUsuario);
+  }
+
+  public String getActivationTokenHash() {
+    return activationTokenHash;
+  }
+
+  public void setActivationTokenHash(String activationTokenHash) {
+    this.activationTokenHash = activationTokenHash;
+  }
+
+  public Instant getActivatedAt() {
+    return activatedAt;
+  }
+
+  public void setActivatedAt(Instant activatedAt) {
+    this.activatedAt = activatedAt;
+  }
+
+  public Instant getInvitationSentAt() {
+    return invitationSentAt;
+  }
+
+  public void setInvitationSentAt(Instant invitationSentAt) {
+    this.invitationSentAt = invitationSentAt;
   }
 
   /** Invariantes obligatorias del usuario. Mismas comprobaciones que el backend Spring. */

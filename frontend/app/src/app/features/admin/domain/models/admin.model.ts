@@ -1,5 +1,8 @@
 import type { PagedResponse } from '../../../../shared/models/page.model';
 
+/** Estado de activacion de una cuenta. */
+export type EstadoUsuario = 'ACTIVO' | 'PENDIENTE_INVITACION';
+
 export interface UsuarioResponseDto {
   publicId: string;
   email: string;
@@ -8,6 +11,26 @@ export interface UsuarioResponseDto {
   rolNombre: string;
   habilitado: boolean;
   creadoEn: string;
+  /**
+   * Estado de activacion de la cuenta. El panel lo usa para decidir a quien se
+   * puede invitar y a quien hay que reenviarle el link: una cuenta activa no
+   * admite invitacion.
+   */
+  estadoUsuario?: EstadoUsuario;
+  /** Ultimo envio de invitacion. Ausente si a la cuenta nunca se le invito. */
+  invitationSentAt?: string | null;
+}
+
+/** Una invitacion que no se pudo encolar, con el motivo. */
+export interface InvitacionFailure {
+  usuarioId: string;
+  razon: string;
+}
+
+/** Resultado de un envio de invitaciones en lote. */
+export interface EnviarInvitacionResponse {
+  sentCount: number;
+  failures: InvitacionFailure[];
 }
 
 export interface SesionResponseDto {
@@ -47,13 +70,13 @@ export interface SesionFiltros {
 export interface CreateUsuarioRequest {
   nombre: string;
   apellido: string;
-  rol: RolUsuario;
+  rolNombre: RolUsuario;
 }
 
 export interface UpdateUsuarioRequest {
   nombre: string;
   apellido: string;
-  rol: RolUsuario;
+  rolNombre: RolUsuario;
   habilitado?: boolean;
 }
 
