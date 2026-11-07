@@ -10,6 +10,11 @@ import java.util.UUID;
  *
  * <p>Mismo shape que el backend Spring: {@code passwordTemporal} solo aparece en la respuesta de la
  * creacion y se omite cuando es null.
+ *
+ * <p>{@code estadoUsuario} y {@code invitationSentAt} los necesita el panel de administracion para
+ * distinguir a quien espera la activacion de a quien ya esta activo, y a quien ya le salio una
+ * invitacion de a quien todavia no. Sin eso, la columna de casillas y la accion "re-enviar" no
+ * pueden decidir nada.
  */
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -21,16 +26,6 @@ public record UsuarioResponseDto(
     String rolNombre,
     boolean habilitado,
     Instant creadoEn,
-    String passwordTemporal) {
-
-  public UsuarioResponseDto(
-      UUID publicId,
-      String email,
-      String nombre,
-      String apellido,
-      String rolNombre,
-      boolean habilitado,
-      Instant creadoEn) {
-    this(publicId, email, nombre, apellido, rolNombre, habilitado, creadoEn, null);
-  }
-}
+    String passwordTemporal,
+    String estadoUsuario,
+    Instant invitationSentAt) {}
