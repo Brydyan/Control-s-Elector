@@ -137,6 +137,19 @@
 			<artifactId>quarkus-smallrye-openapi</artifactId>
 		</dependency>
 
+		<!--
+		Mailer: envio de email por SMTP. Lo necesita el flujo de invitaciones
+		(T-AUTH-INV-01), que por diseno no usa el mailer directo sino la interfaz
+		EmailService, para que el proveedor se pueda cambiar sin tocar la logica.
+
+		La configuracion (host, puerto, credenciales) sale de variables de entorno:
+		ninguna credencial vive en el repositorio.
+		-->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-mailer</artifactId>
+		</dependency>
+
 		<!-- Test -->
 		<dependency>
 			<groupId>io.quarkus</groupId>
