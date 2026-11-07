@@ -359,11 +359,80 @@ email. La suite de contrato es black-box (habla HTTP, no ve la base) y este mód
 de CDI para levantar la aplicación dentro de un test. El script levanta lo mismo, mide lo mismo
 y deja el resultado.
 
+
 ---
 
-**Estado de la implementación:** backend completo y verificado de punta a punta. Frontend sin
-hacer (D.2). k6 sin hacer (D.3). Este archivo **no** declara el change listo para producción: eso
-lo decide el verificador y el Arquitecto.
+## H — Ciclo de verificación: qué se verificó y qué no
+
+El 2026-11-06 aparecieron `verify-report.md` y `fixes-required.md` en este change. **Los tres
+MINOR que traen se aplicaron** (ver §H.2), pero hay que dejar claro **qué se revisó**, porque
+cambia lo que significa el veredicto de "aprobado".
+
+### H.1 — El informe revisó los artefactos del SDD, no la implementación
+
+Evidencia, textual:
+
+| Lo que el informe dice | Lo que el repo tiene |
+|---|---|
+| "6 decisiones (D1-D6)" | `design.md` tiene **D1-D10** |
+| "8 scenarios en Gherkin" | `specs/invitaciones.spec.md` tiene **40+ escenarios** en 7 features |
+| "27 tasks … T-AUTH-01.15 (DB schema)", "T-AUTH-01.7", "T-AUTH-01.11" | las tareas reales son "Task 1.1" … "Task 4.4" |
+| "T-AUTH-01.2: TokenValidationService" | no existe; la implementación es `InvitationTokenService` |
+| "T-AUTH-01.4: ActivationService", "T-AUTH-01.6: ActivationAuditService" | no existen |
+| "el Builder puede comenzar ahora con Phase 1 (DB Schema)" | la fase 1 estaba implementada y con 50 tests en verde |
+| "Usar Quarkus io.smallrye.jwt. Verificar en pom.xml que la dependencia exista" | `quarkus-smallrye-jwt` **no** está en el `pom.xml`; el token se firma con Nimbus |
+| "Queue elegido: Redis Streams (ya presente en stack T-COMPLIANCE-06)" | Redis **no** está en el stack; T-COMPLIANCE-06 no está implementado |
+| "activation_token (VARCHAR, nullable)", "estado_usuario (ENUM …)" | `activation_token_hash VARCHAR(64)` y `estado_usuario VARCHAR(32)` con default `ACTIVO` |
+
+El informe cuenta casillas de markdown y compara contra un SDD que no es este. **No re-ejecutó
+una sola mutación ni un solo test.** El "aprobado" no cubre el código: cubre el diseño.
+
+Eso es exactamente el hueco que `documents/agents/README.md` avisa que se cierra con un verificador
+de contexto limpio: *"Un subagente al que le decís «ya verificamos X, saltátelo» deja de ser un
+verificador"*. Acá pasó la variante contraria — un verificador que verificó el documento en vez
+del cambio — y el resultado es un "aprobado" que no dice nada sobre lo que se implementó.
+
+**Lo que este change necesita después de mi entrega:** un verificador de verdad, con contexto
+limpio, que **re-ejecute las mutaciones** de §C y **mida** los números de §A.2, en vez de leerlos.
+
+### H.2 — Los tres MINOR, aplicados
+
+Están en `design.md`. Se aplicó el **intento** de cada uno, con el contenido que corresponde a la
+implementación real; el texto literal del informe describía cosas que no existen en este repo:
+
+| MINOR | Intención | Cómo quedó |
+|---|---|---|
+| 1 | Aclarar que la validación del token es stateless | **D1**: nota de implementación con los 5 pasos de la validación, los cuatro sin BD, y por qué el secret es simétrico (`app.jwt.secret`) y no una clave pública embebida ni un caché. Se agregó además **quién firma**: Nimbus, no `smallrye-jwt` |
+| 2 | Especificar en D6 dónde verifica el estado el login | **D6**: pseudocódigo con el **orden real** (contraseña primero, estado después) y el motivo: al revés, el 403 confirmaría qué emails existen. El pseudocódigo del informe chequeaba el estado **antes** de la contraseña, lo que además de no ser lo implementado abre enumeración de cuentas |
+| 3 | Concretar la tecnología de la cola de D3 | **D3**: cola en memoria con worker daemon, rate limit 100/min y backoff 1s/2s/4s. El informe pedía "Redis Streams (ya presente en el stack)": Redis **no** está en el stack y atar este change a T-COMPLIANCE-06 (sin implementar) lo convertía en un bloqueo. Se documentó Redis como alternativa descartada y por qué |
+
+Se aplicó además un hallazgo del `verify-report.md` que **no** estaba en `fixes-required.md`:
+en D2, que el token **no** se consume al abrir el link sino al activar con éxito — así el usuario
+puede equivocarse en la contraseña y reintentar sin pedir una invitación nueva.
+
+Y se corrigió **D10**, que el informe no llegó a mirar (su alcance era D1-D6): describía una tabla
+`invitation_audit` que **no existe en la base**. El design no puede describir un schema
+inexistente, así que quedó la nota de implementación que declara el uso de `audit_log` y el SQL
+para consultar el rastro.
+
+**Un defecto previo del `design.md`, corregido de paso.** La sección D6 tenía un bloque de código
+sin cerrar: el `design.md` original (40 fences) estaba desbalanceado, y al agregar la nota de
+MINOR 2 el desbalance se hizo visible. Con el archivo corregido quedan 50 fences y **ninguna
+sección con un bloque sin cerrar**. El texto de D6 no se reescribió: se movió el cierre del
+bloque para que "Ventajas" y "Alternativa descartada" se lean como prosa y no como código.
+
+**Nada de esto toca la funcionalidad**: son notas de `design.md`. El código no se movió.
+
+---
+
+**Estado de la implementación (al cierre de la primera ronda):** backend completo y verificado de
+punta a punta; frontend con la pantalla de activación hecha y verificada (3.1); **bulk invite del
+panel admin sin hacer** (D.2); k6 sin ejecutar (D.3); cobertura > 80 % sin medir (D.9). Este
+archivo **no** declara el change listo para producción: eso lo decide el verificador y el
+Arquitecto.
+
+> Actualizado en **§J**: el bulk invite del panel se hizo en la ronda 2 y el escenario de k6 quedó
+> escrito (sin ejecutar). El estado vigente del change está al final de este archivo.
 
 ### D.9 — La cobertura no se midió
 
@@ -374,3 +443,191 @@ marcar en `tasks.md` en vez de marcarse con un número inventado.
 Lo que sí se midió, y es lo que el ROADMAP pide: **el número de tests sube**. 4 → 50 en el
 backend y 628 → 637 en el frontend. Si al añadir tests el total no sube, los tests nuevos no se
 están ejecutando.
+
+---
+
+## I — Verificación final, después de aplicar los MINOR
+
+Los tres MINOR de `fixes-required.md` se aplicaron **solo sobre `design.md`** (notas de diseño). El
+código no se movió, así que esta corrida sirve para confirmar dos cosas: que el árbol sigue
+compilando y en verde, y que ninguna edición posterior rompió el build.
+
+Medido en esta corrida (2026-11-06, 14:33-14:34):
+
+```
+backend spotless   mvn -B spotless:check                              exit 0
+backend test       mvn -B test -Dtest='!*IT' -DfailIfNoSpecifiedTests=false
+                   7 suites / 41 tests / 0 fallo / 0 error / 0 skip    exit 0
+frontend test      pnpm test:ci      67 suites / 637 tests / 0 fallos   exit 0
+frontend lint      pnpm lint         0 errores                          exit 0
+frontend fmt       pnpm format:check 0 errores                          exit 0
+frontend build     pnpm build        exit 0 (los 2 warnings son preexistentes)
+git status --short 15 modificados + untracked del change; 0 .bak sueltos; sin commit ni push
+```
+
+Los conteos salen de los XML de `target/surefire-reports/`, no del exit code. Los 7 XML con
+timestamp de las 14:33 son los de esta corrida (41 tests); los 2 XML de las 02:42 son de la corrida
+con Docker de la mañana (`InvitacionesMigracionIT` 7 + `RlsIsolationIT` 2 = 9). Los dos juntos dan
+los 50 de §A.2.
+
+**Lo que esta corrida no pudo repetir:** `InvitacionesMigracionIT` (7 tests), el e2e de 21
+comprobaciones y la mutación C.10. Los tres necesitan el daemon de Docker, que sigue caído
+(`docker.service` inactive; `systemctl start` pide sudo interactivo). Sus números de §A.2 son de
+las 02:42 de hoy, con Docker arriba; **no se re-declaran como medidos en esta corrida**. Cuando el
+daemon vuelva, el orden para cerrar todo es el de §D.1.
+
+---
+
+## J — Ronda 2: aplicación de `fixes-required-ronda-2.md`
+
+### J.1 — Qué pedía la ronda 2 y qué hice
+
+El `fixes-required-ronda-2.md` llega con **cero bloqueantes de código**: la implementación está
+aprobada y lo que queda son pendientes declarados (D.2 bulk invite, D.3 k6, D.10 mutación C.10)
+y tres decisiones para el Arquitecto.
+
+Como Builder, lo que me toca de esa lista es lo que está **dentro de `tasks.md`** y es código:
+
+| Pendiente | Tarea | Qué hice |
+|---|---|---|
+| D.2 — bulk invite en el panel | 3.3 | **hecho** (backend + frontend + tests) |
+| D.3 — k6 | 4.4 | **escrito**; la ejecución queda bloqueada |
+| D.10 — mutación C.10 | 2.4 | **sigue bloqueada**: necesita Docker |
+
+Lo que **no** es del Builder: decidir si el change se archiva y si D.2/D.3 entran en el scope de
+cierre. Eso no lo decido.
+
+### J.2 — Deriva entre lo que dice la ronda 2 y lo que dice el código
+
+Cuatro afirmaciones de la ronda 2 que el código no sostiene (medido, no opinado):
+
+| La ronda 2 dice | El código dice |
+|---|---|
+| `InvitacionResource.reenviarInvitacion()` (verify §4.2) | ese método **no existe**: el recurso tiene `enviar()` y `validarToken()`. El reenvío es el mismo `POST /api/v1/auth/invitaciones` — el backend cambia la plantilla según tenga token vigente |
+| `EmailTemplatesTest 3 (nuevo)` (verify, compuerta 1) | son **7** tests |
+| "Desvíos vs SDD: 1 declarado" | §E de este archivo declara **15** desvíos |
+| "Mutaciones: 5/5 unitarias efectivas" | §C tiene **10** mutaciones medidas, 2 de ellas e2e |
+
+Ninguna cambia el veredicto. Las anoto porque este informe es lo que va a decidir el cierre y los
+números que se lean tienen que ser los del código.
+
+### J.3 — Task 3.3: bulk invite en el panel (hecha)
+
+**Lo que había que decidir antes de escribir una línea.** El backend rechaza el lote **entero**
+(409) si una sola cuenta ya está activa. Y el panel no sabía el estado de las cuentas: el DTO de
+administración no lo llevaba. Sin ese dato, la casilla de "Enviar invitación" era una trampa: el
+operador marcaba 50 cuentas, 30 ya estaban activas y no salía ningún email.
+
+Por eso el primer cambio es de backend y es **aditivo**: `UsuarioResponseDto` ahora lleva
+`estadoUsuario` e `invitationSentAt`. El primero decide la casilla y la acción de reenviar; el
+segundo distingue "nunca se le invitó" de "se le invitó y no abrió el correo" — la misma señal
+que usa el backend para elegir la plantilla de reenvío.
+
+**Lo que hace la pantalla:**
+
+- columna de casillas solo en las cuentas `PENDIENTE_INVITACION`; las activas vienen deshabilitadas
+  y **explicando por qué** (`title` y `aria-label`: "La cuenta ya está activa")
+- barra de acciones que aparece solo con selección, con el contador de cuentas elegidas
+- `Enviar invitación` con spinner y botón deshabilitado mientras el lote está en vuelo
+- estado en línea con `role="status"` en el éxito y `role="alert"` en el error
+- acción por fila `Enviar/Reenviar invitación`, solo para cuentas pendientes
+- la tabla se recarga después de un envío correcto
+
+**Lo que NO hice, y por qué:**
+
+- **Toast**: el repo no tiene servicio de notificaciones (`grep -ri toast src/` → 0 resultados).
+  Agregar uno es tocar `shared/ui` para todo el app: es scope de otro change. El mensaje queda en
+  línea, con la misma información y con el rol de ARIA que corresponde.
+- **Selección entre páginas**: la selección sobrevive al cambio de página (se acumulan ids), pero
+  "seleccionar todos los pendientes del sistema" no existe: el panel pagina de a 20 y no hay un
+  endpoint que filtre por estado. La fila de casillas toma los de la página actual.
+- **Confirmación antes de enviar**: el envío no es destructivo (no borra nada) y el spec describe el
+  flujo sin confirmación.
+
+### J.4 — Números medidos (esta ronda)
+
+| | antes | después |
+|---|---|---|
+| backend, unitarios sin Docker | 41 tests / 7 suites | **45 tests / 8 suites** (+4 `UsuarioMapperTest`) |
+| frontend | 637 tests / 67 suites | **651 tests / 68 suites** (+12 bulk invite, +2 API) |
+| `mvn -B spotless:check` | exit 0 | exit 0 |
+| `pnpm lint` / `format:check` / `build` | exit 0 | exit 0 |
+
+Los números salen de los XML de `target/surefire-reports/` y de la salida de `pnpm test:ci`, no del
+exit code.
+
+### J.5 — Mutaciones de esta ronda
+
+**M9 — el mapper deja de mandar el estado** (`UsuarioMapper.toAdminDto`:
+`entity.getEstadoUsuario()` → `null`).
+
+Caen, con el nombre exacto:
+
+- `UsuarioMapperTest.elDtoExponeElEstadoDeActivacion`
+- `UsuarioMapperTest.unaCuentaActivaSeDistingueDeUnaPendiente`
+
+Restaurado con `cp` desde `.bak`. `git status --short` sin `.bak`.
+
+**M10 — el frontend deja de filtrar las cuentas activas** (`esInvitable()` → `true`).
+
+Caen, con el nombre exacto:
+
+- `unaCuentaActivaNoSePuedeSeleccionar`
+- `unaCuentaActivaNoOfreceLaAccionDeReenviar`
+- `laCasillaDeUnaCuentaActivaVieneDeshabilitadaYExplicaPorQue`
+
+De los 12 tests de la suite: 3 caen, 9 siguen en verde. Medida dos veces: antes y después de que
+Prettier reformateara los archivos.
+
+**C.13 (adaptada).** El spec pedía quitar un `@RolesAllowed("ADMIN")` del frontend, que no existe:
+el control real está en el backend (`autorizador.exigir("usuario:create", "MASTER")`) y el e2e ya
+midió que un OBSERVER recibe 403. La mutación equivalente que sí decide es la del filtro de
+selección (M10): sin ese filtro, el operador marca cuentas que el backend va a rechazar con 409. La
+seguridad no depende del frontend en ningún momento — la casilla es cortesía, no control.
+
+### J.6 — Task 4.4: el escenario k6 (escrito, no ejecutado)
+
+`frontend/tests/load/scenarios/invitations.js`, integrado en el harness (`./run.sh invitations`).
+
+Dos patas: `invite` (el MASTER manda lotes) y `activate` (valida y consume tokens reales). La pata
+`activate` **necesita tokens de verdad**: el token viaja en el email y el email sale por la cola,
+así que el script no puede fabricar uno. Se pasan con `INVITATION_TOKENS` (separados por coma).
+Sin tokens, el script mide solo el envío y lo dice por stdout — no inventa números para la pata que
+no corrió. Los umbrales son los del SDD: invitación p95 < 5s, activación p95 < 2s, tasa de fallo
+< 10 %.
+
+Medido: `k6 v0.55.0` parsea el escenario (`k6 inspect`, exit 0) con y sin tokens; `bash -n run.sh`
+sin errores; `node --check` sin errores.
+
+**No ejecutado**: necesita backend vivo y Postgres, y el daemon de Docker está caído.
+
+### J.7 — Hallazgo nuevo, fuera de `tasks.md` (anotado, no arreglado)
+
+El panel manda `rol` y el backend espera `rolNombre`:
+
+- `frontend/app/src/app/features/admin/data/admin.api.ts` → `crearUsuario` y `actualizarUsuario`
+  mandan `{ nombre, apellido, rol }`
+- `backend/electoral-api-quarkus/.../auth/web/dto/CreateUsuarioRequest.java` → `@NotBlank String rolNombre`
+- `backend/electoral-api-quarkus/.../auth/web/dto/UpdateUsuarioRequest.java` → `@NotBlank String rolNombre`
+
+Con `rolNombre` en null, la validación `@NotBlank` falla: **crear o editar un usuario desde el panel
+devuelve 400**. No lo arreglé porque está fuera de `tasks.md` (este change es de invitaciones, no
+del alta de usuarios) y el `02-builder.md` manda anotar en vez de arreglar por fuera. Queda para el
+Arquitecto: el arreglo es renombrar el campo en el modelo del frontend, pero toca el alta de
+usuarios, que es otra historia.
+
+### J.8 — Lo que sigue abierto (declarado, no omitido)
+
+1. **C.10 / D.10** — mutación del login: bloqueada por Docker.
+2. **M1 / C.1** — mutación de la migración 028: bloqueada por Docker (necesita la IT).
+3. **Task 4.4 ejecutado** — bloqueada por Docker, y por tokens reales de activación.
+4. **Cobertura > 80 %** — el módulo no instrumenta JaCoCo (D.9).
+5. **Suite de contrato** — no extendida: sus credenciales del MASTER son del backend Spring que ya
+   no existe (D.4).
+6. **El bug `rol` vs `rolNombre`** de J.7 — decisión del Arquitecto.
+7. **Selección masiva entre páginas** — sin endpoint que filtre por estado; queda la paginación.
+
+**Estado de la implementación tras esta ronda:** backend completo; frontend con la pantalla de
+activación y con el bulk invite del panel; k6 escrito y sin ejecutar. Este archivo **no** declara
+el change listo para producción: eso lo decide el verificador y el Arquitecto.
+
