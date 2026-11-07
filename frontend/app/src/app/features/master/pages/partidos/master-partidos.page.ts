@@ -13,6 +13,9 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
   SkeletonComponent,
+  TableCellTemplate,
+  TableColumn,
+  TableComponent,
 } from '../../../../shared/ui';
 import { CatalogoApi } from '../../data/catalogo.api';
 import {
@@ -36,6 +39,8 @@ import {
     Skeleton,
     TableModule,
     Menu,
+    TableComponent,
+    TableCellTemplate,
   ],
   templateUrl: './master-partidos.page.html',
   styleUrls: ['./master-partidos.page.scss'],
@@ -50,6 +55,12 @@ export class MasterPartidosPage implements OnInit {
   readonly modalError = signal<string | null>(null);
 
   readonly terminoBusqueda = signal('');
+
+  readonly tableColumns: TableColumn<PartidoResponseDto>[] = [
+    { key: 'numeroLista', header: 'Lista', sortable: true, width: '8rem' },
+    { key: 'siglas', header: 'Siglas', sortable: true, width: '10rem' },
+    { key: 'nombre', header: 'Nombre de la Organización', sortable: true },
+  ];
 
   modalAbierto = false;
   modoEdicion = false;

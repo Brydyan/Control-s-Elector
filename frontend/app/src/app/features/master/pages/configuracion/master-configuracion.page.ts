@@ -9,6 +9,9 @@ import {
   ErrorStateComponent,
   KpiCardComponent,
   LoadingStateComponent,
+  TableCellTemplate,
+  TableColumn,
+  TableComponent,
 } from '../../../../shared/ui';
 import { ConfiguracionApi } from '../../data/configuracion.api';
 import {
@@ -55,6 +58,8 @@ import { ConfirmDialogComponent } from './dialogs/confirm-dialog/confirm-dialog.
     PartidoModalComponent,
     CandidatoModalComponent,
     ConfirmDialogComponent,
+    TableComponent,
+    TableCellTemplate,
   ],
   providers: [DialogService],
   templateUrl: './master-configuracion.page.html',
@@ -77,6 +82,88 @@ export class MasterConfiguracionPage implements OnInit, OnDestroy {
 
   // Tab activo (desde ruta data o default)
   readonly tabActiva = signal<'cargos' | 'partidos' | 'candidatos'>('cargos');
+
+  readonly cargosColumns: TableColumn<CargoDto>[] = [
+    { key: 'id', header: 'ID', sortable: true, width: '5rem' },
+    { key: 'nombre', header: 'Nombre', sortable: true },
+    { key: 'nivelTerritorial', header: 'Nivel Territorial', sortable: true },
+    { key: 'orden', header: 'Orden', sortable: true, width: '6rem' },
+    { key: 'estado', header: 'Estado', sortable: true, width: '7rem' },
+  ];
+
+  readonly partidosColumns: TableColumn<PartidoDto>[] = [
+    { key: 'id', header: 'ID', sortable: true, width: '5rem' },
+    { key: 'nombre', header: 'Nombre', sortable: true },
+    { key: 'siglas', header: 'Siglas', sortable: true, width: '8rem' },
+    { key: 'numeroLista', header: 'N° Lista', sortable: true, width: '7rem' },
+    { key: 'estado', header: 'Estado', sortable: true, width: '7rem' },
+  ];
+
+  readonly candidatosColumns: TableColumn<CandidatoDto>[] = [
+    { key: 'id', header: 'ID', sortable: true, width: '5rem' },
+    { key: 'nombre', header: 'Nombre', sortable: true },
+    { key: 'cargoId', header: 'Cargo', sortable: true },
+    { key: 'partidoId', header: 'Partido', sortable: true },
+    { key: 'ordenLista', header: 'Orden Lista', sortable: true, width: '6rem' },
+    { key: 'estado', header: 'Estado', sortable: true, width: '7rem' },
+  ];
+
+  obtenerAccionesCargo(cargo: CargoDto) {
+    return [
+      {
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.abrirModalCargo('edit', cargo),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Eliminar',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-500',
+        command: () => this.abrirConfirmEliminarCargo(cargo),
+      },
+    ];
+  }
+
+  obtenerAccionesPartido(partido: PartidoDto) {
+    return [
+      {
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.abrirModalPartido('edit', partido),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Eliminar',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-500',
+        command: () => this.abrirConfirmEliminarPartido(partido),
+      },
+    ];
+  }
+
+  obtenerAccionesCandidato(candidato: CandidatoDto) {
+    return [
+      {
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.abrirModalCandidato('edit', candidato),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Eliminar',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-500',
+        command: () => this.abrirConfirmEliminarCandidato(candidato),
+      },
+    ];
+  }
 
   ngOnInit(): void {
     // Preseleccionar tab desde ruta data

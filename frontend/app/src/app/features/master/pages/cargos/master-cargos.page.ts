@@ -14,6 +14,9 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
   SkeletonComponent,
+  TableCellTemplate,
+  TableColumn,
+  TableComponent,
 } from '../../../../shared/ui';
 import { CatalogoApi } from '../../data/catalogo.api';
 import {
@@ -39,6 +42,8 @@ import {
     Skeleton,
     TableModule,
     Menu,
+    TableComponent,
+    TableCellTemplate,
   ],
   templateUrl: './master-cargos.page.html',
   styleUrls: ['./master-cargos.page.scss'],
@@ -64,6 +69,17 @@ export class MasterCargosPage implements OnInit {
     { label: 'Provincia', value: 'PROVINCIA' },
     { label: 'Cantón', value: 'CANTON' },
     { label: 'Parroquia', value: 'PARROQUIA' },
+  ];
+
+  readonly tableColumns: TableColumn<CargoResponseDto>[] = [
+    { key: 'nombre', header: 'Cargo', sortable: true },
+    { key: 'nivel', header: 'Nivel Territorial', sortable: true },
+    {
+      key: 'puestos',
+      header: 'Puestos a Elegir',
+      sortable: true,
+      value: (c) => `${c.puestos} ${c.puestos === 1 ? 'puesto' : 'puestos'}`,
+    },
   ];
 
   readonly niveles: { label: string; value: NivelCargo }[] = [

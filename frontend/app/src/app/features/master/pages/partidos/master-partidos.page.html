@@ -47,78 +47,23 @@
     >
   </app-error-state>
 
-  <app-empty-state
-    *ngIf="!loading() && !error() && !partidosFiltrados().length"
-    icon="flag"
-    title="No se encontraron partidos"
-    description="No hay partidos o movimientos políticos registrados con los filtros seleccionados."
-  ></app-empty-state>
-
-  @if (!loading() && !error() && partidosFiltrados().length) {
-  <div class="table-wrap desktop-only">
-    <p-table
-      [value]="partidosFiltrados()"
-      [rowHover]="true"
-      styleClass="app-table catalog-table"
-    >
-      <ng-template #header>
-        <tr>
-          <th>Lista</th>
-          <th>Siglas</th>
-          <th>Nombre de la Organización</th>
-          <th>Acciones</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-partido>
-        <tr>
-          <td>
-            <span class="badge">Lista {{ partido.numeroLista }}</span>
-          </td>
-          <td>
-            <strong>{{ partido.siglas }}</strong>
-          </td>
-          <td>{{ partido.nombre }}</td>
-          <td class="actions">
-            <p-menu
-              #menu
-              [model]="obtenerAccionesPartido(partido)"
-              [popup]="true"
-              appendTo="body"
-            />
-            <app-button
-              variant="ghost"
-              size="sm"
-              icon="pi pi-ellipsis-v"
-              [rounded]="true"
-              aria-label="Acciones de partido"
-              (clicked)="menu.toggle($event)"
-            />
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
-
-  <div class="cards mobile-only">
-    @for (partido of partidosFiltrados(); track partido.id) {
-    <article>
-      <strong>Lista {{ partido.numeroLista }} · {{ partido.siglas }}</strong>
-      <span>{{ partido.nombre }}</span>
-      <div class="actions">
-        <app-button variant="ghost" size="sm" (clicked)="abrirEditar(partido)">
-          Editar
-        </app-button>
-        <app-button
-          variant="danger"
-          size="sm"
-          (clicked)="eliminarPartido(partido)"
-        >
-          Eliminar
-        </app-button>
-      </div>
-    </article>
-    }
-  </div>
+  @if (!loading() && !error()) {
+  <app-table
+    [data]="partidosFiltrados()"
+    [columns]="tableColumns"
+    [actions]="obtenerAccionesPartido.bind(this)"
+    emptyTitle="No se encontraron partidos"
+    emptyDescription="No hay partidos o movimientos políticos registrados con los filtros seleccionados."
+    emptyIcon="pi pi-flag"
+    mobileTitleColumn="nombre"
+  >
+    <ng-template appTableCell="numeroLista" let-partido>
+      <span class="badge">Lista {{ partido.numeroLista }}</span>
+    </ng-template>
+    <ng-template appTableCell="siglas" let-partido>
+      <strong>{{ partido.siglas }}</strong>
+    </ng-template>
+  </app-table>
   }
 </div>
 

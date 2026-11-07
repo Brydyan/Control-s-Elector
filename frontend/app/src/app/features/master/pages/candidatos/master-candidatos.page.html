@@ -63,85 +63,29 @@
     >
   </app-error-state>
 
-  <app-empty-state
-    *ngIf="!loading() && !error() && !candidatosFiltrados().length"
-    icon="person"
-    title="No se encontraron candidatos"
-    description="No hay candidatos registrados con los filtros seleccionados."
-  ></app-empty-state>
-
-  @if (!loading() && !error() && candidatosFiltrados().length) {
-  <div class="table-wrap desktop-only">
-    <p-table
-      [value]="candidatosFiltrados()"
-      [rowHover]="true"
-      styleClass="app-table catalog-table"
-    >
-      <ng-template #header>
-        <tr>
-          <th>Orden Papeleta</th>
-          <th>Nombre del Candidato</th>
-          <th>Dignidad / Cargo</th>
-          <th>Organización Política</th>
-          <th>Acciones</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-candidato>
-        <tr>
-          <td>
-            <span class="badge">#{{ candidato.orden }}</span>
-          </td>
-          <td>
-            <strong>{{ candidato.nombre }}</strong>
-          </td>
-          <td>{{ obtenerNombreCargo(candidato.cargoId) }}</td>
-          <td>{{ obtenerNombrePartido(candidato.partidoId) }}</td>
-          <td class="actions">
-            <p-menu
-              #menu
-              [model]="obtenerAccionesCandidato(candidato)"
-              [popup]="true"
-              appendTo="body"
-            />
-            <app-button
-              variant="ghost"
-              size="sm"
-              icon="pi pi-ellipsis-v"
-              [rounded]="true"
-              aria-label="Acciones de candidato"
-              (clicked)="menu.toggle($event)"
-            />
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
-
-  <div class="cards mobile-only">
-    @for (candidato of candidatosFiltrados(); track candidato.id) {
-    <article>
-      <strong>#{{ candidato.orden }} - {{ candidato.nombre }}</strong>
-      <span>Cargo: {{ obtenerNombreCargo(candidato.cargoId) }}</span>
-      <span>Partido: {{ obtenerNombrePartido(candidato.partidoId) }}</span>
-      <div class="actions">
-        <app-button
-          variant="ghost"
-          size="sm"
-          (clicked)="abrirEditar(candidato)"
-        >
-          Editar
-        </app-button>
-        <app-button
-          variant="danger"
-          size="sm"
-          (clicked)="eliminarCandidato(candidato)"
-        >
-          Eliminar
-        </app-button>
-      </div>
-    </article>
-    }
-  </div>
+  @if (!loading() && !error()) {
+  <app-table
+    [data]="candidatosFiltrados()"
+    [columns]="tableColumns"
+    [actions]="obtenerAccionesCandidato.bind(this)"
+    emptyTitle="No se encontraron candidatos"
+    emptyDescription="No hay candidatos registrados con los filtros seleccionados."
+    emptyIcon="pi pi-users"
+    mobileTitleColumn="nombre"
+  >
+    <ng-template appTableCell="orden" let-candidato>
+      <span class="badge">#{{ candidato.orden }}</span>
+    </ng-template>
+    <ng-template appTableCell="nombre" let-candidato>
+      <strong>{{ candidato.nombre }}</strong>
+    </ng-template>
+    <ng-template appTableCell="cargoId" let-candidato>
+      {{ obtenerNombreCargo(candidato.cargoId) }}
+    </ng-template>
+    <ng-template appTableCell="partidoId" let-candidato>
+      {{ obtenerNombrePartido(candidato.partidoId) }}
+    </ng-template>
+  </app-table>
   }
 </div>
 
