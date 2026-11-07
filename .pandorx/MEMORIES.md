@@ -10,7 +10,7 @@
 
 - Question: What is the domain, business model and type of system you are building?
 - Answer: C — Full-stack application (B2B SaaS or B2C user-facing product).
-- Detail: Aplicación full-stack de misión crítica para el control electoral de la Provincia de Santa Elena: frontend Angular 19 + Ionic 8 (PWA offline-first) y backend Quarkus 3 / Java 21 (Panache + Hibernate ORM), con PostgreSQL y Supabase Object Storage para las evidencias fotográficas.
+- Detail: Aplicación full-stack de misión crítica para el control electoral de la Provincia de Santa Elena: frontend Angular 21 + PrimeNG 21 + Tailwind CSS 4 (PWA offline-first) y backend Quarkus 3.40 / Java 25 (Panache + Hibernate ORM), con PostgreSQL y Supabase Object Storage para las evidencias fotográficas.
 - Source: user
 
 ### Greenfield / new product: initial functional release with defined boundaries.
