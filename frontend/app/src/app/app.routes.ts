@@ -135,6 +135,21 @@ export const routes: Routes = [
         pathMatch: 'full',
       },
       {
+        path: 'observer/mis-actas',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/placeholder/placeholder.page').then(
+            (m) => m.PlaceholderPage,
+          ),
+        data: {
+          roles: ['OBSERVER', 'MASTER'],
+          title: 'Mis Actas',
+          description:
+            'Historial, trazabilidad y estado de las actas electorales transmitidas.',
+          icon: 'document-text-outline',
+        },
+      },
+      {
         path: 'actas',
         canActivate: [roleGuard],
         loadComponent: () =>
@@ -251,7 +266,7 @@ export const routes: Routes = [
         },
       },
       {
-        path: 'master/cargos',
+        path: 'master/configuracion',
         canActivate: [roleGuard],
         loadComponent: () =>
           import('./features/master/pages/configuracion/master-configuracion.page').then(
@@ -260,43 +275,26 @@ export const routes: Routes = [
         data: {
           roles: ['MASTER'],
           tab: 'cargos',
-          title: 'Cargos Electorales',
+          title: 'Catálogos Electorales',
           description:
-            'Configuración de dignidades y tipos de cargos electorales.',
-          icon: 'ribbon-outline',
+            'Configuración integral de dignidades, partidos políticos y candidatos.',
+          icon: 'list-outline',
         },
+      },
+      {
+        path: 'master/cargos',
+        redirectTo: 'master/configuracion',
+        pathMatch: 'full',
       },
       {
         path: 'master/partidos',
-        canActivate: [roleGuard],
-        loadComponent: () =>
-          import('./features/master/pages/configuracion/master-configuracion.page').then(
-            (m) => m.MasterConfiguracionPage,
-          ),
-        data: {
-          roles: ['MASTER'],
-          tab: 'partidos',
-          title: 'Partidos Políticos',
-          description:
-            'Registro y administración de organizaciones y movimientos políticos.',
-          icon: 'flag-outline',
-        },
+        redirectTo: 'master/configuracion',
+        pathMatch: 'full',
       },
       {
         path: 'master/candidatos',
-        canActivate: [roleGuard],
-        loadComponent: () =>
-          import('./features/master/pages/configuracion/master-configuracion.page').then(
-            (m) => m.MasterConfiguracionPage,
-          ),
-        data: {
-          roles: ['MASTER'],
-          tab: 'candidatos',
-          title: 'Candidatos',
-          description:
-            'Padrón de candidatos postulados por dignidad y lista política.',
-          icon: 'person-outline',
-        },
+        redirectTo: 'master/configuracion',
+        pathMatch: 'full',
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
