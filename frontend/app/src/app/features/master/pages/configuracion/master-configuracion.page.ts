@@ -84,28 +84,60 @@ export class MasterConfiguracionPage implements OnInit, OnDestroy {
   readonly tabActiva = signal<'cargos' | 'partidos' | 'candidatos'>('cargos');
 
   readonly cargosColumns: TableColumn<CargoDto>[] = [
-    { key: 'id', header: 'ID', sortable: true, width: '5rem' },
     { key: 'nombre', header: 'Nombre', sortable: true },
-    { key: 'nivelTerritorial', header: 'Nivel Territorial', sortable: true },
-    { key: 'orden', header: 'Orden', sortable: true, width: '6rem' },
-    { key: 'estado', header: 'Estado', sortable: true, width: '7rem' },
+    {
+      key: 'nivel',
+      header: 'Nivel Territorial',
+      sortable: true,
+      value: (c) => c.nivel || c.nivelTerritorial || '—',
+    },
+    {
+      key: 'puestos',
+      header: 'Puestos / Orden',
+      sortable: true,
+      width: '8rem',
+      value: (c) =>
+        c.puestos !== undefined ? `${c.puestos} puestos` : (c.orden ?? '—'),
+    },
   ];
 
   readonly partidosColumns: TableColumn<PartidoDto>[] = [
-    { key: 'id', header: 'ID', sortable: true, width: '5rem' },
-    { key: 'nombre', header: 'Nombre', sortable: true },
-    { key: 'siglas', header: 'Siglas', sortable: true, width: '8rem' },
     { key: 'numeroLista', header: 'N° Lista', sortable: true, width: '7rem' },
-    { key: 'estado', header: 'Estado', sortable: true, width: '7rem' },
+    { key: 'siglas', header: 'Siglas', sortable: true, width: '8rem' },
+    { key: 'nombre', header: 'Nombre de la Organización', sortable: true },
   ];
 
   readonly candidatosColumns: TableColumn<CandidatoDto>[] = [
-    { key: 'id', header: 'ID', sortable: true, width: '5rem' },
-    { key: 'nombre', header: 'Nombre', sortable: true },
-    { key: 'cargoId', header: 'Cargo', sortable: true },
-    { key: 'partidoId', header: 'Partido', sortable: true },
-    { key: 'ordenLista', header: 'Orden Lista', sortable: true, width: '6rem' },
-    { key: 'estado', header: 'Estado', sortable: true, width: '7rem' },
+    {
+      key: 'orden',
+      header: 'Orden',
+      sortable: true,
+      width: '6rem',
+      value: (c) => c.orden ?? c.ordenLista ?? '—',
+    },
+    { key: 'nombre', header: 'Nombre del Candidato', sortable: true },
+    {
+      key: 'cargoId',
+      header: 'Cargo',
+      sortable: true,
+      value: (c) => {
+        const cargo = this.cargosData().find((item) => item.id === c.cargoId);
+        return cargo ? cargo.nombre : `Cargo #${c.cargoId}`;
+      },
+    },
+    {
+      key: 'partidoId',
+      header: 'Partido',
+      sortable: true,
+      value: (c) => {
+        const partido = this.partidosData().find(
+          (item) => item.id === c.partidoId,
+        );
+        return partido
+          ? `${partido.siglas || partido.nombre}`
+          : `Partido #${c.partidoId}`;
+      },
+    },
   ];
 
   obtenerAccionesCargo(cargo: CargoDto) {

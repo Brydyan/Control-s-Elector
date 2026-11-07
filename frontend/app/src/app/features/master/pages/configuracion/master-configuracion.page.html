@@ -122,8 +122,10 @@
       <ng-template appTableCell="nombre" let-cargo>
         <strong>{{ cargo.nombre }}</strong>
       </ng-template>
-      <ng-template appTableCell="estado" let-cargo>
-        <span class="badge">{{ cargo.estado }}</span>
+      <ng-template appTableCell="nivel" let-cargo>
+        <span class="badge"
+          >{{ cargo.nivel || cargo.nivelTerritorial || '—' }}</span
+        >
       </ng-template>
     </app-table>
   </app-card>
@@ -147,9 +149,6 @@
       <ng-template appTableCell="siglas" let-partido>
         <strong>{{ partido.siglas }}</strong>
       </ng-template>
-      <ng-template appTableCell="estado" let-partido>
-        <span class="badge">{{ partido.estado }}</span>
-      </ng-template>
     </app-table>
   </app-card>
   }
@@ -166,11 +165,13 @@
       emptyIcon="pi pi-users"
       mobileTitleColumn="nombre"
     >
+      <ng-template appTableCell="orden" let-candidato>
+        <span class="badge"
+          >#{{ candidato.orden ?? candidato.ordenLista ?? '—' }}</span
+        >
+      </ng-template>
       <ng-template appTableCell="nombre" let-candidato>
         <strong>{{ candidato.nombre }}</strong>
-      </ng-template>
-      <ng-template appTableCell="estado" let-candidato>
-        <span class="badge">{{ candidato.estado }}</span>
       </ng-template>
     </app-table>
   </app-card>

@@ -157,7 +157,6 @@
       >
         <ng-template #header>
           <tr>
-            <th scope="col">ID</th>
             <th scope="col">JRV</th>
             <th scope="col">Dignidad</th>
             <th scope="col">Estado</th>
@@ -170,7 +169,6 @@
         </ng-template>
         <ng-template #body let-acta>
           <tr [ngClass]="'row-estado-' + acta.estado.toLowerCase()">
-            <td class="td-id">#{{ acta.id }}</td>
             <td class="td-jrv font-bold">{{ obtenerNumeroJrv(acta) }}</td>
             <td>{{ obtenerNombreCargo(acta) }}</td>
             <td>
@@ -182,16 +180,22 @@
             <td class="td-muted td-numeric">
               {{ acta.votosBlancos }} / {{ acta.votosNulos }}
             </td>
-            <td class="td-muted">
-              @if (checksumTexto(acta); as checksum) { {{ checksum }} @if
-              (checksumValido(acta) === true) {
-              <i class="pi pi-check" aria-label="Checksum válido"></i>
+            <td class="td-muted td-checksum">
+              @if (checksumValido(acta) === true) {
+              <i
+                class="pi pi-check text-green-600 font-bold"
+                aria-label="Checksum válido"
+                title="Checksum cuadrado"
+              ></i>
               } @else if (checksumValido(acta) === false) {
               <i
-                class="pi pi-exclamation-triangle"
+                class="pi pi-exclamation-triangle text-amber-500 font-bold"
                 aria-label="Checksum inválido"
+                title="Checksum descuadrado"
               ></i>
-              } } @else { — }
+              } @else {
+              <span class="text-muted">—</span>
+              }
             </td>
             <td class="td-muted">
               {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
