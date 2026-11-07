@@ -9,7 +9,7 @@ export function validarUsuario(
   if (!data.apellido || !data.apellido.trim()) {
     return 'El apellido es obligatorio.';
   }
-  if (!data.rol) {
+  if (!data.rolNombre) {
     return 'El rol es obligatorio.';
   }
   return null;

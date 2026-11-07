@@ -210,7 +210,7 @@ describe('AdminUsuariosPage (rendered contract)', () => {
     expect(service.actualizarUsuario).toHaveBeenCalledWith('u1', {
       nombre: 'Ana',
       apellido: 'Perez',
-      rol: 'ADMIN',
+      rolNombre: 'ADMIN',
       habilitado: true,
     });
   });

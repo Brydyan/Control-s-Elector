@@ -188,6 +188,42 @@ test_registrar_acta() {
   log_test_end "$test_name" "$output_file"
 }
 
+# T-AUTH-INV-01 — Task 4.4: carga del envio de invitaciones.
+# Los tokens de activacion son de un solo uso y viajan en el email: si no se
+# pasan por entorno, el escenario mide solo el envio y lo dice.
+test_invitations() {
+  local test_name="Invitaciones por Email - MASTER envia lotes (${INVITE_VUS:-10} VUs, ${INVITE_DURATION:-5m})"
+  local output_file="invitations-${TIMESTAMP}.json"
+
+  log_test_start "$test_name"
+
+  local extra_args=()
+  if [ -n "${INVITATION_TOKENS:-}" ]; then
+    extra_args+=(-e "INVITATION_TOKENS=${INVITATION_TOKENS}")
+    log_info "Tokens de activacion: $(echo "$INVITATION_TOKENS" | tr ',' '\n' | wc -l)"
+  else
+    log_warning "SIN INVITATION_TOKENS: se mide solo el envio, no la activacion"
+  fi
+
+  # k6 no expone las variables del sistema al script: hay que pasarlas con -e.
+  if [ -n "${MASTER_EMAIL:-}" ]; then
+    extra_args+=(-e "MASTER_EMAIL=${MASTER_EMAIL}")
+  fi
+  if [ -n "${MASTER_PASSWORD:-}" ]; then
+    extra_args+=(-e "MASTER_PASSWORD=${MASTER_PASSWORD}")
+  fi
+
+  $K6_CMD run "${SCRIPT_DIR}/scenarios/invitations.js" \
+    --out json="${RESULTS_DIR}/${output_file}" \
+    -e API_HOST="${API_HOST}" \
+    -e SLEEP_DURATION="${SLEEP_DURATION}" \
+    -e INVITE_VUS="${INVITE_VUS:-10}" \
+    -e INVITE_DURATION="${INVITE_DURATION:-5m}" \
+    "${extra_args[@]}"
+
+  log_test_end "$test_name" "$output_file"
+}
+
 run_all_tests() {
   log_info "Ejecutando TODOS los tests en secuencia..."
   log_info "Tiempo estimado: ~2.5 horas"
@@ -222,6 +258,7 @@ ${GREEN}Comandos:${NC}
   stress                Stress test: 200 VUs, find breaking point (30 min)
   listar-actas          Coordinator dashboard: 20 VUs (20 min)
   registrar-acta        Observer workflow: 30 VUs (20 min)
+  invitations           T-AUTH-INV-01: envío de invitaciones (10 VUs, 5 min)
   all                   Ejecutar TODOS los tests en secuencia (~2.5h)
   help                  Mostrar esta ayuda
 
@@ -229,6 +266,11 @@ ${GREEN}Variables de Entorno:${NC}
   API_HOST              URL del backend (default: localhost:8080)
   SLEEP_DURATION        Sleep entre requests en segundos (default: 2)
   K6_DOCKER             Usar Docker en lugar de k6 local (default: false)
+  INVITE_VUS            VUs del escenario de invitaciones (default: 10)
+  INVITE_DURATION       Duración del escenario de invitaciones (default: 5m)
+  INVITATION_TOKENS     Tokens de activación (coma). Sin ellos solo se mide el envío
+  MASTER_EMAIL          Email del MASTER que invita (default: mastersolon@example.local)
+  MASTER_PASSWORD       Contraseña del MASTER que invita (default: admin12345)
 
 ${GREEN}Ejemplos:${NC}
   # Test básico contra localhost
@@ -288,6 +330,9 @@ main() {
       ;;
     registrar-acta)
       test_registrar_acta
+      ;;
+    invitations)
+      test_invitations
       ;;
     all)
       run_all_tests

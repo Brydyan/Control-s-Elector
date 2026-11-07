@@ -49,7 +49,7 @@ describe('AdminApi', () => {
       passwordTemporal: 'tmp',
     };
     service
-      .crearUsuario({ nombre: 'A', apellido: 'B', rol: 'OBSERVER' })
+      .crearUsuario({ nombre: 'A', apellido: 'B', rolNombre: 'OBSERVER' })
       .subscribe((r) => expect(r.passwordTemporal).toBe('tmp'));
     const req = http.expectOne(`${environment.apiUrl}/admin/usuarios`);
     expect(req.request.method).toBe('POST');
@@ -57,7 +57,11 @@ describe('AdminApi', () => {
   });
   it('actualizarUsuario_returnsUsuarioActualizado', () => {
     service
-      .actualizarUsuario('u', { nombre: 'A', apellido: 'B', rol: 'ADMIN' })
+      .actualizarUsuario('u', {
+        nombre: 'A',
+        apellido: 'B',
+        rolNombre: 'ADMIN',
+      })
       .subscribe((r) => expect(r.rolNombre).toBe('ADMIN'));
     const req = http.expectOne(`${environment.apiUrl}/admin/usuarios/u`);
     expect(req.request.method).toBe('PUT');
@@ -74,5 +78,28 @@ describe('AdminApi', () => {
     const req = http.expectOne(`${environment.apiUrl}/admin/sesiones/7`);
     expect(req.request.method).toBe('DELETE');
     req.flush('');
+  });
+  it('enviarInvitaciones_postsLosIdsPublicosSeleccionados', () => {
+    service
+      .enviarInvitaciones(['u1', 'u2'])
+      .subscribe((r) => expect(r.sentCount).toBe(2));
+    const req = http.expectOne(`${environment.apiUrl}/auth/invitaciones`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ usuarioIds: ['u1', 'u2'] });
+    req.flush({ sentCount: 2, failures: [] });
+  });
+  it('enviarInvitaciones_devuelveLosFallosConSuMotivo', () => {
+    service
+      .enviarInvitaciones(['u1'])
+      .subscribe((r) =>
+        expect(r.failures[0].razon).toContain('ya está activo'),
+      );
+    const req = http.expectOne(`${environment.apiUrl}/auth/invitaciones`);
+    req.flush({
+      sentCount: 0,
+      failures: [
+        { usuarioId: 'u1', razon: 'El usuario ya está activo: a@cne.gob.ec' },
+      ],
+    });
   });
 });

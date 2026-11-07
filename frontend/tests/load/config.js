@@ -31,6 +31,18 @@ export const config = {
     password: 'SecurePass123!',
   },
 
+  /**
+   * MASTER de la cuenta de elections. Es la unica que puede invitar: el endpoint
+   * POST /auth/invitaciones exige el permiso `usuario:create` con rol MASTER.
+   * Las credenciales se pueden sobreescribir por entorno (MASTER_EMAIL /
+   * MASTER_PASSWORD) para no depender de la cuenta sembrada.
+   */
+  master: {
+    id: 'master',
+    email: __ENV.MASTER_EMAIL || 'mastersolon@example.local',
+    password: __ENV.MASTER_PASSWORD || 'admin12345',
+  },
+
   // Election data fixtures
   election: {
     totalJrvs: 500,
@@ -85,6 +97,18 @@ export const config = {
       p95: 3000,
       p99: 5000,
       failureRate: 0.05, // <5%
+    },
+    invitaciones: {
+      name: 'Enviar Invitaciones',
+      p95: 5000,
+      p99: 8000,
+      failureRate: 0.1, // <10%: el umbral que fija el SDD
+    },
+    activacion: {
+      name: 'Activar Cuenta',
+      p95: 2000,
+      p99: 3000,
+      failureRate: 0.1, // <10%
     },
   },
 
