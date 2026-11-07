@@ -7,6 +7,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import {
   CardComponent,
   ErrorStateComponent,
+  KpiCardComponent,
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { ConfiguracionApi } from '../../data/configuracion.api';
@@ -47,6 +48,7 @@ import { ConfirmDialogComponent } from './dialogs/confirm-dialog/confirm-dialog.
   imports: [
     CommonModule,
     CardComponent,
+    KpiCardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
     CargoModalComponent,

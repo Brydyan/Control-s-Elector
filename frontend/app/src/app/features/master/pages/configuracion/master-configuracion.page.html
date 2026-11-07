@@ -38,29 +38,32 @@
 
   <!-- Tarjetas de resumen -->
   <div class="resumen-cards" data-testid="resumen-section">
-    <app-card class="resumen-card">
-      <div class="card-content">
-        <h3 class="card-title">Total Cargos</h3>
-        <p class="card-value">{{ totalCargos }}</p>
-        <p class="card-label">Dignidades configuradas</p>
-      </div>
-    </app-card>
+    <app-kpi-card
+      class="resumen-card"
+      label="Total Cargos"
+      [value]="totalCargos"
+      hint="Dignidades configuradas"
+      icon="pi pi-briefcase"
+      tone="brand"
+    ></app-kpi-card>
 
-    <app-card class="resumen-card">
-      <div class="card-content">
-        <h3 class="card-title">Total Partidos</h3>
-        <p class="card-value">{{ totalPartidos }}</p>
-        <p class="card-label">Organizaciones políticas</p>
-      </div>
-    </app-card>
+    <app-kpi-card
+      class="resumen-card"
+      label="Total Partidos"
+      [value]="totalPartidos"
+      hint="Organizaciones políticas"
+      icon="pi pi-flag"
+      tone="neutral"
+    ></app-kpi-card>
 
-    <app-card class="resumen-card">
-      <div class="card-content">
-        <h3 class="card-title">Total Candidatos</h3>
-        <p class="card-value">{{ totalCandidatos }}</p>
-        <p class="card-label">Postulantes registrados</p>
-      </div>
-    </app-card>
+    <app-kpi-card
+      class="resumen-card"
+      label="Total Candidatos"
+      [value]="totalCandidatos"
+      hint="Postulantes registrados"
+      icon="pi pi-users"
+      tone="success"
+    ></app-kpi-card>
   </div>
 
   <!-- Barra de tabs -->
@@ -109,7 +112,7 @@
   @if (tabActiva() === 'cargos') {
   <app-card class="tabla-card" data-testid="cargos-section">
     <div class="tabla-wrapper">
-      <table class="tabla" role="grid" aria-label="Tabla de cargos electorales">
+      <table class="tabla app-table" role="grid" aria-label="Tabla de cargos electorales">
         <thead>
           <tr>
             <th scope="col">ID</th>
@@ -159,7 +162,7 @@
   @if (tabActiva() === 'partidos') {
   <app-card class="tabla-card" data-testid="partidos-section">
     <div class="tabla-wrapper">
-      <table class="tabla" role="grid" aria-label="Tabla de partidos políticos">
+      <table class="tabla app-table" role="grid" aria-label="Tabla de partidos políticos">
         <thead>
           <tr>
             <th scope="col">ID</th>
@@ -218,7 +221,7 @@
   <app-card class="tabla-card" data-testid="candidatos-section">
     <div class="tabla-wrapper">
       <table
-        class="tabla"
+        class="tabla app-table"
         role="grid"
         aria-label="Tabla de candidatos electorales"
       >

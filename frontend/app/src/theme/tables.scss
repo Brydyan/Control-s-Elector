@@ -46,7 +46,8 @@
    * centrado por defecto del navegador, sobre una columna de datos alineada
    * al inicio. El rótulo se alinea con su columna.
    */
-  .p-datatable-thead > tr > th {
+  .p-datatable-thead > tr > th,
+  thead > tr > th {
     background-color: var(--color-table-header-bg);
     color: var(--color-table-header-text);
     border-bottom: 1px solid var(--color-table-header-border);
@@ -65,7 +66,8 @@
    * dice lo mismo con el token de tabla, para que la fila tenga un solo
    * dueño.
    */
-  .p-datatable-tbody > tr {
+  .p-datatable-tbody > tr,
+  tbody > tr {
     background-color: var(--color-table-surface);
     color: var(--color-table-cell-text);
   }
@@ -76,7 +78,8 @@
    * aquí se vuelve a declarar con el borde de la app, que es el mismo trazo
    * que separa una tarjeta de la página.
    */
-  .p-datatable-tbody > tr > td {
+  .p-datatable-tbody > tr > td,
+  tbody > tr > td {
     border-bottom: 1px solid var(--color-table-row-border);
     color: var(--color-table-cell-text);
     font-size: var(--font-size-body);
@@ -91,7 +94,8 @@
    */
   .p-datatable-hoverable
     .p-datatable-tbody
-    > tr:not(.p-datatable-row-selected):hover {
+    > tr:not(.p-datatable-row-selected):hover,
+  tbody > tr:hover {
     background-color: var(--color-table-row-hover-bg);
   }
 
@@ -100,7 +104,9 @@
    * declara en su template `#footer`.
    */
   .p-datatable-tfoot > tr > td,
-  .p-datatable-tfoot > tr > th {
+  .p-datatable-tfoot > tr > th,
+  tfoot > tr > td,
+  tfoot > tr > th {
     border-color: var(--color-table-row-border);
     font-size: var(--font-size-body);
     padding: var(--space-3) var(--space-4);
