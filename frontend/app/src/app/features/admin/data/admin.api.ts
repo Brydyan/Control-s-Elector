@@ -6,6 +6,7 @@ import { mapError } from '../../../shared/errors/error-handler';
 import type { PagedResponse } from '../../../shared/models/page.model';
 import {
   CreateUsuarioRequest,
+  EnviarInvitacionResponse,
   SesionFiltros,
   SesionResponseDto,
   UpdateUsuarioRequest,
@@ -65,6 +66,25 @@ export class AdminApi {
         map(() => undefined),
         catchError((err) => this.handleError(err)),
       );
+  }
+
+  /**
+   * Envia invitaciones a los usuarios indicados, por id publico.
+   *
+   * <p>El backend responde 202: los emails no salen en la respuesta, quedan
+   * encolados y se mandan despues. Un lote con una cuenta ya activa se
+   * rechaza entero (409): por eso la UI solo deja seleccionar cuentas
+   * pendientes.
+   */
+  enviarInvitaciones(
+    usuarioIds: string[],
+  ): Observable<EnviarInvitacionResponse> {
+    return this.http
+      .post<EnviarInvitacionResponse>(
+        `${environment.apiUrl}/auth/invitaciones`,
+        { usuarioIds },
+      )
+      .pipe(catchError((err) => this.handleError(err)));
   }
 
   listarSesiones(

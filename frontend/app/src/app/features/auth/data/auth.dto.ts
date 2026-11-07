@@ -24,3 +24,31 @@ export interface AuthResponseDto {
   sesionId: string;
   usuario: CurrentUserDto;
 }
+
+/**
+ * Respuesta de la validación de un token de activación.
+ *
+ * `valid` en false no dice si el usuario existe: decirlo permitiría enumerar
+ * cuentas. El frontend solo necesita saber si puede mostrar el formulario.
+ */
+export interface ValidarTokenResponseDto {
+  valid: boolean;
+  usuarioId: string | null;
+  expiresAt: string | null;
+}
+
+/** Pedido de activación de cuenta. */
+export interface ActivarRequestDto {
+  token: string;
+  password: string;
+  passwordConfirm: string;
+}
+
+/** Cuenta activada. */
+export interface ActivarResponseDto {
+  publicId: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  rol: string;
+}

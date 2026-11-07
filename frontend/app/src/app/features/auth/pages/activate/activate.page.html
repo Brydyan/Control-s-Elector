@@ -1,0 +1,153 @@
+<div class="activate-container">
+  <section class="panel" aria-live="polite">
+    @switch (estado()) { @case ('validando') {
+    <div class="state-block" data-testid="validando">
+      <h1>Validando tu invitación</h1>
+      <p class="subtitle">Un momento, estamos verificando el enlace.</p>
+      <div class="skeleton-line" aria-hidden="true"></div>
+      <div class="skeleton-line short" aria-hidden="true"></div>
+    </div>
+    } @case ('expirado') {
+    <div class="state-block" data-testid="expirado">
+      <h1>Este link expiró</h1>
+      <p class="subtitle">
+        Los links de activación duran 24 horas. Pedile al administrador que te
+        envíe una invitación nueva.
+      </p>
+      <p-button
+        label="Ir a iniciar sesión"
+        [fluid]="true"
+        (onClick)="irAlLogin()"
+      />
+    </div>
+    } @case ('error') {
+    <div class="state-block" data-testid="error">
+      <h1>No pudimos verificar el enlace</h1>
+      <p class="subtitle">
+        Hubo un problema al comunicarnos con el servidor. Revisá tu conexión e
+        intentá de nuevo.
+      </p>
+      <p-message
+        severity="error"
+        text="No se pudo validar el enlace de activación."
+      />
+      <p-button
+        label="Ir a iniciar sesión"
+        [fluid]="true"
+        (onClick)="irAlLogin()"
+      />
+    </div>
+    } @case ('activado') {
+    <div class="state-block success" data-testid="activado">
+      <div class="success-icon" aria-hidden="true">
+        <i class="pi pi-check"></i>
+      </div>
+      <h1>¡Cuenta activada!</h1>
+      <p class="subtitle">Bienvenido {{ cuentaActivada()?.nombre }}.</p>
+
+      <dl class="resumen">
+        <div>
+          <dt>Correo</dt>
+          <dd>{{ cuentaActivada()?.email }}</dd>
+        </div>
+        <div>
+          <dt>Rol</dt>
+          <dd>{{ cuentaActivada()?.rolNombre }}</dd>
+        </div>
+      </dl>
+
+      <p class="countdown" data-testid="countdown">
+        Redirigiendo al inicio de sesión en {{ countdown() }} s…
+      </p>
+      <p-button
+        label="Ir a iniciar sesión ahora"
+        [fluid]="true"
+        (onClick)="irAlLogin()"
+      />
+    </div>
+    } @default {
+    <div class="state-block" data-testid="formulario">
+      <h1>Activá tu cuenta</h1>
+      <p class="subtitle">
+        Elegí la contraseña con la que vas a entrar al sistema.
+      </p>
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="form-group">
+          <label for="password">Contraseña</label>
+          <div class="input-wrap">
+            <i class="pi pi-lock input-icon" aria-hidden="true"></i>
+            <input
+              id="password"
+              pInputText
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="password"
+              autocomplete="new-password"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              class="toggle-password"
+              (click)="togglePassword()"
+              [attr.aria-label]="
+                    showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'
+                  "
+            >
+              <i
+                [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                aria-hidden="true"
+              ></i>
+            </button>
+          </div>
+        </div>
+
+        <ul class="checklist" data-testid="checklist">
+          @for (requisito of requisitos(); track requisito.id) {
+          <li [class.cumple]="requisito.cumple">
+            <i
+              [class]="requisito.cumple ? 'pi pi-check-circle' : 'pi pi-circle'"
+              aria-hidden="true"
+            ></i>
+            <span>{{ requisito.texto }}</span>
+          </li>
+          }
+        </ul>
+
+        <div class="form-group">
+          <label for="passwordConfirm">Repetí la contraseña</label>
+          <div class="input-wrap">
+            <i class="pi pi-lock input-icon" aria-hidden="true"></i>
+            <input
+              id="passwordConfirm"
+              pInputText
+              [type]="showPassword() ? 'text' : 'password'"
+              formControlName="passwordConfirm"
+              autocomplete="new-password"
+              placeholder="••••••••"
+            />
+          </div>
+          @if ( form.controls.passwordConfirm.touched &&
+          form.controls.passwordConfirm.value !== form.controls.password.value )
+          {
+          <span class="field-error" data-testid="mismatch">
+            Las contraseñas no coinciden.
+          </span>
+          }
+        </div>
+
+        @if (errorMessage()) {
+        <p-message severity="error" [text]="errorMessage()!" />
+        }
+
+        <p-button
+          type="submit"
+          label="Activar cuenta"
+          [disabled]="!puedeEnviar()"
+          [loading]="loading()"
+          [fluid]="true"
+        />
+      </form>
+    </div>
+    } }
+  </section>
+</div>

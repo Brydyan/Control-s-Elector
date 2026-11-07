@@ -19,11 +19,31 @@ import { PaginatorComponent } from '../../../../shared/components/paginator/pagi
 import { AuthStore } from '../../../auth/services/auth.store';
 import { AdminApi } from '../../data/admin.api';
 import {
+  EnviarInvitacionResponse,
   RolUsuario,
   UsuarioConPasswordTemporal,
   UsuarioFiltros,
   UsuarioResponseDto,
 } from '../../domain/models/admin.model';
+
+/**
+ * Estado en el que una cuenta admite invitacion. El backend rechaza el lote entero (409) si
+ * alguna de las cuentas ya esta activa, asi que la pantalla solo deja marcar estas.
+ */
+const ESTADO_INVITABLE = 'PENDIENTE_INVITACION';
+
+/**
+ * Como quedo el ultimo envio de invitaciones. Lo que se muestra en la pantalla, no un toast:
+ * el repo no tiene servicio de notificaciones y el mensaje tiene que quedar a la vista
+ * mientras el operador decide que hacer con las cuentas que fallaron.
+ */
+export interface ResultadoInvitacion {
+  tipo: 'ok' | 'error';
+  titulo: string;
+  detalle: string;
+  /** Motivo de cada invitacion que no se pudo enviar. */
+  fallidos: string[];
+}
 
 @Component({
   selector: 'app-admin-usuarios',
@@ -54,6 +74,12 @@ export class AdminUsuariosPage implements OnInit {
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly error = signal<string | null>(null);
+  /** Cuentas marcadas para invitar, por id publico. */
+  readonly seleccion = signal<ReadonlySet<string>>(new Set<string>());
+  /** Hay un envio de invitaciones en vuelo. */
+  readonly enviandoInvitaciones = signal(false);
+  /** Como quedo el ultimo envio de invitaciones. */
+  readonly resultadoInvitacion = signal<ResultadoInvitacion | null>(null);
   /**
    * MASTER-only controls. The role comes from the in-memory session, so a
    * session restored after a reload lights the controls up on its own.
@@ -190,7 +216,7 @@ export class AdminUsuariosPage implements OnInit {
     const payload = {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
-      rol: this.rol,
+      rolNombre: this.rol,
     };
     const request =
       this.modoEdicion && this.usuarioSeleccionado
@@ -238,7 +264,7 @@ export class AdminUsuariosPage implements OnInit {
       .actualizarUsuario(usuario.publicId, {
         nombre: usuario.nombre,
         apellido: usuario.apellido,
-        rol: usuario.rolNombre as RolUsuario,
+        rolNombre: usuario.rolNombre as RolUsuario,
         habilitado: true,
       })
       .subscribe({
@@ -246,6 +272,163 @@ export class AdminUsuariosPage implements OnInit {
         error: (err) =>
           this.error.set(err?.message || 'No se pudo re-habilitar el usuario.'),
       });
+  }
+
+  // ── Invitaciones en lote (Task 3.3) ──────────────────────────────────────
+
+  /**
+   * Una cuenta admite invitacion solo si sigue esperando la activacion.
+   *
+   * <p>No es un control de seguridad — el que manda es el backend, que exige
+   * `usuario:create` + MASTER. Es la courtesy que evita un 409: el envio de un lote es atomico y
+   * se rechaza entero si una sola de las cuentas ya esta activa, asi que marcar una cuenta
+   * activa garantiza que no sale ningun email.
+   */
+  esInvitable(usuario: UsuarioResponseDto): boolean {
+    return usuario.estadoUsuario === ESTADO_INVITABLE;
+  }
+
+  estaSeleccionado(publicId: string): boolean {
+    return this.seleccion().has(publicId);
+  }
+
+  cantidadSeleccionada(): number {
+    return this.seleccion().size;
+  }
+
+  haySeleccion(): boolean {
+    return this.seleccion().size > 0;
+  }
+
+  /** Marca o desmarca una cuenta. Las cuentas activas no se pueden marcar. */
+  alternarSeleccion(usuario: UsuarioResponseDto): void {
+    if (!this.esInvitable(usuario)) return;
+    const siguiente = new Set(this.seleccion());
+    if (siguiente.has(usuario.publicId)) {
+      siguiente.delete(usuario.publicId);
+    } else {
+      siguiente.add(usuario.publicId);
+    }
+    this.seleccion.set(siguiente);
+  }
+
+  /** Cuentas pendientes de la pagina actual: las unicas que se pueden invitar. */
+  invitablesDeLaPagina(): UsuarioResponseDto[] {
+    return this.usuarios().filter((usuario) => this.esInvitable(usuario));
+  }
+
+  /** Marca o desmarca todas las cuentas pendientes de la pagina actual. */
+  alternarTodosInvitables(): void {
+    const siguiente = new Set(this.seleccion());
+    const invitables = this.invitablesDeLaPagina();
+    const yaEstanTodas = invitables.every((usuario) =>
+      siguiente.has(usuario.publicId),
+    );
+    for (const usuario of invitables) {
+      if (yaEstanTodas) {
+        siguiente.delete(usuario.publicId);
+      } else {
+        siguiente.add(usuario.publicId);
+      }
+    }
+    this.seleccion.set(siguiente);
+  }
+
+  todosInvitablesSeleccionados(): boolean {
+    const invitables = this.invitablesDeLaPagina();
+    return (
+      invitables.length > 0 &&
+      invitables.every((usuario) => this.seleccion().has(usuario.publicId))
+    );
+  }
+
+  limpiarSeleccion(): void {
+    this.seleccion.set(new Set<string>());
+  }
+
+  puedeEnviarInvitaciones(): boolean {
+    return (
+      this.esMaster() && this.haySeleccion() && !this.enviandoInvitaciones()
+    );
+  }
+
+  /** Envia la invitacion a las cuentas marcadas. */
+  enviarInvitaciones(): void {
+    if (!this.puedeEnviarInvitaciones()) return;
+    const ids = [...this.seleccion()];
+    this.enviandoInvitaciones.set(true);
+    this.resultadoInvitacion.set(null);
+    this.service.enviarInvitaciones(ids).subscribe({
+      next: (respuesta) => {
+        this.enviandoInvitaciones.set(false);
+        this.resultadoInvitacion.set(this.resumenDeEnvio(respuesta));
+        this.limpiarSeleccion();
+        this.cargarUsuarios();
+      },
+      error: (err) => {
+        this.enviandoInvitaciones.set(false);
+        this.resultadoInvitacion.set({
+          tipo: 'error',
+          titulo: 'No se pudieron enviar las invitaciones',
+          detalle:
+            err?.message ??
+            'El servidor no acepto el lote de invitaciones. Revisa las cuentas seleccionadas.',
+          fallidos: [],
+        });
+      },
+    });
+  }
+
+  /**
+   * Envia (o reenvia, si ya se habia invitado) la invitacion de una cuenta pendiente.
+   *
+   * <p>El backend decide el tipo de correo: si la cuenta ya tiene un token vigente le manda el
+   * de reenvio, si no, el de invitacion.
+   */
+  reenviarInvitacion(usuario: UsuarioResponseDto): void {
+    if (
+      !this.esMaster() ||
+      !this.esInvitable(usuario) ||
+      this.enviandoInvitaciones()
+    )
+      return;
+    this.enviandoInvitaciones.set(true);
+    this.resultadoInvitacion.set(null);
+    this.service.enviarInvitaciones([usuario.publicId]).subscribe({
+      next: (respuesta) => {
+        this.enviandoInvitaciones.set(false);
+        this.resultadoInvitacion.set(this.resumenDeEnvio(respuesta));
+        this.cargarUsuarios();
+      },
+      error: (err) => {
+        this.enviandoInvitaciones.set(false);
+        this.resultadoInvitacion.set({
+          tipo: 'error',
+          titulo: 'No se pudo enviar la invitación',
+          detalle: err?.message ?? 'El servidor no acepto la invitación.',
+          fallidos: [],
+        });
+      },
+    });
+  }
+
+  /** Traduce la respuesta del backend al mensaje que ve el operador. */
+  private resumenDeEnvio(
+    respuesta: EnviarInvitacionResponse,
+  ): ResultadoInvitacion {
+    const fallidos = respuesta.failures ?? [];
+    const enviados = respuesta.sentCount ?? 0;
+    const titulo = fallidos.length
+      ? `${enviados} invitaciones enviadas, ${fallidos.length} con error`
+      : `${enviados} ${enviados === 1 ? 'invitación enviada' : 'invitaciones enviadas'}`;
+    return {
+      tipo: 'ok',
+      titulo,
+      detalle: fallidos.length
+        ? 'Estas cuentas no se pudieron invitar:'
+        : 'Los correos quedan en cola y salen en breve.',
+      fallidos: fallidos.map((fallido) => fallido.razon),
+    };
   }
 
   obtenerAccionesUsuario(usuario: UsuarioResponseDto): MenuItem[] {
