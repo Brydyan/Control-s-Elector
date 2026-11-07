@@ -50,5 +50,5 @@ export interface ActivarResponseDto {
   nombre: string;
   apellido: string;
   email: string;
-  rol: string;
+  rolNombre: string;
 }
