@@ -28,7 +28,12 @@ public class UsuarioMapper {
         entity.getPublicId(), entity.getEmail(), entity.getRolNombre());
   }
 
-  /** Datos publicos de un usuario para el panel de administracion. */
+  /**
+   * Datos publicos de un usuario para el panel de administracion.
+   *
+   * <p>Incluye el estado de activacion y la fecha del ultimo envio de invitacion: el panel los usa
+   * para decidir a quien se puede invitar y a quien hay que reenviarle el link.
+   */
   public UsuarioResponseDto toAdminDto(Usuario entity) {
     if (entity == null) {
       return null;
@@ -40,7 +45,10 @@ public class UsuarioMapper {
         entity.getApellido(),
         entity.getRolNombre(),
         entity.isHabilitado(),
-        entity.getCreadoEn());
+        entity.getCreadoEn(),
+        null,
+        entity.getEstadoUsuario(),
+        entity.getInvitationSentAt());
   }
 
   /** Detalle de una sesion, con el email del usuario propietario. */

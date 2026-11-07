@@ -32,12 +32,14 @@ public class JwtService {
   private final SecretKey signingKey;
   private final Duration accessTtl;
   private final Duration refreshTtl;
+  private final Duration activationTtl;
   private final String issuer;
 
   public JwtService(
       @ConfigProperty(name = "app.jwt.secret") String secret,
       @ConfigProperty(name = "app.jwt.access-ttl") String accessTtl,
       @ConfigProperty(name = "app.jwt.refresh-ttl") String refreshTtl,
+      @ConfigProperty(name = "app.jwt.activation-ttl") String activationTtl,
       @ConfigProperty(name = "app.jwt.issuer") String issuer) {
     if (secret == null || secret.length() < 32) {
       throw new IllegalStateException(
@@ -46,6 +48,7 @@ public class JwtService {
     this.signingKey = new SecretKeySpec(secret.getBytes(), "HmacSHA256");
     this.accessTtl = Durations.parse(accessTtl);
     this.refreshTtl = Durations.parse(refreshTtl);
+    this.activationTtl = Durations.parse(activationTtl);
     this.issuer = issuer;
   }
 
@@ -124,6 +127,52 @@ public class JwtService {
       throw new InvalidJwtException("Token no es de tipo refresh");
     }
     return parsed;
+  }
+
+  /**
+   * Emite un token de activacion de cuenta (tipo {@code activation}).
+   *
+   * <p>Usa el mismo secreto y el mismo algoritmo que los access tokens —el spec lo exige asi, y asi
+   * lo pide la decision D1 del design— pero con un {@code typ} propio. El {@code typ} es lo que
+   * mantiene los dos dominios separados: {@link #parseAccess(String)} rechaza cualquier token cuyo
+   * {@code typ} no sea {@code access}, de modo que un token de activacion no puede presentarse como
+   * credencial de sesion ni al reves.
+   *
+   * <p>El {@code sub} es el {@code publicId} del usuario (UUID), nunca el id interno: es la misma
+   * regla que siguen los access tokens y la que impide filtrar el correlativo de la base por un
+   * token que viaja en un email.
+   *
+   * @param publicId id publico del usuario invitado
+   * @param email email del usuario, para que el operador pueda identificar el envio
+   * @param rol rol asignado, para que la pantalla de activacion pueda mostrarlo
+   */
+  public String issueActivation(UUID publicId, String email, String rol) {
+    Instant now = Instant.now();
+    return sign(
+        builder ->
+            builder
+                .subject(publicId.toString())
+                .issuer(issuer)
+                .claim("typ", "activation")
+                .claim("email", email)
+                .claim("rol", rol)
+                .issueTime(Date.from(now))
+                .expirationTime(Date.from(now.plus(activationTtl)))
+                .jwtID(UUID.randomUUID().toString()));
+  }
+
+  /** Valida que el token sea de tipo activacion. Es lo que usa el canje de invitacion. */
+  public ParsedJwt parseActivation(String token) {
+    ParsedJwt parsed = parse(token);
+    if (!"activation".equals(parsed.type())) {
+      throw new InvalidJwtException("Token no es de tipo activation");
+    }
+    return parsed;
+  }
+
+  /** Vigencia del token de activacion. */
+  public Duration activationTtl() {
+    return activationTtl;
   }
 
   private String sign(UnaryOperator<JWTClaimsSet.Builder> claimsBuilder) {

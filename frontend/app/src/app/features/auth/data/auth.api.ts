@@ -4,7 +4,14 @@ import { Observable, map } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { CurrentUser } from '../domain/models/user.model';
-import { AuthResponseDto, CurrentUserDto, LoginRequestDto } from './auth.dto';
+import {
+  ActivarRequestDto,
+  ActivarResponseDto,
+  AuthResponseDto,
+  CurrentUserDto,
+  LoginRequestDto,
+  ValidarTokenResponseDto,
+} from './auth.dto';
 
 /**
  * Raw session result: the in-memory access token plus the resolved user.
@@ -60,6 +67,25 @@ export class AuthApi {
     return this.http
       .get<CurrentUserDto>(`${this.base}/me`, { withCredentials: true })
       .pipe(map((dto) => this.toUser(dto)));
+  }
+
+  /**
+   * Valida un token de activación sin necesidad de sesión.
+   *
+   * El endpoint es público a propósito: la pantalla de activación la consulta
+   * antes de que el usuario tenga sesión.
+   */
+  validarToken(token: string): Observable<ValidarTokenResponseDto> {
+    return this.http.get<ValidarTokenResponseDto>(
+      `${this.base}/invitaciones/validate-token/${encodeURIComponent(token)}`,
+    );
+  }
+
+  /**
+   * Activa la cuenta con el token y la contraseña elegida.
+   */
+  activar(pedido: ActivarRequestDto): Observable<ActivarResponseDto> {
+    return this.http.post<ActivarResponseDto>(`${this.base}/activate`, pedido);
   }
 
   private toSession(dto: AuthResponseDto): Session {
