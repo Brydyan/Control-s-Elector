@@ -33,13 +33,25 @@ import jakarta.ws.rs.ext.Provider;
 @Priority(Priorities.AUTHORIZATION)
 public class JwtAuthFilter implements ContainerRequestFilter {
 
-  /** Rutas que no exigen token. Misma lista que el permitAll del backend Spring. */
+  /**
+   * Rutas que no exigen token. Misma lista que el permitAll del backend Spring.
+   *
+   * <p>Las dos rutas del flujo de invitacion son publicas a proposito: la pantalla de activacion
+   * consulta si el token sirve y luego activa la cuenta, y en los dos momentos el usuario todavia
+   * no tiene sesion — no se puede pedir un token a alguien que todavia no entro.
+   *
+   * <p>La validacion del token de activacion es publica pero no dice si el usuario existe, y la
+   * activacion esta limitada por IP. Publica no significa abierta: sin esas dos Epicidades, el
+   * endpoint seria un oracle para adivinar tokens.
+   */
   private static final String[] PUBLICAS = {
     "/actuator/health",
     "/actuator/info",
     "/api/v1/auth/login",
     "/api/v1/auth/refresh",
     "/api/v1/auth/logout",
+    "/api/v1/auth/activate",
+    "/api/v1/auth/invitaciones/validate-token",
     "/v3/api-docs",
     "/swagger-ui",
     "/swagger-ui.html",
