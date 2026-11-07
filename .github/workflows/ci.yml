@@ -6,6 +6,11 @@ on:
     # porque el stack de PRs es apilado: un PR cuya base es otra rama de feature
     # (por ejemplo #152 sobre `feat/backend-quarkus-cutover`) no dispara CI si la
     # lista no lo cubre, y se queda sin checks en silencio.
+    #
+    # SIN filtro de paths a proposito: este workflow produce los checks
+    # requeridos por el ruleset de `develop`. Un workflow que no arranca por un
+    # filtro deja esos checks en "Pending" para siempre y bloquea el PR. El
+    # filtro de paths va en el job `changes`, no aqui. Ver ese job.
     branches:
       - main
       - develop
@@ -19,6 +24,10 @@ on:
       - 'docs/**'
   push:
     branches: [main, develop]
+    # En `push` si se puede filtrar en el trigger: aqui no hay checks
+    # requeridos que reportar, asi que un push que solo toca documentacion
+    # puede no arrancar el workflow. La granularidad fina la pone igual el
+    # job `changes`, que separa backend de frontend.
     paths:
       - 'backend/**'
       - 'frontend/**'
@@ -33,10 +42,87 @@ concurrency:
 
 jobs:
   # ===========================================================================
+  # DETECTOR DE CAMBIOS
+  # ===========================================================================
+  # Este workflow produce los 6 checks que el ruleset de `develop` exige:
+  # Backend Format, Backend Tests & Coverage, Frontend ESLint,
+  # Frontend Format Check, Frontend Production Build y Frontend Unit Tests.
+  #
+  # Por eso el trigger de `pull_request` NO lleva filtro de paths. Un
+  # workflow que no arranca por un filtro deja sus checks en "Pending" para
+  # siempre y el PR queda bloqueado esperando un reporte que nunca llega.
+  # Un job saltado por un `if:`, en cambio, reporta "Success", que es lo que
+  # el branch protection acepta. El filtro va aqui y no en el trigger.
+  #
+  # La decision es fail-safe. Si este job falla, sus salidas quedan vacias,
+  # la comparacion `!= 'false'` da true y TODOS los jobs corren. Es
+  # preferible pagar el CI completo a mergear sin verificar.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El diff se calcula contra la base, asi que hace falta el historial.
+          fetch-depth: 0
+
+      - name: Compute changed paths
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            # Tres puntos: diff entre el merge-base y la cabeza del PR. Es lo
+            # que cambia el PR, no lo que el PR actualizo de la base mientras
+            # tanto.
+            range="$PR_BASE_SHA...HEAD"
+          else
+            before="$PUSH_BEFORE_SHA"
+            # Primer push de la rama: `before` viene en ceros.
+            if [ "$before" = "0000000000000000000000000000000000000000" ]; then
+              before="$(git rev-parse HEAD^)"
+            fi
+            range="$before..HEAD"
+          fi
+
+          changed="$(git diff --name-only "$range")"
+          echo "Rutas cambiadas:"
+          echo "$changed"
+
+          # Los workflows de CI entran en ambos filtros: cambiar como se
+          # verifica el codigo tiene que re-verificar las dos mitades.
+          backend=false
+          frontend=false
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            case "$file" in
+              backend/*|.github/workflows/ci.yml|.github/workflows/ci-native.yml)
+                backend=true ;;
+            esac
+            case "$file" in
+              frontend/*|.github/workflows/ci.yml|.github/workflows/ci-native.yml)
+                frontend=true ;;
+            esac
+          done <<< "$changed"
+
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+          echo "Detectado -> backend=$backend frontend=$frontend"
+
+  # ===========================================================================
   # BACKEND JOBS
   # ===========================================================================
   backend-format:
     name: Backend Format
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -72,6 +158,8 @@ jobs:
   # gate de contrato del backend.
   backend-contract:
     name: Backend Contract Tests
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -189,6 +277,8 @@ jobs:
   # schema) y que el health responde en /actuator/health del puerto principal.
   backend-quarkus:
     name: Backend Quarkus
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -286,6 +376,8 @@ jobs:
   # service de Postgres.
   backend-quarkus-test:
     name: Backend Tests & Coverage
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -325,6 +417,8 @@ jobs:
 
   frontend-format:
     name: Frontend Format Check
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -351,6 +445,8 @@ jobs:
 
   frontend-lint:
     name: Frontend ESLint
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -377,6 +473,8 @@ jobs:
 
   frontend-test:
     name: Frontend Unit Tests
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -403,6 +501,8 @@ jobs:
 
   frontend-build:
     name: Frontend Production Build
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
