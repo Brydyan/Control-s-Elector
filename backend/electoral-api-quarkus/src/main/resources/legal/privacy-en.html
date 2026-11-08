@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy — Control Electoral</title>
+    <meta
+      name="description"
+      content="Privacy policy and personal data processing for the Control Electoral system, under the GDPR (Regulation (EU) 2016/679)."
+    />
+    <style>
+      :root {
+        --color-text: #1f2933;
+        --color-muted: #52606d;
+        --color-border: #d9e2ec;
+        --color-surface: #ffffff;
+        --color-bg: #f5f7fa;
+        --color-link: #1c4a8e;
+        --color-link-hover: #0f3057;
+        --measure: 46rem;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        font-size: 1rem;
+        line-height: 1.65;
+      }
+      main {
+        max-width: var(--measure);
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem 3rem;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 0.5rem;
+        margin-top: 1.5rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+        line-height: 1.25;
+        margin: 0 0 0.5rem;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin: 2rem 0 0.5rem;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid var(--color-border);
+      }
+      h3 {
+        font-size: 1rem;
+        margin: 1.25rem 0 0.35rem;
+      }
+      p,
+      ul {
+        margin: 0.5rem 0;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+      li {
+        margin: 0.25rem 0;
+      }
+      a {
+        color: var(--color-link);
+      }
+      a:hover,
+      a:focus-visible {
+        color: var(--color-link-hover);
+      }
+      .lang-switch a,
+      .nav-links a {
+        display: inline-block;
+        min-height: 44px;
+        line-height: 44px;
+        padding: 0 0.75rem;
+      }
+      .lang-switch {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .lang-switch a {
+        border: 1px solid var(--color-border);
+        border-radius: 0.375rem;
+        text-decoration: none;
+      }
+      .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 1rem;
+        margin: 1.5rem 0 0;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border);
+      }
+      .meta {
+        color: var(--color-muted);
+        font-size: 0.9rem;
+      }
+      .notice {
+        border-left: 3px solid var(--color-link);
+        background: var(--color-bg);
+        padding: 0.75rem 1rem;
+        margin: 1rem 0;
+      }
+      footer {
+        max-width: var(--measure);
+        margin: 0 auto;
+        padding: 0 1.25rem 2.5rem;
+        color: var(--color-muted);
+        font-size: 0.85rem;
+      }
+      @media (max-width: 30rem) {
+        main {
+          border-left: 0;
+          border-right: 0;
+          border-radius: 0;
+          margin-top: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="lang-switch">
+        <a href="/privacy?lang=es" lang="es">Español</a>
+        <a href="/privacy?lang=en" lang="en" aria-current="page">English</a>
+      </div>
+
+      <h1>Privacy Policy</h1>
+      <p class="meta">
+        Version <strong>{{VERSION}}</strong> — effective from <strong>6 November 2026</strong>.
+      </p>
+
+      <div class="notice">
+        <p>
+          This document explains what personal data the Control Electoral system processes, on
+          what legal basis, for how long it keeps it, and what rights registered people have. It
+          is the information required by Articles 13 and 14 of the GDPR.
+        </p>
+      </div>
+
+      <h2>1. Data controller</h2>
+      <p>
+        <strong>Identity:</strong> Control Electoral — observation and results-recording platform
+        for the Province of Santa Elena, Ecuador.
+      </p>
+      <p>
+        <strong>Scope:</strong> the platform operates on <code>control.twintailcs.xyz</code> and
+        its API on <code>api.twintailcs.xyz</code>.
+      </p>
+      <p>
+        <strong>Data protection contact:</strong> through the Data Protection Officer (DPO)
+        contact form described in section 6. No DPO email address is published in this document
+        because enquiries are centralised in that form, which keeps an auditable record of every
+        request.
+      </p>
+
+      <h2>2. Data we collect</h2>
+      <h3>2.1 Account data</h3>
+      <ul>
+        <li>Email address.</li>
+        <li>First and last name.</li>
+        <li>Role in the electoral process (observer, coordinator, administrator, master).</li>
+        <li>Password: never stored in plain text, only as a bcrypt hash.</li>
+        <li>Registration date, account activation date, and date of the last invitation sent.</li>
+        <li>Accepted version of the terms of use and privacy policy, and when it was accepted.</li>
+      </ul>
+
+      <h3>2.2 Electoral process data</h3>
+      <ul>
+        <li>Recorded tally sheets: voting table (JRV), office, status, voters, blank votes, void votes, and registration date.</li>
+        <li>Vote breakdown per candidate on each tally sheet.</li>
+        <li>Photographic evidence of tally sheets, compressed (.webp).</li>
+        <li>Incident reports about polling stations: description, type, and attached evidence.</li>
+        <li>Audit log: who performed each operation and from which IP address.</li>
+      </ul>
+
+      <h3>2.3 Technical data</h3>
+      <ul>
+        <li>Connection IP address.</li>
+        <li>Browser user agent.</li>
+        <li>Session identifier and access logs.</li>
+      </ul>
+
+      <div class="notice">
+        <p>
+          <strong>The platform does not request special categories of data.</strong> The incident
+          report form is free text and a user may volunteer sensitive information: that is a
+          warning to users, not a processing of sensitive data. The system does not profile
+          users and does not use their data for advertising.
+        </p>
+      </div>
+
+      <h2>3. Legal basis</h2>
+      <ul>
+        <li>
+          <strong>Art. 6(1)(b) — Performance of a contract:</strong> processing the account and
+          the tally sheets is necessary for a person to use the platform as an electoral observer.
+        </li>
+        <li>
+          <strong>Art. 6(1)(c) — Compliance with a legal obligation:</strong> retaining tally
+          sheets and audit trails is required by applicable electoral law.
+        </li>
+        <li>
+          <strong>Art. 6(1)(a) — Consent:</strong> acceptance of the terms of use and this
+          policy is recorded with version, timestamp, IP address, and user agent.
+        </li>
+      </ul>
+
+      <h2>4. Who can access the data</h2>
+      <ul>
+        <li>The <strong>observer</strong>: only their own tally sheets, incidents, and account data.</li>
+        <li>The <strong>coordinator</strong>: tally sheets and incidents for the stations they supervise, in order to resolve and correct disputes.</li>
+        <li>The <strong>administrator</strong>: read access to tally sheets and incidents for monitoring; no ability to modify them.</li>
+        <li>The <strong>master</strong>: full operational access, including catalogue and user management.</li>
+        <li>The <strong>DPO</strong>: access to data protection requests and to the acceptance history, only as far as needed to handle them.</li>
+      </ul>
+      <p>
+        Access control is applied in two layers: authorisation on the server (every endpoint
+        declares the roles that enable it) and row-level isolation (RLS) in the database. A role
+        without permission receives <code>403</code>, and the database still withholds rows that
+        do not belong to it.
+      </p>
+
+      <h2>5. Retention</h2>
+      <ul>
+        <li>
+          <strong>Tally sheets and evidence:</strong> kept for the period required by electoral
+          law (around 7 years). They are not automatically deleted when an account is cancelled,
+          because they form part of the electoral record.
+        </li>
+        <li>
+          <strong>Terms acceptance audit:</strong> kept for as long as the record it substantiates,
+          so that what each person accepted, and when, can be demonstrated.
+        </li>
+        <li><strong>Sessions and access logs:</strong> up to 90 days.</li>
+        <li>
+          <strong>Account and profile:</strong> while the account is active. Deletion requests
+          are handled by the DPO, except for electoral data retained under a legal obligation.
+        </li>
+        <li>
+          <strong>Data exports:</strong> the record of each export is kept, so that the exercise
+          of the right of access can be demonstrated.
+        </li>
+      </ul>
+
+      <h2>6. Rights of data subjects (Arts. 15 to 22)</h2>
+      <ul>
+        <li>
+          <strong>Art. 15 — Access:</strong> every registered person can obtain a complete copy
+          of their data as JSON through the export endpoint of their own session, or request it
+          from the DPO. The system keeps an audit record of every export.
+        </li>
+        <li>
+          <strong>Art. 16 — Rectification:</strong> name, surname, and email corrections are
+          requested from the DPO, who handles them with the system administration team.
+        </li>
+        <li>
+          <strong>Art. 17 — Erasure:</strong> account deletion can be requested through the DPO
+          form. Data retained under a legal obligation (tally sheets, evidence, and audit trails)
+          is kept as described in section 5.
+        </li>
+        <li><strong>Art. 18 — Restriction:</strong> processing can be restricted on request.</li>
+        <li>
+          <strong>Art. 20 — Portability:</strong> the export format is machine-readable JSON,
+          which allows it to be ported to another controller.
+        </li>
+        <li>
+          <strong>Art. 21 — Objection:</strong> people may object to processing by stating their
+          reason; the DPO assesses it and replies.
+        </li>
+        <li><strong>Art. 22 — Complaints:</strong> to the competent supervisory authority.</li>
+      </ul>
+      <p>
+        <strong>DPO contact form:</strong>
+        <a href="/contact-dpo">to exercise a right</a>. The form accepts at most one
+        request every 30 seconds per IP address.
+      </p>
+
+      <h2>7. Security</h2>
+      <ul>
+        <li>bcrypt password hashing; the session token lives only in memory.</li>
+        <li>
+          The refresh token travels in an <code>httpOnly</code>, <code>Secure</code>,
+          <code>SameSite=Strict</code> cookie: application code cannot read it.
+        </li>
+        <li>Encryption in transit (HTTPS) and at rest in the database and object storage.</li>
+        <li>Evidence is compressed and stored outside the database.</li>
+        <li>Audit logging of operations on tally sheets.</li>
+      </ul>
+
+      <h2>8. Changes to this policy</h2>
+      <p>
+        This policy is versioned. When a new version is published, the current version changes,
+        the system stops treating the previous one as accepted, and every person must accept again
+        before continuing to use the platform. The date and version number appear at the top of
+        this document.
+      </p>
+
+      <nav class="nav-links" aria-label="Legal documents">
+        <a href="/terms?lang=en">Terms of Use</a>
+        <a href="/contact-dpo">DPO contact form</a>
+      </nav>
+    </main>
+
+    <footer>
+      <p>Control Electoral — Privacy Policy v{{VERSION}} (6 November 2026).</p>
+      <p>
+        Document pending review and sign-off by the data controller and the DPO before
+        publication in production.
+      </p>
+    </footer>
+  </body>
+</html>
