@@ -14,9 +14,17 @@ import java.util.UUID;
  * @param usuarioId id publico del usuario invitado
  * @param username login generado con el que entra al sistema
  * @param emailPersonal correo de contacto al que se mando la invitacion
- * @param status estado de la invitacion: INVITED (o EXPIRED si la ventana ya paso)
- * @param expiraEn momento en que la invitacion deja de valer
+ * @param status estado de la invitacion: INVITED, CREATED (creada sin email), EXPIRED, ACTIVATED
+ * @param expiraEn momento en que la invitacion deja de valer; null si no se envio invitacion
+ * @param success siempre true: un fallo llega como error, no como respuesta
+ * @param mensaje texto para el operador, distinto segun se haya enviado el email o no
  */
 @RegisterForReflection
 public record UserInvitationResponse(
-    UUID usuarioId, String username, String emailPersonal, String status, Instant expiraEn) {}
+    UUID usuarioId,
+    String username,
+    String emailPersonal,
+    String status,
+    Instant expiraEn,
+    boolean success,
+    String mensaje) {}

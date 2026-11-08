@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.auth.web;
 
 import ec.twintailcs.electoral.auth.application.InvitacionService;
 import ec.twintailcs.electoral.auth.application.InvitationTokenService;
+import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.auth.web.dto.EnviarInvitacionResponse;
 import ec.twintailcs.electoral.auth.web.dto.SendInvitacionesRequest;
@@ -17,6 +18,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.UUID;
 
 /**
  * Invitaciones de usuario por email.
@@ -59,9 +61,22 @@ public class InvitacionResource {
       // Lo que llega por la URL es el token envuelto; se deshace para validar el JWT.
       String jwt = tokenService.desenvolverDeLink(token);
       var publicId = tokenService.validateToken(jwt);
-      return new ValidateTokenResponse(true, publicId.toString(), tokenService.expiresAt(jwt));
+      return new ValidateTokenResponse(
+          true, publicId.toString(), tokenService.expiresAt(jwt), usernameDe(publicId));
     } catch (RuntimeException e) {
       return ValidateTokenResponse.invalido();
     }
+  }
+
+  /**
+   * Login del usuario al que pertenece el token.
+   *
+   * <p>Solo se busca con un token ya validado: quien lo tiene es esa persona, y el login es el
+   * correo de Control con el que va a entrar. Con un token invalido la respuesta no dice nada, asi
+   * que el endpoint sigue sin servir para enumerar cuentas.
+   */
+  private String usernameDe(UUID publicId) {
+    Usuario usuario = Usuario.find("publicId", publicId).firstResult();
+    return usuario == null ? null : usuario.getEmail();
   }
 }

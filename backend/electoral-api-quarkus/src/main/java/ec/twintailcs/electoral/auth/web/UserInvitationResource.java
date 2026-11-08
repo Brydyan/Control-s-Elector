@@ -4,6 +4,7 @@ import ec.twintailcs.electoral.auth.application.UserInvitationService;
 import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.auth.security.InvitationRateLimiter;
 import ec.twintailcs.electoral.auth.web.dto.InviteUserRequest;
+import ec.twintailcs.electoral.auth.web.dto.ResendInvitationResponse;
 import ec.twintailcs.electoral.auth.web.dto.UserInvitationResponse;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,9 +14,11 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.UUID;
 
 /**
  * Invitacion de una persona concreta.
@@ -59,6 +62,35 @@ public class UserInvitationResource {
     rateLimiter.registrar(ip);
 
     UserInvitationResponse response = invitationService.invitar(pedido, ip, userAgent);
+    return Response.ok(response).build();
+  }
+
+  /**
+   * Reenvia la invitacion de una cuenta que todavia no se activo (ODD #504, D y E).
+   *
+   * <p>El identificador es el id PUBLICO del usuario (UUID), no el interno: es el que viaja en la
+   * tabla del panel y el que no dice nada del orden de la base.
+   *
+   * @param publicId id publico del usuario invitado
+   * @param xForwardedFor IP del cliente, puesta por el proxy
+   * @param userAgent agente de usuario del cliente
+   */
+  @POST
+  @Path("/{publicId}/resend-invitation")
+  public Response reenviar(
+      @PathParam("publicId") UUID publicId,
+      @HeaderParam("X-Forwarded-For") String xForwardedFor,
+      @HeaderParam("User-Agent") String userAgent) {
+
+    autorizador.exigir("usuario:create", "MASTER");
+
+    String ip = contexto.ip(xForwardedFor);
+    // Ventana propia: invitar y reenviar seguido es un flujo legitimo (se
+    // acaba de crear la cuenta y hay que reenviarle el correo), y un limite
+    // compartido lo dejaria trabado a mitad de camino.
+    rateLimiter.registrar("resend:" + ip);
+
+    ResendInvitationResponse response = invitationService.reenviar(publicId, ip, userAgent);
     return Response.ok(response).build();
   }
 }
