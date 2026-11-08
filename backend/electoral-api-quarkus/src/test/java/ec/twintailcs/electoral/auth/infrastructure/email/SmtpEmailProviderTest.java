@@ -38,6 +38,7 @@ class SmtpEmailProviderTest {
     return new EmailAEnviar(
         7L,
         "ana@control.ttcs",
+        "ana@control.ttcs",
         "Ana",
         "Perez",
         "OBSERVER",
