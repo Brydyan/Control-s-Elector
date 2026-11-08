@@ -272,7 +272,9 @@
         <li>
           <strong>Art. 15 — Acceso:</strong> cada persona registrada puede obtener una copia
           íntegra de sus datos en formato JSON mediante el endpoint de exportación de su propia
-          sesión, o solicitarlo al DPO. El sistema genera una auditoría de cada exportación.
+          sesión —<a href="/api/v1/user/export-data">descargar mis datos</a>— o solicitarlo al
+          DPO. El endpoint exige una sesión activa (devuelve 401 sin token) y admite una
+          exportación cada 24 horas. El sistema genera una auditoría de cada exportación.
         </li>
         <li>
           <strong>Art. 16 — Rectificación:</strong> la corrección de nombre, apellido y correo

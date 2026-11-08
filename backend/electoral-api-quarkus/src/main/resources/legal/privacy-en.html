@@ -262,8 +262,10 @@
       <ul>
         <li>
           <strong>Art. 15 — Access:</strong> every registered person can obtain a complete copy
-          of their data as JSON through the export endpoint of their own session, or request it
-          from the DPO. The system keeps an audit record of every export.
+          of their data as JSON through the export endpoint of their own session —
+          <a href="/api/v1/user/export-data">download my data</a> — or request it from the DPO.
+          The endpoint requires an active session (it returns 401 without a token) and allows one
+          export every 24 hours. The system keeps an audit record of every export.
         </li>
         <li>
           <strong>Art. 16 — Rectification:</strong> name, surname, and email corrections are
