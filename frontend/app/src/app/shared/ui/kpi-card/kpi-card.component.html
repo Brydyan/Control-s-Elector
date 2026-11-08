@@ -1,0 +1,21 @@
+<div
+  class="kpi-card"
+  [class.kpi-card--brand]="tone === 'brand'"
+  [class.kpi-card--success]="tone === 'success'"
+  [class.kpi-card--warning]="tone === 'warning'"
+  [class.kpi-card--corrected]="tone === 'corrected'"
+  [class.kpi-card--neutral]="tone === 'neutral'"
+>
+  <div class="kpi-card__head">
+    <span class="kpi-card__label">{{ label }}</span>
+    @if (icon) {
+      <i class="kpi-card__icon {{ icon }}" aria-hidden="true"></i>
+    }
+  </div>
+
+  <div class="kpi-card__figure">{{ value }}</div>
+
+  @if (hint) {
+    <div class="kpi-card__hint">{{ hint }}</div>
+  }
+</div>

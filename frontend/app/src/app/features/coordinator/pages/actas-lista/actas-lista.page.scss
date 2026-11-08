@@ -117,32 +117,12 @@
  * The table is rendered by PrimeNG, so its internals are reached through the
  * encapsulation boundary. The cells that carry a class are projected from this
  * template and keep this component's scope, so they are styled directly.
+ *
+ * The table itself —the padding de la cabecera y de las celdas, el borde de
+ * la fila, el hover— es el estándar `.app-table` de `src/theme/tables.scss`.
+ * Esta página sólo pone encima lo que es suyo: el filo de color del estado
+ * de la fila y el tipo de letra de las celdas que son códigos o cantidades.
  */
-:host ::ng-deep .actas-table {
-  thead th {
-    background: var(--color-surface-card);
-    color: var(--color-text-muted-on-surface);
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--color-border-on-surface);
-  }
-
-  tbody tr {
-    border-bottom: 1px solid var(--color-border-on-surface);
-    transition: background-color 0.15s ease-in-out;
-  }
-
-  tbody td {
-    padding: 14px 16px;
-    font-size: 14px;
-    color: var(--color-text-on-surface);
-    vertical-align: middle;
-  }
-}
-
 .row-estado-en_disputa {
   border-left: 4px solid var(--color-status-warning);
 }
