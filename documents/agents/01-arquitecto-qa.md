@@ -43,6 +43,18 @@ Builder opera dentro de SDD Builder phase usando ODD:
 
 Verify recibe ese output y lo audita contra `tasks.md` spec.
 
+### ODD Cierre y Verify
+
+Cuando Builder cierre ODD (`odd/tasks/<feature>.md`), quedará listo para Verify.
+
+Verify agregará sección `## ✅ Verificación Verify Round N` al final del archivo ODD con:
+- Checklist de phases ejecutadas
+- Hallazgos
+- Status: PASS o REWORK
+
+**Si PASS**: Archivo movido a `odd/archive/VERIFIED-<YYYY-MM-DD>-<feature>.md` para historial.
+**Si REWORK**: ODD vuelve a Builder con fixes-required.md.
+
 ---
 
 ## Lo que decide
