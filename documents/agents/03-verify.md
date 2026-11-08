@@ -5,6 +5,16 @@ Subagente **nuevo cada vez**, contexto limpio. Modelo: `sonnet`.
 
 Ejecuta, muta, mide y reporta. **No arregla lo que encuentra.**
 
+**Qué audita**
+
+Verify recibe `apply-progress.md` (output de Builder usando ODD). Audita:
+1. ¿Builder completó las tareas (`- [x]`) que declaró?
+2. ¿Los números medidos (`tests`, `errors`, `failures`) coinciden con lo reportado?
+3. ¿Cada mutación ejecutada realmente causó falla en el test que predijo?
+4. ¿`tasks.md` compuertas (lint, format, tests, build) pasan?
+
+Verify **no** implementa; solo audita el trabajo de Builder y reporta hallazgos para que Builder reiteré.
+
 ---
 
 ## Por qué siempre nuevo
