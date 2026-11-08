@@ -14,6 +14,8 @@ import jakarta.validation.constraints.Size;
  *     (que el backend genera a partir de nombre, apellido y rol) porque la persona invited puede no
  *     tener acceso al correo institucional
  * @param rolNombre rol a asignar
+ * @param sendEmail si se manda la invitacion por email (ODD #504, A). Null equivale a true: el
+ *     default es "enviar", y un cliente viejo que no mande el campo sigue invitando
  */
 @RegisterForReflection
 public record InviteUserRequest(
@@ -27,4 +29,16 @@ public record InviteUserRequest(
         @Email(message = "El email debe ser válido")
         @Size(max = 254, message = "El email no puede pasar de 254 caracteres")
         String emailPersonal,
-    @NotBlank(message = "El rol es requerido") String rolNombre) {}
+    @NotBlank(message = "El rol es requerido") String rolNombre,
+    Boolean sendEmail) {
+
+  /**
+   * Si hay que enviar la invitacion por email.
+   *
+   * <p>Null significa true: el default del toggle es encendido, y un cliente que no manda el campo
+   * no deberia cambiar de comportamiento por no conocerlo.
+   */
+  public boolean enviarEmail() {
+    return sendEmail == null || sendEmail;
+  }
+}
