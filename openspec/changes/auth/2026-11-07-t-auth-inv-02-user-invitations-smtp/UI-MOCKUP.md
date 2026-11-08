@@ -355,8 +355,8 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
   <div class="container">
     <!-- Header -->
     <div class="header">
-      <div class="logo">🗳️ Control Electoral</div>
-      <p style="margin-top: 10px; font-size: 14px;">Plataforma de Escrutinio Cívico</p>
+      <div class="logo">🗳️ Control's Elector</div>
+      <p style="margin-top: 10px; font-size: 14px;">Plataforma de Observación Electoral</p>
     </div>
 
     <!-- Content -->
@@ -364,8 +364,7 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
       <div class="section">
         <h2 style="color: #1f2937; margin-bottom: 10px;">¡Bienvenido, Juan!</h2>
         <p style="color: #4b5563; line-height: 1.6;">
-          Tu cuenta de usuario ha sido creada exitosamente en Control Electoral.
-          A continuación encontrarás tus credenciales de acceso temporal.
+          Tu cuenta ha sido <strong>creada pero está INACTIVA</strong>. Para activarla y acceder a Control's Elector, debes cambiar tu contraseña temporal usando las credenciales que encontrarás a continuación.
         </p>
       </div>
 
@@ -385,20 +384,20 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
 
         <div class="credential-item">
           <div class="credential-label">🔗 Enlace de Acceso:</div>
-          <a href="https://control.brydyan.me" class="cta-button">
-            Acceder a Control Electoral
+          <a href="https://app.controls.brydyan.me" class="cta-button">
+            Acceder a Control's Elector
           </a>
         </div>
       </div>
 
       <!-- Next Steps -->
       <div class="section">
-        <h3 style="color: #1f2937;">Próximos Pasos:</h3>
+        <h3 style="color: #1f2937;">Próximos Pasos para Activar tu Cuenta:</h3>
         <ol style="color: #4b5563; line-height: 1.8;">
           <li>Abre el enlace de acceso arriba</li>
           <li>Inicia sesión con usuario y contraseña temporal</li>
           <li>Dirígete a <strong>Mi Perfil → Seguridad</strong></li>
-          <li>Cambia tu contraseña a una nueva (más de 12 caracteres, combinada)</li>
+          <li><strong>Cambia tu contraseña</strong> a una nueva (mín. 12 caracteres, mayúscula + minúscula + número + símbolo) <em style="color: #059669;">— Esto activa tu cuenta</em></li>
           <li>Guarda tu nueva contraseña en lugar seguro</li>
         </ol>
       </div>
@@ -407,7 +406,7 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
       <div class="warning">
         <strong>⚠️ Importante:</strong>
         <ul style="margin: 10px 0 0 0; padding-left: 20px;">
-          <li>Esta contraseña temporal expira en <strong>30 días</strong></li>
+          <li>Esta contraseña temporal expira en <strong>24 horas</strong>. Activa tu cuenta ahora.</li>
           <li>No compartas esta contraseña por email o chat</li>
           <li>Solo tú deberías conocer tu contraseña definitiva</li>
           <li>Si no solicitaste esta cuenta, contacta de inmediato</li>
@@ -417,16 +416,16 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
       <!-- Support -->
       <div class="section">
         <p style="color: #6b7280; font-size: 13px;">
-          ¿Preguntas o problemas? Contacta al equipo de Control Electoral.
+          ¿Preguntas o problemas? Contacta al equipo de Control's Elector.
         </p>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="footer">
-      <p style="margin: 0;">Control Electoral CNE 🗳️ 2026</p>
+      <p style="margin: 0;">Control's Elector 🗳️ 2026</p>
       <p style="margin: 5px 0 0 0; font-size: 11px;">
-        Plataforma de Escrutinio Cívico | Electorado Participativo
+        Plataforma de Observación Electoral | Participación Cívica
       </p>
     </div>
   </div>
@@ -438,13 +437,14 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  🗳️ Control Electoral                                │
-│     Plataforma de Escrutinio Cívico                  │
+│  🗳️ Control's Elector                               │
+│     Plataforma de Observación Electoral              │
 ├──────────────────────────────────────────────────────┤
 │                                                      │
 │ ¡Bienvenido, Juan!                                  │
 │                                                      │
-│ Tu cuenta de usuario ha sido creada exitosamente.   │
+│ Tu cuenta está CREADA pero INACTIVA.                │
+│ Para activarla, cambia tu contraseña temporal.      │
 │                                                      │
 │ ┌────────────────────────────────────────────────┐  │
 │ │ 👤 Usuario (email):                            │  │
@@ -454,25 +454,25 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
 │ │ Kh7@mP9#qLx4                                   │  │
 │ │                                                │  │
 │ │ 🔗 Enlace de Acceso:                           │  │
-│ │ [ Acceder a Control Electoral ]                │  │
+│ │ [ Acceder a Control's Elector ]                │  │
 │ └────────────────────────────────────────────────┘  │
 │                                                      │
-│ Próximos Pasos:                                     │
+│ Próximos Pasos para Activar tu Cuenta:             │
 │ 1. Abre el enlace de acceso arriba                 │
 │ 2. Inicia sesión con usuario y contraseña temporal │
 │ 3. Dirígete a Mi Perfil → Seguridad               │
-│ 4. Cambia tu contraseña a una nueva                │
+│ 4. Cambia tu contraseña (esto activa tu cuenta)   │
 │ 5. Guarda tu nueva contraseña en lugar seguro      │
 │                                                      │
 │ ⚠️ Importante:                                      │
-│ • Esta contraseña temporal expira en 30 días       │
+│ • Esta contraseña temporal expira en 24 horas      │
 │ • No compartas esta contraseña por email           │
 │ • Solo tú deberías conocer tu contraseña           │
 │ • Si no solicitaste esta cuenta, contacta ya       │
 │                                                      │
 │ ─────────────────────────────────────────────────   │
-│ Control Electoral CNE 🗳️ 2026                       │
-│ Plataforma de Escrutinio Cívico                    │
+│ Control's Elector 🗳️ 2026                           │
+│ Plataforma de Observación Electoral                 │
 │                                                      │
 └──────────────────────────────────────────────────────┘
 ```
