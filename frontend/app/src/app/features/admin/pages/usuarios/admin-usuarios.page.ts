@@ -24,6 +24,7 @@ import {
   UsuarioConPasswordTemporal,
   UsuarioFiltros,
   UsuarioResponseDto,
+  UserInvitationResponse,
 } from '../../domain/models/admin.model';
 
 /**
@@ -99,6 +100,17 @@ export class AdminUsuariosPage implements OnInit {
   apellido = '';
   rol: RolUsuario = 'OBSERVER';
   passwordTemporal: string | null = null;
+  /**
+   * Correo de contacto de la persona invitada (T-AUTH-INV-02).
+   *
+   * <p>Es distinto del login: el backend genera el login a partir de nombre,
+   * apellido y rol, y el correo de contacto es donde se manda la invitacion.
+   */
+  emailPersonal = '';
+  /** Hay una invitacion en vuelo. */
+  readonly invitaando = signal(false);
+  /** A quien se le mando la invitacion, para mostrarlo en la pantalla. */
+  readonly invitacionEnviada = signal<UserInvitationResponse | null>(null);
   readonly roles: RolUsuario[] = ['MASTER', 'COORDINATOR', 'OBSERVER', 'ADMIN'];
 
   /** Filter options for the enabled state. */
@@ -186,6 +198,8 @@ export class AdminUsuariosPage implements OnInit {
     this.apellido = '';
     this.rol = 'OBSERVER';
     this.passwordTemporal = null;
+    this.emailPersonal = '';
+    this.invitacionEnviada.set(null);
     this.error.set(null);
     this.modalAbierto = true;
   }
@@ -240,6 +254,75 @@ export class AdminUsuariosPage implements OnInit {
       },
     });
   }
+  // ── Invitación de una persona (T-AUTH-INV-02) ─────────────────────────────
+
+  /**
+   * El correo de contacto tiene que tener forma de correo.
+   *
+   * <p>Es el subconjunto practico de RFC 5322: una arroba, algo antes y algo
+   * despues, y un punto en el dominio. El backend vuelve a validarlo con el
+   * validador de bean y con su propia comprobacion: aca es una ayuda, no la
+   * garantia.
+   */
+  emailValido(): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.emailPersonal.trim());
+  }
+
+  /** El boton de invitar solo se habilita con los tres datos y un email valido. */
+  puedeInvitar(): boolean {
+    return (
+      !this.invitaando() &&
+      this.nombre.trim().length > 0 &&
+      this.apellido.trim().length > 0 &&
+      this.emailPersonal.trim().length > 0 &&
+      this.emailValido()
+    );
+  }
+
+  /**
+   * Invita a la persona: crea la cuenta y manda el email de activacion.
+   *
+   * <p>El mensaje de exito dice a que direccion se mando y con que login entra
+   * la persona: sin el login, quien recibe el correo no sabria como entrar.
+   */
+  invitar(): void {
+    if (!this.puedeInvitar()) {
+      this.error.set(
+        'Nombre, apellido y un email válido son obligatorios para invitar.',
+      );
+      return;
+    }
+
+    this.invitaando.set(true);
+    this.error.set(null);
+    this.invitacionEnviada.set(null);
+
+    this.service
+      .invitarUsuario({
+        nombre: this.nombre.trim(),
+        apellido: this.apellido.trim(),
+        emailPersonal: this.emailPersonal.trim(),
+        rolNombre: this.rol,
+      })
+      .subscribe({
+        next: (respuesta) => {
+          this.invitaando.set(false);
+          this.invitacionEnviada.set(respuesta);
+          // El formulario se limpia: la invitacion ya salio y dejar los datos
+          // cargados invita a mandar dos veces la misma persona.
+          this.nombre = '';
+          this.apellido = '';
+          this.emailPersonal = '';
+          this.rol = 'OBSERVER';
+          this.cargarUsuarios();
+        },
+        error: (err) => {
+          this.invitaando.set(false);
+          this.error.set(err?.message || 'No se pudo enviar la invitación.');
+        },
+      });
+  }
+
   deshabilitar(usuario: UsuarioResponseDto): void {
     if (!this.puedeAnular(usuario)) return;
     const mensaje = `¿Estás seguro de que deseas deshabilitar a ${usuario.email}? Perderá el acceso al sistema.`;

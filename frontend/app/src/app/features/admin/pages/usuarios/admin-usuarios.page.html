@@ -286,8 +286,38 @@
     <p-select [options]="roles" [(ngModel)]="rol" fluid />
   </label>
 
-  @if (error()) {
+  @if (!modoEdicion) {
+  <label class="field">
+    <span>Email personal</span>
+    <input
+      type="email"
+      [(ngModel)]="emailPersonal"
+      pInputText
+      placeholder="persona@ejemplo.com"
+      data-testid="email-personal"
+    />
+    <small class="field-hint">
+      Correo donde la persona recibirá la invitación con su link de activación.
+      Su usuario del sistema se genera solo a partir de su nombre, apellido y
+      rol.
+    </small>
+    @if (emailPersonal.trim().length > 0 && !emailValido()) {
+    <small class="field-error" data-testid="email-personal-error">
+      El email debe ser válido.
+    </small>
+    }
+  </label>
+  } @if (error()) {
   <p-message severity="error" [text]="error() ?? ''" />
+  } @if (invitacionEnviada(); as invitacion) {
+  <div class="password-alert" role="status" data-testid="invitacion-enviada">
+    <strong>Invitación enviada a {{ invitacion.emailPersonal }}</strong
+    ><code>{{ invitacion.username }}</code
+    ><span
+      >La persona entra al sistema con ese usuario y elige su contraseña con el
+      link del email.</span
+    >
+  </div>
   } @if (passwordTemporal) {
   <div class="password-alert">
     <strong>Contraseña temporal</strong><code>{{ passwordTemporal }}</code
@@ -306,6 +336,17 @@
     <app-button [disabled]="submitting()" (clicked)="guardar()">
       {{ submitting() ? 'Guardando…' : 'Guardar' }}
     </app-button>
+    @if (!modoEdicion) {
+    <app-button
+      variant="secondary"
+      [disabled]="!puedeInvitar()"
+      [loading]="invitaando()"
+      (clicked)="invitar()"
+      data-testid="btn-invitar"
+    >
+      {{ invitaando() ? 'Enviando…' : 'Enviar invitación' }}
+    </app-button>
+    }
   </ng-template>
 </p-dialog>
 
