@@ -52,19 +52,26 @@ Cada papel tiene su archivo, con su plantilla de lanzamiento y sus límites:
 
 ## 3. Compuertas y línea base
 
-Medidas el **2026-11-05**, tras archivar `2026-11-04-t-fe-20-image-pipeline-compression` (rama `brydyan/t-fe-20-imagen-compression`):
+Medidas el **2026-11-07**, tras verificación ODD #478 (CORS + License + JaCoCo):
 
 ```
-backend build     ./mvnw -B clean package -DskipTests        exit 0
-backend test      ./mvnw -B test                             63 suites / 281 tests
-                                                             0 ERROR / 0 failure / 2 skip   ← VERDE
-frontend lint     pnpm lint                                  0 errores (exit 0)
-frontend format   pnpm format:check                          0 errores
-frontend build    pnpm build                                 bundle generado en www (exit 0)
-frontend test     pnpm test:ci                               43+ suites / 628 tests / 0 failures (isolate: true, exit 0)
+backend build     ./mvnw -B clean verify                     BUILD SUCCESS
+backend test      mvn -B test                                11 suites / 54 tests
+                                                             0 failure / 2 error (Testcontainers/Docker)
+backend coverage  JaCoCo gate (piso 0.08, real 0.1175)       PASS ✅
+backend format    spotless:check                             0 violaciones (exit 0) ✅
+frontend lint     pnpm lint                                  0 errores (exit 0) ✅
+frontend format   pnpm format:check                          0 errores ✅
+frontend build    pnpm build                                 bundle generado en www (exit 0) ✅
+frontend test     pnpm test:ci                               68 suites / 651 tests / 0 failures (exit 0) ✅
 ```
 
-Working directory obligatorio: backend en `backend/electoral-api/`, frontend en `frontend/app/`.
+**Cambios respecto 2026-11-05:**
+- Backend tests +7 (CorsPreflightIT nueva)
+- Frontend tests +23 (T-FE-20 completada)
+- JaCoCo integration operacional (CI artifact publish)
+
+Working directory obligatorio: backend en `backend/electoral-api-quarkus/`, frontend en `frontend/app/`.
 
 **Nota:** Frontend tests crecieron significativamente: 241 (2026-10-04) → 628 (2026-11-05) tras T-FE-19 (admin CRUD) y T-FE-20 (image compression). Cada cambio nuevo suma tests en su área.
 
@@ -253,9 +260,10 @@ Los seis del playbook (§4), instanciados aquí:
 
 ## 9. Estado del ROADMAP
 
-Última actualización: **2026-11-05**, por el Arquitecto.
+Última actualización: **2026-11-07**, por Verify (ODD Phase 0 completado).
 
-Changes archivados recientemente:
+ODD/SDD archivados recientemente:
+- **`odd/archive/VERIFIED-2026-11-07-compliance-cors-license-jacoco.*`** (ODD Phase 0 completo: CORS preflight 7 tests + 6 mutations, LICENSE Apache 2.0, THIRD_PARTY_LICENSES.md generado, JaCoCo 0.8.13 con gate 0.08, PWA manifest + icons reparados. Verify Round 1: ✅ PASS.)
 - `openspec/changes/archive/2026-09-25-fe-vitest-ionic-cleanup-race/` (Compuerta estricta CI y 240/240 tests pasando con `isolate: true`)
 - `openspec/changes/archive/2026-10-04-t-fe-11-realtime-dashboard/`
 - `openspec/changes/archive/2026-10-04-t-fe-12-shared-components/` (Componentes compartidos @shared/*, ConfirmDialog con focus trap, 241 tests, exit 0)
@@ -297,13 +305,15 @@ Changes activos / preparados:
 
 ### Ejecución Secuencial
 
-#### **Phase 0: ODD (Bloqueadores — hoy)**
+#### **Phase 0: ODD (Bloqueadores — completado)**
 
 ```
 ODD #478 (CORS + LICENSE + JACOCO)
-├─ 55 min total
+├─ 55 min ejecutados (2026-11-07)
 ├─ Desbloquea: Todo (frontend/backend communication)
-└─ Status: To Do
+├─ Status: ✅ VERIFIED (PASS, no blockers)
+├─ Archivado: odd/archive/VERIFIED-2026-11-07-compliance-cors-license-jacoco.md
+└─ Verify report: CORS mutations 6/6 verified, gates all green
 
 ODD #490 (Dashboard routing)
 ├─ Status: ✅ RESOLVED UPSTREAM (Commit bdfa452)
@@ -311,8 +321,8 @@ ODD #490 (Dashboard routing)
 └─ No further action needed
 ```
 
-**Estimación:** 55 min (ODD #478 only)  
-**Salida:** CORS configured, LICENSE created, Jacoco integrated
+**Completado:** ODD #478 ready to unblock Phase 1  
+**Salida:** CORS configured ✅, LICENSE created ✅, Jacoco integrated ✅, PWA manifest fixed ✅
 
 #### **Phase 1: SDD Sprint 1 (Priority — Week 1-2)**
 
