@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.legal.web;
 
+import jakarta.annotation.security.PermitAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -26,6 +27,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Path("/api/v1/legal/current-version")
 @Produces(MediaType.APPLICATION_JSON)
 @ApplicationScoped
+@PermitAll
 public class LegalVersionResource {
 
   /** Version vigente de los terminos y de la politica. Cambiarla obliga a re-aceptar. */

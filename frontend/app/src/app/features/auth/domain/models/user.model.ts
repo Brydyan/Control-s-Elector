@@ -13,4 +13,6 @@ export interface CurrentUser {
   email: string;
   role: Role;
   permissions: string[];
+  acceptedTermsVersion?: string | null;
+  acceptedPrivacyVersion?: string | null;
 }
