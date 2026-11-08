@@ -1,7 +1,8 @@
 # Apply Progress — ODD: Compliance CORS + Licencias + JaCoCo (PWA)
 
 **Implementador:** agente Mavis (modo ODD / Implementation Routing)
-**Change:** `odd/tasks/2026-11-07-compliance-cors-license-jacoco.md`
+**Change:** `odd/archive/VERIFIED-2026-11-07-compliance-cors-license-jacoco.md`
+**(origen:** `odd/tasks/2026-11-07-compliance-cors-license-jacoco.md`, archivado el 2026-11-07 tras PASS de Verify)**
 **Rama:** `brydyan/sc-478/odd-cors-license-thirdparty-jacoco` (sin commitear, sin push)
 **Fecha:** 2026-11-07
 
