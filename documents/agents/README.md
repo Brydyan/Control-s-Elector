@@ -1,32 +1,114 @@
-# Los tres papeles — índice
+# Los tres papeles — Flujos SDD vs ODD
 
 Reparto de trabajo con agentes en Control Electoral. Método: `SDD-PLAYBOOK.md` (raíz).
 Adaptación al proyecto: `openspec/ROADMAP.md`.
 
-Regla que sostiene todo lo demás: **nadie verifica su propio trabajo.**
+**Regla que sostiene todo:** Nadie verifica su propio trabajo. SDD y ODD son flujos distintos.
 
 ---
 
 ## Quién es quién
 
-| Papel | Archivo | Quién | Modelo |
-|---|---|---|---|
-| **Arquitecto / QA** | `01-arquitecto-qa.md` | agente principal — el hilo con el que hablás | opus |
-| **Builder** (Implementador) | `02-builder.md` | subagente `sdd-apply`, contexto sólo del prompt | sonnet |
-| **Verify** (Verificador) | `03-verify.md` | subagente **nuevo**, contexto limpio | sonnet |
+| Papel | SDD | ODD |
+|---|---|---|
+| **Arquitecto / QA** | `01-arquitecto-qa.md` — Decide si es SDD o ODD | `01-arquitecto-qa.md` — Decide si es SDD o ODD |
+| **Builder SDD** | `02-builder-sdd.md` — Explore → Architect → Build | — |
+| **Builder ODD** | — | `02-builder-odd.md` — Implement tasks directo |
+| **Verify SDD** | `03-verify-sdd.md` — Mutaciones formales + compuertas | — |
+| **Verify ODD** | — | `03-verify-odd.md` — Validación checklist |
+
+---
+
+## Flujo SDD (Software Design Document)
+
+**Para features nuevas o cambios arquitectónicos.**
 
 ```
-Arquitecto ──escribe──► tasks.md ──► Builder ──escribe──► apply-progress.md
-     ▲                                                            │
-     │                                                            ▼
-     └──────── verify-report.md ◄──── Verify ◄────── lee y RE-EJECUTA
-                fixes-required.md
+Arquitecto
+  proposal.md ✍️
+  design.md (D1, D2, ...) ✍️
+  specs/*.md ✍️
+  tasks.md (A-E con mutaciones) ✍️
+       │
+       ▼
+Builder SDD (vía /02-build-sdd)
+  Authorize ✓ Explore ✓ Resolve ✓
+  Implement (A→B→C→D→E)
+  Close: apply-progress.md ✍️
+       │
+       ▼
+Verify SDD (vía /03-verify-sdd)
+  Ejecutar TODAS las mutaciones
+  Validar compuertas formales
+  verify-report.md ✍️
+  fixes-required.md ✍️ (si CRITICAL)
+       │
+       ├─→ PASS ──► Archive (git mv a openspec/archive/)
+       │
+       └─→ REWORK ──► Builder vuelve con fixes-required.md
 ```
 
-El Builder no decide si su trabajo está bien. Verify no arregla lo que encuentra. El
-Arquitecto no escribe la funcionalidad. Cada frontera existe para que el hueco de uno lo vea
-otro: quien escribe algo no puede ver el hueco que dejó, porque el hueco tiene la forma de su
-propia suposición.
+---
+
+## Flujo ODD (Implementation Routing)
+
+**Para ajustes a features ya diseñadas.**
+
+```
+Arquitecto crea odd/tasks/<feature>.md
+  - Tasks A-E (ajuste concreto)
+  - Criterios de aceptación claros
+  - Referencia a SDD padre (si aplica)
+       │
+       ▼
+Builder ODD (vía /02-build-odd)
+  Authorize ✓ Explore ✓
+  Implement (A→B→C)
+  Close: apply-progress.md ✍️
+       │
+       ▼
+Verify ODD (vía /03-verify-odd)
+  Validar tasks completadas
+  Ejecutar compuertas (lint, test, build)
+  verify-report.md ✍️
+  fixes-required.md ✍️ (si CRITICAL)
+       │
+       ├─→ PASS ──► Archive (git mv a odd/archive/)
+       │
+       └─→ REWORK ──► Builder vuelve con fixes-required.md
+```
+
+---
+
+## Diferencia Clave: SDD vs ODD
+
+| Aspecto | SDD | ODD |
+|---------|-----|-----|
+| **Cuándo** | Nueva feature / cambio arquitectónico | Ajuste a feature existente |
+| **Architect** | SÍ — proposal, design, specs | NO — solo tasks |
+| **Builder Fases** | Authorize + Explore + Resolve + Implement | Authorize + Explore + Implement |
+| **Mutaciones** | Obligatorias, todas | Opcionales, si introduce garantía |
+| **Verify** | Formal (mutation testing) | Validación checklist |
+| **Duración** | 2-3 semanas (Architect → Builder → Verify) | 2-4 horas (Builder → Verify) |
+| **Rondas Verify** | Posibles (R1, R2, R3) | Generalmente 1 ronda |
+
+---
+
+## Reglas Invariantes
+
+1. **Nadie verifica su propio trabajo**
+   - Builder no decide si está bien
+   - Verify no arregla lo que encuentra
+   - Arquitecto no escribe funcionalidad
+
+2. **Cada frontera existe para ver huecos ajenos**
+   - Quien escribe no ve su propio hueco
+   - Quien verifica ve con ojos frescos
+
+3. **Contexto limpio para Verify**
+   - Cada Verify es nuevo
+   - No hereda suposiciones de Builder
+   - Prompt se sostiene solo
 
 ---
 
