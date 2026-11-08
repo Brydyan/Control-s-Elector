@@ -1,6 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map, of, catchError, shareReplay } from 'rxjs';
+import {
+  Observable,
+  forkJoin,
+  map,
+  of,
+  catchError,
+  shareReplay,
+  throwError,
+} from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   DashboardData,
@@ -112,7 +120,16 @@ export class DashboardApi {
             };
           }),
         ),
-        shareReplay(1),
+        // Un fallo NO puede quedar cacheado. `shareReplay` reemitiria el error a
+        // cada suscriptor futuro y el boton "reintentar" de la pagina nunca
+        // recuperaria sin recargar el navegador: la segunda llamada recibiria el
+        // error cacheado, no una respuesta nueva. Se limpia la cache y se
+        // re-lanza, para que el proximo intento vuelva a pedir el endpoint.
+        catchError((err) => {
+          this.resultadosDetalles$ = null;
+          return throwError(() => err);
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
       );
     }
     return this.resultadosDetalles$;
@@ -132,7 +149,13 @@ export class DashboardApi {
             parroquias: (c as ProgresoCantonDto).parroquias ?? [],
           })),
         ),
-        shareReplay(1),
+        // Mismo criterio que en getResultadosDetalles(): el error no se cachea,
+        // para que el reintento de la pagina vuelva a pedir el endpoint.
+        catchError((err) => {
+          this.progresoDetalles$ = null;
+          return throwError(() => err);
+        }),
+        shareReplay({ bufferSize: 1, refCount: false }),
       );
     }
     return this.progresoDetalles$;
