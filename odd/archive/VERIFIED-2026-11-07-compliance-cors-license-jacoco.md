@@ -10,7 +10,7 @@
 
 > **Estado:** ejecutado. Todas las tasks marcadas `[x]`. El informe con números **medidos**,
 > mutaciones ejecutadas y desvíos está en
-> [`2026-11-07-compliance-cors-license-jacoco.apply-progress.md`](./2026-11-07-compliance-cors-license-jacoco.apply-progress.md).
+> [`VERIFIED-2026-11-07-compliance-cors-license-jacoco.apply-progress.md`](./VERIFIED-2026-11-07-compliance-cors-license-jacoco.apply-progress.md).
 >
 > **Resumen medido:** backend `11 suites / 54 tests / 0 failure / 2 error` (Testcontainers sin
 > Docker); cobertura LINE `387/3294 = 0.1175` con gate 0.08; frontend `68/651` tests, lint/format
@@ -392,7 +392,7 @@ open target/site/jacoco/index.html
 | PWA manifest / icons | ✅ | 5 min |
 | **Total** | **DONE** | **55 min** |
 
-**Details:** [apply-progress.md](./2026-11-07-compliance-cors-license-jacoco.apply-progress.md)
+**Details:** [apply-progress.md](./VERIFIED-2026-11-07-compliance-cors-license-jacoco.apply-progress.md)
 
 **Total ODD effort:** ~55 minutes
 
@@ -410,7 +410,7 @@ Then: **Launch SDD builders** (Privacy+Terms, Cookie Consent, Sentry)
 ---
 
 **Status:** Ejecutado — informe en
-[`2026-11-07-compliance-cors-license-jacoco.apply-progress.md`](./2026-11-07-compliance-cors-license-jacoco.apply-progress.md)  
+[`VERIFIED-2026-11-07-compliance-cors-license-jacoco.apply-progress.md`](./VERIFIED-2026-11-07-compliance-cors-license-jacoco.apply-progress.md)  
 **Assigned to:** Builder (ODD phase)  
 **Next:** `design.md` for each SDD after ODD closes
 
