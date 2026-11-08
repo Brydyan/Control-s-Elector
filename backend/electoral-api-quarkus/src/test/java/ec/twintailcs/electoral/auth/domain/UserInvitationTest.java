@@ -22,7 +22,7 @@ class UserInvitationTest {
     invitacion.setEmailPersonal("juan@example.com");
     invitacion.setInvitedBy(2L);
     invitacion.setInvitedAt(Instant.now());
-    invitacion.setExpiryAt(Instant.now().plus(Duration.ofDays(UserInvitation.DIAS_VIGENCIA)));
+    invitacion.setExpiryAt(Instant.now().plus(Duration.ofHours(UserInvitation.HORAS_VIGENCIA)));
     return invitacion;
   }
 
@@ -71,8 +71,8 @@ class UserInvitationTest {
   }
 
   @Test
-  @DisplayName("la ventana de vigencia es de 30 dias")
-  void laVigenciaEsDe30Dias() {
-    assertThat(UserInvitation.DIAS_VIGENCIA).isEqualTo(30);
+  @DisplayName("la ventana de vigencia es de 24 horas (ODD #504, B)")
+  void laVigenciaEsDe24Horas() {
+    assertThat(UserInvitation.HORAS_VIGENCIA).isEqualTo(24);
   }
 }
