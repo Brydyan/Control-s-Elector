@@ -364,41 +364,36 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
       <div class="section">
         <h2 style="color: #1f2937; margin-bottom: 10px;">¡Bienvenido, Juan!</h2>
         <p style="color: #4b5563; line-height: 1.6;">
-          Tu cuenta ha sido <strong>creada pero está INACTIVA</strong>. Para activarla y acceder a Control's Elector, debes cambiar tu contraseña temporal usando las credenciales que encontrarás a continuación.
+          Tu cuenta ha sido <strong>creada</strong>. Para activarla, haz clic en el enlace de abajo e ingresa una nueva contraseña segura.
         </p>
       </div>
 
-      <!-- Credentials -->
+      <!-- Activation Link -->
       <div class="credentials">
-        <h3 style="color: #1e40af; margin-top: 0;">Tus Credenciales Temporales</h3>
+        <h3 style="color: #1e40af; margin-top: 0;">Activar tu Usuario</h3>
         
         <div class="credential-item">
-          <div class="credential-label">👤 Usuario (email):</div>
+          <div class="credential-label">👤 Tu usuario será:</div>
           <div class="credential-value">juagar.obs@control.ttcs</div>
         </div>
 
         <div class="credential-item">
-          <div class="credential-label">🔑 Contraseña (temporal):</div>
-          <div class="credential-value">Kh7@mP9#qLx4</div>
-        </div>
-
-        <div class="credential-item">
-          <div class="credential-label">🔗 Enlace de Acceso:</div>
-          <a href="https://app.controls.brydyan.me" class="cta-button">
-            Acceder a Control's Elector
+          <div class="credential-label">🔗 Enlace para activar tu usuario:</div>
+          <a href="https://app.controls.brydyan.me/activate?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." class="cta-button">
+            Activar Cuenta y Establecer Contraseña
           </a>
         </div>
       </div>
 
       <!-- Next Steps -->
       <div class="section">
-        <h3 style="color: #1f2937;">Próximos Pasos para Activar tu Cuenta:</h3>
+        <h3 style="color: #1f2937;">Próximos Pasos:</h3>
         <ol style="color: #4b5563; line-height: 1.8;">
-          <li>Abre el enlace de acceso arriba</li>
-          <li>Inicia sesión con usuario y contraseña temporal</li>
-          <li>Dirígete a <strong>Mi Perfil → Seguridad</strong></li>
-          <li><strong>Cambia tu contraseña</strong> a una nueva (mín. 12 caracteres, mayúscula + minúscula + número + símbolo) <em style="color: #059669;">— Esto activa tu cuenta</em></li>
-          <li>Guarda tu nueva contraseña en lugar seguro</li>
+          <li>Haz clic en el enlace "Activar Cuenta y Establecer Contraseña"</li>
+          <li>Ingresa una contraseña nueva segura (mín. 12 caracteres: mayúscula + minúscula + número + símbolo)</li>
+          <li>Confirma tu contraseña</li>
+          <li>Verás un resumen de tu cuenta con usuario y rol</li>
+          <li>Usa el botón "Ir a Login" para iniciar sesión con tu nueva contraseña</li>
         </ol>
       </div>
 
@@ -443,26 +438,25 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
 │                                                      │
 │ ¡Bienvenido, Juan!                                  │
 │                                                      │
-│ Tu cuenta está CREADA pero INACTIVA.                │
-│ Para activarla, cambia tu contraseña temporal.      │
+│ Tu cuenta ha sido creada.                           │
+│ Para activarla, establece una nueva contraseña.    │
 │                                                      │
 │ ┌────────────────────────────────────────────────┐  │
-│ │ 👤 Usuario (email):                            │  │
+│ │ Activar tu Usuario                             │  │
+│ │                                                │  │
+│ │ 👤 Tu usuario será:                            │  │
 │ │ juagar.obs@control.ttcs                        │  │
 │ │                                                │  │
-│ │ 🔑 Contraseña (temporal):                      │  │
-│ │ Kh7@mP9#qLx4                                   │  │
-│ │                                                │  │
-│ │ 🔗 Enlace de Acceso:                           │  │
-│ │ [ Acceder a Control's Elector ]                │  │
+│ │ 🔗 Enlace para activar tu usuario:             │  │
+│ │ [ Activar Cuenta y Establecer Contraseña ]     │  │
 │ └────────────────────────────────────────────────┘  │
 │                                                      │
-│ Próximos Pasos para Activar tu Cuenta:             │
-│ 1. Abre el enlace de acceso arriba                 │
-│ 2. Inicia sesión con usuario y contraseña temporal │
-│ 3. Dirígete a Mi Perfil → Seguridad               │
-│ 4. Cambia tu contraseña (esto activa tu cuenta)   │
-│ 5. Guarda tu nueva contraseña en lugar seguro      │
+│ Próximos Pasos:                                     │
+│ 1. Haz clic en el enlace                           │
+│ 2. Ingresa una contraseña nueva segura             │
+│ 3. Confirma tu contraseña                          │
+│ 4. Verás un resumen de tu cuenta                   │
+│ 5. Usa "Ir a Login" para iniciar sesión            │
 │                                                      │
 │ ⚠️ Importante:                                      │
 │ • Esta contraseña temporal expira en 24 horas      │
@@ -479,7 +473,330 @@ Bienvenido a Control Electoral - Tus Credenciales de Acceso
 
 ---
 
-## 3. FORMULARIO PRIMER LOGIN (Change Password - First Time)
+## 3. PANTALLA ACTIVACIÓN DE CUENTA (Establish Password)
+
+### Ubicación
+```
+Usuario hace clic en enlace de email: /activate?token=xyz...
+          ↓
+Backend valida token (JWT, 24h expiry)
+          ↓
+Si válido: Redirige a /auth/activate (frontend)
+Si expirado/inválido: Muestra error "Tu enlace de activación expiró. Solicita uno nuevo."
+```
+
+### Pantalla: "Activar tu Cuenta"
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .container { max-width: 500px; margin: 0 auto; padding: 40px 20px; }
+    .header { background-color: #1e40af; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+    .form-container { background-color: #f9fafb; padding: 40px; border-radius: 0 0 8px 8px; }
+    .form-group { margin-bottom: 20px; }
+    .label { font-weight: 600; color: #374151; margin-bottom: 8px; display: block; }
+    .input-field { 
+      width: 100%; 
+      padding: 12px; 
+      border: 1px solid #d1d5db; 
+      border-radius: 4px; 
+      font-size: 14px; 
+      box-sizing: border-box;
+    }
+    .help-text { font-size: 12px; color: #6b7280; margin-top: 6px; }
+    .requirements { 
+      background-color: #e0f2fe; 
+      border-left: 4px solid #0284c7; 
+      padding: 15px; 
+      margin: 20px 0;
+      border-radius: 4px;
+      font-size: 13px;
+    }
+    .requirement-item { margin: 8px 0; }
+    .requirement-check { color: #dc2626; }
+    .button { 
+      width: 100%; 
+      padding: 12px; 
+      background-color: #1e40af; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      font-weight: 600; 
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .button:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 24px;">🔐 Activar tu Cuenta</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">Establece tu contraseña segura</p>
+    </div>
+    
+    <form class="form-container">
+      <div class="form-group">
+        <label class="label">Tu Usuario:</label>
+        <div style="padding: 12px; background-color: #fff; border: 1px solid #d1d5db; border-radius: 4px; color: #374151;">
+          juagar.obs@control.ttcs
+        </div>
+      </div>
+
+      <div class="requirements">
+        <strong>Requisitos de Contraseña:</strong>
+        <div class="requirement-item requirement-check">☐ Mínimo 12 caracteres</div>
+        <div class="requirement-item requirement-check">☐ Mayúsculas (A-Z)</div>
+        <div class="requirement-item requirement-check">☐ Minúsculas (a-z)</div>
+        <div class="requirement-item requirement-check">☐ Números (0-9)</div>
+        <div class="requirement-item requirement-check">☐ Caracteres especiales (!@#$%^&*)</div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Nueva Contraseña *</label>
+        <input type="password" class="input-field" placeholder="Ingresa tu nueva contraseña" />
+        <div class="help-text">Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo</div>
+      </div>
+
+      <div class="form-group">
+        <label class="label">Confirmar Contraseña *</label>
+        <input type="password" class="input-field" placeholder="Confirma tu nueva contraseña" />
+        <div class="help-text">Las contraseñas deben coincidir</div>
+      </div>
+
+      <div class="form-group" style="margin: 25px 0;">
+        <label style="display: flex; align-items: center; font-weight: normal; color: #374151;">
+          <input type="checkbox" style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
+          Entiendo que esta es mi contraseña definitiva y la guardaré en lugar seguro
+        </label>
+      </div>
+
+      <button type="submit" class="button">✓ Activar Cuenta</button>
+    </form>
+  </div>
+</body>
+</html>
+```
+
+### Mockup ASCII
+
+```
+┌──────────────────────────────────────────────────┐
+│          🔐 Activar tu Cuenta                    │
+│     Establece tu contraseña segura               │
+├──────────────────────────────────────────────────┤
+│                                                  │
+│ Tu Usuario:                                      │
+│ ┌────────────────────────────────────────────┐  │
+│ │ juagar.obs@control.ttcs                    │  │
+│ └────────────────────────────────────────────┘  │
+│                                                  │
+│ Requisitos de Contraseña:                       │
+│ ☐ Mínimo 12 caracteres                         │
+│ ☐ Mayúsculas (A-Z)                             │
+│ ☐ Minúsculas (a-z)                             │
+│ ☐ Números (0-9)                                │
+│ ☐ Caracteres especiales (!@#$%^&*)             │
+│                                                  │
+│ Nueva Contraseña *                              │
+│ ┌────────────────────────────────────────────┐  │
+│ │ [____________ contraseña ____________]  👁️ │  │
+│ └────────────────────────────────────────────┘  │
+│                                                  │
+│ Confirmar Contraseña *                          │
+│ ┌────────────────────────────────────────────┐  │
+│ │ [____________ contraseña ____________]  👁️ │  │
+│ └────────────────────────────────────────────┘  │
+│                                                  │
+│ ☑ Entiendo que esta es mi contraseña definitiva │
+│   y la guardaré en lugar seguro                 │
+│                                                  │
+│       [✓ Activar Cuenta]                        │
+│                                                  │
+└──────────────────────────────────────────────────┘
+```
+
+### Validaciones en Tiempo Real
+
+```
+Nueva Contraseña: MyStr0ng!Pass123
+
+✅ Mínimo 12 caracteres              (15 chars)
+✅ Mayúsculas (A-Z)                  (M, S, P)
+✅ Minúsculas (a-z)                  (ytrngass)
+✅ Números (0-9)                     (123)
+✅ Caracteres especiales (!@#$%^&*)  (!)
+
+Fuerza: ████████████████  MUY FUERTE
+```
+
+### Flujo post-submit (Activar Cuenta)
+
+```
+Usuario presiona "Activar Cuenta"
+          ↓
+Frontend valida:
+  - Nueva contraseña cumple todos los requisitos
+  - Confirmación coincide con nueva contraseña
+  - Checkbox de entendimiento marcado
+          ↓
+POST /api/v1/auth/activate
+  Body: {
+    token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    newPassword: "MyStr0ng!Pass123"
+  }
+          ↓
+Backend:
+  1. Valida token (JWT, 24h expiry)
+  2. Validar contraseña cumple requisitos
+  3. Hashear y guardar nueva contraseña
+  4. Marcar usuario como activated_at = NOW
+  5. Invalidar el token de invitación
+  6. Retorna { success: true, message: "Cuenta activada" }
+          ↓
+Frontend redirige a /auth/account-summary
+```
+
+---
+
+## 4. PANTALLA RESUMEN DE CUENTA (Account Activation Summary)
+
+### Ubicación
+```
+POST /api/v1/auth/activate responde 200 OK
+          ↓
+Frontend guarda user data en AuthStore
+          ↓
+Redirige a: /auth/account-summary
+          ↓
+Usuario ve resumen y puede ir a login
+```
+
+### Pantalla: "Tu Cuenta Activada"
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f3f4f6; }
+    .container { max-width: 500px; margin: 0 auto; padding: 40px 20px; }
+    .success-box { background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+    .success-header { background-color: #10b981; color: white; padding: 40px 20px; text-align: center; }
+    .checkmark { font-size: 48px; margin-bottom: 16px; }
+    .success-title { font-size: 24px; font-weight: 600; margin: 0; }
+    .success-subtitle { margin: 8px 0 0 0; opacity: 0.9; font-size: 14px; }
+    .summary-content { padding: 40px 20px; }
+    .summary-item { margin-bottom: 24px; }
+    .summary-label { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; margin-bottom: 6px; }
+    .summary-value { font-size: 16px; color: #1f2937; font-weight: 500; }
+    .info-box { background-color: #eff6ff; border-left: 4px solid #0284c7; padding: 15px; margin: 20px 0; border-radius: 4px; font-size: 13px; color: #1e40af; }
+    .button { 
+      width: 100%; 
+      padding: 12px; 
+      background-color: #1e40af; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      font-size: 14px;
+      margin-top: 20px;
+    }
+    .button:hover { background-color: #1e3a8a; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="success-box">
+      <div class="success-header">
+        <div class="checkmark">✅</div>
+        <h1 class="success-title">¡Cuenta Activada!</h1>
+        <p class="success-subtitle">Tu cuenta está lista para usar</p>
+      </div>
+      
+      <div class="summary-content">
+        <h2 style="color: #1f2937; font-size: 18px; margin: 0 0 24px 0;">Resumen de tu Cuenta</h2>
+
+        <div class="summary-item">
+          <div class="summary-label">👤 Usuario:</div>
+          <div class="summary-value">juagar.obs@control.ttcs</div>
+        </div>
+
+        <div class="summary-item">
+          <div class="summary-label">📧 Correo:</div>
+          <div class="summary-value">juan.garcia@example.com</div>
+        </div>
+
+        <div class="summary-item">
+          <div class="summary-label">🎭 Rol de Control:</div>
+          <div class="summary-value">Observador Electoral</div>
+        </div>
+
+        <div class="info-box">
+          ℹ️ Tu contraseña ha sido establecida correctamente. Ahora puedes iniciar sesión en Control's Elector.
+        </div>
+
+        <button class="button">→ Ir a Login</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+### Mockup ASCII
+
+```
+┌──────────────────────────────────────────────────┐
+│                                                  │
+│              ✅ ¡Cuenta Activada!                │
+│          Tu cuenta está lista para usar          │
+│                                                  │
+├──────────────────────────────────────────────────┤
+│                                                  │
+│ Resumen de tu Cuenta                             │
+│                                                  │
+│ 👤 Usuario:                                      │
+│    juagar.obs@control.ttcs                       │
+│                                                  │
+│ 📧 Correo:                                       │
+│    juan.garcia@example.com                       │
+│                                                  │
+│ 🎭 Rol de Control:                               │
+│    Observador Electoral                          │
+│                                                  │
+│ ┌────────────────────────────────────────────┐  │
+│ │ ℹ️ Tu contraseña ha sido establecida       │  │
+│ │ correctamente. Ahora puedes iniciar sesión │  │
+│ │ en Control's Elector.                      │  │
+│ └────────────────────────────────────────────┘  │
+│                                                  │
+│       [→ Ir a Login]                             │
+│                                                  │
+└──────────────────────────────────────────────────┘
+```
+
+### Flujo post-Summary
+
+```
+Usuario presiona "Ir a Login"
+          ↓
+Frontend navega a /auth/login
+          ↓
+Usuario ingresa credenciales (usuario + nueva contraseña)
+          ↓
+Login procede normalmente (sin obligación de cambio de contraseña)
+```
+
+---
+
+## 5. FORMULARIO PRIMER LOGIN (Change Password - First Time)
 
 ### Ubicación
 ```
