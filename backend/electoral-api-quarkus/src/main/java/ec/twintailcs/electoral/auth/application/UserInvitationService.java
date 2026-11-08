@@ -1,14 +1,17 @@
 package ec.twintailcs.electoral.auth.application;
 
 import ec.twintailcs.electoral.auth.application.port.InvitationEmailQueue;
+import ec.twintailcs.electoral.auth.domain.EstadoInvitacion;
 import ec.twintailcs.electoral.auth.domain.EstadoUsuario;
 import ec.twintailcs.electoral.auth.domain.InvitacionException;
+import ec.twintailcs.electoral.auth.domain.RecursoNoEncontradoException;
 import ec.twintailcs.electoral.auth.domain.Rol;
 import ec.twintailcs.electoral.auth.domain.UserInvitation;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.infrastructure.email.EmailAEnviar;
 import ec.twintailcs.electoral.auth.security.CurrentUser;
 import ec.twintailcs.electoral.auth.web.dto.InviteUserRequest;
+import ec.twintailcs.electoral.auth.web.dto.ResendInvitationResponse;
 import ec.twintailcs.electoral.auth.web.dto.UserInvitationResponse;
 import ec.twintailcs.electoral.evidencia.domain.RlsContexto;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -19,6 +22,7 @@ import jakarta.transaction.Transactional;
 import java.security.SecureRandom;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -142,6 +146,22 @@ public class UserInvitationService {
     usuario.persist();
 
     Instant ahora = Instant.now();
+
+    // ODD #504 (A): el toggle decide si la invitacion sale por email. Con el
+    // toggle apagado la cuenta queda creada y pendiente: sin token y sin
+    // correo, lista para que el MASTER le envie la invitacion cuando quiera.
+    if (!pedido.enviarEmail()) {
+      auditService.logUserCreated(actorId, usuario.getId(), emailPersonal, false);
+      return new UserInvitationResponse(
+          usuario.getPublicId(),
+          username,
+          emailPersonal,
+          EstadoInvitacion.CREATED.valor(),
+          null,
+          true,
+          "Usuario creado. Puedes enviar invitación después.");
+    }
+
     String token = tokenService.generateToken(usuario.getPublicId(), username, rol.getNombre());
     Instant expira = tokenService.expiraEn();
     usuario.setActivationTokenHash(tokenService.hashOf(token));
@@ -156,13 +176,13 @@ public class UserInvitationService {
     invitacion.setStatus(UserInvitation.STATUS_INVITED);
     invitacion.setIpAddress(ip);
     invitacion.setUserAgent(userAgent);
-    // La vigencia de la INVITACION es de 30 dias (la del registro); la del LINK
-    // de activacion son 24 horas (el TTL del token). Son dos plazos distintos:
-    // el link caduca antes que la invitacion, y el email lo dice.
-    invitacion.setExpiryAt(ahora.plus(Duration.ofDays(UserInvitation.DIAS_VIGENCIA)));
+    // La vigencia de la invitacion es la misma que la del token: 24 horas
+    // (ODD #504, B). Una invitacion que vive 30 dias es una credencial que
+    // vive 30 dias en un buzon de correo.
+    invitacion.setExpiryAt(ahora.plus(Duration.ofHours(UserInvitation.HORAS_VIGENCIA)));
     invitacion.persist();
 
-    auditService.logInvitationSent(actorId, usuario.getId(), emailPersonal, expira.toString());
+    auditService.logUserCreated(actorId, usuario.getId(), emailPersonal, true);
 
     EmailAEnviar email =
         new EmailAEnviar(
@@ -182,8 +202,120 @@ public class UserInvitationService {
         usuario.getPublicId(),
         username,
         emailPersonal,
-        invitacion.estadoActual(),
-        invitacion.getExpiryAt());
+        EstadoInvitacion.INVITED.valor(),
+        invitacion.getExpiryAt(),
+        true,
+        "Invitación enviada a " + emailPersonal);
+  }
+
+  /**
+   * Reenvia la invitacion de una cuenta que todavia no se activo.
+   *
+   * <p>Es el caso de soporte: la persona no recibio el correo, se le cambio la direccion o la
+   * cuenta quedo a la espera. El reenvio genera un token NUEVO y deja el anterior sin efecto: como
+   * el hash guardado es el del token vigente, el link viejo deja de servir en el momento en que se
+   * guarda el nuevo.
+   *
+   * <p>Solo se reenvia a una cuenta que este esperando: una cuenta ya activada no se re-invita (el
+   * link nuevo no haria falta y le daria a quien lo recibiera el control de una cuenta que ya
+   * existe), y una cuenta deshabilitada tampoco.
+   *
+   * @param publicId id publico del usuario a re-invitar
+   * @param ip direccion del cliente
+   * @param userAgent agente de usuario del cliente
+   * @return los datos de la nueva invitacion
+   * @throws InvitacionException 400 si la cuenta no admite invitacion; 404 si el usuario no existe
+   */
+  @Transactional
+  public ResendInvitationResponse reenviar(UUID publicId, String ip, String userAgent) {
+    Usuario usuario = Usuario.find("publicId", publicId).firstResult();
+    if (usuario == null) {
+      throw new RecursoNoEncontradoException("Usuario no encontrado: " + publicId);
+    }
+
+    if (usuario.estaActivo()) {
+      auditService.logInvitationRejected(actorId(), usuario.getId(), "usuario_ya_activo");
+      throw InvitacionException.peticionInvalida(
+          "La cuenta ya está activa: no se puede reenviar la invitación.");
+    }
+    if (!usuario.isHabilitado()) {
+      auditService.logInvitationRejected(actorId(), usuario.getId(), "usuario_deshabilitado");
+      throw InvitacionException.peticionInvalida(
+          "La cuenta está deshabilitada: habilítala antes de reenviar la invitación.");
+    }
+
+    Long actorId = actorId();
+    if (actorId == null) {
+      throw new InvitacionException(401, "No autenticado");
+    }
+    rls.activar(actorId);
+
+    // El correo de contacto es el destino de la invitacion. Si la cuenta se creo
+    // sin correo personal (ODD #504, A), se cae al login: es la unica direccion
+    // que hay.
+    String emailPersonal =
+        usuario.getEmailPersonal() == null || usuario.getEmailPersonal().isBlank()
+            ? usuario.getEmail()
+            : usuario.getEmailPersonal();
+
+    Instant ahora = Instant.now();
+    String token =
+        tokenService.generateToken(
+            usuario.getPublicId(), usuario.getEmail(), usuario.getRolNombre());
+    Instant expira = tokenService.expiraEn();
+
+    // El token nuevo deja sin efecto al anterior: el hash guardado es el del
+    // token vigente y el link viejo deja de coincidir.
+    usuario.setActivationTokenHash(tokenService.hashOf(token));
+    usuario.setInvitationSentAt(ahora);
+    usuario.persist();
+
+    UserInvitation invitacion = ultimaInvitacion(usuario.getId());
+    if (invitacion == null) {
+      // La cuenta se creo sin email (ODD #504, A): todavia no hay invitacion que
+      // reenviar, se crea la primera.
+      invitacion = new UserInvitation();
+      invitacion.setUsuarioId(usuario.getId());
+      invitacion.setEmailPersonal(emailPersonal);
+      invitacion.setInvitedBy(actorId);
+      invitacion.setStatus(UserInvitation.STATUS_INVITED);
+    }
+    invitacion.setInvitedAt(ahora);
+    invitacion.setIpAddress(ip);
+    invitacion.setUserAgent(userAgent);
+    invitacion.setExpiryAt(ahora.plus(Duration.ofHours(UserInvitation.HORAS_VIGENCIA)));
+    if (UserInvitation.STATUS_ACTIVATED.equals(invitacion.getStatus())) {
+      invitacion.setStatus(UserInvitation.STATUS_INVITED);
+    }
+    invitacion.persist();
+
+    auditService.logInvitationResent(actorId, usuario.getId(), emailPersonal, expira.toString());
+
+    EmailAEnviar email =
+        new EmailAEnviar(
+            usuario.getId(),
+            emailPersonal,
+            usuario.getEmail(),
+            usuario.getNombre(),
+            usuario.getApellido(),
+            usuario.getRolNombre(),
+            linkDeActivacion(token),
+            expira.toString(),
+            2,
+            EmailAEnviar.TipoEmail.REENVIO);
+    encolarDespuesDelCommit(email);
+
+    return new ResendInvitationResponse(
+        true,
+        "Invitación re-enviada a " + emailPersonal,
+        ahora,
+        invitacion.getExpiryAt(),
+        emailPersonal);
+  }
+
+  /** Ultima invitacion registrada de un usuario (la vigente). */
+  private UserInvitation ultimaInvitacion(Long usuarioId) {
+    return UserInvitation.find("usuarioId = ?1 order by id desc", usuarioId).firstResult();
   }
 
   /**
