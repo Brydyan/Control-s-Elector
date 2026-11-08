@@ -72,37 +72,48 @@ export class DashboardApi {
   /**
    * T-FE-15 A.2: Obtener resultados detallados por cargo con estado, foto, porcentaje.
    * Cachea en memoria via shareReplay(1) — una sola llamada HTTP incluso con múltiples suscriptores.
-   *
-   * @returns Observable<ResultadoCargoDto[]> con detalles de candidatos, votos válidos/blancos/nulos.
-   *
-   * @example
-   * // Backend esperado
-   * [
-   *   {
-   *     cargoId: 1,
-   *     cargoNombre: "Presidente",
-   *     votosValidos: 250000,
-   *     votosBlancos: 5000,
-   *     votosNulos: 3000,
-   *     candidatos: [
-   *       {
-   *         candidatoId: 101,
-   *         candidatoNombre: "Juan Pérez",
-   *         partidoNombre: "Movimiento X",
-   *         votos: 120000,
-   *         porcentaje: 48.0,
-   *         estado: "GANADOR_PROVISIONAL",
-   *         fotoUrl: "https://..."
-   *       }
-   *     ]
-   *   }
-   * ]
+   * Consume el endpoint canónico `/resultados` y enriquece los datos calculando votos válidos,
+   * porcentajes y estados provisionales.
    */
   getResultadosDetalles(): Observable<ResultadoCargoDto[]> {
     if (!this.resultadosDetalles$) {
-      this.resultadosDetalles$ = this.http
-        .get<ResultadoCargoDto[]>(`${this.baseUrl}/resultados-detallados`)
-        .pipe(shareReplay(1));
+      this.resultadosDetalles$ = this.getResultados().pipe(
+        map((cargos) =>
+          cargos.map((cargo) => {
+            const votosValidos = cargo.candidatos.reduce(
+              (acc, c) => acc + (c.votos || 0),
+              0,
+            );
+            const maxVotos =
+              cargo.candidatos.length > 0
+                ? Math.max(...cargo.candidatos.map((c) => c.votos || 0))
+                : 0;
+
+            const candidatos = cargo.candidatos.map((c) => {
+              const votos = c.votos || 0;
+              const porcentaje =
+                votosValidos > 0 ? (votos / votosValidos) * 100 : 0;
+              const esLider = votos === maxVotos && votos > 0;
+              return {
+                ...c,
+                porcentaje,
+                estado: esLider ? 'GANADOR_PROVISIONAL' : 'EN_CONTEO',
+                fotoUrl: null,
+              };
+            });
+
+            return {
+              cargoId: cargo.cargoId,
+              cargoNombre: cargo.cargoNombre,
+              votosValidos,
+              votosBlancos: 0,
+              votosNulos: 0,
+              candidatos,
+            };
+          }),
+        ),
+        shareReplay(1),
+      );
     }
     return this.resultadosDetalles$;
   }
@@ -110,35 +121,19 @@ export class DashboardApi {
   /**
    * T-FE-15 A.2: Obtener progreso por cantón con desglose de parroquias.
    * Cachea en memoria via shareReplay(1).
-   *
-   * @returns Observable<ProgresoCantonDto[]> con métricas territoriales.
-   *
-   * @example
-   * // Backend esperado
-   * [
-   *   {
-   *     cantonId: 1,
-   *     cantonNombre: "Santa Elena",
-   *     totalJrvs: 79,
-   *     jrvsConActa: 42,
-   *     porcentaje: 53.2,
-   *     parroquias: [
-   *       {
-   *         parroquiaId: 10,
-   *         parroquiaNombre: "Santa Elena",
-   *         jrvsEscrutadas: 25,
-   *         jrvsTotal: 40,
-   *         avance: 62.5
-   *       }
-   *     ]
-   *   }
-   * ]
+   * Consume el endpoint canónico `/progreso` asegurando compatibilidad con ProgresoCantonDto.
    */
   getProgresoDetalles(): Observable<ProgresoCantonDto[]> {
     if (!this.progresoDetalles$) {
-      this.progresoDetalles$ = this.http
-        .get<ProgresoCantonDto[]>(`${this.baseUrl}/progreso-detallado`)
-        .pipe(shareReplay(1));
+      this.progresoDetalles$ = this.getProgreso().pipe(
+        map((cantones) =>
+          cantones.map((c) => ({
+            ...c,
+            parroquias: (c as ProgresoCantonDto).parroquias ?? [],
+          })),
+        ),
+        shareReplay(1),
+      );
     }
     return this.progresoDetalles$;
   }
