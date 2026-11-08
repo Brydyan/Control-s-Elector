@@ -1,5 +1,5 @@
 # =============================================================================
-# Liquibase Master Changelog — Control Electoral
+# Liquibase Master Changelog — Control's Elector
 # =============================================================================
 # NOTA: El orden de los changesets es CRÍTICO.
 # Un changeset NO puede referenciar una tabla o columna creada en un changelog
