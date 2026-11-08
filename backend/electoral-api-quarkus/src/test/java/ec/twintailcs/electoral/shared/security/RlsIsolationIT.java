@@ -70,7 +70,13 @@ class RlsIsolationIT {
           "008-configuracion.sql",
           "009-acta-observer-permisos.sql",
           "010-tablas-jpa.sql",
-          "011-rls.sql");
+          "011-rls.sql",
+          // T-AUTH-INV-02: `usuario.email_personal` y la tabla `user_invitations`
+          // con su RLS. Sin estos changesets los casos de invitacion de esta
+          // misma suite no tendrian tabla contra la que probar.
+          "029-user-invitations.sql",
+          // ODD #504: la invitacion vive 24 horas, no 30 dias.
+          "030-user-invitation-24h-expiry.sql");
 
   private Connection adminConn;
   private long obsAId;
@@ -355,6 +361,9 @@ class RlsIsolationIT {
   @DisplayName("la escritura exige que invited_by sea el usuario del contexto")
   void laEscrituraExigeQueInvitedBySeaElContexto() throws Exception {
     // Con el contexto de obsA no se puede registrar una invitacion en nombre de obsB.
+    // Para que la politica de insercion se tiene que violar, `invited_by` tiene
+    // que ser ALGUIEN QUE NO SEA el del contexto: si se pusiera obsA (que es el
+    // contexto) la invitacion seria legitima y la base la aceptaria.
     SQLException thrown = null;
     try (Connection conn =
         DriverManager.getConnection(POSTGRES.getJdbcUrl(), RLS_USER_NAME, RLS_PASSWORD)) {
@@ -366,9 +375,9 @@ class RlsIsolationIT {
       }
       try (PreparedStatement ps =
           conn.prepareStatement(
-              "INSERT INTO user_invitations (usuario_id, email_personal, invited_by, expiry_at) VALUES (?, 'x@test.local', ?, NOW() + INTERVAL '30 days')")) {
+              "INSERT INTO user_invitations (usuario_id, email_personal, invited_by, expiry_at) VALUES (?, 'x@test.local', ?, NOW() + INTERVAL '1 day')")) {
         ps.setLong(1, obsBId);
-        ps.setLong(2, obsAId);
+        ps.setLong(2, obsBId);
         ps.executeUpdate();
       } catch (SQLException e) {
         thrown = e;
@@ -443,7 +452,7 @@ class RlsIsolationIT {
               + emailPersonal
               + "', "
               + masterId
-              + ", NOW() + INTERVAL '30 days')");
+              + ", NOW() + INTERVAL '1 day')");
     }
     adminConn.commit();
   }
