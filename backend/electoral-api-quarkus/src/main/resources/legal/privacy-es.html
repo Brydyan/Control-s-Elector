@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Política de Privacidad — Control Electoral</title>
+    <meta
+      name="description"
+      content="Política de privacidad y tratamiento de datos personales del sistema Control Electoral, conforme al RGPD (Reglamento (UE) 2016/679)."
+    />
+    <style>
+      :root {
+        --color-text: #1f2933;
+        --color-muted: #52606d;
+        --color-border: #d9e2ec;
+        --color-surface: #ffffff;
+        --color-bg: #f5f7fa;
+        --color-link: #1c4a8e;
+        --color-link-hover: #0f3057;
+        --measure: 46rem;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        -webkit-text-size-adjust: 100%;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--color-bg);
+        color: var(--color-text);
+        font-family:
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        font-size: 1rem;
+        line-height: 1.65;
+      }
+      main {
+        max-width: var(--measure);
+        margin: 0 auto;
+        padding: 1.5rem 1.25rem 3rem;
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 0.5rem;
+        margin-top: 1.5rem;
+      }
+      h1 {
+        font-size: 1.6rem;
+        line-height: 1.25;
+        margin: 0 0 0.5rem;
+      }
+      h2 {
+        font-size: 1.15rem;
+        margin: 2rem 0 0.5rem;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid var(--color-border);
+      }
+      h3 {
+        font-size: 1rem;
+        margin: 1.25rem 0 0.35rem;
+      }
+      p,
+      ul {
+        margin: 0.5rem 0;
+      }
+      ul {
+        padding-left: 1.25rem;
+      }
+      li {
+        margin: 0.25rem 0;
+      }
+      a {
+        color: var(--color-link);
+      }
+      a:hover,
+      a:focus-visible {
+        color: var(--color-link-hover);
+      }
+      /* Target tactil minimo de 44px: los enlaces sueltos dentro del texto
+         no llegan a eso, pero los de navegacion y de accion si. */
+      .lang-switch a,
+      .nav-links a {
+        display: inline-block;
+        min-height: 44px;
+        line-height: 44px;
+        padding: 0 0.75rem;
+      }
+      .lang-switch {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .lang-switch a {
+        border: 1px solid var(--color-border);
+        border-radius: 0.375rem;
+        text-decoration: none;
+      }
+      .nav-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 1rem;
+        margin: 1.5rem 0 0;
+        padding-top: 1rem;
+        border-top: 1px solid var(--color-border);
+      }
+      .meta {
+        color: var(--color-muted);
+        font-size: 0.9rem;
+      }
+      .notice {
+        border-left: 3px solid var(--color-link);
+        background: var(--color-bg);
+        padding: 0.75rem 1rem;
+        margin: 1rem 0;
+      }
+      footer {
+        max-width: var(--measure);
+        margin: 0 auto;
+        padding: 0 1.25rem 2.5rem;
+        color: var(--color-muted);
+        font-size: 0.85rem;
+      }
+      @media (max-width: 30rem) {
+        main {
+          border-left: 0;
+          border-right: 0;
+          border-radius: 0;
+          margin-top: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="lang-switch">
+        <a href="/privacy?lang=es" lang="es" aria-current="page">Español</a>
+        <a href="/privacy?lang=en" lang="en">English</a>
+      </div>
+
+      <h1>Política de Privacidad</h1>
+      <p class="meta">
+        Versión <strong>{{VERSION}}</strong> — vigente desde el <strong>6 de noviembre de 2026</strong>.
+      </p>
+
+      <div class="notice">
+        <p>
+          Este documento describe qué datos personales trata el sistema Control Electoral, con
+          qué base legal, cuánto tiempo los conserva y qué derechos tienen las personas
+          registradas. Es la información exigida por los artículos 13 y 14 del RGPD.
+        </p>
+      </div>
+
+      <h2>1. Responsable del tratamiento</h2>
+      <p>
+        <strong>Identidad:</strong> Control Electoral — plataforma de observación y registro de
+        resultados electorales de la Provincia de Santa Elena, Ecuador.
+      </p>
+      <p>
+        <strong>Ámbito:</strong> la plataforma opera en
+        <code>control.twintailcs.xyz</code> y su API en <code>api.twintailcs.xyz</code>.
+      </p>
+      <p>
+        <strong>Contacto para asuntos de protección de datos:</strong> a través del formulario de
+        contacto del Delegado de Protección de Datos (DPO) descrito en la sección 6. No se publica
+        una dirección de correo del DPO en este documento porque su atención se centraliza en el
+        formulario, que deja registro auditable de cada solicitud.
+      </p>
+
+      <h2>2. Datos que se recogen</h2>
+      <h3>2.1 Datos de la cuenta</h3>
+      <ul>
+        <li>Correo electrónico.</li>
+        <li>Nombre y apellido.</li>
+        <li>Rol en el proceso electoral (observador, coordinador, administrador, master).</li>
+        <li>Contraseña: nunca se almacena en claro, solo su huella con bcrypt.</li>
+        <li>
+          Fecha de alta, fecha de activación de la cuenta y fecha del último envío de
+          invitación.
+        </li>
+        <li>Versión de los términos de uso y de la política de privacidad aceptada, y cuándo.</li>
+      </ul>
+
+      <h3>2.2 Datos del proceso electoral</h3>
+      <ul>
+        <li>Actas registradas: mesa receptora de votos (JRV), dignidad, estado, sufragantes, votos en blanco, votos nulos y fecha de registro.</li>
+        <li>Detalle de votos por candidato en cada acta.</li>
+        <li>Evidencias fotográficascompressedas (.webp) de las actas.</li>
+        <li>Incidencias reportadas sobre mesas: descripción, tipo y evidencia asociada.</li>
+        <li>Registro de auditoría: quién hizo cada operación y desde qué dirección IP.</li>
+      </ul>
+
+      <h3>2.3 Datos técnicos</h3>
+      <ul>
+        <li>Dirección IP de la conexión.</li>
+        <li>Agente de usuario del navegador.</li>
+        <li>Identificador de sesión y registros de acceso.</li>
+      </ul>
+
+      <div class="notice">
+        <p>
+          <strong>La plataforma no solicita categorías especiales de datos.</strong> El formulario
+          de incidencias es de texto libre y el usuario puede escribir datos sensibles por su
+          cuenta: esa es una advertencia al usuario, no un tratamiento de datos sensibles. El
+          sistema no analiza ni perfila a los usuarios, y no usa sus datos para publicidad.
+        </p>
+      </div>
+
+      <h2>3. Base legal</h2>
+      <ul>
+        <li>
+          <strong>Art. 6.1.b — Ejecución de un contrato:</strong> el tratamiento de la cuenta y
+          de las actas es necesario para que la persona use la plataforma como observador
+          electoral.
+        </li>
+        <li>
+          <strong>Art. 6.1.c — Cumplimiento de una obligación legal:</strong> la conservación de
+          las actas y de la trazabilidad responde a la normativa electoral applicable.
+        </li>
+        <li>
+          <strong>Art. 6.1.a — Consentimiento:</strong> la aceptación de los términos de uso y
+          de esta política queda registrada con versión, fecha, IP y agente de usuario.
+        </li>
+      </ul>
+
+      <h2>4. Quién puede acceder a los datos</h2>
+      <ul>
+        <li>El <strong>observador</strong>: únicamente sus propias actas, incidencias y datos de cuenta.</li>
+        <li>El <strong>coordinador</strong>: las actas y las incidencias de las mesas que supervisa, para resolver disputas y corregirlas.</li>
+        <li>El <strong>administrador</strong>: lectura de las actas e incidencias para el seguimiento; sin capacidad de modificación.</li>
+        <li>El <strong>master</strong>: acceso operativo completo, incluida la gestión de catálogos y de usuarios.</li>
+        <li>El <strong>DPO</strong>: acceso a las solicitudes de protección de datos y al historial de aceptaciones, en la medida necesaria para atenderlas.</li>
+      </ul>
+      <p>
+        El control de acceso se aplica en dos capas: la autorización en el servidor (cada endpoint
+        declara los roles que lo habilitan) y el aislamiento por fila (RLS) en la base de datos.
+        Un rol sin permiso recibe <code>403</code> y la base sigue estranando las filas que no le
+        corresponden.
+      </p>
+
+      <h2>5. Conservación de los datos</h2>
+      <ul>
+        <li>
+          <strong>Actas y sus evidencias:</strong> se conservan por el plazo que exige la
+          normativa electoral (orden de 7 años). No se eliminan de forma automática al
+          cancelarse la cuenta, porque forman parte del registro electoral.
+        </li>
+        <li>
+          <strong>Auditoría de aceptaciones de términos:</strong> se conserva mientras el acta
+          que ampara el consentimiento, para poder demostrar qué aceptó cada persona y cuándo.
+        </li>
+        <li>
+          <strong>Sesiones y registros de acceso:</strong> hasta 90 días.
+        </li>
+        <li>
+          <strong>Cuenta y perfil:</strong> mientras la cuenta esté activa. La solicitud de
+          supresión se atiende por el DPO, con la excepción de los datoselectorales retenidos por
+          obligación legal.
+        </li>
+        <li>
+          <strong>Exportaciones de datos:</strong> el registro de cada exportación se conserva
+          para poder demostrar el ejercicio del derecho de acceso.
+        </li>
+      </ul>
+
+      <h2>6. Derechos de las personas (arts. 15 a 22)</h2>
+      <ul>
+        <li>
+          <strong>Art. 15 — Acceso:</strong> cada persona registrada puede obtener una copia
+          íntegra de sus datos en formato JSON mediante el endpoint de exportación de su propia
+          sesión, o solicitarlo al DPO. El sistema genera una auditoría de cada exportación.
+        </li>
+        <li>
+          <strong>Art. 16 — Rectificación:</strong> la corrección de nombre, apellido y correo
+          se solicita al DPO, que la tramita con el equipo administrador del sistema.
+        </li>
+        <li>
+          <strong>Art. 17 — Supresión:</strong> se puede solicitar la eliminación de la cuenta
+          mediante el formulario del DPO. Los datos retenidos por obligación legal (actas,
+          evidencias y auditoría) se conservan con lo indicado en la sección 5.
+        </li>
+        <li>
+          <strong>Art. 18 — Limitación:</strong> se puede solicitar la limitación del
+          tratamiento.
+        </li>
+        <li>
+          <strong>Art. 20 — Portabilidad:</strong> el formato de exportación es JSON legible por
+          máquina, lo que permite su portabilidad a otro responsable.
+        </li>
+        <li>
+          <strong>Art. 21 — Oposición:</strong> las personas pueden oponerse al tratamiento
+          citando su motivo; el DPO lo evalúa y responde.
+        </li>
+        <li>
+          <strong>Art. 22 — Quejas:</strong> ante la autoridad de control competente.
+        </li>
+      </ul>
+      <p>
+        <strong>Formulario de contacto con el DPO:</strong>
+        <a href="/contact-dpo">solicitar el ejercicio de un derecho</a>. El formulario
+        admite un máximo de una solicitud cada 30 segundos por dirección IP.
+      </p>
+
+      <h2>7. Seguridad</h2>
+      <ul>
+        <li>Contraseñas con bcrypt; el token de sesión vive solo en memoria.</li>
+        <li>
+          El token de refresco viaja en una cookie <code>httpOnly</code>, <code>Secure</code> y
+          <code>SameSite=Strict</code>: el código de la aplicación no puede leerlo.
+        </li>
+        <li>Cifrado en tránsito (HTTPS) y en reposo en la base y en el almacenamiento de objetos.</li>
+        <li>Evidencias comprimidas y almacenadas fuera de la base de datos.</li>
+        <li>Registro de auditoría de las operaciones sobre actas.</li>
+      </ul>
+
+      <h2>8. Cambios en esta política</h2>
+      <p>
+        Esta política se versiona. Cuando se publica una versión nueva, la versión vigente
+        cambia, el sistema deja de considerar aceptada la anterior y toda persona debe volver a
+        aceptar antes de seguir usando la plataforma. La fecha y el número de versión aparecen
+        al principio de este documento.
+      </p>
+
+      <nav class="nav-links" aria-label="Documentos legales">
+        <a href="/terms?lang=es">Términos de uso</a>
+        <a href="/contact-dpo">Formulario del DPO</a>
+      </nav>
+    </main>
+
+    <footer>
+      <p>
+        Control Electoral — Política de Privacidad v{{VERSION}} (6 de noviembre de 2026).
+      </p>
+      <p>
+        Documento pendiente de revisión y firma por el responsable del tratamiento y el DPO
+        antes de su publicación en producción.
+      </p>
+    </footer>
+  </body>
+</html>
