@@ -30,6 +30,33 @@ escrita dejaba la suite sin ejecutar un solo test.
 
 ---
 
+## SDD + ODD — Métodos complementarios
+
+**SDD (Software Design Document)** = ciclo formal: Architect → Builder → Verify → Archive
+**ODD (Implementation Routing)** = método internal del Builder para ejecutar `tasks.md` fase a fase
+
+ODD estructura **cómo** implementar. SDD estructura **cuándo y quién**.
+
+Builder opera dentro de SDD Builder phase usando ODD:
+- ODD: Authorize (read tasks.md) → Explore (code structure) → Resolve (uncertainties) → Classify (scope) → Implement (task by task) → Close (report progress)
+- Output: `apply-progress.md` con tareas completadas, números medidos, mutaciones ejecutadas
+
+Verify recibe ese output y lo audita contra `tasks.md` spec.
+
+### ODD Cierre y Verify
+
+Cuando Builder cierre ODD (`odd/tasks/<feature>.md`), quedará listo para Verify.
+
+Verify agregará sección `## ✅ Verificación Verify Round N` al final del archivo ODD con:
+- Checklist de phases ejecutadas
+- Hallazgos
+- Status: PASS o REWORK
+
+**Si PASS**: Archivo movido a `odd/archive/VERIFIED-<YYYY-MM-DD>-<feature>.md` para historial.
+**Si REWORK**: ODD vuelve a Builder con fixes-required.md.
+
+---
+
 ## Lo que decide
 
 **Si un change cierra.** Nunca lo decide el Builder.

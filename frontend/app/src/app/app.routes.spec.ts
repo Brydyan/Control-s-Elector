@@ -4,6 +4,7 @@ import { provideRouter, Router, Routes } from '@angular/router';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { routes } from './app.routes';
+import { NAV_CONFIG, type UserRole } from './layout/nav.config';
 
 /**
  * Test de configuración de rutas (T-FE-02 CRITICAL 2).
@@ -105,3 +106,92 @@ function collectCoordinatorRoutes(routes: Routes): any[] {
   }
   return matches;
 }
+
+/**
+ * Ruta efectiva del router, con el prefijo de los hijos ya resuelto.
+ *
+ * El wildcard `**` se excluye a proposito: es la trampa que convierte una URL
+ * fantasma en un rebote silencioso al dashboard, no una ruta real.
+ */
+function collectPaths(routes: Routes, prefix = ''): string[] {
+  const out: string[] = [];
+  for (const r of routes) {
+    if (!r.path) {
+      if (r.children) out.push(...collectPaths(r.children, prefix));
+      continue;
+    }
+    if (r.path.startsWith('**')) continue;
+    const full = `${prefix}/${r.path}`.replace(/\/{2,}/g, '/');
+    out.push(full);
+    if (r.children) out.push(...collectPaths(r.children, full));
+  }
+  return out;
+}
+
+/** Busca una ruta por su path (sin el prefijo de la raiz). */
+function findRoute(routes: Routes, path: string): any | undefined {
+  for (const r of routes) {
+    if (r.path === path) return r;
+    if (r.children) {
+      const found = findRoute(r.children, path);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Regresion de las "URL fantasma" (#175).
+ *
+ * El bug original era de esa clase: el menu apuntaba a rutas que el router no
+ * tenia, y la ruta comodin `**` las mandaba al dashboard. El sintoma era
+ * "click en el menu y aparece el dashboard, sin error".
+ *
+ * Este bloque no mira dos rutas sueltas: mira TODAS las rutas de TODOS los
+ * menus y exige que cada una exista en el router. Si alguien agrega un item al
+ * menu y olvida la ruta (o al reves), el test cae.
+ */
+describe('regresion de rutas del menu (sin URL fantasma)', () => {
+  const ROLES: UserRole[] = ['OBSERVER', 'COORDINATOR', 'ADMIN', 'MASTER'];
+
+  it('toda ruta de NAV_CONFIG existe en el router', () => {
+    const paths = collectPaths(routes);
+
+    for (const role of ROLES) {
+      for (const section of NAV_CONFIG[role]) {
+        for (const item of section.items) {
+          expect(
+            paths,
+            `La ruta "${item.route}" (menu "${item.label}" de ${role}) no existe en el router: rebotaria al dashboard`,
+          ).toContain(item.route);
+        }
+      }
+    }
+  });
+
+  it('/observer/mis-actas existe y admite OBSERVER y MASTER', () => {
+    const r = findRoute(routes, 'observer/mis-actas');
+    expect(r).toBeDefined();
+    expect(r!.data?.['roles']).toEqual(
+      expect.arrayContaining(['OBSERVER', 'MASTER']),
+    );
+  });
+
+  it('/master/configuracion existe y admite MASTER', () => {
+    const r = findRoute(routes, 'master/configuracion');
+    expect(r).toBeDefined();
+    expect(r!.data?.['roles']).toEqual(expect.arrayContaining(['MASTER']));
+  });
+
+  it('/master/cargos, /master/partidos y /master/candidatos redirigen a /master/configuracion', () => {
+    for (const path of [
+      'master/cargos',
+      'master/partidos',
+      'master/candidatos',
+    ]) {
+      const r = findRoute(routes, path);
+      expect(r, `falta la ruta ${path}`).toBeDefined();
+      expect(r!.redirectTo).toBe('master/configuracion');
+    }
+  });
+});

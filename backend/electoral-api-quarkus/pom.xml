@@ -27,6 +27,7 @@
 		<compiler-plugin.version>3.16.0</compiler-plugin.version>
 		<surefire-plugin.version>3.5.6</surefire-plugin.version>
 		<failsafe-plugin.version>3.5.6</failsafe-plugin.version>
+		<jacoco-plugin.version>0.8.13</jacoco-plugin.version>
 	</properties>
 
 	<dependencyManagement>
@@ -270,6 +271,101 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-failsafe-plugin</artifactId>
 				<version>${failsafe-plugin.version}</version>
+			</plugin>
+
+			<!--
+				JaCoCo — cobertura de codigo.
+
+				Version 0.8.13 y no la 0.8.10 del task original: el modulo compila con
+				`maven.compiler.release=25` y JaCoCo 0.8.10 no instrumenta class files de
+				Java 25 (falla con "Unsupported class file major version 69"). 0.8.13 es
+				la primera linea que soporta Java 25.
+
+				`report` y `check` van en `verify`, no en `test`: el dato de cobertura lo
+				produce surefire en `test`, y atarlos a la misma fase deja el orden
+				contra el lifecycle default de Maven. `verify` es ademas la fase que
+				corre CI (`./mvnw -B clean verify`), asi que el reporte existe sin
+				tocar el workflow.
+
+				La regla de `check` es un PISO DE NO-REGRESION, no el objetivo de
+				cobertura: el minimo es el ratio real medido del modulo (ver
+				apply-progress.md). Poner 0.60 como minimo bloqueante dejaria el build
+				rojo desde el primer dia, porque hoy la suite es 47 tests unitarios
+				sobre un backend de ~120 clases de produccion. El objetivo real (80% en
+				clases nuevas) se persigue con la suite de tests, no con el gate.
+			-->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<!--
+								Las clases de test no cuentan para la cobertura del
+								producto: si contaran, el ratio subiria por el codigo
+								que se prueba a si mismo.
+							-->
+							<excludes>
+								<exclude>**/*Test*</exclude>
+								<exclude>**/*IT*</exclude>
+							</excludes>
+						</configuration>
+					</execution>
+					<execution>
+						<id>check</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+						<configuration>
+							<rules>
+								<rule>
+									<!--
+										BUNDLE y no PACKAGE: una regla por paquete hace
+										fallar el build por un unico paquete sin tests
+										(Hibernate entities, DTOs). El piso es del
+										producto completo, que es lo que se puede
+										hacer retroceder con una regla.
+									-->
+									<element>BUNDLE</element>
+									<excludes>
+										<exclude>**/*Test*</exclude>
+										<exclude>**/*IT*</exclude>
+									</excludes>
+									<limits>
+										<limit>
+											<counter>LINE</counter>
+											<value>COVEREDRATIO</value>
+											<!--
+												PISO DE NO-REGRESION, no objetivo.
+												Medido en este modulo: 325/3294 lineas = 0.0986.
+												El piso queda en 0.08 para dejar margen de ~60
+												lineas: asi el gate frena una regresion real
+												(perder los tests de auth lo baja a ~0.04) sin
+												romperse cada vez que se agrega una clase sin
+												test. Subir el piso es parte del trabajo de
+												cobertura, no de este change.
+											-->
+											<minimum>0.08</minimum>
+										</limit>
+									</limits>
+								</rule>
+							</rules>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

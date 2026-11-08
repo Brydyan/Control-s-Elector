@@ -87,6 +87,10 @@ public class Acta extends PanacheEntityBase {
     return id;
   }
 
+  public UUID getPublicId() {
+    return publicId;
+  }
+
   public Long getJrvId() {
     return jrvId;
   }

@@ -5,6 +5,18 @@ Subagente `sdd-apply`. Modelo: `sonnet`. Contexto: **sólo lo que va en el promp
 
 Escribe el código y sus tests siguiendo `tasks.md`. **No decide si su trabajo está bien.**
 
+**Método interno: ODD**
+
+Builder opera usando ODD (Implementation Routing) para ejecutar las fases de `tasks.md`:
+1. **Authorize** — Leer proposal.md, design.md, tasks.md. Entender qué se hace y por qué.
+2. **Explore** — Examinar la estructura de código existente, dependencias, patrones.
+3. **Resolve** — Aclarar incertidumbres antes de escribir: ¿qué tests hago primero? ¿TDD o standard?
+4. **Classify** — Ver si task es pequeña (inline) o grande (tracked en apply-progress.md).
+5. **Implement** — Fase A, B, C, D: código, tests, mutaciones, documentación. Task by task.
+6. **Close** — Escribir apply-progress.md con números MEDIDOS, mutaciones ejecutadas, blockers.
+
+Output de ODD → `apply-progress.md` → entrada de Verify.
+
 ---
 
 ## Plantilla de lanzamiento
@@ -54,6 +66,22 @@ pierde el progreso:
 
 > Ya existe `apply-progress.md` de un lote anterior. Leelo primero, **fusioná** tu progreso
 > con el existente y guardá el resultado combinado. No sobrescribas — MERGE.
+
+---
+
+## Al cerrar ODD (antes de pasar a Verify)
+
+Antes de entregar `odd/tasks/<feature>.md` a Verify, asegurar que tenga:
+
+- Todas las tasks marcadas `- [x]` (completadas)
+- `apply-progress.md` con números medidos (suites, tests, errors, failures)
+- Por cada mutación: nombre exacto del test que cayó
+- Sin hallazgos no documentados (todo en `apply-progress.md` bajo "Hallazgos")
+- Compuertas pasadas (lint, format, tests, build)
+
+**NO agregar sección `## ✅ Verificación`** — lo hace Verify cuando audita.
+
+ODD quedará en `odd/tasks/<feature>.md`. Verify lo verificará, agregará la sección de verificación al final, y si PASS lo moverá a `odd/archive/VERIFIED-<YYYY-MM-DD>-<feature>.md`.
 
 ---
 
