@@ -15,6 +15,13 @@ export interface CurrentUserDto {
   email: string;
   rol: string;
   permisos?: string[];
+  /**
+   * Version de los terminos aceptada por el usuario. `null` si nunca acepto.
+   *
+   * Opcional en el DTO: un backend viejo que no lo mande no rompe el login,
+   * solo deja al usuario con pendiente de aceptacion.
+   */
+  acceptedTermsVersion?: string | null;
 }
 
 export interface AuthResponseDto {

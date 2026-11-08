@@ -1,5 +1,10 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard, roleGuard } from './core/guards/auth.guard';
+import {
+  authGuard,
+  guestGuard,
+  roleGuard,
+  sessionGuard,
+} from './core/guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -17,6 +22,28 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/auth/pages/activate/activate.page').then(
         (m) => m.ActivatePage,
+      ),
+  },
+  {
+    // Aceptacion de terminos (T-LEGAL-01.7/.8). Es la pantalla donde vive el
+    // modal obligatorio: exige sesion (sin sesion no hay a quien registrar la
+    // aceptacion) pero NO pasa por `authGuard`, que es el que manda aqui
+    // cuando la version vigente todavia no se acepto.
+    path: 'terminos',
+    canActivate: [sessionGuard],
+    loadComponent: () =>
+      import('./features/legal/pages/terms-acceptance/terms-acceptance.page').then(
+        (m) => m.TermsAcceptancePage,
+      ),
+  },
+  {
+    // Formulario de contacto con el DPO (GDPR Art. 17). Publico a proposito:
+    // el derecho a pedir la supresion de la cuenta lo puede ejercer alguien
+    // que ya no tiene sesion.
+    path: 'contact-dpo',
+    loadComponent: () =>
+      import('./features/legal/pages/contact-dpo/contact-dpo.page').then(
+        (m) => m.ContactDpoPage,
       ),
   },
   {
