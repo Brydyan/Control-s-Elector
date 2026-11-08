@@ -1,10 +1,11 @@
-# T-LEGAL-01: Propuesta — Privacy Policy + Terms of Use
+# T-LEGAL-01: Propuesta — Privacy Policy + Terms of Use (PWA Privada)
 
 **Date:** 2026-11-06  
 **Author:** Control Electoral Team  
 **Status:** Proposal  
-**Priority:** CRÍTICO  
-**Estimación:** 4-5 puntos → 1 sprint
+**Priority:** 🟡 ALTO  
+**Estimación:** 13 story points  
+**Contexto:** PWA privada (control.twintailcs.xyz). Sin publicación en Play Store ni GitHub público.
 
 ---
 
@@ -22,24 +23,26 @@ Sistema de **Legal Compliance** (Privacidad + Términos) que permite:
 
 ## Por qué es necesario
 
-**Hoy (CRÍTICO):**
+**Hoy (riesgos legales reales):**
 ```
-❌ Google Play rechaza apps sin Privacy Policy + Terms
-❌ GDPR Art. 13/14: información obligatoria no documentada
-❌ GDPR Art. 15: usuario NO puede acceder sus datos (violación)
-❌ GDPR Art. 17: delete account existe pero SIN privacidad documentada
-❌ Responsabilidad legal indefinida (sin términos)
-❌ Sistema electoral CON datos sensibles = riesgo legal grave
+❌ GDPR/RGPD Art. 13/14: información obligatoria NO documentada
+❌ GDPR/RGPD Art. 15: usuario NO puede acceder sus datos (violación)
+❌ GDPR/RGPD Art. 17: delete account existe pero SIN términos claros
+❌ Datos electorales SENSIBLES: sin política de retención/acceso
+❌ Responsabilidad legal INDEFINIDA (sin términos: qué se guarda, por cuánto)
+❌ Auditoría de consentimiento CERO (no hay rastro de aceptaciones)
+❌ Sistema CON datos de veedores: nombres, emails, JRVs, observaciones
 ```
 
 **Con esta SDD:**
 ```
-✅ Google Play: legal docs cumplimiento
-✅ GDPR Art. 13/14: info completa transparente
-✅ GDPR Art. 15: endpoint export-data auditable
-✅ GDPR Art. 17: delete documentado en términos
-✅ Responsabilidad clara en términos
-✅ Auditoría de aceptaciones (prueba de consentimiento)
+✅ GDPR/RGPD Art. 13/14: info legal completa y transparente
+✅ GDPR/RGPD Art. 15: endpoint export-data auditable
+✅ GDPR/RGPD Art. 17: términos claros + procedimiento delete
+✅ Retención definida: datos electorales, tiempo de conservación
+✅ Responsabilidad clara: qué se guarda, quién accede, por cuánto tiempo
+✅ Auditoría completa: rastro de quién aceptó qué, cuándo, desde dónde
+✅ Cumplimiento GDPR/RGPD: si inspección, tienes documentación
 ```
 
 ---
@@ -47,9 +50,13 @@ Sistema de **Legal Compliance** (Privacidad + Términos) que permite:
 ## Problema específico
 
 - **Auditoría encontró:** NO existe `/privacy`, NO existe `/terms`, NO existe `usuario.accepted_terms_version`
-- **Google Play requiere:** Legal docs claros y accesibles
-- **GDPR requiere:** Info obligatoria, export data, auditoría de aceptación
-- **Seguridad electoral:** Dónde guardar datos, cuánto tiempo, quién accede
+- **GDPR/RGPD requiere:** Info obligatoria (Art. 13/14), export data (Art. 15), auditoría de aceptación
+- **Seguridad electoral:** Sistema maneja datos de veedores, JRVs, observaciones. **Debe haber política clara:**
+  - Qué datos se guardan
+  - Por cuánto tiempo se conservan  
+  - Quién puede acceder
+  - Cómo se protegen datos sensibles (género, zona, observaciones)
+- **Auditoría:** Sin rastro de aceptaciones, no hay prueba de consentimiento informado
 
 ---
 
@@ -103,8 +110,10 @@ BD Changes:
 - ✅ Frontend: Angular 21, TypeScript 5
 - ✅ Backend: Quarkus 3.40, Hibernate ORM
 - ✅ BD: PostgreSQL con Liquibase
-- ✅ Admin acepta política redactada (no genera contenido)
+- ✅ ODD #478 (CORS) completado ← desbloquea este SDD
+- ✅ Admin/Abogado revisa y acepta política antes de deploy (contenido estático en código)
 - ✅ Email/soporte configurado para DPO
+- **NO es requisito:** Publicación en Play Store (proyecto privado PWA)
 
 ---
 
@@ -112,11 +121,12 @@ BD Changes:
 
 | Beneficio | Antes | Después |
 |-----------|-------|---------|
-| Google Play | ❌ Rechazo | ✅ Compliance |
-| GDPR Art 13/14 | ❌ No | ✅ Sí |
-| GDPR Art 15 | ❌ No export | ✅ Endpoint |
-| Legal Risk | 🔴 Crítico | 🟢 Bajo |
-| Auditoría | ❌ Cero | ✅ Completa |
+| GDPR Art. 13/14 (Información obligatoria) | ❌ No | ✅ Sí (Privacy + Terms) |
+| GDPR Art. 15 (Data Export) | ❌ No export | ✅ Endpoint JSON |
+| GDPR Art. 17 (Delete Account) | ❌ Sin procedimiento | ✅ Documentado en términos |
+| Rastro de aceptaciones | ❌ Cero | ✅ Auditoría completa (BD) |
+| Riesgo legal (inspección GDPR) | 🔴 Crítico | 🟢 Bajo (documentado) |
+| Responsabilidad de datos | ❌ Indefinida | ✅ Clara en términos |
 
 ---
 
