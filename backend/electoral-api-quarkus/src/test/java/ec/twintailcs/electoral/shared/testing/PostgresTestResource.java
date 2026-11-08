@@ -1,4 +1,4 @@
-package ec.twintailcs.electoral.legal.support;
+package ec.twintailcs.electoral.shared.testing;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
@@ -31,7 +31,7 @@ import org.testcontainers.utility.DockerImageName;
  * propietario: las politicas siguen aplicandose para el rol nuevo (no es superusuario y no es el
  * propietario), asi que el aislamiento se verifica igual.
  */
-public class PostgresLegalTestResource implements QuarkusTestResourceLifecycleManager {
+public class PostgresTestResource implements QuarkusTestResourceLifecycleManager {
 
   /** URL de la base local. Si no esta, se levanta un contenedor. */
   public static final String PROP_URL = "test.postgres.url";
