@@ -27,13 +27,13 @@ Este ODD documenta ajustes antes de pasar a Builder.
 
 ### A · Toggle "Enviar Invitación por Email"
 
-- [ ] **A.1** — En form crear usuario, añadir field:
+- [x] **A.1** — En form crear usuario, añadir field:
   ```
   ☑ Enviar Invitación por Email (default: ON)
   ℹ️ Si desactivas, solo se crea el usuario sin email
   ```
 
-- [ ] **A.2** — Frontend envía `sendEmail: boolean` en POST body:
+- [x] **A.2** — Frontend envía `sendEmail: boolean` en POST body:
   ```json
   POST /api/v1/users/invite
   {
@@ -45,12 +45,12 @@ Este ODD documenta ajustes antes de pasar a Builder.
   }
   ```
 
-- [ ] **A.3** — Backend:
+- [x] **A.3** — Backend:
   - Si `sendEmail=true`: genera temp password + envía SMTP
   - Si `sendEmail=false`: crea usuario, NO envía email
   - Log auditoría: `USER_CREATED[_WITHOUT_EMAIL]`
 
-- [ ] **A.4** — Response diferenciada:
+- [x] **A.4** — Response diferenciada:
   ```json
   {
     success: true,
@@ -69,7 +69,7 @@ Este ODD documenta ajustes antes de pasar a Builder.
 SDD #492 mostraba contraseña temporal + instrucciones para cambiarla en login.  
 ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
 
-- [ ] **A.5.1** — Email NO contiene contraseña temporal
+- [x] **A.5.1** — Email NO contiene contraseña temporal
   ```html
   Subject: Bienvenido a Control's Elector - Activa tu Cuenta
   
@@ -100,7 +100,11 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   Footer: Control's Elector 🗳️ 2026
   ```
 
-- [ ] **A.5.2** — Diferencia usuario vs correo Control
+- [x] **A.5.2** — Diferencia usuario vs correo Control
+  > El email y las pantallas muestran las tres cosas por separado: **usuario (Control)**
+  > (`juagarobs`), **correo (Control)** (`juagarobs@control.ttcs`) y **correo personal**. El usuario
+  > corto se deriva del login real (`EmailGenerator` genera 3+4+3 letras: `juagarobs`, no
+  > `juagobs`). Ver `odd-504-t-auth-inv-02-ui-adjustments.apply-progress.md`.
   ```
   Usuario (Control): 3 letras nombre + 3 apellido + 3 rol (minúsculas)
     Ej: Juan García, Observador → juagobs
@@ -116,21 +120,21 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
 
 ### B · Cambiar Expiry de 30 días a 24 horas
 
-- [ ] **B.1** — Backend: `user_invitations` table
+- [x] **B.1** — Backend: `user_invitations` table
   - Cambiar default expiry: `30 DAYS` → `1 DAY` (24 horas)
   - Migrate existing records: `expiry_at = created_at + INTERVAL '1 day'`
 
-- [ ] **B.2** — Email template actualizar:
+- [x] **B.2** — Email template actualizar:
   ```
   Antes: "Esta contraseña expira en 30 días"
   Después: "Esta invitación expira en 24 horas"
   ```
 
-- [ ] **B.3** — Frontend: Validación en tabla usuarios
+- [x] **B.3** — Frontend: Validación en tabla usuarios
   - Status EXPIRED = invitedAt + 24h < NOW
   - Toast warning si <2h para expirar
 
-- [ ] **B.4** — Tests:
+- [x] **B.4** — Tests:
   ```java
   @Test void invitationExpiresAfter24Hours() {
     User invited = inviteUser("juan@example.com");
@@ -145,7 +149,15 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
 
 **Flujo de usuario post-email:**
 
-- [ ] **B.5.1** — Pantalla 1: Establecer Contraseña (`/activate?token=xyz`)
+- [x] **B.5.1** — Pantalla 1: Establecer Contraseña (`/activate?token=xyz`)
+  > ⚠️ Desviación 1: la **UI** pide 12 caracteres y minúscula (checklist en vivo + medidor de
+  > fuerza), pero el **backend sigue en 8** (`PasswordValidationResult.MIN_LENGTH = 8`, decisión D8
+  > del design): endurecer el formulario no rechaza nada que el servidor vaya a aceptar, cambiar la
+  > política del servidor es un cambio de producto y requiere decisión humana.
+  > ⚠️ Desviación 7: el `POST /api/v1/auth/activate` sigue con `{token, password, passwordConfirm}`
+  > (el endpoint y su contrato son de T-AUTH-INV-01, verificado y archivado), no `{token,
+  > newPassword}`.
+  > La pantalla `/activate?token=…` existe como alias de la canónica `/auth/activate`.
   ```
   Header: 🔐 Activar tu Cuenta
   
@@ -180,7 +192,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
     6. Retorna { success: true }
   ```
 
-- [ ] **B.5.2** — Pantalla 2: Resumen de Activación (`/auth/account-summary`)
+- [x] **B.5.2** — Pantalla 2: Resumen de Activación (`/auth/account-summary`)
   ```
   Header: ✅ ¡Cuenta Activada!
          Tu cuenta está lista para usar
@@ -203,18 +215,21 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
 
 ### C · Tabla Usuarios + Columna Estado
 
-- [ ] **C.1** — Añadir columna "Estado" a tabla:
+- [x] **C.1** — Añadir columna "Estado" a tabla:
   ```
   Nombre | Email | Rol | Estado | Acciones
   ```
 
-- [ ] **C.2** — Estados renderizados:
+- [x] **C.2** — Estados renderizados:
   - 🟢 **INVITED**: invitedAt < 24h y no logueado
   - 🟡 **EXPIRED**: invitedAt + 24h < NOW y no logueado
   - 🟢 **ACTIVE**: has logueado at least once
   - 🔴 **DISABLED**: disabled_at IS NOT NULL
 
-- [ ] **C.3** — SQL query estado:
+- [x] **C.3** — SQL query estado:
+  > ⚠️ Desviación 6: el estado se deriva en `UsuarioMapper` desde las columnas de `usuario`, no con
+  > un `CASE` SQL sobre `user_invitations`: leer esa tabla en el listado exigiría abrirle la RLS a
+  > quien solo puede leer usuarios.
   ```sql
   CASE
     WHEN ui.activated_at IS NOT NULL THEN 'ACTIVE'
@@ -228,11 +243,14 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
 
 ### D · Botón "Re-enviar Invitación"
 
-- [ ] **D.1** — En tabla acciones, botón "📧 Re-enviar Invitación"
+- [x] **D.1** — En tabla acciones, botón "📧 Re-enviar Invitación"
   - Visible solo si: `invitation_status IN ('INVITED', 'EXPIRED')`
   - Hidden si: `invitation_status IN ('ACTIVE', 'DISABLED')`
 
-- [ ] **D.2** — Modal confirmatorio:
+- [x] **D.2** — Modal confirmatorio:
+  > ⚠️ Desviación 3: el modal muestra el **correo de Control** de la cuenta, no el correo personal:
+  > el listado lo ven MASTER, COORDINATOR y ADMIN y no expone PII. El correo personal real aparece
+  > en la confirmación del backend.
   ```
   ¿Re-enviar invitación a juan.garcia@example.com?
   
@@ -243,7 +261,10 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   [Cancelar] [✓ Re-enviar por Email]
   ```
 
-- [ ] **D.3** — Flujo post-click:
+- [x] **D.3** — Flujo post-click:
+  > ⚠️ Desviación 4: el reenvío genera un **token de activación nuevo** (no una contraseña
+  > temporal): en este sistema la credencial de la invitación es el link de 24 h y la contraseña la
+  > elige la persona. El link anterior deja de servir.
   ```
   Frontend: POST /api/v1/users/{userId}/resend-invitation
   Backend:
@@ -260,7 +281,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   Tabla: auto-refresh estado
   ```
 
-- [ ] **D.4** — Test:
+- [x] **D.4** — Test:
   ```java
   @Test void resendInvitationCreatesNewPassword() {
     User invited = inviteUser("juan@example.com");
@@ -288,7 +309,9 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
 
 ### E · Backend Endpoint: Resend Invitation
 
-- [ ] **E.1** — Endpoint definition:
+- [x] **E.1** — Endpoint definition:
+  > ⚠️ Desviación 5: exige **MASTER** o el permiso `usuario:create` (ADMIN es solo lectura en el
+  > RBAC del repo y recibe 403, como en el resto de escrituras del panel).
   ```java
   @PostMapping("/{userId}/resend-invitation")
   @PreAuthorize("hasAnyRole('MASTER','ADMIN')")
@@ -301,7 +324,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   }
   ```
 
-- [ ] **E.2** — Request/Response DTOs:
+- [x] **E.2** — Request/Response DTOs:
   ```java
   // No request body needed (info from path)
   
@@ -315,7 +338,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   }
   ```
 
-- [ ] **E.3** — Error handling:
+- [x] **E.3** — Error handling:
   ```
   400 BAD_REQUEST: User status not INVITED/EXPIRED
   404 NOT_FOUND: User not found
@@ -323,7 +346,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   500 INTERNAL_SERVER_ERROR: SMTP failure (log, retry async)
   ```
 
-- [ ] **E.4** — Audit logging:
+- [x] **E.4** — Audit logging:
   ```
   action: "INVITATION_RESENT"
   usuario_id: invited user
@@ -337,7 +360,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
 
 ### F · Integration Tests
 
-- [ ] **F.1** — Crear usuario SIN email:
+- [x] **F.1** — Crear usuario SIN email:
   ```java
   @Test void createUserWithoutSendingEmail() {
     CreateUserRequest req = new CreateUserRequest()
@@ -354,7 +377,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   }
   ```
 
-- [ ] **F.2** — Crear usuario CON email:
+- [x] **F.2** — Crear usuario CON email:
   ```java
   @Test void createUserWithEmail() {
     CreateUserRequest req = new CreateUserRequest()
@@ -371,7 +394,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   }
   ```
 
-- [ ] **F.3** — Re-enviar invitación:
+- [x] **F.3** — Re-enviar invitación:
   ```java
   @Test void resendInvitationGeneratesNewPassword() {
     User invited = createAndInviteUser("juan@example.com");
@@ -386,7 +409,7 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
   }
   ```
 
-- [ ] **F.4** — Expiry validation:
+- [x] **F.4** — Expiry validation:
   ```java
   @Test void invitationStatusExpiredAfter24Hours() {
     User invited = createAndInviteUser("juan@example.com");
@@ -402,13 +425,13 @@ ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
 
 ## Mutaciones
 
-- [ ] **M1** — Expiry time. Cambiar `+ INTERVAL '1 day'` a `+ INTERVAL '30 days'`.
+- [x] **M1** — Expiry time. Cambiar `+ INTERVAL '1 day'` a `+ INTERVAL '30 days'`.
   Mutación: test de 24h expiry debe fallar. Restaura.
 
-- [ ] **M2** — Resend password invalidation. Quitar línea que invalida old password.
+- [x] **M2** — Resend password invalidation. Quitar línea que invalida old password.
   Mutación: test debe detectar que ambas passwords funcionan (bad). Restaura.
 
-- [ ] **M3** — Toggle behavior. Cambiar `if (sendEmail)` a `if (!sendEmail)`.
+- [x] **M3** — Toggle behavior. Cambiar `if (sendEmail)` a `if (!sendEmail)`.
   Mutación: test de "crear sin email" envía email de todas formas. Restaura.
 
 ---
@@ -465,7 +488,19 @@ cd backend/electoral-api-quarkus
 
 ## Status
 
-- [ ] Builder implementa A-F (2-3 horas)
-- [ ] Tests all green (F.1–F.4 + M1–M3)
+- [x] Builder implementa A-F (2-3 horas)
+- [x] Tests all green (F.1–F.4 + M1–M3)
 - [ ] Verify round 1 (mutaciones validadas)
 - [ ] Archive to odd/archive/VERIFIED-2026-11-08-t-auth-inv-02-ui-adjustments.md
+
+---
+
+**Apply-progress del Builder:** `odd/tasks/odd-504-t-auth-inv-02-ui-adjustments.apply-progress.md`
+(números medidos, mutaciones M1–M3 con el test exacto que cayó, hallazgos y desviaciones).
+
+> `Verify round 1` y el archivado quedan pendientes: los hace Verify/Archivador, no el Builder.
+
+> **Ajuste posterior (pedido del usuario, 2026-11-08):** el email ahora explica que la cuenta
+> **está creada pero no activa** (bloque "Estado de tu cuenta") y la marca de la plataforma es
+> **"Control's Elector"** — sin CNE — en correos, páginas legales, OpenAPI, topbar, login y
+> manifest. Detalle y gates medidos en el `apply-progress.md` (§8).
