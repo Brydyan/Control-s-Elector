@@ -49,26 +49,30 @@
 
 <!-- Stats row -->
 <section class="stats-row">
-  <app-card styleClass="stat-card c-enviada">
-    <div class="stat-card-label">Enviadas</div>
-    <div class="stat-card-value v-enviada">{{ resumen().enviadas }}</div>
-    <div class="stat-card-sub">Pendientes revisión</div>
-  </app-card>
-  <app-card styleClass="stat-card c-disputa">
-    <div class="stat-card-label">En Disputa</div>
-    <div class="stat-card-value v-disputa">{{ resumen().enDisputa }}</div>
-    <div class="stat-card-sub">Requieren corrección</div>
-  </app-card>
-  <app-card styleClass="stat-card c-corregida">
-    <div class="stat-card-label">Corregidas</div>
-    <div class="stat-card-value v-corregida">{{ resumen().corregidas }}</div>
-    <div class="stat-card-sub">Listas para aprobación</div>
-  </app-card>
-  <app-card styleClass="stat-card c-aprobada">
-    <div class="stat-card-label">Aprobadas</div>
-    <div class="stat-card-value v-aprobada">{{ resumen().aprobadas }}</div>
-    <div class="stat-card-sub">Confirmadas</div>
-  </app-card>
+  <app-kpi-card
+    label="Enviadas"
+    [value]="resumen().enviadas"
+    hint="Pendientes revisión"
+    tone="brand"
+  ></app-kpi-card>
+  <app-kpi-card
+    label="En Disputa"
+    [value]="resumen().enDisputa"
+    hint="Requieren corrección"
+    tone="warning"
+  ></app-kpi-card>
+  <app-kpi-card
+    label="Corregidas"
+    [value]="resumen().corregidas"
+    hint="Listas para aprobación"
+    tone="corrected"
+  ></app-kpi-card>
+  <app-kpi-card
+    label="Aprobadas"
+    [value]="resumen().aprobadas"
+    hint="Confirmadas"
+    tone="success"
+  ></app-kpi-card>
 </section>
 
 <!-- Bottom grid -->

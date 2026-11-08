@@ -64,11 +64,24 @@ describe('DashboardPage (rendering)', () => {
   it('should render the four summary counters', () => {
     const values = Array.from(
       fixture.nativeElement.querySelectorAll(
-        '.stat-card-value',
+        '.kpi-card__figure',
       ) as NodeListOf<HTMLElement>,
     ).map((el) => el.textContent?.trim());
 
     expect(values).toEqual(['1', '1', '1', '1']);
+  });
+
+  it('should render the four cards of the standard', () => {
+    const cards = fixture.nativeElement.querySelectorAll(
+      '.kpi-card',
+    ) as NodeListOf<HTMLElement>;
+
+    expect(cards.length).toBe(4);
+    expect(
+      Array.from(cards)
+        .map((card) => card.className)
+        .join(' '),
+    ).toContain('kpi-card--brand');
   });
 
   it('should render the progress banner', () => {

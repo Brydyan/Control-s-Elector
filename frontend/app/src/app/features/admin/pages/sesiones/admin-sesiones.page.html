@@ -48,7 +48,11 @@
 
   @if (!loading() && !error() && sesiones().length) {
   <div class="table-wrap desktop-only">
-    <p-table [value]="sesiones()" [rowHover]="true" styleClass="admin-table">
+    <p-table
+      [value]="sesiones()"
+      [rowHover]="true"
+      styleClass="app-table admin-table"
+    >
       <ng-template #header>
         <tr>
           <th>Usuario</th>
