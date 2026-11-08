@@ -188,6 +188,39 @@ input[type="checkbox"] {
   color: var(--color-status-success);
 }
 
+/*
+ * Estado de la invitacion (ODD #504, C). Cada estado tiene su color: verde
+ * la invitacion vigente, amarillo la vencida, azul la cuenta todavia sin
+ * correo y rojo la deshabilitada.
+ */
+.state-invited {
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
+}
+
+.state-expired {
+  background: var(--color-status-warning-bg);
+  color: var(--color-status-warning);
+}
+
+.state-created {
+  background: var(--color-status-info-bg);
+  color: var(--color-status-info);
+}
+
+.state-disabled {
+  background: var(--color-status-danger-bg);
+  color: var(--color-status-danger);
+}
+
+/* Aviso de invitacion por caducar (ODD #504, B.3). */
+.state-warning {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-status-warning);
+}
+
 /* Dialog ---------------------------------------------------------------- */
 
 .field {
@@ -213,6 +246,45 @@ input[type="checkbox"] {
   font-size: 0.8125rem;
   line-height: 1.4;
   color: var(--color-status-danger);
+}
+
+/*
+ * Toggle "Enviar Invitacion por Email" (ODD #504, A).
+ *
+ * <p>La etiqueta es el target del checkbox: el cursor y el texto van juntos,
+ * para que no haya un cuadrado suelto al que apuntar.
+ */
+.toggle-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  color: var(--color-text-on-surface);
+  cursor: pointer;
+}
+
+/* Aviso del modal de reenvio (ODD #504, D.2). */
+.aviso-reenvio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-status-warning-border);
+  border-radius: var(--radius-md);
+  background: var(--color-status-warning-bg);
+  color: var(--color-text-on-surface);
+
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
 }
 
 .password-alert {

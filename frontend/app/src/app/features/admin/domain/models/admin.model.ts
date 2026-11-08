@@ -19,7 +19,23 @@ export interface UsuarioResponseDto {
   estadoUsuario?: EstadoUsuario;
   /** Ultimo envio de invitacion. Ausente si a la cuenta nunca se le invito. */
   invitationSentAt?: string | null;
+  /**
+   * Estado de la INVITACION (ODD #504, C). No es lo mismo que el estado de la
+   * cuenta: una cuenta activa puede conservar una invitacion vieja sin usar.
+   */
+  invitationStatus?: InvitationStatus;
+  /** Momento en que vence la invitacion vigente; null si no hay invitacion. */
+  invitationExpiresAt?: string | null;
 }
+
+/**
+ * Estados de una invitacion (ODD #504, C).
+ *
+ * <p>`CREATED` es la cuenta que existe pero nunca recibio el correo: por eso el
+ * reenvio tambien se le ofrece a ese estado.
+ */
+export type InvitationStatus =
+  'CREATED' | 'INVITED' | 'EXPIRED' | 'ACTIVE' | 'DISABLED';
 
 /** Una invitacion que no se pudo encolar, con el motivo. */
 export interface InvitacionFailure {
@@ -92,6 +108,14 @@ export interface InviteUsuarioRequest {
   apellido: string;
   emailPersonal: string;
   rolNombre: RolUsuario;
+  /**
+   * Si el correo de invitacion sale (ODD #504, A).
+   *
+   * <p>Apagado, la cuenta se crea y queda pendiente sin correo: el MASTER puede
+   * mandarle la invitacion despues con la accion de reenviar. El backend lo
+   * trata como `true` cuando no viene.
+   */
+  sendEmail?: boolean;
 }
 
 /**
@@ -104,8 +128,25 @@ export interface UserInvitationResponse {
   usuarioId: string;
   username: string;
   emailPersonal: string;
-  status: 'INVITED' | 'ACTIVATED' | 'EXPIRED';
-  expiraEn: string;
+  status: 'CREATED' | 'INVITED' | 'EXPIRED' | 'ACTIVE' | 'DISABLED';
+  expiraEn: string | null;
+  /** Siempre true: un fallo llega como error, no como respuesta. */
+  success?: boolean;
+  /** Texto para el operador: distinto si el correo salio o no. */
+  mensaje?: string;
+}
+
+/**
+ * Resultado de reenviar una invitacion (ODD #504, D/E).
+ *
+ * <p>Tampoco trae credenciales: lo unico que viaja es el link, por email.
+ */
+export interface ResendInvitationResponse {
+  success: boolean;
+  message: string;
+  newInvitationSentAt: string;
+  expiresAt: string;
+  emailPersonal: string;
 }
 
 export interface UsuarioConPasswordTemporal extends UsuarioResponseDto {
