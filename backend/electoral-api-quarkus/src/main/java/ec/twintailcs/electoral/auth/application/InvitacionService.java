@@ -86,6 +86,7 @@ public class InvitacionService {
           new EmailAEnviar(
               usuario.getId(),
               usuario.getEmail(),
+              usuario.getEmail(),
               usuario.getNombre(),
               usuario.getApellido(),
               usuario.getRolNombre(),
