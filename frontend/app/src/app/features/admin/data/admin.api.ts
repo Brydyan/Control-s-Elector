@@ -8,6 +8,7 @@ import {
   CreateUsuarioRequest,
   EnviarInvitacionResponse,
   InviteUsuarioRequest,
+  ResendInvitationResponse,
   SesionFiltros,
   SesionResponseDto,
   UpdateUsuarioRequest,
@@ -102,6 +103,22 @@ export class AdminApi {
       .post<UserInvitationResponse>(
         `${environment.apiUrl}/users/invite`,
         payload,
+      )
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  /**
+   * Reenvia la invitacion de una cuenta que todavia no se activo (ODD #504, E).
+   *
+   * <p>El backend genera un link nuevo y deja sin efecto el anterior: la
+   * invitacion que ya no sirve no se puede reutilizar. Solo lo acepta para una
+   * cuenta en INVITED, EXPIRED o CREATED.
+   */
+  reenviarInvitacion(publicId: string): Observable<ResendInvitationResponse> {
+    return this.http
+      .post<ResendInvitationResponse>(
+        `${environment.apiUrl}/users/${publicId}/resend-invitation`,
+        {},
       )
       .pipe(catchError((err) => this.handleError(err)));
   }
