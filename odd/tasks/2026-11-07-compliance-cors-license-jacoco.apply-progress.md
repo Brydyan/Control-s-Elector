@@ -373,6 +373,21 @@ anterior al corte a Quarkus. Se deja como esta: no es de este change.
 (las secciones de cierre ODD → Verify). **No los toco este change**: se modificaron durante la
 sesion, por fuera de este trabajo. Se los deja como estan.
 
+### F.11 — El commit `17e4efe` excluyó `LICENSE` y `THIRD_PARTY_LICENSES.md`
+
+Un proceso ajeno a este ODD commiteó el árbol de trabajo como
+`17e4efe fix(odd-478): CORS + JaCoCo for private PWA` con el mensaje
+*"Private PWA context: LICENSE/THIRD_PARTY skipped"*, excluyendo los dos archivos de licencia y
+dejando la Phase 2 del task file como `SKIPPED`.
+
+**Los dos archivos se restauraron** (Apache-2.0 verbatim y el inventario generado del árbol real),
+porque son el Task 2 y el Task 3 de este ODD y el titular ya estaba decidido. Lo que no se
+restauró fue el estado `SKIPPED` del encabezado: el task file archivado dice la verdad.
+
+El commit ajeno quedó como estaba; la restauración se commiteó aparte, con los entregables
+**antes** de archivar el ODD — archivar con los entregables fuera del repo deja el archivo
+afirmando una cosa que el commit no contiene (ver I.5).
+
 ---
 
 ## G — Como se reproduce
@@ -443,8 +458,92 @@ curl -i -X OPTIONS http://localhost:8080/api/v1/auth/login \
 
 ---
 
+---
+
+## I — Auditoría independiente del verify-report y cierre
+
+`fixes-required.md` llegó con **"✅ NO BLOCKERS"**: no hay fixes que aplicar. Eso no exime de
+auditar el artefacto que dice PASS, porque un PASS con datos equivocados es peor que un FAIL
+honesto. Revisé el `verify-report.md` contra el repo.
+
+> **Límite respetado:** `verify-report.md` y `fixes-required.md` son del verificador. El
+> `02-builder.md` prohíbe al Builder escribirlos, así que **no los edito**. Las correcciones van
+> acá, que es mi artefacto.
+
+### I.1 — Lo que el verify-report dice bien
+
+- Números del backend: 54 tests, 0 fallos, 2 errores (Testcontainers), cobertura 0.1175, gate
+  0.08 en verde, spotless en verde. **Verificado de nuevo en esta sesión: coinciden.**
+- Las 6 mutaciones y los tests que caen en cada una. **Reproducidas: coinciden.**
+- Las 5 tareas declaradas como ejecutadas. **Verificado: las 5 están marcadas `[x]`.**
+
+### I.2 — Inexactitudes del verify-report (no bloquean el PASS, pero mienten)
+
+| Afirmación | Realidad |
+|---|---|
+| `**Rama:** brydyan/sc-477/t-auth-inv-01-sistema-de-invitaciones-por` | La rama auditada es **`brydyan/sc-478/odd-cors-license-thirdparty-jacoco`**. El header del reporte trae la rama de otro change: se copió de un reporte anterior. Los números del reporte sí son los de esta rama, así que la auditoría se hizo sobre el código correcto y lo que está mal es la etiqueta. |
+| "### Frontend — Running. Results pending." | Contradice la sección de al lado, que ya reporta 68/651. El reporte quedó a medio escribir. |
+| "✅ No undeclared modifications in working tree" | **Falso en el momento de la auditoría**: `LICENSE` y `THIRD_PARTY_LICENSES.md` estaban **untracked** (el commit `17e4efe` los había excluido a propósito) y el task file + `apply-progress.md` estaban modificados. |
+| "Test suite still 54/54 executable" | Redondeo que tapa el dato: son 54 tests de los cuales **2 error** (sin Docker). El 52/54 ejecutable es el número real. |
+
+### I.3 — Compuerta que el verificador no corrió
+
+El checklist del `02-builder.md` pide "Compuertas pasadas (lint, format, tests, **build**)". El
+reporte corre lint, format y tests del frontend, pero **no menciona `pnpm build`**. Corrienda en
+esta sesión:
+
+```
+frontend build   pnpm build   exit 0
+                 Initial total 818.87 kB | 196.58 kB (compressed)
+                 www/manifest.webmanifest presente (871 bytes)
+                 www/ngsw.json presente (8248 bytes)
+```
+
+### I.4 — Validaciones que el reporte no cubre
+
+```
+ci.yml           YAML valido (9 jobs; el step de artifact quedo en
+                 backend-quarkus-test, con if-no-files-found: error)
+k8s/configmap    YAML valido; CORS_ALLOWED_ORIGINS =
+                 https://control.twintailcs.xyz,https://k3s-staging.tailc8cd10.ts.net
+.env.example     CORS_ALLOWED_ORIGINS parsea en 4 origenes
+LICENSE          diff contra apache.org -> 1 linea (el titular)
+```
+
+### I.5 — Orden de commit y archivado
+
+El ODD no se podía archivar con los entregables sin commitear: el commit `17e4efe` los había
+excluido, así que el archivo archivado habría afirmado "Task 2 y Task 3 cerradas" por algo que el
+repo no contenía. El orden fue: **commit de los entregables primero, archivo después**.
+
+El archivado quedó en `odd/archive/` con los 4 artefactos y el prefijo
+`VERIFIED-2026-11-07-compliance-cors-license-jacoco` (más el sufijo de cada uno), que es lo que
+pide el `03-verify.md`. Los links relativos dentro de los archivos se corrigieron al moverlos, y
+el `fixes-required.md` — que se había perdido en el movimiento — se restauró con su contenido
+original.
+
+### I.6 — Estado de los gates al cierre
+
+```
+backend   mvn -B -o clean verify -Dmaven.test.failure.ignore=true   BUILD SUCCESS
+          11 suites / 54 tests / 0 failure / 2 error (Testcontainers)
+          spotless ✓   jacoco:report ✓   jacoco:check (piso 0.08) ✓
+          cobertura LINE 387/3294 = 0.1175
+frontend  pnpm test:ci        68 suites / 651 tests / 0 fallos
+          pnpm lint           0 errores
+          pnpm format:check   0 errores
+          pnpm build          exit 0
+mutaciones 6/6 caen; restauracion verificada con diff
+```
+
+**Veredicto propio:** el trabajo está bien y los gates pasan. El `fixes-required.md` es correcto
+en su "no blockers". Lo que falta para cerrar no es un fix de codigo: es **commitear los
+entregables y archivar**.
+
+---
+
 **Estado de la implementacion tras este ODD:** las 5 tareas del task original estan cerradas (4
 con desvio deliberado y documentado). El build del backend pasa con el gate de cobertura, el
-frontend pasa sus gates, y hay 7 tests nuevos que demonstrates el comportamiento de CORS por
+frontend pasa sus gates, y hay 7 tests nuevos que demonstran el comportamiento de CORS por
 mutacion. Este archivo **no** declara el change listo para produccion: eso lo decide el
 verificador y el Arquitecto.
