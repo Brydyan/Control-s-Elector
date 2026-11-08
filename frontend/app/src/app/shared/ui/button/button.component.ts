@@ -27,6 +27,15 @@ export class ButtonComponent {
   @Input() icon?: string;
   @Input() rounded = false;
 
+  /**
+   * The accessible name of the button.
+   *
+   * A button that carries only an icon has no name of its own, so the label
+   * goes to the element that is really the button —the one a screen reader
+   * announces— and not to the host.
+   */
+  @Input() ariaLabel?: string;
+
   @Output() clicked = new EventEmitter<MouseEvent>();
 
   /** `p-button` only accepts `small` and `large`; the default size is unset. */

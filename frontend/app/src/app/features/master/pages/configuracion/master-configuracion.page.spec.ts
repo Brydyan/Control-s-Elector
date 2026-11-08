@@ -226,7 +226,10 @@ describe('MasterConfiguracionPage', () => {
     expect(cards.length).toBe(3); // 3 resumen cards (Cargos, Partidos, Candidatos)
 
     // Verificar valores en los cards
-    const values = fixture.nativeElement.querySelectorAll('.card-value');
+    const values = fixture.nativeElement.querySelectorAll(
+      '.kpi-card__figure, .card-value',
+    );
+    expect(values.length).toBe(3);
     expect(values[0].textContent.trim()).toBe('2'); // Total Cargos
     expect(values[1].textContent.trim()).toBe('2'); // Total Partidos
     expect(values[2].textContent.trim()).toBe('2'); // Total Candidatos

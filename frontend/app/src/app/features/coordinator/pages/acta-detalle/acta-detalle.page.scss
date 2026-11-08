@@ -230,28 +230,16 @@
 /*
  * The table is rendered by PrimeNG, so its internals are reached through the
  * encapsulation boundary.
+ *
+ * The table itself —el padding de la cabecera y de las celdas, el borde, el
+ * hover— es el estándar `.app-table` de `src/theme/tables.scss`. Esta página
+ * sólo pone encima lo que es suyo: la alineación de la columna de votos y
+ * las filas de resumen del pie.
  */
 :host ::ng-deep .votes-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-
-  thead th {
-    background: var(--color-surface-page);
-    color: var(--color-text-muted);
-    font-size: var(--font-size-xs);
-    font-weight: 700;
-    text-transform: uppercase;
-    padding: 10px 14px;
-    border-bottom: 2px solid var(--color-border-subtle);
-  }
-
-  tbody td {
-    padding: 10px 14px;
-    font-size: var(--font-size-sm);
-    border-bottom: 1px solid var(--color-border-subtle);
-    vertical-align: middle;
-  }
 
   .th-votos,
   .td-votos {
@@ -266,16 +254,22 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .row-subtotal {
+  /*
+   * El fondo de las filas de resumen va en la celda y no en la fila: PrimeNG
+   * pinta el fondo de la celda del pie, así que un fondo en la `tr` queda
+   * debajo de la celda, donde no se ve. La banda de gris que el autor pedía
+   * no se veía.
+   */
+  .row-subtotal td {
     background: var(--color-surface-page);
     color: var(--color-text-muted);
   }
 
   .row-total {
-    background: var(--color-border-subtle);
     th,
     td {
-      padding: 12px 14px;
+      background: var(--color-border-subtle);
+      padding: var(--space-3) var(--space-4);
       border-top: 2px solid var(--color-border-medium);
       font-size: var(--font-size-base);
     }

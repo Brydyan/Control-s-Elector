@@ -55,77 +55,23 @@
     >
   </app-error-state>
 
-  <app-empty-state
-    *ngIf="!loading() && !error() && !cargosFiltrados().length"
-    icon="ribbon"
-    title="No se encontraron cargos"
-    description="No hay cargos electorales registrados con los filtros seleccionados."
-  ></app-empty-state>
-
-  @if (!loading() && !error() && cargosFiltrados().length) {
-  <div class="table-wrap desktop-only">
-    <p-table
-      [value]="cargosFiltrados()"
-      [rowHover]="true"
-      styleClass="catalog-table"
-    >
-      <ng-template #header>
-        <tr>
-          <th>Cargo</th>
-          <th>Nivel Territorial</th>
-          <th>Puestos a Elegir</th>
-          <th>Acciones</th>
-        </tr>
-      </ng-template>
-      <ng-template #body let-cargo>
-        <tr>
-          <td>
-            <strong>{{ cargo.nombre }}</strong>
-          </td>
-          <td>
-            <span class="badge">{{ cargo.nivel }}</span>
-          </td>
-          <td>
-            {{ cargo.puestos }} {{ cargo.puestos === 1 ? 'puesto' : 'puestos' }}
-          </td>
-          <td class="actions">
-            <p-menu
-              #menu
-              [model]="obtenerAccionesCargo(cargo)"
-              [popup]="true"
-              appendTo="body"
-            />
-            <app-button
-              variant="ghost"
-              size="sm"
-              icon="pi pi-ellipsis-v"
-              [rounded]="true"
-              aria-label="Acciones de cargo"
-              (clicked)="menu.toggle($event)"
-            />
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
-  </div>
-
-  <div class="cards mobile-only">
-    @for (cargo of cargosFiltrados(); track cargo.id) {
-    <article>
+  @if (!loading() && !error()) {
+  <app-table
+    [data]="cargosFiltrados()"
+    [columns]="tableColumns"
+    [actions]="obtenerAccionesCargo.bind(this)"
+    emptyTitle="No se encontraron cargos"
+    emptyDescription="No hay cargos electorales registrados con los filtros seleccionados."
+    emptyIcon="pi pi-briefcase"
+    mobileTitleColumn="nombre"
+  >
+    <ng-template appTableCell="nombre" let-cargo>
       <strong>{{ cargo.nombre }}</strong>
-      <span>Nivel: {{ cargo.nivel }}</span>
-      <span>Puestos: {{ cargo.puestos }}</span>
-      <div class="actions">
-        <app-button variant="ghost" size="sm" (clicked)="abrirEditar(cargo)">
-          Editar
-        </app-button>
-        <app-button variant="danger" size="sm" (clicked)="eliminarCargo(cargo)">
-          Eliminar
-        </app-button>
-      </div>
-    </article>
-    }
-  </div>
+    </ng-template>
+    <ng-template appTableCell="nivel" let-cargo>
+      <span class="badge">{{ cargo.nivel }}</span>
+    </ng-template>
+  </app-table>
   }
 </div>
 

@@ -38,29 +38,32 @@
 
   <!-- Tarjetas de resumen -->
   <div class="resumen-cards" data-testid="resumen-section">
-    <app-card class="resumen-card">
-      <div class="card-content">
-        <h3 class="card-title">Total Cargos</h3>
-        <p class="card-value">{{ totalCargos }}</p>
-        <p class="card-label">Dignidades configuradas</p>
-      </div>
-    </app-card>
+    <app-kpi-card
+      class="resumen-card"
+      label="Total Cargos"
+      [value]="totalCargos"
+      hint="Dignidades configuradas"
+      icon="pi pi-briefcase"
+      tone="brand"
+    ></app-kpi-card>
 
-    <app-card class="resumen-card">
-      <div class="card-content">
-        <h3 class="card-title">Total Partidos</h3>
-        <p class="card-value">{{ totalPartidos }}</p>
-        <p class="card-label">Organizaciones políticas</p>
-      </div>
-    </app-card>
+    <app-kpi-card
+      class="resumen-card"
+      label="Total Partidos"
+      [value]="totalPartidos"
+      hint="Organizaciones políticas"
+      icon="pi pi-flag"
+      tone="neutral"
+    ></app-kpi-card>
 
-    <app-card class="resumen-card">
-      <div class="card-content">
-        <h3 class="card-title">Total Candidatos</h3>
-        <p class="card-value">{{ totalCandidatos }}</p>
-        <p class="card-label">Postulantes registrados</p>
-      </div>
-    </app-card>
+    <app-kpi-card
+      class="resumen-card"
+      label="Total Candidatos"
+      [value]="totalCandidatos"
+      hint="Postulantes registrados"
+      icon="pi pi-users"
+      tone="success"
+    ></app-kpi-card>
   </div>
 
   <!-- Barra de tabs -->
@@ -108,49 +111,23 @@
   <!-- TABLA DE CARGOS -->
   @if (tabActiva() === 'cargos') {
   <app-card class="tabla-card" data-testid="cargos-section">
-    <div class="tabla-wrapper">
-      <table class="tabla" role="grid" aria-label="Tabla de cargos electorales">
-        <thead>
-          <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Nombre</th>
-            <th scope="col">Nivel Territorial</th>
-            <th scope="col">Orden</th>
-            <th scope="col">Estado</th>
-            <th scope="col" class="col-acciones">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (cargo of cargosData(); track cargo.id; let idx = $index) {
-          <tr [attr.data-testid]="'cargo-row-' + cargo.id">
-            <td>{{ cargo.id }}</td>
-            <td>{{ cargo.nombre }}</td>
-            <td>{{ cargo.nivelTerritorial }}</td>
-            <td>{{ cargo.orden }}</td>
-            <td>{{ cargo.estado }}</td>
-            <td class="col-acciones">
-              <button
-                class="btn-action"
-                (click)="abrirModalCargo('edit', cargo)"
-                aria-label="Editar cargo {{ cargo.nombre }}"
-                [attr.data-testid]="'btn-edit-cargo-' + idx"
-              >
-                Editar
-              </button>
-              <button
-                class="btn-action btn-danger"
-                (click)="abrirConfirmEliminarCargo(cargo)"
-                aria-label="Eliminar cargo {{ cargo.nombre }}"
-                [attr.data-testid]="'btn-delete-cargo-' + idx"
-              >
-                Eliminar
-              </button>
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <app-table
+      [data]="cargosData()"
+      [columns]="cargosColumns"
+      [actions]="obtenerAccionesCargo.bind(this)"
+      emptyTitle="No hay cargos configurados"
+      emptyIcon="pi pi-briefcase"
+      mobileTitleColumn="nombre"
+    >
+      <ng-template appTableCell="nombre" let-cargo>
+        <strong>{{ cargo.nombre }}</strong>
+      </ng-template>
+      <ng-template appTableCell="nivel" let-cargo>
+        <span class="badge"
+          >{{ cargo.nivel || cargo.nivelTerritorial || '—' }}</span
+        >
+      </ng-template>
+    </app-table>
   </app-card>
   }
   <!-- FIN TABLA CARGOS -->
@@ -158,57 +135,21 @@
   <!-- TABLA DE PARTIDOS -->
   @if (tabActiva() === 'partidos') {
   <app-card class="tabla-card" data-testid="partidos-section">
-    <div class="tabla-wrapper">
-      <table class="tabla" role="grid" aria-label="Tabla de partidos políticos">
-        <thead>
-          <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Nombre</th>
-            <th scope="col">Siglas</th>
-            <th scope="col">Nº Lista</th>
-            <th scope="col">Color</th>
-            <th scope="col">Estado</th>
-            <th scope="col" class="col-acciones">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (partido of partidosData(); track partido.id; let idx = $index) {
-          <tr [attr.data-testid]="'partido-row-' + partido.id">
-            <td>{{ partido.id }}</td>
-            <td>{{ partido.nombre }}</td>
-            <td>{{ partido.siglas }}</td>
-            <td>{{ partido.numeroLista }}</td>
-            <td>
-              <span
-                class="color-badge"
-                [style.background-color]="partido.color || 'transparent'"
-                [attr.aria-label]="'Color: ' + (partido.color || 'No definido')"
-              ></span>
-            </td>
-            <td>{{ partido.estado }}</td>
-            <td class="col-acciones">
-              <button
-                class="btn-action"
-                (click)="abrirModalPartido('edit', partido)"
-                aria-label="Editar partido {{ partido.nombre }}"
-                [attr.data-testid]="'btn-edit-partido-' + idx"
-              >
-                Editar
-              </button>
-              <button
-                class="btn-action btn-danger"
-                (click)="abrirConfirmEliminarPartido(partido)"
-                aria-label="Eliminar partido {{ partido.nombre }}"
-                [attr.data-testid]="'btn-delete-partido-' + idx"
-              >
-                Eliminar
-              </button>
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <app-table
+      [data]="partidosData()"
+      [columns]="partidosColumns"
+      [actions]="obtenerAccionesPartido.bind(this)"
+      emptyTitle="No hay partidos configurados"
+      emptyIcon="pi pi-flag"
+      mobileTitleColumn="nombre"
+    >
+      <ng-template appTableCell="numeroLista" let-partido>
+        <span class="badge">Lista {{ partido.numeroLista }}</span>
+      </ng-template>
+      <ng-template appTableCell="siglas" let-partido>
+        <strong>{{ partido.siglas }}</strong>
+      </ng-template>
+    </app-table>
   </app-card>
   }
   <!-- FIN TABLA PARTIDOS -->
@@ -216,62 +157,23 @@
   <!-- TABLA DE CANDIDATOS -->
   @if (tabActiva() === 'candidatos') {
   <app-card class="tabla-card" data-testid="candidatos-section">
-    <div class="tabla-wrapper">
-      <table
-        class="tabla"
-        role="grid"
-        aria-label="Tabla de candidatos electorales"
-      >
-        <thead>
-          <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Nombre</th>
-            <th scope="col">Cargo</th>
-            <th scope="col">Partido</th>
-            <th scope="col">Orden Lista</th>
-            <th scope="col">Estado</th>
-            <th scope="col" class="col-acciones">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (candidato of candidatosData(); track candidato.id; let idx =
-          $index) {
-          <tr [attr.data-testid]="'candidato-row-' + candidato.id">
-            <td>{{ candidato.id }}</td>
-            <td>{{ candidato.nombre }}</td>
-            <td>
-              {{ (cargosData() | slice: 0:1 | slice: 0:1)[0]?.nombre || "Cargo
-              #" + candidato.cargoId }}
-            </td>
-            <td>
-              {{ (partidosData() | slice: 0:1 | slice: 0:1)[0]?.nombre ||
-              "Partido #" + candidato.partidoId }}
-            </td>
-            <td>{{ candidato.ordenLista }}</td>
-            <td>{{ candidato.estado }}</td>
-            <td class="col-acciones">
-              <button
-                class="btn-action"
-                (click)="abrirModalCandidato('edit', candidato)"
-                aria-label="Editar candidato {{ candidato.nombre }}"
-                [attr.data-testid]="'btn-edit-candidato-' + idx"
-              >
-                Editar
-              </button>
-              <button
-                class="btn-action btn-danger"
-                (click)="abrirConfirmEliminarCandidato(candidato)"
-                aria-label="Eliminar candidato {{ candidato.nombre }}"
-                [attr.data-testid]="'btn-delete-candidato-' + idx"
-              >
-                Eliminar
-              </button>
-            </td>
-          </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <app-table
+      [data]="candidatosData()"
+      [columns]="candidatosColumns"
+      [actions]="obtenerAccionesCandidato.bind(this)"
+      emptyTitle="No hay candidatos configurados"
+      emptyIcon="pi pi-users"
+      mobileTitleColumn="nombre"
+    >
+      <ng-template appTableCell="orden" let-candidato>
+        <span class="badge"
+          >#{{ candidato.orden ?? candidato.ordenLista ?? '—' }}</span
+        >
+      </ng-template>
+      <ng-template appTableCell="nombre" let-candidato>
+        <strong>{{ candidato.nombre }}</strong>
+      </ng-template>
+    </app-table>
   </app-card>
   }
   <!-- FIN TABLA CANDIDATOS -->
