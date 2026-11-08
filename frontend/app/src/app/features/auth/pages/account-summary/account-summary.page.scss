@@ -1,0 +1,111 @@
+/* Resumen de la cuenta activada (ODD #504, B.5.2).
+ *
+ * Solo tokens del tema: el guard de tokens (`src/theme/token-guard.spec.ts`)
+ * rechaza cualquier color crudo fuera de la capa de tema.
+ */
+
+.summary-container {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: var(--color-surface-page);
+}
+
+.panel {
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-lg);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+
+  h1 {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-title);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+  }
+
+  .subtitle {
+    margin: 0 0 var(--space-5);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-base);
+    line-height: 1.5;
+  }
+}
+
+.success-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--space-4);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-status-success);
+  color: var(--color-text-on-brand);
+  font-size: var(--font-size-title);
+}
+
+.resumen-titulo {
+  margin: 0 0 var(--space-4);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  text-align: left;
+}
+
+.resumen {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-page);
+  text-align: left;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-1) 0;
+  }
+
+  dt {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-meta);
+  }
+
+  dd {
+    margin: 0;
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    word-break: break-all;
+  }
+}
+
+.aviso {
+  margin: 0 0 var(--space-5);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
+  font-size: var(--font-size-body);
+  line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+  .summary-container {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .panel {
+    border: none;
+    border-radius: 0;
+    padding: var(--space-6) var(--space-5);
+  }
+}

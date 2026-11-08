@@ -165,6 +165,100 @@
   color: var(--color-status-danger);
 }
 
+/*
+ * Usuario de Control (ODD #504, B.5.1): la persona ve con que credencial va a
+ * entrar antes de elegir la contraseña.
+ */
+.usuario-control {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-page);
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  span {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-meta);
+  }
+
+  strong {
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    word-break: break-all;
+  }
+}
+
+/* Ayuda del campo: que se espera de la contraseña (ODD #504, B.5.1). */
+.help-text {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-meta);
+  color: var(--color-text-muted);
+}
+
+/* Medidor de fuerza: es una ayuda, no un control (ODD #504, B.5.1). */
+.fuerza {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+}
+
+.fuerza-barra {
+  flex: 1;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface-page);
+  overflow: hidden;
+}
+
+.fuerza-relleno {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-status-danger);
+  transition: width 0.2s ease;
+}
+
+.fuerza-relleno.fuerza-media {
+  background: var(--color-status-warning);
+}
+
+.fuerza-relleno.fuerza-alta {
+  background: var(--color-status-success);
+}
+
+.fuerza-etiqueta {
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+/* Confirmacion de la contraseña definitiva (ODD #504, B.5.1). */
+.check-confirmacion {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+
+  input {
+    margin-top: 2px;
+  }
+}
+
 .skeleton-line {
   height: 14px;
   border-radius: var(--radius-sm);

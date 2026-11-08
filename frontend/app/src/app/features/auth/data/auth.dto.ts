@@ -42,6 +42,12 @@ export interface ValidarTokenResponseDto {
   valid: boolean;
   usuarioId: string | null;
   expiresAt: string | null;
+  /**
+   * Login del usuario (el correo de Control con el que entra).
+   *
+   * Solo viene cuando el token es válido: quien tiene el token es esa persona.
+   */
+  username?: string | null;
 }
 
 /** Pedido de activación de cuenta. */
@@ -57,5 +63,7 @@ export interface ActivarResponseDto {
   nombre: string;
   apellido: string;
   email: string;
+  /** Correo de contacto de la persona; null si la cuenta se creó sin correo. */
+  emailPersonal?: string | null;
   rolNombre: string;
 }
