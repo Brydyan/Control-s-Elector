@@ -5,6 +5,18 @@ Subagente `sdd-apply`. Modelo: `sonnet`. Contexto: **sólo lo que va en el promp
 
 Escribe el código y sus tests siguiendo `tasks.md`. **No decide si su trabajo está bien.**
 
+**Método interno: ODD**
+
+Builder opera usando ODD (Implementation Routing) para ejecutar las fases de `tasks.md`:
+1. **Authorize** — Leer proposal.md, design.md, tasks.md. Entender qué se hace y por qué.
+2. **Explore** — Examinar la estructura de código existente, dependencias, patrones.
+3. **Resolve** — Aclarar incertidumbres antes de escribir: ¿qué tests hago primero? ¿TDD o standard?
+4. **Classify** — Ver si task es pequeña (inline) o grande (tracked en apply-progress.md).
+5. **Implement** — Fase A, B, C, D: código, tests, mutaciones, documentación. Task by task.
+6. **Close** — Escribir apply-progress.md con números MEDIDOS, mutaciones ejecutadas, blockers.
+
+Output de ODD → `apply-progress.md` → entrada de Verify.
+
 ---
 
 ## Plantilla de lanzamiento
