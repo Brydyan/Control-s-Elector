@@ -34,10 +34,10 @@ CREATE INDEX idx_user_invitations_email ON user_invitations(email_personal);
 ```
 
 **Acceptance Criteria:**
-- [ ] Migration runs cleanly: `mvn flyway:migrate`
-- [ ] Table created with all columns
-- [ ] Foreign keys defined
-- [ ] Indexes on status + email
+- [x] Migration runs cleanly — Liquibase, no Flyway: se aplico contra un Postgres 16.15 real (`mvn verify` con el datasource apuntando a la base)
+- [x] Table created with all columns
+- [x] Foreign keys defined
+- [x] Indexes on status + email
 
 **Mutation:** Created user_invitations table.
 
@@ -146,13 +146,13 @@ public class UserInvitationService {
 ```
 
 **Acceptance Criteria:**
-- [ ] Username generated: {3name}{3lastname}{3role}@control.ttcs
-- [ ] Temp password: 12 chars with entropy
-- [ ] Usuario created in DB
-- [ ] Invitation record created
-- [ ] Email sent (verify in MailService)
-- [ ] Audit log recorded
-- [ ] No temp password in response body
+- [x] Username generated: {3name}{3lastname}{3role}@control.ttcs — formato real sin el punto (port exacto del backend Spring); ver D de apply-progress
+- [ ] Temp password: 12 chars with entropy — **NO implementada, declarada en apply-progress.md (D.2)**: la cuenta nace PENDIENTE_INVITACION y el login la bloquea, asi que una temporal no serviria para entrar; el link de activacion es la credencial. Hace falta una pantalla de cambio de contrasena (o `must_change_password`), que es otro change de producto.
+- [x] Usuario created in DB
+- [x] Invitation record created
+- [x] Email sent (verify in MailService)
+- [x] Audit log recorded
+- [x] No temp password in response body
 
 **Mutation:** Created UserInvitationService; remove password generation and verify invitations fail.
 
@@ -194,12 +194,12 @@ public class UserInvitationResource {
 ```
 
 **Acceptance Criteria:**
-- [ ] POST /api/v1/users/invite requires MASTER role
-- [ ] Rate limit: 1/5s per IP
-- [ ] Response: { usuarioId, username, emailPersonal, status }
-- [ ] Status code: 200 OK on success
-- [ ] Status code: 429 on rate limit
-- [ ] Status code: 401 if not MASTER
+- [x] POST /api/v1/users/invite requires MASTER role
+- [x] Rate limit: 1/5s per IP
+- [x] Response: { usuarioId, username, emailPersonal, status }
+- [x] Status code: 200 OK on success
+- [x] Status code: 429 on rate limit
+- [x] Status code: 401 if not MASTER — 403 para un autenticado sin permiso (el contrato del repo) y 401 para quien no tiene sesion
 
 **Mutation:** Remove rate limit decorator; verify endpoint allows >1 per 5s (should fail).
 
@@ -290,12 +290,12 @@ export class CreateUserFormComponent {
 ```
 
 **Acceptance Criteria:**
-- [ ] Form has fields: nombre, apellido, email, rol
-- [ ] Email validation (required, RFC 5322)
-- [ ] Submit button disabled until form valid
-- [ ] Success message: "Invitación enviada a X"
-- [ ] Form resets after submit
-- [ ] Loading state during request
+- [x] Form has fields: nombre, apellido, email, rol
+- [x] Email validation (required, RFC 5322)
+- [x] Submit button disabled until form valid
+- [x] Success message: "Invitación enviada a X"
+- [x] Form resets after submit
+- [x] Loading state during request
 
 **Mutation:** Remove email field; verify form can submit with invalid email.
 
@@ -338,11 +338,11 @@ public void testInviteUserGeneratesUsernameAndSendsEmail() {
 ```
 
 **Acceptance Criteria:**
-- [ ] Username generated correctly
-- [ ] User created in DB
-- [ ] Invitation record created
-- [ ] Status: INVITED
-- [ ] Email queued (verify mock)
+- [x] Username generated correctly
+- [x] User created in DB
+- [x] Invitation record created
+- [x] Status: INVITED
+- [x] Email queued (verify mock)
 
 **Mutation:** Remove username generation; verify test fails (username != expected).
 
@@ -372,10 +372,10 @@ test('MASTER can create and invite user', async ({ page }) => {
 ```
 
 **Acceptance Criteria:**
-- [ ] Form fills and submits
-- [ ] Success message appears
-- [ ] POST /api/v1/users/invite called
-- [ ] Response 200 OK
+- [x] Form fills and submits
+- [x] Success message appears
+- [x] POST /api/v1/users/invite called
+- [x] Response 200 OK
 
 ---
 
