@@ -281,13 +281,19 @@ Changes activos / preparados:
 | Orden | Ticket | Tipo | Pts | Criticidad | Bloqueador | Dependencia |
 |-------|--------|------|-----|-----------|-----------|------------|
 | **1** | #478 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (frontend↔backend) | None |
-| **2** | #490 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (Master dashboard) | None |
+| **2** | #490 | ODD | — | ✅ DONE | ✅ RESOLVED | bdfa452 |
 | **3** | #482 | SDD | 13 | 🔴 CRÍTICO | ❌ Legal (Google Play) | #478 (CORS) |
 | **4** | #492 | SDD | 5 | 🟡 ALTO | ❌ Feature (users) | None |
 | **5** | #486 | SDD | 5 | 🟠 MEDIO | ❌ Feature (consent) | Product decision |
 | **6** | #488 | SDD | 5 | 🟠 MEDIO | ❌ Monitoring | Sentry account setup |
 
-**Total:** 30 story points (~4-5 sprints)
+**Total:** 29 story points (~4-5 sprints)
+
+**⚠ UPDATE (2026-11-07):** ODD #490 RESOLVED UPSTREAM
+- Commit bdfa452 (develop) already fixed Master dashboard routing issues
+- /observer/mis-actas route added, /master/configuracion refactored
+- Dashboard endpoints /resultados, /progreso canonical (no -detallado suffix)
+- **Action:** Mark ODD #490 as DONE; keep ODD #478 only
 
 ### Ejecución Secuencial
 
@@ -300,13 +306,13 @@ ODD #478 (CORS + LICENSE + JACOCO)
 └─ Status: To Do
 
 ODD #490 (Dashboard routing)
-├─ 30 min total
-├─ Desbloquea: Master users can access dashboard
-└─ Status: To Do
+├─ Status: ✅ RESOLVED UPSTREAM (Commit bdfa452)
+├─ Action: Superseded by develop merge
+└─ No further action needed
 ```
 
-**Estimación:** 85 min, correr en paralelo (independientes)  
-**Salida:** Environment.apiUrl fixed, LICENSE created, Dashboard routing fixed
+**Estimación:** 55 min (ODD #478 only)  
+**Salida:** CORS configured, LICENSE created, Jacoco integrated
 
 #### **Phase 1: SDD Sprint 1 (Priority — Week 1-2)**
 
