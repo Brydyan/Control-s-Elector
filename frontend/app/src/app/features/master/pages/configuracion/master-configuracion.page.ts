@@ -7,7 +7,11 @@ import { DialogService } from 'primeng/dynamicdialog';
 import {
   CardComponent,
   ErrorStateComponent,
+  KpiCardComponent,
   LoadingStateComponent,
+  TableCellTemplate,
+  TableColumn,
+  TableComponent,
 } from '../../../../shared/ui';
 import { ConfiguracionApi } from '../../data/configuracion.api';
 import {
@@ -47,12 +51,15 @@ import { ConfirmDialogComponent } from './dialogs/confirm-dialog/confirm-dialog.
   imports: [
     CommonModule,
     CardComponent,
+    KpiCardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
     CargoModalComponent,
     PartidoModalComponent,
     CandidatoModalComponent,
     ConfirmDialogComponent,
+    TableComponent,
+    TableCellTemplate,
   ],
   providers: [DialogService],
   templateUrl: './master-configuracion.page.html',
@@ -75,6 +82,120 @@ export class MasterConfiguracionPage implements OnInit, OnDestroy {
 
   // Tab activo (desde ruta data o default)
   readonly tabActiva = signal<'cargos' | 'partidos' | 'candidatos'>('cargos');
+
+  readonly cargosColumns: TableColumn<CargoDto>[] = [
+    { key: 'nombre', header: 'Nombre', sortable: true },
+    {
+      key: 'nivel',
+      header: 'Nivel Territorial',
+      sortable: true,
+      value: (c) => c.nivel || c.nivelTerritorial || '—',
+    },
+    {
+      key: 'puestos',
+      header: 'Puestos / Orden',
+      sortable: true,
+      width: '8rem',
+      value: (c) =>
+        c.puestos !== undefined ? `${c.puestos} puestos` : (c.orden ?? '—'),
+    },
+  ];
+
+  readonly partidosColumns: TableColumn<PartidoDto>[] = [
+    { key: 'numeroLista', header: 'N° Lista', sortable: true, width: '7rem' },
+    { key: 'siglas', header: 'Siglas', sortable: true, width: '8rem' },
+    { key: 'nombre', header: 'Nombre de la Organización', sortable: true },
+  ];
+
+  readonly candidatosColumns: TableColumn<CandidatoDto>[] = [
+    {
+      key: 'orden',
+      header: 'Orden',
+      sortable: true,
+      width: '6rem',
+      value: (c) => c.orden ?? c.ordenLista ?? '—',
+    },
+    { key: 'nombre', header: 'Nombre del Candidato', sortable: true },
+    {
+      key: 'cargoId',
+      header: 'Cargo',
+      sortable: true,
+      value: (c) => {
+        const cargo = this.cargosData().find((item) => item.id === c.cargoId);
+        return cargo ? cargo.nombre : `Cargo #${c.cargoId}`;
+      },
+    },
+    {
+      key: 'partidoId',
+      header: 'Partido',
+      sortable: true,
+      value: (c) => {
+        const partido = this.partidosData().find(
+          (item) => item.id === c.partidoId,
+        );
+        return partido
+          ? `${partido.siglas || partido.nombre}`
+          : `Partido #${c.partidoId}`;
+      },
+    },
+  ];
+
+  obtenerAccionesCargo(cargo: CargoDto) {
+    return [
+      {
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.abrirModalCargo('edit', cargo),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Eliminar',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-500',
+        command: () => this.abrirConfirmEliminarCargo(cargo),
+      },
+    ];
+  }
+
+  obtenerAccionesPartido(partido: PartidoDto) {
+    return [
+      {
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.abrirModalPartido('edit', partido),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Eliminar',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-500',
+        command: () => this.abrirConfirmEliminarPartido(partido),
+      },
+    ];
+  }
+
+  obtenerAccionesCandidato(candidato: CandidatoDto) {
+    return [
+      {
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.abrirModalCandidato('edit', candidato),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Eliminar',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-500',
+        command: () => this.abrirConfirmEliminarCandidato(candidato),
+      },
+    ];
+  }
 
   ngOnInit(): void {
     // Preseleccionar tab desde ruta data

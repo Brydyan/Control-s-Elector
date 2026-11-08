@@ -440,6 +440,17 @@ export class AdminUsuariosPage implements OnInit {
       },
     ];
 
+    if (this.esMaster() && this.esInvitable(usuario)) {
+      items.push({
+        label: usuario.invitationSentAt
+          ? 'Reenviar invitación'
+          : 'Enviar invitación',
+        icon: 'pi pi-envelope',
+        disabled: this.enviandoInvitaciones(),
+        command: () => this.reenviarInvitacion(usuario),
+      });
+    }
+
     if (this.esMaster()) {
       items.push({
         label: 'Editar',

@@ -1,0 +1,105 @@
+/*
+ * La tarjeta de un indicador.
+ *
+ * Las cifras son la voz del tablero: van en la familia tabular de IBM Plex
+ * Sans (`font-variant-numeric`), porque el operador las compara entre
+ * tarjetas y una cifra que se mueve de ancho se lee peor.
+ *
+ * El color del filo y el de la cifra los decide el tono, no la tarjeta: las
+ * reglas de abajo sólo nombran el token que corresponde a cada tono.
+ */
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background-color: var(--color-kpi-surface);
+  border: 1px solid var(--color-kpi-border);
+  /*
+   * El filo de tres píxeles es el que dice el tono. El color lo pone la
+   * regla del tono; aquí está el de marca, que es el tono por defecto.
+   */
+  border-top: 3px solid var(--color-kpi-accent-brand);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.kpi-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/*
+ * El rótulo va en mayúscula y apagado: es el nombre del indicador, no una
+ * cifra, y no debe competir con el dato que nombra.
+ */
+.kpi-card__label {
+  font-size: var(--font-size-meta);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-kpi-label);
+}
+
+.kpi-card__icon {
+  font-size: var(--font-size-body);
+  color: var(--color-kpi-label);
+}
+
+.kpi-card__figure {
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-kpi-figure-brand);
+}
+
+.kpi-card__hint {
+  font-size: var(--font-size-meta);
+  color: var(--color-kpi-hint);
+}
+
+/* Tones -------------------------------------------------------------------- */
+
+.kpi-card--brand {
+  border-top-color: var(--color-kpi-accent-brand);
+
+  .kpi-card__figure {
+    color: var(--color-kpi-figure-brand);
+  }
+}
+
+.kpi-card--success {
+  border-top-color: var(--color-kpi-accent-success);
+
+  .kpi-card__figure {
+    color: var(--color-kpi-figure-success);
+  }
+}
+
+.kpi-card--warning {
+  border-top-color: var(--color-kpi-accent-warning);
+
+  .kpi-card__figure {
+    color: var(--color-kpi-figure-warning);
+  }
+}
+
+.kpi-card--corrected {
+  border-top-color: var(--color-kpi-accent-corrected);
+
+  .kpi-card__figure {
+    color: var(--color-kpi-figure-corrected);
+  }
+}
+
+.kpi-card--neutral {
+  border-top-color: var(--color-kpi-accent-neutral);
+
+  .kpi-card__figure {
+    color: var(--color-kpi-figure-neutral);
+  }
+}

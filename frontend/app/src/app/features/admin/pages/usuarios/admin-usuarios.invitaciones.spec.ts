@@ -191,16 +191,15 @@ describe('AdminUsuariosPage (invitaciones en lote)', () => {
   });
 
   it('unaCuentaActivaNoOfreceLaAccionDeReenviar', () => {
-    const botones = fixture.nativeElement.querySelectorAll('.btn-invitar');
-    const correos = Array.from(botones).map((b: Element) =>
-      b.getAttribute('aria-label'),
-    );
+    const accionesInactivo = page.obtenerAccionesUsuario(pendienteInvitado);
+    const accionesActivo = page.obtenerAccionesUsuario(activo);
 
-    expect(correos).toContain('Reenviar invitación a invitado@cne.gob.ec');
-    expect(correos).toContain('Enviar invitación a pendiente@cne.gob.ec');
-    expect(
-      correos.some((c: string | null) => c?.includes('activo@cne.gob.ec')),
-    ).toBe(false);
+    expect(accionesInactivo.some((a) => a.label?.includes('invitación'))).toBe(
+      true,
+    );
+    expect(accionesActivo.some((a) => a.label?.includes('invitación'))).toBe(
+      false,
+    );
   });
 
   it('laCasillaDeUnaCuentaActivaVieneDeshabilitadaYExplicaPorQue', () => {

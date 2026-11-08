@@ -1,0 +1,174 @@
+/*
+ * La tabla reutilizable.
+ *
+ * La regla visual de la tabla no es de este componente: la hoja global
+ * `theme/tables.scss` es la única dueña de las cuatro piezas —la cabecera, la
+ * fila, la celda y el paginador— a través de la clase `app-table`. Aquí están
+ * sólo las piezas que el componente añade: la superficie que envuelve la
+ * tabla, el esqueleto de carga, el control de orden y la tarjeta del móvil.
+ *
+ * Los colores son tokens del tema y no valores sueltos: por eso la tabla se
+ * ve igual en los dos esquemas y no hay un color que mantener en dos lugares.
+ */
+
+:host {
+  display: block;
+}
+
+.app-table {
+  display: block;
+  width: 100%;
+}
+
+/*
+ * La superficie: la tabla y su esqueleto son la misma caja —el mismo fondo,
+ * el mismo borde y la misma sombra— para que el esqueleto no se note cuando
+ * llega la primera fila.
+ */
+.app-table__desktop,
+.app-table__skeleton {
+  overflow: auto;
+  background: var(--color-table-surface);
+  border: 1px solid var(--color-table-row-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-surface);
+}
+
+.app-table__skeleton-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* El texto que sólo leen las tecnologías de asistencia. */
+.app-table__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/*
+ * La cabecera ordenable.
+ *
+ * El puntero y el foco se declaran aquí porque la `<th>` vive dentro del
+ * `p-table`, y el estilo del componente no la alcanza sin `::ng-deep`.
+ */
+:host ::ng-deep .app-table__header-cell--sortable {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: var(--color-text-on-surface);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: -2px;
+  }
+}
+
+:host ::ng-deep .app-table__sort-icon {
+  margin-inline-start: var(--space-2);
+  font-size: var(--font-size-meta);
+  opacity: 0.65;
+}
+
+/*
+ * La columna de acciones: el menú de tres puntos.
+ *
+ * Ocupa el ancho de su contenido y no se parte en dos líneas, para que los
+ * puntos caigan siempre en el mismo lugar de la fila.
+ */
+:host ::ng-deep .app-table__actions-cell {
+  width: 1%;
+  white-space: nowrap;
+  text-align: end;
+}
+
+/* La tarjeta del móvil: la fila de la tabla, abierta. */
+.app-table__mobile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.app-table__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-table-surface);
+  border: 1px solid var(--color-table-row-border);
+  border-radius: var(--radius-lg);
+}
+
+.app-table__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.app-table__card-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-on-surface);
+}
+
+.app-table__card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.app-table__card-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.app-table__card-label {
+  font-size: var(--font-size-meta);
+  color: var(--color-text-muted-on-surface);
+}
+
+.app-table__card-value {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-text-on-surface);
+  text-align: end;
+}
+
+/*
+ * El reparto entre la tabla y la tarjeta.
+ *
+ * El teléfono no puede con una tabla de cinco columnas: ahí la fila se abre
+ * como una tarjeta. El punto de corte es el mismo que usa el shell —768px—,
+ * para que la tabla cambie de forma en el mismo ancho en que cambia el
+ * resto de la aplicación.
+ */
+.desktop-only {
+  display: none;
+}
+
+.mobile-only {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+
+  .desktop-only {
+    display: block;
+  }
+}
