@@ -190,6 +190,16 @@ describe('DashboardApi (T-FE-11 A.3)', () => {
  * Este bloque fija ese contrato para que nadie vuelva a los endpoints inventados,
  * y comprueba que un fallo no queda cacheado (si queda, el boton "reintentar" de
  * la pagina no puede recuperar sin recargar el navegador).
+ *
+ * OJO sobre de donde viene esa garantia: NO esta en el codigo del repo, esta en
+ * `shareReplay`, que internamente usa `share({ resetOnError: true })`. Cuando la
+ * fuente falla, el ReplaySubject se resetea y el siguiente suscriptor vuelve a
+ * suscribir la fuente, o sea que dispara una peticion HTTP nueva.
+ *
+ * Por eso estos tests son valuable aunque no haya codigo que los "sostenga": si
+ * alguien cambia `shareReplay` por `publishReplay` (que SI cachea el error) o
+ * guarda el error a mano, estos tests caen. No hay que "arreglar" el cache con un
+ * catchError: seria un no-op que solo confusiona.
  */
 describe('DashboardApi — endpoints canonicos y cache sin errores', () => {
   let service: DashboardApi;
@@ -252,8 +262,9 @@ describe('DashboardApi — endpoints canonicos y cache sin errores', () => {
     expect(primerError).toBeTruthy();
 
     // Segundo intento: tiene que haber una peticion HTTP nueva. Si el error
-    // quedara cacheado, `shareReplay` lo reemitiria sin volver a pedir nada y
-    // el boton "reintentar" de la pagina no podria recuperar.
+    // quedara cacheado, no se volveria a pedir nada y el boton "reintentar" de
+    // la pagina no podria recuperar. Lo garantiza `resetOnError: true` de
+    // shareReplay (ver la nota del describe).
     let segundoError: unknown = null;
     service.getResultadosDetalles().subscribe({
       error: (e) => (segundoError = e),
