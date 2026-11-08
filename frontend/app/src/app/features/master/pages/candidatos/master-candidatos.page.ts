@@ -15,6 +15,9 @@ import {
   EmptyStateComponent,
   ErrorStateComponent,
   SkeletonComponent,
+  TableCellTemplate,
+  TableColumn,
+  TableComponent,
 } from '../../../../shared/ui';
 import { CatalogoApi } from '../../data/catalogo.api';
 import {
@@ -41,6 +44,8 @@ import {
     Skeleton,
     TableModule,
     Menu,
+    TableComponent,
+    TableCellTemplate,
   ],
   templateUrl: './master-candidatos.page.html',
   styleUrls: ['./master-candidatos.page.scss'],
@@ -90,6 +95,23 @@ export class MasterCandidatosPage implements OnInit {
       value: p.id,
     })),
   );
+
+  readonly tableColumns: TableColumn<CandidatoResponseDto>[] = [
+    { key: 'orden', header: 'Orden Papeleta', sortable: true, width: '10rem' },
+    { key: 'nombre', header: 'Nombre del Candidato', sortable: true },
+    {
+      key: 'cargoId',
+      header: 'Dignidad / Cargo',
+      sortable: true,
+      value: (c) => this.obtenerNombreCargo(c.cargoId),
+    },
+    {
+      key: 'partidoId',
+      header: 'Organización Política',
+      sortable: true,
+      value: (c) => this.obtenerNombrePartido(c.partidoId),
+    },
+  ];
 
   modalAbierto = false;
   modoEdicion = false;

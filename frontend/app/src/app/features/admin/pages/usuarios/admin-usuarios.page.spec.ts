@@ -146,45 +146,42 @@ describe('AdminUsuariosPage (rendered contract)', () => {
     fixture.detectChanges();
 
     expect(buttonLabels()).toContain('Crear usuario');
-    // Icon buttons: MASTER should see view, edit, delete, restore
-    expect(countIconButtons('btn-view')).toBeGreaterThan(0);
-    expect(countIconButtons('btn-edit')).toBeGreaterThan(0);
-    expect(countIconButtons('btn-delete')).toBeGreaterThan(0);
+    const accionesMaster = page.obtenerAccionesUsuario(usuario);
+    expect(accionesMaster.some((a) => a.label === 'Ver detalles')).toBe(true);
+    expect(accionesMaster.some((a) => a.label === 'Editar')).toBe(true);
+    expect(accionesMaster.some((a) => a.label === 'Deshabilitar')).toBe(true);
 
     loginAs('ADMIN');
     fixture.detectChanges();
 
     expect(buttonLabels()).not.toContain('Crear usuario');
-    // ADMIN should only see view button, no edit/delete/restore
-    expect(countIconButtons('btn-view')).toBeGreaterThan(0);
-    expect(countIconButtons('btn-edit')).toBe(0);
-    expect(countIconButtons('btn-delete')).toBe(0);
+    const accionesAdmin = page.obtenerAccionesUsuario(usuario);
+    expect(accionesAdmin.some((a) => a.label === 'Ver detalles')).toBe(true);
+    expect(accionesAdmin.some((a) => a.label === 'Editar')).toBe(false);
+    expect(accionesAdmin.some((a) => a.label === 'Deshabilitar')).toBe(false);
   });
 
   // ── D.1 Icon Button Tests ───────────────────────────────────────────────
 
-  it('D.1: renderiza todos los iconos de acción para MASTER', () => {
+  it('D.1: renderiza todos los iconos de acción para MASTER en el menú contextual', () => {
     loginAs('MASTER');
     fixture.detectChanges();
 
-    // Eye button (always visible)
-    expect(countIconButtons('btn-view')).toBeGreaterThan(0);
-    // Edit button (only MASTER)
-    expect(countIconButtons('btn-edit')).toBeGreaterThan(0);
-    // Delete button (only if habilitado and MASTER)
-    expect(countIconButtons('btn-delete')).toBeGreaterThan(0);
+    const acciones = page.obtenerAccionesUsuario(usuario);
+    expect(acciones.some((a) => a.label === 'Ver detalles')).toBe(true);
+    expect(acciones.some((a) => a.label === 'Editar')).toBe(true);
+    expect(acciones.some((a) => a.label === 'Deshabilitar')).toBe(true);
   });
 
-  it('D.1: renderiza solo el ícono eye-outline para ADMIN', () => {
+  it('D.1: renderiza solo Ver detalles en las acciones para ADMIN', () => {
     loginAs('ADMIN');
     fixture.detectChanges();
 
-    // Eye button (always visible)
-    expect(countIconButtons('btn-view')).toBeGreaterThan(0);
-    // No edit, delete, or restore buttons
-    expect(countIconButtons('btn-edit')).toBe(0);
-    expect(countIconButtons('btn-delete')).toBe(0);
-    expect(countIconButtons('btn-restore')).toBe(0);
+    const acciones = page.obtenerAccionesUsuario(usuario);
+    expect(acciones.some((a) => a.label === 'Ver detalles')).toBe(true);
+    expect(acciones.some((a) => a.label === 'Editar')).toBe(false);
+    expect(acciones.some((a) => a.label === 'Deshabilitar')).toBe(false);
+    expect(acciones.some((a) => a.label === 'Re-habilitar')).toBe(false);
   });
 
   it('D.1: llama a AdminService.deshabilitarUsuario al confirmar soft-delete', () => {
