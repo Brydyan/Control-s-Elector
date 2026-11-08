@@ -62,6 +62,58 @@ Este ODD documenta ajustes antes de pasar a Builder.
 
 ---
 
+### A.5 — Email Template: Sin Contraseña Temporal (Enlace de Activación)
+
+**Cambio crítico respecto a SDD #492:**
+
+SDD #492 mostraba contraseña temporal + instrucciones para cambiarla en login.  
+ODD #504 cambia a enlace de activación directo (24h token JWT) — más seguro.
+
+- [ ] **A.5.1** — Email NO contiene contraseña temporal
+  ```html
+  Subject: Bienvenido a Control's Elector - Activa tu Cuenta
+  
+  Header: 🗳️ Control's Elector | Plataforma de Observación Electoral
+  
+  Cuerpo:
+  ¡Bienvenido, Juan!
+  Tu cuenta ha sido creada. Para activarla, establece una nueva contraseña.
+  
+  👤 Tu usuario (Control): juagobs
+  📧 Tu correo (Control): juagobs@control.ttcs
+  
+  🔗 Enlace para activar tu usuario: [botón clickeable]
+  Token: JWT(24h expiry, user_id + invitation_token)
+  
+  Próximos Pasos:
+  1. Haz clic en el enlace
+  2. Ingresa una contraseña nueva segura
+  3. Confirma tu contraseña
+  4. Verás un resumen de tu cuenta
+  5. Usa "Ir a Login" para iniciar sesión
+  
+  ⚠️ Importante:
+  • Esta invitación expira en 24 horas
+  • No compartas este enlace
+  • Solo tú deberías conocer tu contraseña definitiva
+  
+  Footer: Control's Elector 🗳️ 2026
+  ```
+
+- [ ] **A.5.2** — Diferencia usuario vs correo Control
+  ```
+  Usuario (Control): 3 letras nombre + 3 apellido + 3 rol (minúsculas)
+    Ej: Juan García, Observador → juagobs
+  
+  Correo Control: usuario + @control.ttcs
+    Ej: juagobs@control.ttcs
+  
+  Correo Personal: email real del usuario (separado)
+    Ej: juan.garcia@example.com
+  ```
+
+---
+
 ### B · Cambiar Expiry de 30 días a 24 horas
 
 - [ ] **B.1** — Backend: `user_invitations` table
@@ -85,6 +137,66 @@ Este ODD documenta ajustes antes de pasar a Builder.
     Instant expiry = invited.getInvitationExpiresAt();
     assertEquals(24, ChronoUnit.HOURS.between(NOW, expiry));
   }
+  ```
+
+---
+
+### B.5 — Pantallas de Activación y Resumen
+
+**Flujo de usuario post-email:**
+
+- [ ] **B.5.1** — Pantalla 1: Establecer Contraseña (`/activate?token=xyz`)
+  ```
+  Header: 🔐 Activar tu Cuenta
+  
+  Tu Usuario (Control): juagobs (lectura)
+  
+  Requisitos de Contraseña (validación real-time):
+  ☐ Mínimo 12 caracteres
+  ☐ Mayúsculas (A-Z)
+  ☐ Minúsculas (a-z)
+  ☐ Números (0-9)
+  ☐ Caracteres especiales (!@#$%^&*)
+  
+  Inputs:
+  - Nueva Contraseña *
+  - Confirmar Contraseña *
+  - ☑ Entiendo que esta es mi contraseña definitiva...
+  
+  Botón: ✓ Activar Cuenta
+  
+  POST /api/v1/auth/activate
+  {
+    token: "JWT...",
+    newPassword: "MyStr0ng!Pass123"
+  }
+  
+  Backend:
+    1. Valida token (JWT, 24h expiry)
+    2. Valida contraseña cumple requisitos
+    3. Hashea y guarda nueva contraseña
+    4. Marca usuario: activated_at = NOW
+    5. Invalida token de invitación
+    6. Retorna { success: true }
+  ```
+
+- [ ] **B.5.2** — Pantalla 2: Resumen de Activación (`/auth/account-summary`)
+  ```
+  Header: ✅ ¡Cuenta Activada!
+         Tu cuenta está lista para usar
+  
+  Resumen de tu Cuenta:
+  👤 Usuario (Control): juagobs
+  📧 Correo Control: juagobs@control.ttcs
+  💬 Correo Personal: juan.garcia@example.com
+  🎭 Rol de Control: Observador Electoral
+  
+  ℹ️ Tu contraseña ha sido establecida correctamente.
+     Ahora puedes iniciar sesión en Control's Elector.
+  
+  Botón: → Ir a Login
+  
+  Redirige a: /auth/login
   ```
 
 ---
