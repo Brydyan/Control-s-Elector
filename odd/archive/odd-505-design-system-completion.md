@@ -553,16 +553,16 @@ describe('ButtonComponent A11y', () => {
 
 ## Mutaciones
 
-- [ ] **M1** — Toast disabled. Quitar `setToastComponent()` call en AppComponent.
+- [x] **M1** — Toast disabled. Quitar `setToastComponent()` call en AppComponent.
   Mutación: espera que `toastService.success()` sea no-op. Restaura.
 
-- [ ] **M2** — Spacing scale. Cambiar `--space-4: 1rem` a `--space-4: 0.5rem`.
+- [x] **M2** — Spacing scale. Cambiar `--space-4: 1rem` a `--space-4: 0.5rem`.
   Mutación: espera que buttons queden demasiado ajustados. Restaura.
 
-- [ ] **M3** — Focus ring. Quitar `outline` en `:focus-visible`.
+- [x] **M3** — Focus ring. Quitar `outline` en `:focus-visible`.
   Mutación: keyboard nav es invisible. Restaura.
 
-- [ ] **M4** — A11y tests. Remover `expectA11yClean()` call.
+- [x] **M4** — A11y tests. Remover `expectA11yClean()` call.
   Mutación: test pasa sin validar accesibilidad. Restaura.
 
 ---
@@ -606,7 +606,29 @@ pnpm test:ci
 
 ## Status
 
-- [ ] Builder implementa A-E (3-4 horas)
-- [ ] Tests all green (A11y suite + existing tests)
+- [x] Builder implementa A-E (3-4 horas)
+- [x] Tests all green (A11y suite + existing tests)
 - [ ] Verify round 1 (mutaciones validadas)
 - [ ] Archive to odd/archive/VERIFIED-2026-11-08-design-system-completion.md
+
+---
+
+**Apply-progress del Builder:** `odd/tasks/odd-505-design-system-completion.apply-progress.md`
+(números medidos, mutaciones M1–M4 con el test exacto que cayó, hallazgos y desviaciones).
+
+> `Verify round 1` y el archivado quedan pendientes: los hace Verify/Archivador, no el Builder.
+
+### Desviaciones del ODD (resumen; el detalle está en el apply-progress)
+
+| Tarea | Se hizo en vez de lo pedido | Por qué |
+|---|---|---|
+| **A.1** | Vida del toast **5000 ms** (no 3000) y **sin** `backdrop-filter` | 3 s no alcanza a leerse un mensaje de dos líneas (la banda de la casa es 4-8 s) y un panel de vidrio se come el contraste del texto. `warn` y `error` no tienen vida: se quedan hasta que se cierran. |
+| **A.2** | El `ToastService` habla con el `MessageService` de PrimeNG en vez de `setToastComponent()` | El mecanismo propuesto tiene una ventana donde el feedback se pierde en silencio (si el componente no está registrado, `success()` es un no-op). La **API pública es la misma**. |
+| **A.3** | El `MessageService` se provee en `main.ts` | En PrimeNG 21 **no** es `providedIn: 'root'`: sin la instancia compartida el toast se monta y no muestra nada. |
+| **A.4** | Toast de **éxito**; el error sigue inline en el modal | El modal ya muestra el error con `role="alert"` y su motivo (409 / 400 / otro): avisarlo dos veces es ruido. |
+| **B.1** | La escala que **ya tenía** el repo, completada con `--space-7` y `--space-9` | Cambiar `--space-10` de 40px a 48px habría movido un token en uso, y el propio ODD prohíbe cambiar tokens existentes. |
+| **B.2** | Las utilidades de espaciado **no se duplican** | Tailwind v4 ya las emite con la misma escala de 4px y se carga después (gana). Dos fuentes de verdad para el mismo valor divergen. Se verifica con un test de contrato. |
+| **C.2** | `!important` **localizado** en la regla del anillo | El styled engine de PrimeNG emite su anillo (3px) en runtime y gana por cascada. Precedente: `base.scss` ya lo hace en dos reglas, con el motivo escrito. |
+| **D.1** | Duración y easing por separado; transiciones **por propiedad** (no `all`) | `transition: all` se lleva por delante cambios que nadie pidió y hace que la interfaz parezca más lenta de lo que es. |
+| **E.1** | **`vitest-axe`** en vez de `jest-axe` | El runner del repo es Vitest, no Jest: `jest-axe` no tiene versión para Vitest. `vitest-axe` expone el mismo `axe` + `toHaveNoViolations`. |
+| **M4** | La mutación rompe el **componente** (el botón se queda sin nombre accesible), no el test | Quitar `expectA11yClean()` hace que el test **pase**, no que caiga: esa mutación no demuestra nada. La versión ejecutada comprueba que el test de a11y **cae** (`button-name`), con un contrapeso que sigue verde. |
