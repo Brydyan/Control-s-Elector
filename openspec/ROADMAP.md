@@ -260,9 +260,10 @@ Los seis del playbook (§4), instanciados aquí:
 
 ## 9. Estado del ROADMAP
 
-Última actualización: **2026-11-07**, por Verify (ODD Phase 0 completado).
+Última actualización: **2026-11-08**, por Verify (Phase 0 + SDD #482 completados).
 
 ODD/SDD archivados recientemente:
+- **`openspec/changes/archive/VERIFIED-2026-11-08-t-legal-01-privacy-terms/`** (SDD Phase 1a completo: 82 backend tests, 686 frontend tests, 3 Verify rounds. GDPR/RGPD compliance infrastructure complete — endpoints, BD schema, auth guards, rate limiting, modals. Mutation tests: M1–M3 all verified. Outstanding: legal content review.)
 - **`odd/archive/VERIFIED-2026-11-07-compliance-cors-license-jacoco.*`** (ODD Phase 0 completo: CORS preflight 7 tests + 6 mutations, LICENSE Apache 2.0, THIRD_PARTY_LICENSES.md generado, JaCoCo 0.8.13 con gate 0.08, PWA manifest + icons reparados. Verify Round 1: ✅ PASS.)
 - `openspec/changes/archive/2026-09-25-fe-vitest-ionic-cleanup-race/` (Compuerta estricta CI y 240/240 tests pasando con `isolate: true`)
 - `openspec/changes/archive/2026-10-04-t-fe-11-realtime-dashboard/`
@@ -286,14 +287,14 @@ Changes activos / preparados:
 
 ### Matriz de Priorización
 
-| Orden | Ticket | Tipo | Pts | Criticidad | Bloqueador | Dependencia |
-|-------|--------|------|-----|-----------|-----------|------------|
-| **1** | #478 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (frontend↔backend) | None |
-| **2** | #490 | ODD | — | ✅ DONE | ✅ RESOLVED | bdfa452 |
-| **3** | #482 | SDD | 13 | 🟡 ALTO | ❌ Legal (GDPR/RGPD) | #478 (CORS) |
-| **4** | #492 | SDD | 5 | 🟡 ALTO | ❌ Feature (users) | None |
-| **5** | #486 | SDD | 5 | 🟠 MEDIO | ❌ Feature (consent) | Product decision |
-| **6** | #488 | SDD | 5 | 🟠 MEDIO | ❌ Monitoring | Sentry account setup |
+| Orden | Ticket | Tipo | Pts | Criticidad | Bloqueador | Status |
+|-------|--------|------|-----|-----------|-----------|--------|
+| **1** | #478 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (frontend↔backend) | ✅ VERIFIED 2026-11-07 |
+| **2** | #490 | ODD | — | ✅ DONE | ✅ RESOLVED | ✅ VERIFIED 2026-11-07 |
+| **3** | #482 | SDD | 13 | 🟡 ALTO | ✅ UNBLOCKED | ✅ VERIFIED 2026-11-08 |
+| **4** | #492 | SDD | 5 | 🟡 ALTO | ❌ Feature (users) | Ready for Builder |
+| **5** | #486 | SDD | 5 | 🟠 MEDIO | ❌ Feature (consent) | Needs product decision |
+| **6** | #488 | SDD | 5 | 🟠 MEDIO | ❌ Monitoring | Needs Sentry setup |
 
 **Total:** 29 story points (~4-5 sprints)
 
@@ -329,11 +330,12 @@ ODD #490 (Dashboard routing)
 ```
 T-LEGAL-01 #482 (Privacy + Terms — GDPR/RGPD)
 ├─ 13 story points
-├─ 6 tasks (DB, endpoints, pages, modals, tests)
-├─ Prerequisite: #478 (CORS must be done)
+├─ 3 Verify rounds: R1 6 CRITICAL (entity properties), R2 2 CRITICAL (service/component), R3 PASS
+├─ Completado: 2026-11-08
 ├─ Contexto: PWA privada. Cumplimiento GDPR/RGPD: Art. 13/14 (info), 15 (export), 17 (delete)
-├─ Salida: Privacy Policy + Terms + auditoría de aceptaciones
-└─ Status: Ready for Builder (proposal + design complete, refocused for private PWA)
+├─ Salida: ✅ Privacy Policy + Terms + auditoría de aceptaciones (82 backend tests, 686 frontend tests)
+├─ Archivado: openspec/changes/archive/VERIFIED-2026-11-08-t-legal-01-privacy-terms/
+└─ Status: ✅ VERIFIED (PASS, no blockers) — Outstanding: legal content review (stubs pending lawyer sign-off)
 
 T-AUTH-INV-02 #492 (User Invitations + SMTP)
 ├─ 5 story points (4.5pt actual)
