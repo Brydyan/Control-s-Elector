@@ -290,7 +290,7 @@ Changes activos / preparados:
 |-------|--------|------|-----|-----------|-----------|------------|
 | **1** | #478 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (frontend↔backend) | None |
 | **2** | #490 | ODD | — | ✅ DONE | ✅ RESOLVED | bdfa452 |
-| **3** | #482 | SDD | 13 | 🔴 CRÍTICO | ❌ Legal (Google Play) | #478 (CORS) |
+| **3** | #482 | SDD | 13 | 🟡 ALTO | ❌ Legal (GDPR/RGPD) | #478 (CORS) |
 | **4** | #492 | SDD | 5 | 🟡 ALTO | ❌ Feature (users) | None |
 | **5** | #486 | SDD | 5 | 🟠 MEDIO | ❌ Feature (consent) | Product decision |
 | **6** | #488 | SDD | 5 | 🟠 MEDIO | ❌ Monitoring | Sentry account setup |
@@ -324,26 +324,27 @@ ODD #490 (Dashboard routing)
 **Completado:** ODD #478 ready to unblock Phase 1  
 **Salida:** CORS configured ✅, LICENSE created ✅, Jacoco integrated ✅, PWA manifest fixed ✅
 
-#### **Phase 1: SDD Sprint 1 (Priority — Week 1-2)**
+#### **Phase 1: SDD Sprint 1 (High Priority — Week 1-2)**
 
 ```
-T-LEGAL-01 #482 (Privacy + Terms)
+T-LEGAL-01 #482 (Privacy + Terms — GDPR/RGPD)
 ├─ 13 story points
 ├─ 6 tasks (DB, endpoints, pages, modals, tests)
 ├─ Prerequisite: #478 (CORS must be done)
-├─ Salida: Google Play compliant
-└─ Status: Ready for Builder (design complete)
+├─ Contexto: PWA privada. Cumplimiento GDPR/RGPD: Art. 13/14 (info), 15 (export), 17 (delete)
+├─ Salida: Privacy Policy + Terms + auditoría de aceptaciones
+└─ Status: Ready for Builder (proposal + design complete, refocused for private PWA)
 
 T-AUTH-INV-02 #492 (User Invitations + SMTP)
 ├─ 5 story points (4.5pt actual)
 ├─ 6 tasks (DB, service, endpoint, form, tests)
-├─ Prerequisite: None (independent)
-├─ Salida: MASTER can invite users via SMTP
-└─ Status: Design complete (ready for Builder)
+├─ Prerequisite: None (independent, can run in parallel with #482)
+├─ Salida: MASTER can invite users via SMTP with 24h activation token
+└─ Status: Ready for Builder (design complete)
 ```
 
 **Estimación:** 18 story points, ~2-3 weeks  
-**Parallelizable:** Yes (no dependencies between them)
+**Parallelizable:** Yes (no dependencies between them, can both start immediately after #478)
 
 #### **Phase 2: SDD Sprint 2 (Compliance — Week 3-4, conditional)**
 
