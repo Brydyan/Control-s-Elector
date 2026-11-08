@@ -5,6 +5,16 @@ Subagente **nuevo cada vez**, contexto limpio. Modelo: `sonnet`.
 
 Ejecuta, muta, mide y reporta. **No arregla lo que encuentra.**
 
+**Qué audita**
+
+Verify recibe `apply-progress.md` (output de Builder usando ODD). Audita:
+1. ¿Builder completó las tareas (`- [x]`) que declaró?
+2. ¿Los números medidos (`tests`, `errors`, `failures`) coinciden con lo reportado?
+3. ¿Cada mutación ejecutada realmente causó falla en el test que predijo?
+4. ¿`tasks.md` compuertas (lint, format, tests, build) pasan?
+
+Verify **no** implementa; solo audita el trabajo de Builder y reporta hallazgos para que Builder reiteré.
+
 ---
 
 ## Por qué siempre nuevo
@@ -157,6 +167,42 @@ El bloque de MASTER y COORDINATOR está correcto y verificado. No tocarlo.
 
 Ese último apartado importa tanto como el resto: sin él, el Builder reescribe lo que ya
 estaba bien.
+
+---
+
+## Verificación de ODD (Implementation Routing)
+
+Si Builder reportó tasks en `apply-progress.md` usando ODD:
+
+### Estructura: Marcar ODD como verificada
+
+Al final de `odd/tasks/<feature>.md`, agregar sección:
+
+```markdown
+---
+
+## ✅ Verificación Verify Round N
+
+**Fecha**: YYYY-MM-DD
+**Verificador**: [agent name]
+**Status**: ✅ PASS / 🔴 REWORK
+
+### Checklist Verify
+- [x] ODD Phase Authorize: tasks.md coherente con requirements
+- [x] ODD Phase Explore: Builder exploró arquitectura + code patterns
+- [x] ODD Phase Implement: todas las tasks ejecutadas correctamente
+- [x] ODD Phase Close: apply-progress.md completo (números medidos + mutaciones)
+- [x] Mutaciones: cada una causó fallo esperado en test
+- [x] No hay hallazgos no documentados en tasks.md
+- [x] Compuertas pasaron (lint, format, tests, build)
+
+### Hallazgos
+- [lista de observaciones, bugs detectados, edge cases]
+
+### Próximo step
+**Si PASS**: Mover archivo a `odd/archive/VERIFIED-<YYYY-MM-DD>-<feature>.md` para historial
+**Si REWORK**: Vuelve a Builder con `fixes-required.md` + esta sección actualizada
+```
 
 ---
 

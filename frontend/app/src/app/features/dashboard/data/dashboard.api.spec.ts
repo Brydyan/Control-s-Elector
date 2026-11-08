@@ -178,3 +178,123 @@ describe('DashboardApi (T-FE-11 A.3)', () => {
       .flush([]);
   });
 });
+
+/**
+ * Regresion del cache de detalles (`resultados-detallados` / `progreso-detallado`).
+ *
+ * Esos dos endpoints NUNCA existieron en el backend: el resource expone
+ * `/resultados` y `/progreso`. Pedirlos daba 404 y la pagina caia en el estado de
+ * error ("No se pudieron cargar los resultados"). El fix (#175) fue consumir los
+ * endpoints canonicos y enriquecer en el cliente.
+ *
+ * Este bloque fija ese contrato para que nadie vuelva a los endpoints inventados,
+ * y comprueba que un fallo no queda cacheado (si queda, el boton "reintentar" de
+ * la pagina no puede recuperar sin recargar el navegador).
+ *
+ * OJO sobre de donde viene esa garantia: NO esta en el codigo del repo, esta en
+ * `shareReplay`, que internamente usa `share({ resetOnError: true })`. Cuando la
+ * fuente falla, el ReplaySubject se resetea y el siguiente suscriptor vuelve a
+ * suscribir la fuente, o sea que dispara una peticion HTTP nueva.
+ *
+ * Por eso estos tests son valuable aunque no haya codigo que los "sostenga": si
+ * alguien cambia `shareReplay` por `publishReplay` (que SI cachea el error) o
+ * guarda el error a mano, estos tests caen. No hay que "arreglar" el cache con un
+ * catchError: seria un no-op que solo confusiona.
+ */
+describe('DashboardApi — endpoints canonicos y cache sin errores', () => {
+  let service: DashboardApi;
+  let httpTesting: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        DashboardApi,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
+    service = TestBed.inject(DashboardApi);
+    httpTesting = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpTesting.verify();
+  });
+
+  it('getResultadosDetalles pide /dashboard/resultados (no /resultados-detallados)', () => {
+    service.getResultadosDetalles().subscribe();
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/dashboard/resultados`,
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush([{ cargoId: 1, cargoNombre: 'X', candidatos: [] }]);
+
+    // Si volviera a pedir el endpoint inventado, queda una peticion sin consumir.
+    expect(
+      httpTesting.match(
+        `${environment.apiUrl}/dashboard/resultados-detallados`,
+      ),
+    ).toEqual([]);
+  });
+
+  it('getProgresoDetalles pide /dashboard/progreso (no /progreso-detallado)', () => {
+    service.getProgresoDetalles().subscribe();
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/dashboard/progreso`,
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush([]);
+
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/progreso-detallado`),
+    ).toEqual([]);
+  });
+
+  it('un fallo NO queda cacheado: el reintento vuelve a pedir el endpoint', () => {
+    // Primer intento: falla.
+    let primerError: unknown = null;
+    service.getResultadosDetalles().subscribe({
+      error: (e) => (primerError = e),
+    });
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resultados`)
+      .flush('boom', { status: 500, statusText: 'Server Error' });
+    expect(primerError).toBeTruthy();
+
+    // Segundo intento: tiene que haber una peticion HTTP nueva. Si el error
+    // quedara cacheado, no se volveria a pedir nada y el boton "reintentar" de
+    // la pagina no podria recuperar. Lo garantiza `resetOnError: true` de
+    // shareReplay (ver la nota del describe).
+    let segundoError: unknown = null;
+    service.getResultadosDetalles().subscribe({
+      error: (e) => (segundoError = e),
+    });
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/dashboard/resultados`,
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush([{ cargoId: 1, cargoNombre: 'X', candidatos: [] }]);
+    expect(segundoError).toBeNull();
+  });
+
+  it('un fallo de /progreso NO queda cacheado', () => {
+    let primerError: unknown = null;
+    service
+      .getProgresoDetalles()
+      .subscribe({ error: (e) => (primerError = e) });
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/progreso`)
+      .flush('boom', { status: 500, statusText: 'Server Error' });
+    expect(primerError).toBeTruthy();
+
+    let segundoError: unknown = null;
+    service
+      .getProgresoDetalles()
+      .subscribe({ error: (e) => (segundoError = e) });
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/dashboard/progreso`,
+    );
+    req.flush([]);
+    expect(segundoError).toBeNull();
+  });
+});

@@ -52,19 +52,26 @@ Cada papel tiene su archivo, con su plantilla de lanzamiento y sus límites:
 
 ## 3. Compuertas y línea base
 
-Medidas el **2026-11-05**, tras archivar `2026-11-04-t-fe-20-image-pipeline-compression` (rama `brydyan/t-fe-20-imagen-compression`):
+Medidas el **2026-11-07**, tras verificación ODD #478 (CORS + License + JaCoCo):
 
 ```
-backend build     ./mvnw -B clean package -DskipTests        exit 0
-backend test      ./mvnw -B test                             63 suites / 281 tests
-                                                             0 ERROR / 0 failure / 2 skip   ← VERDE
-frontend lint     pnpm lint                                  0 errores (exit 0)
-frontend format   pnpm format:check                          0 errores
-frontend build    pnpm build                                 bundle generado en www (exit 0)
-frontend test     pnpm test:ci                               43+ suites / 628 tests / 0 failures (isolate: true, exit 0)
+backend build     ./mvnw -B clean verify                     BUILD SUCCESS
+backend test      mvn -B test                                11 suites / 54 tests
+                                                             0 failure / 2 error (Testcontainers/Docker)
+backend coverage  JaCoCo gate (piso 0.08, real 0.1175)       PASS ✅
+backend format    spotless:check                             0 violaciones (exit 0) ✅
+frontend lint     pnpm lint                                  0 errores (exit 0) ✅
+frontend format   pnpm format:check                          0 errores ✅
+frontend build    pnpm build                                 bundle generado en www (exit 0) ✅
+frontend test     pnpm test:ci                               68 suites / 651 tests / 0 failures (exit 0) ✅
 ```
 
-Working directory obligatorio: backend en `backend/electoral-api/`, frontend en `frontend/app/`.
+**Cambios respecto 2026-11-05:**
+- Backend tests +7 (CorsPreflightIT nueva)
+- Frontend tests +23 (T-FE-20 completada)
+- JaCoCo integration operacional (CI artifact publish)
+
+Working directory obligatorio: backend en `backend/electoral-api-quarkus/`, frontend en `frontend/app/`.
 
 **Nota:** Frontend tests crecieron significativamente: 241 (2026-10-04) → 628 (2026-11-05) tras T-FE-19 (admin CRUD) y T-FE-20 (image compression). Cada cambio nuevo suma tests en su área.
 
@@ -253,9 +260,11 @@ Los seis del playbook (§4), instanciados aquí:
 
 ## 9. Estado del ROADMAP
 
-Última actualización: **2026-11-05**, por el Arquitecto.
+Última actualización: **2026-11-08**, por Verify (Phase 0 + SDD #482 completados).
 
-Changes archivados recientemente:
+ODD/SDD archivados recientemente:
+- **`openspec/changes/archive/VERIFIED-2026-11-08-t-legal-01-privacy-terms/`** (SDD Phase 1a completo: 82 backend tests, 686 frontend tests, 3 Verify rounds. GDPR/RGPD compliance infrastructure complete — endpoints, BD schema, auth guards, rate limiting, modals. Mutation tests: M1–M3 all verified. Outstanding: legal content review.)
+- **`odd/archive/VERIFIED-2026-11-07-compliance-cors-license-jacoco.*`** (ODD Phase 0 completo: CORS preflight 7 tests + 6 mutations, LICENSE Apache 2.0, THIRD_PARTY_LICENSES.md generado, JaCoCo 0.8.13 con gate 0.08, PWA manifest + icons reparados. Verify Round 1: ✅ PASS.)
 - `openspec/changes/archive/2026-09-25-fe-vitest-ionic-cleanup-race/` (Compuerta estricta CI y 240/240 tests pasando con `isolate: true`)
 - `openspec/changes/archive/2026-10-04-t-fe-11-realtime-dashboard/`
 - `openspec/changes/archive/2026-10-04-t-fe-12-shared-components/` (Componentes compartidos @shared/*, ConfirmDialog con focus trap, 241 tests, exit 0)
@@ -267,3 +276,146 @@ Changes activos / preparados:
 - `openspec/changes/front/2026-09-26-t-fe-{14..17}/`
 - `openspec/changes/front/2026-10-03-t-fe-18-sidebar-rbac-dynamic-menus/`
 - `openspec/changes/front/2026-10-04-t-fe-19-admin-usuarios-crud-softdelete/`
+
+---
+
+## 10. Priorización — Noviembre 2026 (ODD + SDD)
+
+**Actualización:** 2026-11-07  
+**Contexto:** Auditoría compliance + bugs dashboard master + feature invitaciones usuarios  
+**Principio:** ODD (fixes rápidos) desbloquean SDD (features formales); criticidad por impacto en usuario
+
+### Matriz de Priorización
+
+| Orden | Ticket | Tipo | Pts | Criticidad | Bloqueador | Status |
+|-------|--------|------|-----|-----------|-----------|--------|
+| **1** | #478 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (frontend↔backend) | ✅ VERIFIED 2026-11-07 |
+| **2** | #490 | ODD | — | ✅ DONE | ✅ RESOLVED | ✅ VERIFIED 2026-11-07 |
+| **3** | #482 | SDD | 13 | 🟡 ALTO | ✅ UNBLOCKED | ✅ VERIFIED 2026-11-08 |
+| **4** | #492 | SDD | 5 | 🟡 ALTO | ❌ Feature (users) | Ready for Builder |
+| **5** | #486 | SDD | 5 | 🟠 MEDIO | ❌ Feature (consent) | Needs product decision |
+| **6** | #488 | SDD | 5 | 🟠 MEDIO | ❌ Monitoring | Needs Sentry setup |
+
+**Total:** 29 story points (~4-5 sprints)
+
+**⚠ UPDATE (2026-11-07):** ODD #490 RESOLVED UPSTREAM
+- Commit bdfa452 (develop) already fixed Master dashboard routing issues
+- /observer/mis-actas route added, /master/configuracion refactored
+- Dashboard endpoints /resultados, /progreso canonical (no -detallado suffix)
+- **Action:** Mark ODD #490 as DONE; keep ODD #478 only
+
+### Ejecución Secuencial
+
+#### **Phase 0: ODD (Bloqueadores — completado)**
+
+```
+ODD #478 (CORS + LICENSE + JACOCO)
+├─ 55 min ejecutados (2026-11-07)
+├─ Desbloquea: Todo (frontend/backend communication)
+├─ Status: ✅ VERIFIED (PASS, no blockers)
+├─ Archivado: odd/archive/VERIFIED-2026-11-07-compliance-cors-license-jacoco.md
+└─ Verify report: CORS mutations 6/6 verified, gates all green
+
+ODD #490 (Dashboard routing)
+├─ Status: ✅ RESOLVED UPSTREAM (Commit bdfa452)
+├─ Action: Superseded by develop merge
+└─ No further action needed
+```
+
+**Completado:** ODD #478 ready to unblock Phase 1  
+**Salida:** CORS configured ✅, LICENSE created ✅, Jacoco integrated ✅, PWA manifest fixed ✅
+
+#### **Phase 1: SDD Sprint 1 (High Priority — Week 1-2)**
+
+```
+T-LEGAL-01 #482 (Privacy + Terms — GDPR/RGPD)
+├─ 13 story points
+├─ 3 Verify rounds: R1 6 CRITICAL (entity properties), R2 2 CRITICAL (service/component), R3 PASS
+├─ Completado: 2026-11-08
+├─ Contexto: PWA privada. Cumplimiento GDPR/RGPD: Art. 13/14 (info), 15 (export), 17 (delete)
+├─ Salida: ✅ Privacy Policy + Terms + auditoría de aceptaciones (82 backend tests, 686 frontend tests)
+├─ Archivado: openspec/changes/archive/VERIFIED-2026-11-08-t-legal-01-privacy-terms/
+└─ Status: ✅ VERIFIED (PASS, no blockers) — Outstanding: legal content review (stubs pending lawyer sign-off)
+
+T-AUTH-INV-02 #492 (User Invitations + SMTP)
+├─ 5 story points (4.5pt actual)
+├─ 6 tasks (DB, service, endpoint, form, tests)
+├─ Prerequisite: None (independent, can run in parallel with #482)
+├─ Salida: MASTER can invite users via SMTP with 24h activation token
+└─ Status: Ready for Builder (design complete)
+```
+
+**Estimación:** 18 story points, ~2-3 weeks  
+**Parallelizable:** Yes (no dependencies between them, can both start immediately after #478)
+
+#### **Phase 2: SDD Sprint 2 (Compliance — Week 3-4, conditional)**
+
+```
+T-COMPLIANCE-07 #486 (Consent Banner + Permissions)
+├─ 5 story points
+├─ Prerequisite: Product decision (geolocation? camera? notifications?)
+├─ Status: Needs tasks.md completion
+└─ Block if: Features not needed for MVP
+
+T-COMPLIANCE-05 #488 (Sentry Error Tracking)
+├─ 5 story points
+├─ Prerequisite: Sentry SaaS account + API keys
+├─ Status: Needs tasks.md completion
+└─ Can start: Backend integration while frontend waiting for tasks.md
+```
+
+**Estimación:** 10 story points, ~2-3 weeks (conditional)  
+**Decision Gate:** 2026-11-10 (product confirms scope)
+
+### Árbol de Dependencias
+
+```
+┌─── ODD #478 (CORS)
+│    └─► SDD #482 (Privacy+Terms) ✅
+│
+├─── ODD #490 (Dashboard) ✅
+│
+├─── SDD #492 (User Invitations) ✅
+│    └─► Puede empezar en paralelo con #482
+│
+└─── SDD #486 (Consent) + #488 (Sentry)
+     └─► Dependen de product decision (geolocation, notifications, errors)
+```
+
+### Criterios de Cierre
+
+**ODD #478 closed when:**
+- [ ] CORS config added to `application.properties`
+- [ ] Frontend can call `GET /api/v1/dashboard/resultados` (200 OK)
+- [ ] OPTIONS preflight returns 200 with CORS headers
+
+**ODD #490 closed when:**
+- [ ] Dashboard resultados + progreso load data (no errors)
+- [ ] Mis Actas navigates + shows content
+- [ ] Catálogos route exists + tabs work
+
+**SDD #482 closed when:**
+- [ ] Verify phase complete (mutations all pass)
+- [ ] Privacy + Terms pages accessible
+- [ ] Terms modal appears on login (version mismatch)
+- [ ] Export data endpoint returns JSON
+- [ ] Archive-report.md signed off
+
+**SDD #492 closed when:**
+- [ ] Verify phase complete (mutations all pass)
+- [ ] MASTER can create users via form
+- [ ] SMTP email sent with credentials
+- [ ] Username auto-generated correctly
+- [ ] Rate limiting enforced
+- [ ] Archive-report.md signed off
+
+### Trampas Nuevas (2026-11-07)
+
+| Trampa | Qué pasa | Mitigación |
+|--------|----------|----------|
+| `environment.apiUrl` hardcoded | Frontend calls `http://localhost:8080` en prod | Verificar en environment.prod.ts antes de deploy |
+| Rutas fantasma en navbar | Nav apunta a `/master/configuracion` que no existe | Grep todas las rutas en app.routes.ts vs NavbarComponent |
+| SMTP sandbox vs prod | Mailtrap/mailhog en dev, Gmail SMTP en prod | Env vars para SMTP_HOST, SMTP_PORT, SMTP_FROM |
+| Temp password en logs | Password temporario se registra en audit_log | Never log temporaryPassword, solo audit "USER_INVITED" + email |
+
+---

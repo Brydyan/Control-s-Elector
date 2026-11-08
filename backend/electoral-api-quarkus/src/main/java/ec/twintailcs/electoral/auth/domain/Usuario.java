@@ -90,6 +90,22 @@ public class Usuario extends PanacheEntityBase {
   @Column(name = "invitation_sent_at")
   Instant invitationSentAt;
 
+  /** Versión de Términos de Uso aceptada. NULL si nunca aceptó. */
+  @Column(name = "accepted_terms_version", length = 10)
+  String acceptedTermsVersion;
+
+  /** Momento de la aceptación de Términos de Uso. NULL si nunca aceptó. */
+  @Column(name = "accepted_terms_at")
+  Instant acceptedTermsAt;
+
+  /** Versión de Política de Privacidad aceptada. NULL si nunca aceptó. */
+  @Column(name = "accepted_privacy_version", length = 10)
+  String acceptedPrivacyVersion;
+
+  /** Momento de la aceptación de Política de Privacidad. NULL si nunca aceptó. */
+  @Column(name = "accepted_privacy_at")
+  Instant acceptedPrivacyAt;
+
   public Long getId() {
     return id;
   }
@@ -213,6 +229,38 @@ public class Usuario extends PanacheEntityBase {
 
   public void setInvitationSentAt(Instant invitationSentAt) {
     this.invitationSentAt = invitationSentAt;
+  }
+
+  public String getAcceptedTermsVersion() {
+    return acceptedTermsVersion;
+  }
+
+  public void setAcceptedTermsVersion(String acceptedTermsVersion) {
+    this.acceptedTermsVersion = acceptedTermsVersion;
+  }
+
+  public Instant getAcceptedTermsAt() {
+    return acceptedTermsAt;
+  }
+
+  public void setAcceptedTermsAt(Instant acceptedTermsAt) {
+    this.acceptedTermsAt = acceptedTermsAt;
+  }
+
+  public String getAcceptedPrivacyVersion() {
+    return acceptedPrivacyVersion;
+  }
+
+  public void setAcceptedPrivacyVersion(String acceptedPrivacyVersion) {
+    this.acceptedPrivacyVersion = acceptedPrivacyVersion;
+  }
+
+  public Instant getAcceptedPrivacyAt() {
+    return acceptedPrivacyAt;
+  }
+
+  public void setAcceptedPrivacyAt(Instant acceptedPrivacyAt) {
+    this.acceptedPrivacyAt = acceptedPrivacyAt;
   }
 
   /** Invariantes obligatorias del usuario. Mismas comprobaciones que el backend Spring. */

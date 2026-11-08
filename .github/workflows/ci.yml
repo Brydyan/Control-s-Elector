@@ -410,6 +410,25 @@ jobs:
         working-directory: backend/electoral-api-quarkus
         run: ./mvnw -B clean verify
 
+      # El plugin de JaCoCo ya corre DENTRO de `clean verify`: la ejecucion
+      # `report` genera target/site/jacoco/ y la `check` aplica el piso de
+      # no-regresion (0.08). Si la cobertura baja de ese piso, el paso anterior
+      # ya deja el build en rojo — este paso no decide nada.
+      #
+      # Este paso solo publica el reporte como artifact del workflow, para poder
+      # abrirlo desde la pestana de CI sin depender de un servicio externo.
+      # No se sube a Codecov: eso exige un token y una cuenta de Codecov que el
+      # proyecto todavia no tiene; con un token ausente el job se rompe por una
+      # razon que no es del codigo.
+      - name: Upload the JaCoCo coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: |
+            backend/electoral-api-quarkus/target/site/jacoco/
+            backend/electoral-api-quarkus/target/jacoco.exec
+          if-no-files-found: error
+
   # ===========================================================================
   # FRONTEND JOBS
   # ===========================================================================

@@ -1,0 +1,105 @@
+<section class="pagina">
+  <header class="encabezado">
+    <h1>Contactar al Delegado de Protección de Datos</h1>
+    <p class="intro">
+      Si quieres ejercer tus derechos sobre tus datos personales —acceso,
+      supresión, rectificación— escríbele al DPO. La solicitud se registra en el
+      sistema y el DPO responde en un máximo de 5 días hábiles.
+    </p>
+  </header>
+
+  @if (enviado()) {
+  <div class="exito" data-testid="dpo-confirmation">
+    <p-message severity="success" [text]="confirmationMessage()!" />
+    <p class="nota">
+      Guardamos tu solicitud y la IP desde la que se envió. No se envía ningún
+      correo electrónico: la respuesta se registra en la misma solicitud.
+    </p>
+    <a href="/privacy" data-testid="dpo-link-privacy"
+      >Volver a la Política de Privacidad</a
+    >
+  </div>
+  } @else {
+  <form
+    [formGroup]="form"
+    (ngSubmit)="onEnviar()"
+    novalidate
+    data-testid="dpo-form"
+  >
+    <div class="campo">
+      <label for="dpo-name">Nombre</label>
+      <input
+        id="dpo-name"
+        type="text"
+        pInputText
+        formControlName="name"
+        autocomplete="name"
+        data-testid="dpo-name"
+      />
+      @if (errorDe('name'); as error) {
+      <p class="error" data-testid="dpo-name-error">{{ error }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="dpo-email">Email</label>
+      <input
+        id="dpo-email"
+        type="email"
+        pInputText
+        formControlName="email"
+        autocomplete="email"
+        data-testid="dpo-email"
+      />
+      @if (errorDe('email'); as error) {
+      <p class="error" data-testid="dpo-email-error">{{ error }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="dpo-subject">Asunto</label>
+      <input
+        id="dpo-subject"
+        type="text"
+        pInputText
+        formControlName="subject"
+        data-testid="dpo-subject"
+      />
+      @if (errorDe('subject'); as error) {
+      <p class="error" data-testid="dpo-subject-error">{{ error }}</p>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="dpo-message">Mensaje</label>
+      <textarea
+        id="dpo-message"
+        pTextarea
+        formControlName="message"
+        rows="6"
+        data-testid="dpo-message"
+      ></textarea>
+      @if (errorDe('message'); as error) {
+      <p class="error" data-testid="dpo-message-error">{{ error }}</p>
+      }
+    </div>
+
+    @if (errorMessage(); as error) {
+    <p-message severity="error" [text]="error" data-testid="dpo-error" />
+    }
+
+    <div class="acciones">
+      <app-button
+        label="Enviar"
+        type="submit"
+        [loading]="loading()"
+        data-testid="dpo-submit"
+      ></app-button>
+    </div>
+  </form>
+  }
+
+  <footer class="pie">
+    <a href="/terms" data-testid="dpo-link-terms">Ver los Términos de Uso</a>
+  </footer>
+</section>
