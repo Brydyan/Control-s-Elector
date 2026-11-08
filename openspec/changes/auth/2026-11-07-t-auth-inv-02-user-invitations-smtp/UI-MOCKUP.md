@@ -48,24 +48,38 @@ Esqueletos visuales para creación de usuarios y flujo de invitación.
 │                                                         │
 │ ─────────────────────────────────────────────────────  │
 │                                                         │
-│ [ Cancelar ]                   [ ✓ Crear y Enviar ]    │
+│ Opciones de Invitación                                  │
+│ ─────────────────────────────────────────────────────  │
+│                                                         │
+│ ☑ Enviar Invitación por Email                          │
+│   📧 Se enviará el email con credenciales temporales    │
+│   Si desactivas, solo se crea el usuario sin email.    │
+│                                                         │
+│ ─────────────────────────────────────────────────────  │
+│                                                         │
+│ [ Cancelar ]                   [ ✓ Crear Usuario ]    │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Datos a llenar
 
-| Campo | Tipo | Validación | Ejemplo |
-|-------|------|-----------|---------|
-| **Nombre** | Texto | Minlength 2, max 100 | Juan |
-| **Apellido** | Texto | Minlength 2, max 100 | García Muñoz |
-| **Email Personal** | Email | RFC 5322 + regex | juan.garcia@example.com |
-| **Rol** | Select | Enum (4 opciones) | OBSERVER |
+| Campo | Tipo | Validación | Ejemplo | Obligatorio |
+|-------|------|-----------|---------|-----------|
+| **Nombre** | Texto | Minlength 2, max 100 | Juan | ✅ |
+| **Apellido** | Texto | Minlength 2, max 100 | García Muñoz | ✅ |
+| **Email Personal** | Email | RFC 5322 + regex | juan.garcia@example.com | ✅ |
+| **Rol** | Select | Enum (4 opciones) | OBSERVER | ✅ |
+| **Enviar Invitación** | Toggle/Checkbox | Boolean | ON/OFF | ❌ (default: ON) |
+
+**Comportamiento del toggle:**
+- **ON (default):** Envía email con credenciales al crear usuario
+- **OFF:** Solo crea usuario sin enviar email (útil si se enviará después manualmente)
 
 ### Flujo post-submit
 
 ```
-Usuario presiona "Crear y Enviar"
+Usuario presiona "Crear Usuario"
           ↓
 Frontend valida campos (required, email format)
           ↓
@@ -74,15 +88,17 @@ POST /api/v1/users/invite
     nombre: "Juan",
     apellido: "García Muñoz",
     emailPersonal: "juan.garcia@example.com",
-    rol: "OBSERVER"
+    rol: "OBSERVER",
+    sendEmail: true  (depende del toggle)
   }
           ↓
 Backend genera:
   - username: "juagar.obs@control.ttcs"
   - temporaryPassword: "Kh7@mP9#qLx4"
   - Crea usuario en BD (tabla usuario)
-  - Crea registro en user_invitations
-  - Envía SMTP
+  - Crea registro en user_invitations (status: "INVITED" o "CREATED")
+  - Si sendEmail=true: Envía SMTP con credenciales
+  - Si sendEmail=false: NO envía email (se puede hacer después)
           ↓
 Response 201 Created:
   {
@@ -95,7 +111,9 @@ Response 201 Created:
       rol: "OBSERVER",
       username: "juagar.obs@control.ttcs"
     },
-    message: "Invitación enviada a juan.garcia@example.com"
+    message: sendEmail 
+      ? "Invitación enviada a juan.garcia@example.com"
+      : "Usuario creado. Puedes enviar la invitación después."
   }
           ↓
 Frontend muestra modal de éxito
@@ -127,6 +145,149 @@ Frontend muestra modal de éxito
 │    No la compartas fuera del email.                     │
 │                                                         │
 │ [ Cerrar ]              [ Crear Otro Usuario ]          │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 1.5 TABLA USUARIOS (MASTER) - Con Acciones de Re-envío
+
+### Ubicación
+```
+/master/usuarios → Tabla con columna "Acciones"
+```
+
+### Pantalla: "Gestión de Usuarios" (Tabla)
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 🔐 Gestión de Usuarios                                  [➕ Crear Usuario]   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│ Nombre         │ Email             │ Rol       │ Estado      │ Acciones    │
+├────────────────┼───────────────────┼───────────┼─────────────┼─────────────┤
+│ Juan García    │ juan@example.com  │ OBSERVER  │ 🟢 INVITED  │ ⋮          │
+│                │                   │           │             │ • Ver      │
+│                │                   │           │             │ • Editar   │
+│                │                   │           │             │ • 📧 Re-enviar
+│                │                   │           │             │ • Deshabilitar
+│                │                   │           │             │ • Eliminar │
+├────────────────┼───────────────────┼───────────┼─────────────┼─────────────┤
+│ María López    │ maria@example.com │ COORD     │ 🟡 EXPIRED  │ ⋮          │
+│                │                   │           │             │ • Ver      │
+│                │                   │           │             │ • Editar   │
+│                │                   │           │             │ • 📧 Re-enviar
+│                │                   │           │             │ • Deshabilitar
+│                │                   │           │             │ • Eliminar │
+├────────────────┼───────────────────┼───────────┼─────────────┼─────────────┤
+│ Pedro García   │ pedro@example.com │ MASTER    │ 🟢 ACTIVE   │ ⋮          │
+│                │                   │           │             │ • Ver      │
+│                │                   │           │             │ • Editar   │
+│                │                   │           │             │ • Deshabilitar
+│                │                   │           │             │ • Eliminar │
+│                │                   │           │             │ (Re-enviar N/A)
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Estados de Invitación en Tabla
+
+| Estado | Icono | Descripción | Puede Re-enviar |
+|--------|-------|-------------|-----------------|
+| **INVITED** | 🟢 Verde | Email enviado, usuario aún no se loguea | ✅ SÍ |
+| **EXPIRED** | 🟡 Amarillo | Invitación expirada (>30 días) | ✅ SÍ |
+| **ACTIVE** | 🟢 Verde | Usuario logueado exitosamente | ❌ NO |
+| **DISABLED** | 🔴 Rojo | Usuario deshabilitado por MASTER | ❌ NO |
+
+### Botón Menú Acciones (Dropdown)
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Acciones para: Juan García (juagar.obs@control.ttcs)│
+├─────────────────────────────────────────────────────┤
+│ • 👁️  Ver Detalles                                  │
+│ • ✏️  Editar Información                            │
+│ ─────────────────────────────────────────────────── │
+│ • 📧 Re-enviar Invitación     ← SI status=INVITED   │
+│ ─────────────────────────────────────────────────── │
+│ • 🔒 Deshabilitar Usuario                           │
+│ • 🗑️  Eliminar Usuario (soft-delete)               │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Modal Re-enviar Invitación
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 📧 Re-enviar Invitación                         [X]      │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ ¿Re-enviar credenciales de acceso a:                   │
+│ juan.garcia@example.com?                               │
+│                                                         │
+│ Usuario: juagar.obs@control.ttcs                        │
+│ Rol: OBSERVER                                           │
+│                                                         │
+│ ℹ️ Se generará una nueva contraseña temporal.          │
+│    La anterior será invalidada.                         │
+│                                                         │
+│ ☑ Entiendo que se enviará una nueva invitación         │
+│                                                         │
+│ [ Cancelar ]           [ ✓ Re-enviar por Email ]       │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Flujo Re-enviar Invitación
+
+```
+Usuario presiona "Re-enviar Invitación" desde tabla
+          ↓
+Frontend muestra modal confirmatorio
+          ↓
+Usuario presiona "Re-enviar por Email"
+          ↓
+POST /api/v1/users/{id}/resend-invitation
+  Header: Authorization: Bearer {jwt_token}
+          ↓
+Backend:
+  - Valida que usuario tenga status INVITED o EXPIRED
+  - Genera NUEVA temporaryPassword
+  - Actualiza registro en user_invitations (resetea timestamp)
+  - Envía SMTP con NUEVAS credenciales
+  - Log auditoría: ACTION_INVITATION_RESENT + usuario + timestamp
+          ↓
+Response 200 OK:
+  {
+    success: true,
+    message: "Invitación re-enviada a juan.garcia@example.com",
+    newInvitationSentAt: "2026-11-08T15:30:00Z",
+    expiresAt: "2026-12-08T15:30:00Z"
+  }
+          ↓
+Frontend muestra toast: "✅ Invitación re-enviada"
+Tabla se actualiza (estado, timestamp)
+```
+
+### Modal Éxito (Re-envío)
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ ✅ Invitación Re-enviada                               │
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│ Credenciales de acceso enviadas nuevamente a:          │
+│ juan.garcia@example.com                                 │
+│                                                         │
+│ Información:                                            │
+│ • Se generó una nueva contraseña temporal              │
+│ • La anterior ya no es válida                          │
+│ • Esta invitación expira en 30 días                    │
+│ • Enviado: 2026-11-08 15:30                            │
+│                                                         │
+│                        [ Cerrar ]                      │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -459,10 +620,28 @@ Usuario ya está autenticado normalmente
 | Apellido | ✅ | Texto | García |
 | Email Personal | ✅ | Email | juan@example.com |
 | Rol | ✅ | Select | OBSERVER |
+| Enviar Invitación | ❌ | Toggle | ON (default) |
 
 **Generado Automáticamente (Backend):**
 - Username: `juagar.obs@control.ttcs`
 - Temporary Password: `Kh7@mP9#qLx4`
+
+### 1.5️⃣ Tabla Usuarios + Re-enviar Invitación (MASTER)
+
+| Acción | Visible Cuando | Genera |
+|--------|----------------|---------|
+| **Ver Detalles** | Siempre | Usuario completo |
+| **Editar** | Siempre | Formulario pre-poblado |
+| **📧 Re-enviar** | Status = INVITED o EXPIRED | Nueva temporaryPassword + SMTP |
+| **Deshabilitar** | Status ≠ DISABLED | Soft-delete flag |
+| **Eliminar** | Siempre | Hard-delete |
+
+**Flujo Re-envío:**
+- POST `/api/v1/users/{id}/resend-invitation`
+- Genera nueva temporaryPassword
+- Invalida la anterior
+- Envía SMTP con nuevas credenciales
+- Reset expiry counter (30 días más)
 
 ### 2️⃣ Email Invitación (Auto-generado)
 
@@ -486,14 +665,124 @@ Usuario ya está autenticado normalmente
 
 ## Notas de UX
 
+### Crear Usuario
 - ✅ **Contraseña temporal NUNCA se muestra en pantalla** (solo en email)
 - ✅ **Username generado se muestra en modal de éxito** (para copiar rápido)
-- ✅ **Show/Hide password toggles** en todos los campos de password
-- ✅ **Real-time validation** para requisitos de contraseña
+- ✅ **Toggle "Enviar Invitación"** con opción de crear sin email
 - ✅ **Rate limiting**: 1 invitación/5s por IP (backend)
 - ✅ **Email validation**: RFC 5322 + regex (frontend + backend)
+
+### Tabla Usuarios
+- ✅ **Columna "Estado"** muestra: INVITED (🟢), EXPIRED (🟡), ACTIVE (🟢), DISABLED (🔴)
+- ✅ **Botón "Re-enviar Invitación"** solo visible si status = INVITED o EXPIRED
+- ✅ **Modal confirmatorio** antes de re-enviar
+- ✅ **Nueva contraseña generada** al re-enviar (antigua se invalida)
+- ✅ **Expiry reset** a 30 días nuevamente
+
+### General
+- ✅ **Show/Hide password toggles** en todos los campos de password
+- ✅ **Real-time validation** para requisitos de contraseña
 - ✅ **Mensajes en español** (ES como lenguaje MVP)
 - ✅ **Links de email usan dominio production** (controls.brydyan.me)
+- ✅ **Toast notifications** para confirmaciones (re-envío, cambio de pwd)
+- ✅ **Audit logging** de todas las acciones (create, resend, change-password)
+
+---
+
+## Backend API Endpoints Necesarios
+
+### 1. Crear Usuario + Enviar Invitación
+```http
+POST /api/v1/users/invite
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+
+Body:
+{
+  "nombre": "Juan",
+  "apellido": "García",
+  "emailPersonal": "juan@example.com",
+  "rol": "OBSERVER",
+  "sendEmail": true  (default: true)
+}
+
+Response 201 Created:
+{
+  "success": true,
+  "usuario": {
+    "id": "uuid-1234",
+    "nombre": "Juan",
+    "apellido": "García",
+    "emailPersonal": "juan@example.com",
+    "rol": "OBSERVER",
+    "username": "juagar.obs@control.ttcs"
+  },
+  "message": "Invitación enviada a juan@example.com"
+}
+```
+
+### 2. Re-enviar Invitación (Generate New Temp Password)
+```http
+POST /api/v1/users/{id}/resend-invitation
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+
+Response 200 OK:
+{
+  "success": true,
+  "message": "Invitación re-enviada a juan@example.com",
+  "newInvitationSentAt": "2026-11-08T15:30:00Z",
+  "expiresAt": "2026-12-08T15:30:00Z"
+}
+```
+
+### 3. Cambiar Contraseña (Primer Login)
+```http
+PUT /api/v1/auth/change-password
+Authorization: Bearer {jwt_token}
+Content-Type: application/json
+
+Body:
+{
+  "currentPassword": "Kh7@mP9#qLx4",
+  "newPassword": "MyStr0ng!Pass",
+  "confirmPassword": "MyStr0ng!Pass"
+}
+
+Response 200 OK:
+{
+  "success": true,
+  "message": "Contraseña actualizada exitosamente",
+  "nextRedirect": "/dashboard"
+}
+```
+
+### 4. Listar Usuarios (con estado de invitación)
+```http
+GET /api/v1/users?page=0&size=20
+Authorization: Bearer {jwt_token}
+
+Response 200 OK:
+{
+  "content": [
+    {
+      "id": "uuid-1234",
+      "nombre": "Juan",
+      "apellido": "García",
+      "email": "juan@example.com",
+      "rol": "OBSERVER",
+      "username": "juagar.obs@control.ttcs",
+      "invitationStatus": "INVITED",  // INVITED, EXPIRED, ACTIVE, DISABLED
+      "invitedAt": "2026-11-08T10:00:00Z",
+      "invitedBy": "uuid-admin",
+      "lastLogin": null,
+      "enabled": true
+    }
+  ],
+  "totalElements": 45,
+  "totalPages": 3
+}
+```
 
 ---
 
