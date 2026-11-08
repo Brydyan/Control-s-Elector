@@ -80,6 +80,34 @@ export interface UpdateUsuarioRequest {
   habilitado?: boolean;
 }
 
+/**
+ * Datos para invitar a una persona (T-AUTH-INV-02).
+ *
+ * `emailPersonal` es el correo de contacto: a donde se manda la invitacion. Es
+ * distinto del login, que el backend genera solo a partir de nombre, apellido
+ * y rol.
+ */
+export interface InviteUsuarioRequest {
+  nombre: string;
+  apellido: string;
+  emailPersonal: string;
+  rolNombre: RolUsuario;
+}
+
+/**
+ * Resultado de una invitacion.
+ *
+ * No trae ninguna credencial: la unica credencial de la invitacion es el link
+ * de activacion, que sale por email.
+ */
+export interface UserInvitationResponse {
+  usuarioId: string;
+  username: string;
+  emailPersonal: string;
+  status: 'INVITED' | 'ACTIVATED' | 'EXPIRED';
+  expiraEn: string;
+}
+
 export interface UsuarioConPasswordTemporal extends UsuarioResponseDto {
   passwordTemporal?: string | null;
 }
