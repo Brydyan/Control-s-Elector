@@ -132,6 +132,7 @@ public class ActivarUsuarioPorTokenUseCase {
         usuario.getNombre(),
         usuario.getApellido(),
         usuario.getEmail(),
+        usuario.getEmailPersonal(),
         usuario.getRolNombre());
   }
 

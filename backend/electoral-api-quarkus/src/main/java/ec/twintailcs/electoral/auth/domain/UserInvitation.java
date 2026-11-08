@@ -23,7 +23,7 @@ import java.time.Instant;
  * <ul>
  *   <li>{@code INVITED} — enviada, pendiente de que la persona active la cuenta.
  *   <li>{@code ACTIVATED} — la persona activo la cuenta.
- *   <li>{@code EXPIRED} — paso la ventana de 30 dias sin activarse.
+ *   <li>{@code EXPIRED} — paso la ventana de 24 horas sin activarse.
  * </ul>
  *
  * <p>{@code EXPIRED} no se escribe: se DERIVA. Una invitacion que nunca se activa deja de ser
@@ -43,8 +43,13 @@ public class UserInvitation extends PanacheEntityBase {
   /** La invitacion vencio sin que nadie la activara. */
   public static final String STATUS_EXPIRED = "EXPIRED";
 
-  /** Ventana de vigencia de la invitacion, en dias. */
-  public static final int DIAS_VIGENCIA = 30;
+  /**
+   * Ventana de vigencia de la invitacion, en horas.
+   *
+   * <p>Son 24 horas, no 30 dias (ODD #504, B): es lo mismo que dura el token de activacion, y una
+   * invitacion que vive 30 dias es una credencial que vive 30 dias en un buzon de correo.
+   */
+  public static final int HORAS_VIGENCIA = 24;
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -84,7 +89,7 @@ public class UserInvitation extends PanacheEntityBase {
 
   /** Momento en que la invitacion deja de valer. */
   @Column(name = "expiry_at", nullable = false)
-  Instant expiryAt = Instant.now().plus(Duration.ofDays(DIAS_VIGENCIA));
+  Instant expiryAt = Instant.now().plus(Duration.ofHours(HORAS_VIGENCIA));
 
   public Long getId() {
     return id;
