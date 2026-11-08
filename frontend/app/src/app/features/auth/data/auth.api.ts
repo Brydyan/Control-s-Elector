@@ -103,6 +103,7 @@ export class AuthApi {
       email: dto.email,
       role: dto.rol as CurrentUser['role'],
       permissions: dto.permisos ?? [],
+      acceptedTermsVersion: dto.acceptedTermsVersion ?? null,
     };
   }
 }
