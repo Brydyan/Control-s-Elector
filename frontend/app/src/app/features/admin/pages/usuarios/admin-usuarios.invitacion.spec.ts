@@ -31,10 +31,22 @@ function loginAs(role: Role): void {
  * valido: el endpoint responde 400 y la cuenta no se crea, asi que el panel tiene que frenarlo
  * antes de gastar un viaje.
  */
+/** Usuario de ejemplo del panel. */
+const usuarioBase = {
+  publicId: 'u-1',
+  email: 'juan@control.ttcs',
+  nombre: 'Juan',
+  apellido: 'García',
+  rolNombre: 'OBSERVER' as const,
+  habilitado: true,
+  creadoEn: '2026-11-01T10:00:00Z',
+};
+
 describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () => {
   let fixture: ComponentFixture<AdminUsuariosPage>;
   let page: AdminUsuariosPage;
   let invitarUsuario: ReturnType<typeof vi.fn>;
+  let reenviarInvitacion: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     invitarUsuario = vi.fn().mockReturnValue(
@@ -44,6 +56,16 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
         emailPersonal: 'juan@example.com',
         status: 'INVITED' as const,
         expiraEn: '2026-12-08T10:00:00Z',
+      }),
+    );
+
+    reenviarInvitacion = vi.fn().mockReturnValue(
+      of({
+        success: true,
+        message: 'Invitación re-enviada a juan@example.com',
+        newInvitationSentAt: '2026-11-08T10:00:00Z',
+        expiresAt: '2026-11-09T10:00:00Z',
+        emailPersonal: 'juan@example.com',
       }),
     );
 
@@ -57,6 +79,7 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
       actualizarUsuario: () => of({}),
       deshabilitarUsuario: () => of(undefined),
       invitarUsuario,
+      reenviarInvitacion,
     };
 
     await TestBed.configureTestingModule({
@@ -105,6 +128,7 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
       apellido: 'García',
       emailPersonal: 'juan@example.com',
       rolNombre: 'OBSERVER',
+      sendEmail: true,
     });
     expect(page.invitacionEnviada()?.emailPersonal).toBe('juan@example.com');
     expect(page.invitacionEnviada()?.username).toBe('juagarobs@control.ttcs');
@@ -149,6 +173,112 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     expect(page.nombre).toBe('');
     expect(page.apellido).toBe('');
     expect(page.emailPersonal).toBe('');
+  });
+
+  // ---------------------------------------------------------------------------
+  // ODD #504 (A): el toggle "Enviar Invitacion por Email"
+  // ---------------------------------------------------------------------------
+
+  it('el toggle viene encendido por defecto', () => {
+    expect(page.enviarInvitacionPorEmail()).toBe(true);
+  });
+
+  it('con el toggle apagado la peticion va con sendEmail false', () => {
+    page.nombre = 'Juan';
+    page.apellido = 'García';
+    page.emailPersonal = 'juan@example.com';
+    page.enviarInvitacionPorEmail.set(false);
+
+    page.invitar();
+
+    expect(invitarUsuario).toHaveBeenCalledWith(
+      expect.objectContaining({ sendEmail: false }),
+    );
+  });
+
+  it('con el toggle encendido la peticion va con sendEmail true', () => {
+    page.nombre = 'Juan';
+    page.apellido = 'García';
+    page.emailPersonal = 'juan@example.com';
+
+    page.invitar();
+
+    expect(invitarUsuario).toHaveBeenCalledWith(
+      expect.objectContaining({ sendEmail: true }),
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // ODD #504 (C y D): el estado de la invitacion y el reenvio
+  // ---------------------------------------------------------------------------
+
+  it('el estado de la invitacion se lee del backend y, si no viene, se deduce', () => {
+    const conEstado = {
+      ...usuarioBase,
+      invitationStatus: 'EXPIRED' as const,
+    };
+    expect(page.estadoInvitacion(conEstado)).toBe('EXPIRED');
+
+    const sinEstado = {
+      ...usuarioBase,
+      estadoUsuario: 'PENDIENTE_INVITACION' as const,
+    };
+    expect(page.estadoInvitacion(sinEstado)).toBe('CREATED');
+  });
+
+  it('las etiquetas del estado son legibles', () => {
+    expect(
+      page.etiquetaEstado({ ...usuarioBase, invitationStatus: 'INVITED' }),
+    ).toBe('Invitado');
+    expect(
+      page.etiquetaEstado({ ...usuarioBase, invitationStatus: 'EXPIRED' }),
+    ).toBe('Vencida');
+    expect(
+      page.etiquetaEstado({ ...usuarioBase, invitationStatus: 'ACTIVE' }),
+    ).toBe('Activa');
+    expect(
+      page.etiquetaEstado({ ...usuarioBase, invitationStatus: 'DISABLED' }),
+    ).toBe('Deshabilitada');
+  });
+
+  it('el reenvio se ofrece para INVITED, EXPIRED y CREATED, y no para ACTIVE ni DISABLED', () => {
+    const conEstado = (
+      estado: 'INVITED' | 'EXPIRED' | 'CREATED' | 'ACTIVE' | 'DISABLED',
+    ) => ({ ...usuarioBase, invitationStatus: estado });
+
+    expect(page.puedeReenviarInvitacion(conEstado('INVITED'))).toBe(true);
+    expect(page.puedeReenviarInvitacion(conEstado('EXPIRED'))).toBe(true);
+    expect(page.puedeReenviarInvitacion(conEstado('CREATED'))).toBe(true);
+    expect(page.puedeReenviarInvitacion(conEstado('ACTIVE'))).toBe(false);
+    expect(page.puedeReenviarInvitacion(conEstado('DISABLED'))).toBe(false);
+  });
+
+  it('abrir el reenvio pide confirmacion y el backend lo recibe', () => {
+    const usuario = {
+      ...usuarioBase,
+      invitationStatus: 'INVITED' as const,
+    };
+
+    page.abrirReenvio(usuario);
+    expect(page.usuarioAReenviar()).toBe(usuario);
+
+    page.confirmarReenvio();
+
+    expect(reenviarInvitacion).toHaveBeenCalledWith(usuario.publicId);
+    expect(page.usuarioAReenviar()).toBeNull();
+    expect(page.resultadoInvitacion()?.titulo).toBe('Invitación re-enviada');
+  });
+
+  it('un reenvio a una cuenta activa no se ofrece', () => {
+    const usuario = {
+      ...usuarioBase,
+      invitationStatus: 'ACTIVE' as const,
+    };
+
+    page.abrirReenvio(usuario);
+
+    expect(page.usuarioAReenviar()).toBeNull();
+    expect(reenviarInvitacion).not.toHaveBeenCalled();
   });
 
   it('un email vacio no dispara la peticion', () => {
