@@ -5,6 +5,8 @@
 -- ============================================================================
 
 -- changeset electoral:014-01-actualizar-menus-existentes
+-- validCheckSum: 9:90295f2e10880ff7a4682094e46d8291
+-- validCheckSum: 9:c75c247fc1db17978ab9521d12b61a4b
 -- Actualizar rutas y labels canónicos
 UPDATE menu SET label = 'Dashboard', icono = 'home', ruta = '/dashboard', orden = 1 WHERE codigo = 'dashboard';
 UPDATE menu SET label = 'Actas', icono = 'document', ruta = '/actas', orden = 2 WHERE codigo = 'actas';

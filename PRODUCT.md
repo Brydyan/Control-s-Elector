@@ -31,7 +31,7 @@ Control Electoral no es un simple formulario web ni un dashboard estático: es u
 ## Capabilities and Constraints
 
 - **Seguridad RBAC:** Redirecciones estrictas según rol JWT (`OBSERVER`, `COORDINATOR`, `MASTER`, `ADMIN`).
-- **Arquitectura:** Frontend Angular 19 + Ionic 8 (Standalone Components), Backend Spring Boot 3.4 con PostgreSQL y almacenamiento S3/Supabase.
+- **Arquitectura:** Frontend Angular 21 + PrimeNG 21 (Standalone Components), Backend Quarkus 3.40 / Java 25 con PostgreSQL y almacenamiento S3/Supabase.
 - **Ciclo de vida del acta:** `BORRADOR` → `ENVIADA` → `EN_DISPUTA` → `CORREGIDA` → `APROBADA` → `ANULADA`.
 - **Estructura territorial:** Provincia de Santa Elena dividida en Cantones (Santa Elena, La Libertad, Salinas) con dignidades provinciales, cantonales y parroquiales.
 
@@ -43,8 +43,10 @@ Control Electoral no es un simple formulario web ni un dashboard estático: es u
 ## Evidence on Hand
 
 - Documentación arquitectónica y operacional en `README.md`.
-- Rutas y guardias RBAC implementadas en `frontend/app/src/app/app.routes.ts`.
-- Diseño base con tokens Ionic y SCSS en `frontend/app/src/theme/`.
+- Rutas y guardias RBAC implementados en `frontend/app/src/app/app.routes.ts`.
+- Sistema de diseño propio sobre PrimeNG: preset y tokens en `frontend/app/src/theme/`.
+- Suite E2E de navegador en `frontend/app/e2e` (Playwright) y suite de contrato
+  HTTP en `backend/contract-tests`, que corren contra la misma API de producción.
 
 ## Product Principles
 

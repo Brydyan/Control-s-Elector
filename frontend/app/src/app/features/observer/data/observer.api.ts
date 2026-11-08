@@ -35,12 +35,31 @@ export class ObserverApi {
   private readonly configUrl = `${environment.apiUrl}/configuracion`;
 
   getMisJrvs(): Observable<JrvConEstado[]> {
-    return this.http.get<JrvConEstado[]>(`${this.baseUrl}/jrvs`);
+    return this.http.get<any[]>(`${this.baseUrl}/jrvs`).pipe(
+      map((items) =>
+        items.map((j) => ({
+          jrvId: j.jrvId ?? j.id,
+          numero: j.numero,
+          parroquia: j.parroquia ?? null,
+          cargosPendientes: j.cargosPendientes,
+          cargosRegistrados: j.cargosRegistrados,
+        })),
+      ),
+    );
   }
 
   getCargosDeJrv(jrvId: number): Observable<CargoConEstado[]> {
-    return this.http.get<CargoConEstado[]>(
-      `${this.baseUrl}/jrv/${jrvId}/cargos`,
+    return this.http.get<any[]>(`${this.baseUrl}/jrv/${jrvId}/cargos`).pipe(
+      map((items) =>
+        items.map((c) => ({
+          cargoId: c.cargoId ?? c.id,
+          nombre: c.nombre,
+          nivel: c.nivel,
+          registrado: c.registrado,
+          ...(c.estadoActa !== undefined ? { estadoActa: c.estadoActa } : {}),
+          ...(c.actaId !== undefined ? { actaId: c.actaId } : {}),
+        })),
+      ),
     );
   }
 
