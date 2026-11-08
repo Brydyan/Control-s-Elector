@@ -79,14 +79,17 @@ import { describirErrorLegal } from '../../services/legal.service';
         />
       }
 
-      <ng-template #footer>
-        <app-button
-          label="Acepto"
-          [loading]="enviando"
-          (clicked)="onAceptar()"
+      <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <button
+          type="button"
+          [disabled]="enviando"
+          (click)="onAceptar()"
           data-testid="terms-accept"
-        ></app-button>
-      </ng-template>
+          class="p-button p-button-primary"
+        >
+          {{ enviando ? 'Enviando...' : 'Acepto' }}
+        </button>
+      </div>
     </p-dialog>
   `,
   styles: `

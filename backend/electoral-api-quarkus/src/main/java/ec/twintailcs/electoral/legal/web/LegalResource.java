@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.legal.web;
 
 import ec.twintailcs.electoral.shared.web.ApiErrorResponse;
+import jakarta.annotation.security.PermitAll;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -24,6 +25,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * rastro. Ver {@code 2026-11-06-t-legal-01-privacy-terms/design.md} (D2).
  */
 @Path("/")
+@PermitAll
 public class LegalResource {
 
   /** Version vigente de los terminos y de la politica. Cambiarla obliga a re-aceptar. */

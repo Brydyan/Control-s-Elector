@@ -48,6 +48,20 @@ export class AuthStore {
     this._requiresPinUnlock.set(value);
   }
 
+  setAcceptedTermsVersion(version: string): void {
+    const currentUser = this._user();
+    if (currentUser) {
+      this._user.set({ ...currentUser, acceptedTermsVersion: version });
+    }
+  }
+
+  setAcceptedPrivacyVersion(version: string): void {
+    const currentUser = this._user();
+    if (currentUser) {
+      this._user.set({ ...currentUser, acceptedPrivacyVersion: version });
+    }
+  }
+
   setSession(accessToken: string, user: CurrentUser): void {
     this._accessToken.set(accessToken);
     this._user.set(user);
