@@ -1,4 +1,4 @@
-# Control Electoral — Provincia de Santa Elena 🇪🇨
+# Control's Elector — Provincia de Santa Elena 🇪🇨
 
 Sistema de misión crítica para el control, registro y validación de actas electorales en tiempo real, diseñado para las **Elecciones Seccionales 2027-2031** de la Provincia de Santa Elena (Cantones: Santa Elena, La Libertad, Salinas).
 
