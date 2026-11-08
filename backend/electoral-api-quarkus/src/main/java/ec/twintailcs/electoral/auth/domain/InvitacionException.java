@@ -12,15 +12,32 @@ package ec.twintailcs.electoral.auth.domain;
 public class InvitacionException extends RuntimeException {
 
   private final int status;
+  private final int retryAfterSeconds;
 
   public InvitacionException(int status, String message) {
+    this(status, message, 0);
+  }
+
+  public InvitacionException(int status, String message, int retryAfterSeconds) {
     super(message);
     this.status = status;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 
   /** Status HTTP con el que se responde. */
   public int status() {
     return status;
+  }
+
+  /**
+   * Segundos que faltan para poder reintentar. 0 si el error no es un limite de tasa.
+   *
+   * <p>El 429 del limite de invitaciones lo necesita: sin el, el cliente solo sabe que hay que
+   * esperar "un rato" y no cuanto. Con el, puede avisar al operador exactamente cuando volver a
+   * intentarlo.
+   */
+  public int retryAfterSeconds() {
+    return retryAfterSeconds;
   }
 
   /** 400: el pedido esta mal formado o no cumple las reglas (token invalido, contrasena debil). */
@@ -36,5 +53,10 @@ public class InvitacionException extends RuntimeException {
   /** 429: se supero el limite de intentos. */
   public static InvitacionException demasiadosIntentos(String mensaje) {
     return new InvitacionException(429, mensaje);
+  }
+
+  /** 429 con el tiempo que falta para poder reintentar. */
+  public static InvitacionException demasiadosIntentos(String mensaje, int retryAfterSeconds) {
+    return new InvitacionException(429, mensaje, retryAfterSeconds);
   }
 }

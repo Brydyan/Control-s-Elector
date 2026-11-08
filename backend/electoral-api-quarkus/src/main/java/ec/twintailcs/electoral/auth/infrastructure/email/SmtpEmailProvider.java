@@ -41,6 +41,7 @@ public class SmtpEmailProvider implements EmailService {
     variables.put("apellido", email.apellido());
     variables.put("nombreCompleto", email.nombreCompleto());
     variables.put("rol", email.rol());
+    variables.put("username", email.username());
     variables.put("activationLink", email.activationLink());
     variables.put("tokenExpira", email.tokenExpira());
 
