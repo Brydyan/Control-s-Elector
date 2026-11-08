@@ -267,3 +267,136 @@ Changes activos / preparados:
 - `openspec/changes/front/2026-09-26-t-fe-{14..17}/`
 - `openspec/changes/front/2026-10-03-t-fe-18-sidebar-rbac-dynamic-menus/`
 - `openspec/changes/front/2026-10-04-t-fe-19-admin-usuarios-crud-softdelete/`
+
+---
+
+## 10. Priorización — Noviembre 2026 (ODD + SDD)
+
+**Actualización:** 2026-11-07  
+**Contexto:** Auditoría compliance + bugs dashboard master + feature invitaciones usuarios  
+**Principio:** ODD (fixes rápidos) desbloquean SDD (features formales); criticidad por impacto en usuario
+
+### Matriz de Priorización
+
+| Orden | Ticket | Tipo | Pts | Criticidad | Bloqueador | Dependencia |
+|-------|--------|------|-----|-----------|-----------|------------|
+| **1** | #478 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (frontend↔backend) | None |
+| **2** | #490 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (Master dashboard) | None |
+| **3** | #482 | SDD | 13 | 🔴 CRÍTICO | ❌ Legal (Google Play) | #478 (CORS) |
+| **4** | #492 | SDD | 5 | 🟡 ALTO | ❌ Feature (users) | None |
+| **5** | #486 | SDD | 5 | 🟠 MEDIO | ❌ Feature (consent) | Product decision |
+| **6** | #488 | SDD | 5 | 🟠 MEDIO | ❌ Monitoring | Sentry account setup |
+
+**Total:** 30 story points (~4-5 sprints)
+
+### Ejecución Secuencial
+
+#### **Phase 0: ODD (Bloqueadores — hoy)**
+
+```
+ODD #478 (CORS + LICENSE + JACOCO)
+├─ 55 min total
+├─ Desbloquea: Todo (frontend/backend communication)
+└─ Status: To Do
+
+ODD #490 (Dashboard routing)
+├─ 30 min total
+├─ Desbloquea: Master users can access dashboard
+└─ Status: To Do
+```
+
+**Estimación:** 85 min, correr en paralelo (independientes)  
+**Salida:** Environment.apiUrl fixed, LICENSE created, Dashboard routing fixed
+
+#### **Phase 1: SDD Sprint 1 (Priority — Week 1-2)**
+
+```
+T-LEGAL-01 #482 (Privacy + Terms)
+├─ 13 story points
+├─ 6 tasks (DB, endpoints, pages, modals, tests)
+├─ Prerequisite: #478 (CORS must be done)
+├─ Salida: Google Play compliant
+└─ Status: Ready for Builder (design complete)
+
+T-AUTH-INV-02 #492 (User Invitations + SMTP)
+├─ 5 story points (4.5pt actual)
+├─ 6 tasks (DB, service, endpoint, form, tests)
+├─ Prerequisite: None (independent)
+├─ Salida: MASTER can invite users via SMTP
+└─ Status: Design complete (ready for Builder)
+```
+
+**Estimación:** 18 story points, ~2-3 weeks  
+**Parallelizable:** Yes (no dependencies between them)
+
+#### **Phase 2: SDD Sprint 2 (Compliance — Week 3-4, conditional)**
+
+```
+T-COMPLIANCE-07 #486 (Consent Banner + Permissions)
+├─ 5 story points
+├─ Prerequisite: Product decision (geolocation? camera? notifications?)
+├─ Status: Needs tasks.md completion
+└─ Block if: Features not needed for MVP
+
+T-COMPLIANCE-05 #488 (Sentry Error Tracking)
+├─ 5 story points
+├─ Prerequisite: Sentry SaaS account + API keys
+├─ Status: Needs tasks.md completion
+└─ Can start: Backend integration while frontend waiting for tasks.md
+```
+
+**Estimación:** 10 story points, ~2-3 weeks (conditional)  
+**Decision Gate:** 2026-11-10 (product confirms scope)
+
+### Árbol de Dependencias
+
+```
+┌─── ODD #478 (CORS)
+│    └─► SDD #482 (Privacy+Terms) ✅
+│
+├─── ODD #490 (Dashboard) ✅
+│
+├─── SDD #492 (User Invitations) ✅
+│    └─► Puede empezar en paralelo con #482
+│
+└─── SDD #486 (Consent) + #488 (Sentry)
+     └─► Dependen de product decision (geolocation, notifications, errors)
+```
+
+### Criterios de Cierre
+
+**ODD #478 closed when:**
+- [ ] CORS config added to `application.properties`
+- [ ] Frontend can call `GET /api/v1/dashboard/resultados` (200 OK)
+- [ ] OPTIONS preflight returns 200 with CORS headers
+
+**ODD #490 closed when:**
+- [ ] Dashboard resultados + progreso load data (no errors)
+- [ ] Mis Actas navigates + shows content
+- [ ] Catálogos route exists + tabs work
+
+**SDD #482 closed when:**
+- [ ] Verify phase complete (mutations all pass)
+- [ ] Privacy + Terms pages accessible
+- [ ] Terms modal appears on login (version mismatch)
+- [ ] Export data endpoint returns JSON
+- [ ] Archive-report.md signed off
+
+**SDD #492 closed when:**
+- [ ] Verify phase complete (mutations all pass)
+- [ ] MASTER can create users via form
+- [ ] SMTP email sent with credentials
+- [ ] Username auto-generated correctly
+- [ ] Rate limiting enforced
+- [ ] Archive-report.md signed off
+
+### Trampas Nuevas (2026-11-07)
+
+| Trampa | Qué pasa | Mitigación |
+|--------|----------|----------|
+| `environment.apiUrl` hardcoded | Frontend calls `http://localhost:8080` en prod | Verificar en environment.prod.ts antes de deploy |
+| Rutas fantasma en navbar | Nav apunta a `/master/configuracion` que no existe | Grep todas las rutas en app.routes.ts vs NavbarComponent |
+| SMTP sandbox vs prod | Mailtrap/mailhog en dev, Gmail SMTP en prod | Env vars para SMTP_HOST, SMTP_PORT, SMTP_FROM |
+| Temp password en logs | Password temporario se registra en audit_log | Never log temporaryPassword, solo audit "USER_INVITED" + email |
+
+---
