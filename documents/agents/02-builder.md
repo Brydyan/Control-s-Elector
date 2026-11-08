@@ -69,6 +69,22 @@ pierde el progreso:
 
 ---
 
+## Al cerrar ODD (antes de pasar a Verify)
+
+Antes de entregar `odd/tasks/<feature>.md` a Verify, asegurar que tenga:
+
+- Todas las tasks marcadas `- [x]` (completadas)
+- `apply-progress.md` con números medidos (suites, tests, errors, failures)
+- Por cada mutación: nombre exacto del test que cayó
+- Sin hallazgos no documentados (todo en `apply-progress.md` bajo "Hallazgos")
+- Compuertas pasadas (lint, format, tests, build)
+
+**NO agregar sección `## ✅ Verificación`** — lo hace Verify cuando audita.
+
+ODD quedará en `odd/tasks/<feature>.md`. Verify lo verificará, agregará la sección de verificación al final, y si PASS lo moverá a `odd/archive/VERIFIED-<YYYY-MM-DD>-<feature>.md`.
+
+---
+
 ## Modo TDD estricto
 
 Si `openspec/ROADMAP.md` §3 declara la suite en verde y el change lo pide, el prompt lleva:
