@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
-import { InputTextarea } from 'primeng/inputtextarea';
 import { Message } from 'primeng/message';
+import { Textarea } from 'primeng/textarea';
 import { ButtonComponent } from '../../../../shared/ui';
 
 /**
@@ -42,8 +42,8 @@ import { ButtonComponent } from '../../../../shared/ui';
     CommonModule,
     FormsModule,
     Dialog,
-    InputTextarea,
     Message,
+    Textarea,
     ButtonComponent,
   ],
   templateUrl: './modal-anular.component.html',
