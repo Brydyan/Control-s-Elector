@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.common.application;
 
 import static org.assertj.core.api.Assertions.*;
 
+import ec.twintailcs.electoral.shared.testing.PostgresTestResource;
 import ec.twintailcs.electoral.shared.testing.RedisTestResource;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
  * servicio falla abierto permitiendo las solicitudes).
  */
 @QuarkusTest
+@QuarkusTestResource(PostgresTestResource.class)
 @QuarkusTestResource(RedisTestResource.class)
 @DisplayName("RateLimitingService")
 class RateLimitingServiceTest {
