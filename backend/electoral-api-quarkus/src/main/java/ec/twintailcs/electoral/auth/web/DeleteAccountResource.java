@@ -3,7 +3,6 @@ package ec.twintailcs.electoral.auth.web;
 import ec.twintailcs.electoral.auth.application.CancelDeletionUseCase;
 import ec.twintailcs.electoral.auth.application.RequestDeletionUseCase;
 import ec.twintailcs.electoral.auth.security.CurrentUser;
-import ec.twintailcs.electoral.auth.security.Requiere;
 import ec.twintailcs.electoral.auth.web.dto.RequestDeletionRequest;
 import ec.twintailcs.electoral.auth.web.dto.RequestDeletionResponse;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -43,8 +42,8 @@ public class DeleteAccountResource {
   /**
    * Solicita eliminación de cuenta (soft-delete con 30 días grace period).
    *
-   * <p>Requiere autenticación. El usuario debe confirmar su contraseña. Enviamos email con link
-   * de recuperación válido 7 días.
+   * <p>Requiere autenticación (JWT). El usuario debe confirmar su contraseña. Enviamos email con
+   * link de recuperación válido 7 días.
    *
    * <p>Responde 200 con:
    *
@@ -61,7 +60,6 @@ public class DeleteAccountResource {
    */
   @POST
   @Path("/user/request-deletion")
-  @Requiere
   public Response requestDeletion(@Valid RequestDeletionRequest request) {
     // CurrentUser está inyectado y contiene el usuario autenticado
     // Extrae el usuarioId del JWT (pero necesitamos acceso a CurrentUser.userId())

@@ -4,21 +4,21 @@ import ec.twintailcs.electoral.auth.domain.DeletionAudit;
 import ec.twintailcs.electoral.auth.domain.DeletionStatus;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import io.quarkus.logging.Log;
-import io.quarkus.scheduler.Scheduled;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.List;
 
 /**
- * Cron job que ejecuta hard-delete permanente de cuentas marcadas para eliminación.
+ * Servicio que ejecuta hard-delete permanente de cuentas marcadas para eliminación.
  *
  * <p>Implementa T-COMPLIANCE-04 D1: después de 30 días de soft-delete, el usuario y sus datos
  * personales se eliminan permanentemente. Las referencias en actas electorales se retienen por
  * requisito legal (7 años).
  *
- * <p>Corre diariamente. Busca todas las cuentas en estado DELETED_PENDING con deleted_at <
- * NOW() - 30 dias, las elimina y marca en auditoría.
+ * <p>TODO: En producción, este método se llama via cron job diario. Por ahora es un servicio
+ * invocable manualmente o via admin endpoint. Se puede integrar con quarkus-scheduler agregando
+ * la dependencia en pom.xml y usando @io.quarkus.scheduler.Scheduled(cron = "0 2 * * *")
  */
 @ApplicationScoped
 public class HardDeleteAccountJob {
@@ -28,10 +28,9 @@ public class HardDeleteAccountJob {
   /**
    * Ejecuta hard-delete de cuentas con soft-delete vencido.
    *
-   * <p>Scheduled diariamente a las 2 AM (hora servidor). Se ejecuta una sola instancia aunque
-   * haya múltiples nodos (via Quarkus locks).
+   * <p>TODO: Debería ejecutarse automáticamente vía cron job (diariamente a las 2 AM UTC).
+   * Actualmente se puede invocar manualmente para testing.
    */
-  @Scheduled(cron = "0 2 * * *", timezone = "UTC") // 2 AM UTC daily
   @Transactional
   public void hardDeleteExpiredAccounts() {
     Log.info("Starting hard-delete job for expired accounts");

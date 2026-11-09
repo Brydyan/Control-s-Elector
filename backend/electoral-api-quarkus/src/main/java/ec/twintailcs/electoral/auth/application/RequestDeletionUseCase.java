@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.auth.application;
 
+import ec.twintailcs.electoral.auth.application.port.DeletionEmailQueue;
 import ec.twintailcs.electoral.auth.domain.DeletionAudit;
 import ec.twintailcs.electoral.auth.domain.DeletionStatus;
 import ec.twintailcs.electoral.auth.domain.Usuario;
