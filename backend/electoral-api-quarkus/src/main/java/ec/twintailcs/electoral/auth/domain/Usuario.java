@@ -106,6 +106,31 @@ public class Usuario extends PanacheEntityBase {
   @Column(name = "accepted_privacy_at")
   Instant acceptedPrivacyAt;
 
+  /**
+   * Momento cuando se solicito la eliminacion de cuenta (soft-delete).
+   *
+   * <p>NULL si la cuenta no esta siendo eliminada. Se usa para:
+   * - Marcar el momento T+0 de la eliminacion
+   * - Calcular T+30d para hard-delete automatico
+   * - Recuperar snapshot de auditoria
+   */
+  @Column(name = "deleted_at")
+  Instant deletedAt;
+
+  /**
+   * Estado de eliminacion de la cuenta.
+   *
+   * <p>Valores: ACTIVO | DELETED_PENDING | DELETED_PERMANENT. Default: ACTIVO. Se persiste el
+   * nombre del enum ({@link EstadoUsuario}). Similar a {@code estado_usuario} pero este campo
+   * existe para razon de clarity y performance: queries filtrando por elimination status no
+   * confunden con activation status.
+   *
+   * <p>Durante DELETED_PENDING: usuario no puede iniciar sesion, pero puede recuperar dentro 7
+   * dias. Hard-delete automatico despues 30 dias.
+   */
+  @Column(name = "deletion_status", nullable = false, length = 32)
+  String deletionStatus = "ACTIVO";
+
   public Long getId() {
     return id;
   }
@@ -261,6 +286,37 @@ public class Usuario extends PanacheEntityBase {
 
   public void setAcceptedPrivacyAt(Instant acceptedPrivacyAt) {
     this.acceptedPrivacyAt = acceptedPrivacyAt;
+  }
+
+  public Instant getDeletedAt() {
+    return deletedAt;
+  }
+
+  public void setDeletedAt(Instant deletedAt) {
+    this.deletedAt = deletedAt;
+  }
+
+  public String getDeletionStatus() {
+    return deletionStatus;
+  }
+
+  /**
+   * Fija el estado de eliminacion.
+   *
+   * @throws IllegalArgumentException si el valor no es un estado conocido
+   */
+  public void setDeletionStatus(String deletionStatus) {
+    this.deletionStatus = deletionStatus;
+  }
+
+  /** {@code true} si la cuenta esta marcada para eliminacion (soft-delete o hard-delete). */
+  public boolean estaEliminada() {
+    return !DeletionStatus.ACTIVO.valor().equals(deletionStatus);
+  }
+
+  /** {@code true} si la cuenta esta en soft-delete (recoverable). */
+  public boolean estaPendienteEliminacion() {
+    return DeletionStatus.DELETED_PENDING.valor().equals(deletionStatus);
   }
 
   /** Invariantes obligatorias del usuario. Mismas comprobaciones que el backend Spring. */
