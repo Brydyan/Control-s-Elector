@@ -22,13 +22,13 @@
 -- =============================================================================
 
 
--- changeset electoral:030-01-expiry-24h-default
+-- changeset electoral:033-01-expiry-24h-default
 ALTER TABLE user_invitations
   ALTER COLUMN expiry_at SET DEFAULT (NOW() + INTERVAL '1 day');
 -- rollback: ALTER TABLE user_invitations ALTER COLUMN expiry_at SET DEFAULT (NOW() + INTERVAL '30 days');
 
 
--- changeset electoral:030-02-expiry-24h-migracion
+-- changeset electoral:033-02-expiry-24h-migracion
 ALTER TABLE user_invitations DISABLE ROW LEVEL SECURITY;
 UPDATE user_invitations
    SET expiry_at = invited_at + INTERVAL '1 day'
