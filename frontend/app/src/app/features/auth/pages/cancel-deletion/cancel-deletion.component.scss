@@ -1,0 +1,203 @@
+.cancel-deletion-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 1rem;
+}
+
+.spinner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  background: white;
+  padding: 3rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  width: 100%;
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+.result-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background: white;
+  padding: 3rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  width: 100%;
+
+  h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  button {
+    width: 100%;
+    max-width: 300px;
+    margin-top: 1rem;
+  }
+
+  .action-info {
+    background-color: #f3f4f6;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    color: #4b5563;
+    font-size: 0.875rem;
+    width: 100%;
+
+    p {
+      margin: 0.5rem 0;
+      &:first-child {
+        margin-top: 0;
+      }
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  // Estado exitoso
+  &.success {
+    .success-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      background-color: #dcfce7;
+      border-radius: 50%;
+
+      i {
+        font-size: 2.5rem;
+        color: #16a34a;
+      }
+    }
+
+    h2 {
+      color: #16a34a;
+    }
+
+    :deep .success-message {
+      width: 100%;
+      .p-message {
+        width: 100%;
+      }
+    }
+  }
+
+  // Estado expirado
+  &.expired {
+    .expired-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      background-color: #fef3c7;
+      border-radius: 50%;
+
+      i {
+        font-size: 2.5rem;
+        color: #f59e0b;
+      }
+    }
+
+    h2 {
+      color: #f59e0b;
+    }
+
+    :deep .warning-message {
+      width: 100%;
+      .p-message {
+        width: 100%;
+      }
+    }
+  }
+
+  // Estado error
+  &.error {
+    .error-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      background-color: #fee2e2;
+      border-radius: 50%;
+
+      i {
+        font-size: 2.5rem;
+        color: #ef4444;
+      }
+    }
+
+    h2 {
+      color: #ef4444;
+    }
+
+    :deep .error-message {
+      width: 100%;
+      .p-message {
+        width: 100%;
+      }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .spinner-wrapper,
+  .result-container {
+    padding: 2rem 1.5rem;
+    border-radius: 0.5rem;
+  }
+
+  .result-container {
+    .success-icon,
+    .expired-icon,
+    .error-icon {
+      width: 60px;
+      height: 60px;
+
+      i {
+        font-size: 2rem;
+      }
+    }
+
+    h2 {
+      font-size: 1.25rem;
+    }
+  }
+}
