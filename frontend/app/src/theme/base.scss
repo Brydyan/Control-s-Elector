@@ -114,3 +114,51 @@ body {
     min-width: 44px;
   }
 }
+
+/*
+ * Las transiciones (ODD 505, D).
+ *
+ * <p>Se anima solo lo que el elemento declara: un `transition: all` se lleva por
+ * delante cambios que nadie pidió —el color de un estado, un ancho— y hace que
+ * la interfaz parezca más lenta de lo que es. Las duraciones salen de los tokens
+ * (100-300ms) y `prefers-reduced-motion` las apaga (ver `animations.scss`).
+ */
+.p-button,
+app-button {
+  transition:
+    var(--transition-bg-color), var(--transition-border),
+    var(--transition-shadow), var(--transition-transform);
+}
+
+.p-button:not(:disabled):hover,
+app-button:hover {
+  transform: translateY(-1px);
+}
+
+.p-card,
+app-card {
+  transition: var(--transition-shadow);
+}
+
+.p-card:hover,
+app-card:hover {
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Modales: la máscara entra y el diálogo sube. */
+.p-dialog-mask {
+  animation: fadeIn var(--duration-normal) var(--ease-out);
+}
+
+.p-dialog {
+  animation: slideUp var(--duration-normal) var(--ease-out);
+}
+
+/* Inputs: cambian color, no geometría. */
+.p-inputtext,
+.p-select,
+.p-datepicker {
+  transition:
+    var(--transition-color), var(--transition-bg-color),
+    var(--transition-border);
+}

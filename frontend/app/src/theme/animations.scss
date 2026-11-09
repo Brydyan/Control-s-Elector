@@ -1,0 +1,75 @@
+// ─────────────────────────────────────────────────────────────
+// KEYFRAMES DEL SISTEMA
+// ─────────────────────────────────────────────────────────────
+
+/*
+ * Los keyframes que usan las transiciones de la app. Los nombres son los del
+ * ODD 505 (D.3): fadeIn, slideUp, slideDown, spinIn y shimmer.
+ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(1rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-1rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spinIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/*
+ * `prefers-reduced-motion`: quien lo pide en su sistema recibe el mismo
+ * resultado, sin viaje. No se quitan los estados ni el contenido: se quita el
+ * movimiento (WCAG 2.3.3 Animation from Interactions).
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
