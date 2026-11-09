@@ -50,6 +50,14 @@ public class LoginUseCase {
           "Usuario aún no ha activado su cuenta. Revisa tu email.");
     }
 
+    // Cuenta marcada para eliminacion (soft-delete): no puede entrar
+    // El usuario puede recuperarla clickeando el link en el email (7 dias)
+    if (u.estaPendienteEliminacion()) {
+      invitationAudit.logLoginRejected(u.getId(), "cuenta_marcada_eliminacion");
+      throw new AccesoNoPermitidoException(
+          "Tu cuenta está marcada para eliminación. Revisa tu email para recuperarla.");
+    }
+
     String sesionId = UUID.randomUUID().toString();
     List<String> permisos = RolPermiso.authorityStringsByUsuarioId(u.getId());
     JwtService.TokenPair pair =
