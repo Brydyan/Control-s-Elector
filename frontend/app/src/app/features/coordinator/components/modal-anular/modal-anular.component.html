@@ -1,0 +1,62 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [style]="{ width: '28rem' }"
+  header="Anular acta"
+  styleClass="modal-anular-dialog"
+>
+  <div class="modal-anular-content">
+    <p-message
+      severity="warn"
+      text="Esta es una acción irreversible. El acta será marcada como ANULADA permanentemente."
+      [styleClass]="'w-full'"
+    />
+
+    <div class="motivo-field">
+      <label for="motivo-anular" class="label-motivo">
+        Motivo de anulación <span class="required">*</span>
+      </label>
+      <textarea
+        id="motivo-anular"
+        pInputTextarea
+        [ngModel]="motivoAnular()"
+        (ngModelChange)="motivoAnular.set($event)"
+        rows="4"
+        placeholder="Explique el motivo por el que se anula esta acta (ejemplo: Datos verificados como fraudulentos)"
+        [disabled]="isSubmitting"
+        data-testid="anular-motivo"
+      ></textarea>
+      @if (!motivoAnular().trim() && !isDisabledConfirm) {
+        <span class="error-message">El motivo es obligatorio</span>
+      }
+    </div>
+
+    @if (error) {
+      <p-message severity="error" [text]="error" [styleClass]="'w-full'" />
+    }
+  </div>
+
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      (clicked)="onVisibleChange(false)"
+      [disabled]="isSubmitting"
+      data-testid="anular-cancel"
+    >
+      Cancelar
+    </app-button>
+    <app-button
+      variant="danger"
+      (clicked)="confirmarAnular()"
+      [loading]="isSubmitting"
+      [disabled]="isDisabledConfirm"
+      data-testid="anular-confirm"
+    >
+      Anular acta
+    </app-button>
+  </ng-template>
+</p-dialog>

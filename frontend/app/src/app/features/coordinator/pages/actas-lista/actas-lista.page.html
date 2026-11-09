@@ -272,4 +272,42 @@
       (sizeChange)="onSizeChange($event)"
     ></app-paginator>
   </div>
+
+  <!-- ==================== MODALES DE ACCIONES ==================== -->
+
+  <!-- Modal Aprobar -->
+  <app-modal-aprobar
+    [visible]="modalAprobarVisible()"
+    [isSubmitting]="loading()"
+    (visibleChange)="modalAprobarVisible.set($event)"
+    (confirm)="onAprobarConfirm()"
+  ></app-modal-aprobar>
+
+  <!-- Modal Disputar -->
+  <app-modal-disputar
+    [visible]="modalDisputarVisible()"
+    [isSubmitting]="loading()"
+    (visibleChange)="modalDisputarVisible.set($event)"
+    (confirm)="onDisputarConfirm($event)"
+  ></app-modal-disputar>
+
+  <!-- Modal Corregir -->
+  <app-modal-corregir
+    #modalCorregir
+    [visible]="modalCorregirVisible()"
+    [isSubmitting]="loading()"
+    [candidatos]="[]"
+    [jrvId]="actaSeleccionada()?.jrvId || 0"
+    [cargoId]="actaSeleccionada()?.cargoId || 0"
+    (visibleChange)="modalCorregirVisible.set($event)"
+    (confirm)="onCorregirConfirm($event)"
+  ></app-modal-corregir>
+
+  <!-- Modal Anular -->
+  <app-modal-anular
+    [visible]="modalAnularVisible()"
+    [isSubmitting]="loading()"
+    (visibleChange)="modalAnularVisible.set($event)"
+    (confirm)="onAnularConfirm($event)"
+  ></app-modal-anular>
 </div>

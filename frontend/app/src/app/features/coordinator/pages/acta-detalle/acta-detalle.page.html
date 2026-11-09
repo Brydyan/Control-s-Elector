@@ -38,7 +38,7 @@
         *ngIf="detalle.acta.estado === 'ENVIADA' || detalle.acta.estado === 'CORREGIDA'"
         variant="primary"
         size="sm"
-        (clicked)="abrirAprobar()"
+        (clicked)="abrirModalAprobar()"
         [disabled]="submitting()"
       >
         <i class="pi pi-check-circle" aria-hidden="true"></i>
@@ -353,177 +353,6 @@
     </ul>
   </app-card>
 
-  <!-- ==================== MODAL DISPUTAR ==================== -->
-  <p-dialog
-    [(visible)]="modalDisputarAbierto"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '34rem' }"
-    header="Disputar Acta de Escrutinio"
-    (onHide)="cerrarModalDisputar()"
-  >
-    <p class="modal-desc">
-      Indica el motivo por el cual esta acta entra en disputa. El observador o
-      equipo de campo recibirá la notificación para su revisión o recuento.
-    </p>
-
-    <div class="form-group">
-      <label for="motivoDisputa" class="form-label font-bold">
-        Motivo de la Disputa:
-      </label>
-      <textarea
-        id="motivoDisputa"
-        pTextarea
-        rows="4"
-        [(ngModel)]="motivoDisputa"
-        placeholder="Ej: Inconsistencia numérica en votos de candidatos con respecto al acta física escaneada..."
-      ></textarea>
-    </div>
-
-    @if (errorDisputa) {
-    <p-message severity="error" [text]="errorDisputa" />
-    }
-
-    <ng-template #footer>
-      <app-button
-        variant="ghost"
-        size="md"
-        (clicked)="cerrarModalDisputar()"
-        [disabled]="submitting()"
-      >
-        Cancelar
-      </app-button>
-      <app-button
-        variant="secondary"
-        size="md"
-        (clicked)="confirmarDisputa()"
-        [disabled]="submitting() || !motivoDisputa.trim()"
-        [loading]="submitting()"
-      >
-        Confirmar Disputa
-      </app-button>
-    </ng-template>
-  </p-dialog>
-
-  <!-- ==================== MODAL CORREGIR ==================== -->
-  <p-dialog
-    [(visible)]="modalCorregirAbierto"
-    [modal]="true"
-    [draggable]="false"
-    [resizable]="false"
-    [style]="{ width: '48rem' }"
-    header="Corregir Acta de Escrutinio"
-    (onHide)="cerrarModalCorregir()"
-  >
-    <div class="correction-grid">
-      <div class="form-group">
-        <label for="corrSufragantes" class="form-label font-bold">
-          Total Sufragantes:
-        </label>
-        <input
-          id="corrSufragantes"
-          pInputText
-          type="number"
-          min="0"
-          [(ngModel)]="correcionSufragantes"
-        />
-      </div>
-      <div class="form-group">
-        <label for="corrBlancos" class="form-label font-bold">
-          Votos Blancos:
-        </label>
-        <input
-          id="corrBlancos"
-          pInputText
-          type="number"
-          min="0"
-          [(ngModel)]="correcionBlancos"
-        />
-      </div>
-      <div class="form-group">
-        <label for="corrNulos" class="form-label font-bold">Votos Nulos:</label>
-        <input
-          id="corrNulos"
-          pInputText
-          type="number"
-          min="0"
-          [(ngModel)]="correcionNulos"
-        />
-      </div>
-    </div>
-
-    <h3 class="correction-subtitle">Votos por Candidato</h3>
-    @if (data()) {
-    <div class="candidates-correction-list">
-      @for (c of detalle.candidatos; track c.id) {
-      <div class="candidate-correction-row">
-        <div class="cand-info">
-          <span class="cand-name font-bold">{{ c.nombre }}</span>
-          <span class="cand-sub td-muted"
-            >{{ c.partidoSiglas || 'Lista' }}</span
-          >
-        </div>
-        <div class="cand-input-wrap">
-          <input
-            pInputText
-            type="number"
-            min="0"
-            class="cand-input"
-            [value]="votosCorregidosMap.get(c.id) || 0"
-            (input)="setVotoCorregido(c.id, $event)"
-          />
-        </div>
-      </div>
-      }
-    </div>
-    }
-
-    <!-- Checksum banner in correction modal -->
-    <div
-      class="modal-checksum"
-      [class.modal-checksum--valid]="isChecksumCorregidoValido"
-      [class.modal-checksum--invalid]="!isChecksumCorregidoValido"
-    >
-      <span>
-        Suma calculada: <strong>{{ sumaVotosCorregidos }}</strong> / Total
-        requerido: <strong>{{ correcionSufragantes }}</strong> (Diferencia: {{
-        diferenciaChecksumCorregida > 0 ? '+' : '' }}{{
-        diferenciaChecksumCorregida }})
-      </span>
-      <span class="checksum-msg">
-        @if (isChecksumCorregidoValido) {
-        <i class="pi pi-check" aria-hidden="true"></i> Total verificado } @else
-        { <i class="pi pi-times" aria-hidden="true"></i> La suma no coincide con
-        el total de sufragantes }
-      </span>
-    </div>
-
-    @if (errorCorregir) {
-    <p-message severity="error" [text]="errorCorregir" />
-    }
-
-    <ng-template #footer>
-      <app-button
-        variant="ghost"
-        size="md"
-        (clicked)="cerrarModalCorregir()"
-        [disabled]="submitting()"
-      >
-        Cancelar
-      </app-button>
-      <app-button
-        variant="primary"
-        size="md"
-        (clicked)="confirmarCorrecion()"
-        [disabled]="submitting() || !isChecksumCorregidoValido"
-        [loading]="submitting()"
-      >
-        Guardar Corrección
-      </app-button>
-    </ng-template>
-  </p-dialog>
-
   <!-- Fullscreen Image Zoom Modal -->
   <p-dialog
     [(visible)]="imagenZoomAbierto"
@@ -543,14 +372,41 @@
     />
   </p-dialog>
 
-  <!-- T-FE-12 S3: confirmar aprobación -->
-  <app-confirm-dialog
-    [visible]="confirmAprobarAbierto"
-    title="¿Confirma que desea APROBAR esta acta electoral?"
-    message="Una vez aprobada, el acta pasa al conteo oficial y no puede modificarse salvo anulación MASTER."
-    variant="primary"
-    confirmLabel="Sí, aprobar"
-    (confirm$)="confirmarAprobar()"
-    (cancel$)="confirmAprobarAbierto = false"
-  ></app-confirm-dialog>
+  <!-- ==================== MODALES DE ACCIONES ==================== -->
+
+  <!-- Modal Aprobar -->
+  <app-modal-aprobar
+    [visible]="modalAprobarVisible()"
+    [isSubmitting]="submitting()"
+    (visibleChange)="modalAprobarVisible.set($event)"
+    (confirm)="onAprobarConfirm()"
+  ></app-modal-aprobar>
+
+  <!-- Modal Disputar -->
+  <app-modal-disputar
+    [visible]="modalDisputarVisible()"
+    [isSubmitting]="submitting()"
+    (visibleChange)="modalDisputarVisible.set($event)"
+    (confirm)="onDisputarConfirm($event)"
+  ></app-modal-disputar>
+
+  <!-- Modal Corregir -->
+  <app-modal-corregir
+    #modalCorregir
+    [visible]="modalCorregirVisible()"
+    [isSubmitting]="submitting()"
+    [candidatos]="data()?.candidatos || []"
+    [jrvId]="data()?.acta?.jrvId || 0"
+    [cargoId]="data()?.acta?.cargoId || 0"
+    (visibleChange)="modalCorregirVisible.set($event)"
+    (confirm)="onCorregirConfirm($event)"
+  ></app-modal-corregir>
+
+  <!-- Modal Anular -->
+  <app-modal-anular
+    [visible]="modalAnularVisible()"
+    [isSubmitting]="submitting()"
+    (visibleChange)="modalAnularVisible.set($event)"
+    (confirm)="onAnularConfirm($event)"
+  ></app-modal-anular>
 </div>

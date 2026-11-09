@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { IconField } from 'primeng/iconfield';
@@ -28,9 +35,17 @@ import {
   ActaItem,
   CantonResumen,
   CargoResumen,
+  CorregirActaPayload,
+  DisputarActaPayload,
   EstadoActa,
 } from '../../domain/models/coordinator.model';
 import { CoordinatorApi } from '../../data/coordinator.api';
+import {
+  ModalAprobarComponent,
+  ModalDisputarComponent,
+  ModalCorregirComponent,
+  ModalAnularComponent,
+} from '../../components';
 
 @Component({
   selector: 'app-actas-lista',
@@ -54,11 +69,17 @@ import { CoordinatorApi } from '../../data/coordinator.api';
     Tabs,
     TableModule,
     Menu,
+    ModalAprobarComponent,
+    ModalDisputarComponent,
+    ModalCorregirComponent,
+    ModalAnularComponent,
   ],
   templateUrl: './actas-lista.page.html',
   styleUrls: ['./actas-lista.page.scss'],
 })
 export class ActasListaPage implements OnInit, OnDestroy {
+  @ViewChild(ModalCorregirComponent) modalCorregir?: ModalCorregirComponent;
+
   private readonly coordinatorService = inject(CoordinatorApi);
   private readonly router = inject(Router);
   private readonly authStore = inject(AuthStore);
@@ -70,6 +91,13 @@ export class ActasListaPage implements OnInit, OnDestroy {
   readonly cantones = signal<CantonResumen[]>([]);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+
+  // Modal visibility signals
+  readonly modalAprobarVisible = signal(false);
+  readonly modalDisputarVisible = signal(false);
+  readonly modalCorregirVisible = signal(false);
+  readonly modalAnularVisible = signal(false);
+  readonly actaSeleccionada = signal<ActaItem | null>(null);
 
   /**
    * MASTER-only controls ("Anular" in the tray). The role comes from the
@@ -255,31 +283,143 @@ export class ActasListaPage implements OnInit, OnDestroy {
     return this.esMaster() && acta.estado === 'APROBADA';
   }
 
-  anular(actaId: number): void {
-    const motivo = prompt(
-      'Motivo de anulación (obligatorio):',
-      'Datos verificados como fraudulentos',
-    );
-    if (!motivo || !motivo.trim()) {
-      this.error.set('El motivo de anulación es obligatorio.');
-      return;
-    }
+  puedeAprobar(acta: ActaItem): boolean {
+    return acta.estado === 'ENVIADA' || acta.estado === 'CORREGIDA';
+  }
+
+  puedeDisputar(acta: ActaItem): boolean {
+    return acta.estado === 'ENVIADA' || acta.estado === 'CORREGIDA';
+  }
+
+  puedeCorregir(acta: ActaItem): boolean {
+    return acta.estado === 'EN_DISPUTA';
+  }
+
+  abrirModalAprobar(acta: ActaItem): void {
+    this.actaSeleccionada.set(acta);
+    this.modalAprobarVisible.set(true);
+  }
+
+  abrirModalDisputar(acta: ActaItem): void {
+    this.actaSeleccionada.set(acta);
+    this.modalDisputarVisible.set(true);
+  }
+
+  abrirModalCorregir(acta: ActaItem): void {
+    // Need to load the full detail to get candidate information for correction
+    this.coordinatorService.getActaDetalleCompleto(acta.id).subscribe({
+      next: (detalle) => {
+        this.actaSeleccionada.set(acta);
+
+        // Initialize the modal with full candidate data
+        if (this.modalCorregir) {
+          const votesPerCandidate = new Map<number, number>();
+          detalle.candidatos.forEach((c) => {
+            votesPerCandidate.set(c.id, c.votos || 0);
+          });
+
+          this.modalCorregir.initializeForm({
+            totalSufragantes: detalle.acta.totalSufragantes,
+            votosBlancos: detalle.acta.votosBlancos,
+            votosNulos: detalle.acta.votosNulos,
+            votesPerCandidate,
+          });
+        }
+
+        this.modalCorregirVisible.set(true);
+      },
+      error: (err) => {
+        const mapped = mapError(err);
+        this.error.set(mapped.message);
+      },
+    });
+  }
+
+  abrirModalAnular(acta: ActaItem): void {
+    this.actaSeleccionada.set(acta);
+    this.modalAnularVisible.set(true);
+  }
+
+  onAprobarConfirm(): void {
+    if (!this.actaSeleccionada()) return;
     this.loading.set(true);
-    this.coordinatorService.anularActa(actaId, motivo.trim()).subscribe({
-      next: () => this.cargarActas(),
+    this.coordinatorService.aprobarActa(this.actaSeleccionada()!.id).subscribe({
+      next: () => {
+        this.modalAprobarVisible.set(false);
+        this.cargarActas();
+      },
       error: (err) => {
         const mapped = mapError(err);
         this.error.set(mapped.message);
         this.loading.set(false);
-
-        // W4 FIX (S7): 409 Conflict — auto-reload like dispute/correct actions
-        // When another session annuls the acta concurrently, reload the list
-        // to reflect the current state and prevent stale data display.
         if (mapped.type === 'conflict') {
           this.cargarActas();
         }
       },
     });
+  }
+
+  onDisputarConfirm(payload: DisputarActaPayload): void {
+    if (!this.actaSeleccionada()) return;
+    this.loading.set(true);
+    this.coordinatorService
+      .disputarActa(this.actaSeleccionada()!.id, payload)
+      .subscribe({
+        next: () => {
+          this.modalDisputarVisible.set(false);
+          this.cargarActas();
+        },
+        error: (err) => {
+          const mapped = mapError(err);
+          this.error.set(mapped.message);
+          this.loading.set(false);
+          if (mapped.type === 'conflict') {
+            this.cargarActas();
+          }
+        },
+      });
+  }
+
+  onCorregirConfirm(payload: CorregirActaPayload): void {
+    if (!this.actaSeleccionada()) return;
+    this.loading.set(true);
+    this.coordinatorService
+      .corregirActa(this.actaSeleccionada()!.id, payload)
+      .subscribe({
+        next: () => {
+          this.modalCorregirVisible.set(false);
+          this.cargarActas();
+        },
+        error: (err) => {
+          const mapped = mapError(err);
+          this.error.set(mapped.message);
+          this.loading.set(false);
+          if (mapped.type === 'conflict') {
+            this.cargarActas();
+          }
+        },
+      });
+  }
+
+  onAnularConfirm(motivo: string): void {
+    if (!this.actaSeleccionada()) return;
+    this.loading.set(true);
+    this.coordinatorService
+      .anularActa(this.actaSeleccionada()!.id, motivo)
+      .subscribe({
+        next: () => {
+          this.modalAnularVisible.set(false);
+          this.cargarActas();
+        },
+        error: (err) => {
+          const mapped = mapError(err);
+          this.error.set(mapped.message);
+          this.loading.set(false);
+          if (mapped.type === 'conflict') {
+            this.cargarActas();
+          }
+        },
+      });
   }
 
   onPageChange(next: number): void {
@@ -372,12 +512,39 @@ export class ActasListaPage implements OnInit, OnDestroy {
       },
     ];
 
+    if (this.puedeAprobar(acta)) {
+      items.push({
+        label: 'Aprobar',
+        icon: 'pi pi-check-circle',
+        styleClass: 'text-green-600',
+        command: () => this.abrirModalAprobar(acta),
+      });
+    }
+
+    if (this.puedeDisputar(acta)) {
+      items.push({
+        label: 'Disputar',
+        icon: 'pi pi-exclamation-circle',
+        styleClass: 'text-amber-500',
+        command: () => this.abrirModalDisputar(acta),
+      });
+    }
+
+    if (this.puedeCorregir(acta)) {
+      items.push({
+        label: 'Corregir',
+        icon: 'pi pi-pencil',
+        styleClass: 'text-blue-600',
+        command: () => this.abrirModalCorregir(acta),
+      });
+    }
+
     if (this.puedeAnular(acta)) {
       items.push({
         label: 'Anular',
         icon: 'pi pi-trash',
         styleClass: 'text-red-500',
-        command: () => this.anular(acta.id),
+        command: () => this.abrirModalAnular(acta),
       });
     }
 
