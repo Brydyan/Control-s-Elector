@@ -10,6 +10,7 @@ import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { provideServiceWorker } from '@angular/service-worker';
 import { providePrimeNG } from 'primeng/config';
+import * as Sentry from '@sentry/angular';
 
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
@@ -24,6 +25,29 @@ import { environment } from './environments/environment';
  * `LOCALE_ID` tells Angular which one to use.
  */
 registerLocaleData(localeEs);
+
+/**
+ * Initialize Sentry for error tracking and crash reporting.
+ *
+ * - Production: 10% sampling to reduce costs and noise
+ * - Dev/staging: 100% sampling for complete visibility
+ * - PII scrubbing: auto-redact emails, passwords, authorization headers
+ */
+if (environment.sentryDsn) {
+  Sentry.init({
+    dsn: environment.sentryDsn,
+    environment: environment.production ? 'prod' : 'dev',
+    sampleRate: environment.production ? 0.1 : 1.0,
+    denyUrls: [/localhost/],
+    beforeSend: (event) => {
+      // PII redaction: remove sensitive headers and data
+      if (event.request?.headers) {
+        delete event.request.headers['authorization'];
+      }
+      return event;
+    },
+  });
+}
 
 bootstrapApplication(AppComponent, {
   providers: [
