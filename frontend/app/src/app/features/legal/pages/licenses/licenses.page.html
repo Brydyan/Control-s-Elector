@@ -1,0 +1,94 @@
+<div class="licenses-container">
+  @if (loading()) {
+  <div class="loading">
+    <p>Cargando licencias...</p>
+  </div>
+  } @else if (errorMessage()) {
+  <div class="error-message">
+    <p>{{ errorMessage() }}</p>
+  </div>
+  } @else {
+  <section class="licenses-section">
+    <h1>Licencias de Código Abierto</h1>
+    <p class="intro-text">
+      Esta aplicación utiliza las siguientes librerías y componentes de código
+      abierto. Agradecemos a todos los autores y contribuyentes por su trabajo.
+    </p>
+
+    @if (libraries().length > 0) {
+    <div class="table-wrapper">
+      <table class="licenses-table">
+        <thead>
+          <tr>
+            <th>Librería</th>
+            <th>Versión</th>
+            <th>Licencia</th>
+            <th>Repositorio</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (lib of libraries(); track lib.name) {
+          <tr [class.restrictive]="lib.restrictive">
+            <td class="name">{{ lib.name }}</td>
+            <td class="version">{{ lib.version }}</td>
+            <td class="license">
+              <span>{{ lib.license }}</span>
+              @if (lib.restrictive) {
+              <span
+                class="warning-badge"
+                title="Licencia con requisitos especiales (GPL/AGPL)"
+                >⚠️ Restrictiva</span
+              >
+              }
+            </td>
+            <td class="repository">
+              @if (lib.repository) {
+              <a
+                [href]="lib.repository"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Ver en GitHub</a
+              >
+              } @else {
+              <span class="no-repo">—</span>
+              }
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <p class="summary">Total de dependencias: {{ libraries().length }}</p>
+    } @else {
+    <p class="no-data">No se encontraron licencias cargadas.</p>
+    }
+  </section>
+
+  @if (assets().length > 0) {
+  <section class="assets-section">
+    <h2>Atribuciones de Assets</h2>
+    <p class="intro-text">
+      Algunos íconos, imágenes y otros recursos utilizados en la aplicación
+      tienen licencias propias.
+    </p>
+
+    <ul class="assets-list">
+      @for (asset of assets(); track asset.id) {
+      <li class="asset-item">
+        <div class="asset-info">
+          <strong>{{ asset.name }}</strong> — {{ asset.author }}
+        </div>
+        <div class="asset-license">
+          <a
+            [href]="asset.license_url"
+            target="_blank"
+            rel="noopener noreferrer"
+            >{{ asset.license }}</a
+          >
+        </div>
+      </li>
+      }
+    </ul>
+  </section>
+  } }
+</div>
