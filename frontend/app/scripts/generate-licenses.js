@@ -3,9 +3,8 @@
 /**
  * generate-licenses.js — Build-time script to generate licenses.json
  *
- * Lee package-lock.json y package.json para extraer información de
- * dependencias y genera un archivo JSON con nombre, versión, licencia y
- * repositorio de cada paquete.
+ * Extrae información de dependencias desde node_modules o lock files
+ * y genera un archivo JSON con nombre, versión, licencia y repositorio.
  *
  * Uso: node scripts/generate-licenses.js
  */
@@ -13,13 +12,14 @@
 const fs = require('fs');
 const path = require('path');
 
-const LOCK_FILE = path.join(__dirname, '../package-lock.json');
-const PACKAGE_FILE = path.join(__dirname, '../package.json');
+const PNPM_LOCK_FILE = path.join(__dirname, '../pnpm-lock.yaml');
+const NPM_LOCK_FILE = path.join(__dirname, '../package-lock.json');
 const OUTPUT_DIR = path.join(__dirname, '../src/assets/legal');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'licenses.json');
+const NODE_MODULES_PATH = path.join(__dirname, '../node_modules');
 
 /**
- * Asegura que el directorio de output existe.
+ * Asegura que el directorio de output existe
  */
 function ensureOutputDir() {
   if (!fs.existsSync(OUTPUT_DIR)) {
@@ -28,80 +28,97 @@ function ensureOutputDir() {
 }
 
 /**
- * Lee y parsea el package-lock.json
+ * Extrae licencias de node_modules leyendo package.json de cada paquete
  */
-function readLockFile() {
-  try {
-    const content = fs.readFileSync(LOCK_FILE, 'utf8');
-    return JSON.parse(content);
-  } catch (err) {
-    console.error('Error reading package-lock.json:', err.message);
-    process.exit(1);
-  }
-}
-
-/**
- * Extrae las licencias de las dependencias.
- * Retorna un array de objetos con { name, version, license, repository, restrictive }
- */
-function extractLicenses(lockFile) {
+function extractLicensesFromNodeModules() {
   const licenses = [];
   const seenPackages = new Set();
 
-  // Itera sobre todos los paquetes en el lock file
-  const packages = lockFile.packages || {};
+  if (!fs.existsSync(NODE_MODULES_PATH)) {
+    console.warn('Warning: node_modules not found');
+    return licenses;
+  }
 
-  Object.entries(packages).forEach(([key, pkg]) => {
-    // Salta el paquete raíz (key vacía)
-    if (!key || key === '') {
+  try {
+    // Lee directorios top-level
+    const topLevelDirs = fs.readdirSync(NODE_MODULES_PATH);
+
+    topLevelDirs.forEach((topDir) => {
+      const topPath = path.join(NODE_MODULES_PATH, topDir);
+
+      // Si es un scope (comienza con @), lee sus subdirectorios
+      if (topDir.startsWith('@')) {
+        try {
+          const scopedDirs = fs.readdirSync(topPath);
+          scopedDirs.forEach((scopedPkg) => {
+            const pkgPath = path.join(topPath, scopedPkg);
+            tryExtractLicense(pkgPath, `${topDir}/${scopedPkg}`, licenses, seenPackages);
+          });
+        } catch (err) {
+          // Ignore errors reading scoped directories
+        }
+      } else {
+        // Paquete normal
+        tryExtractLicense(topPath, topDir, licenses, seenPackages);
+      }
+    });
+  } catch (err) {
+    console.error('Error reading node_modules:', err.message);
+  }
+
+  // Ordena por nombre
+  licenses.sort((a, b) => a.name.localeCompare(b.name));
+
+  return licenses;
+}
+
+/**
+ * Intenta extraer información de licencia de un directorio de paquete
+ */
+function tryExtractLicense(pkgPath, pkgName, licenses, seenPackages) {
+  try {
+    const pkgJsonPath = path.join(pkgPath, 'package.json');
+
+    if (!fs.existsSync(pkgJsonPath)) {
       return;
     }
 
-    // Extrae el nombre del paquete del key
-    // key format: "node_modules/package-name" o "node_modules/@scope/package-name"
-    const packageName = pkg.name;
+    const pkgJson = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+    const name = pkgJson.name || pkgName;
 
-    if (
-      !packageName ||
-      !pkg.version ||
-      !pkg.license ||
-      seenPackages.has(packageName)
-    ) {
+    if (seenPackages.has(name)) {
       return;
     }
 
-    seenPackages.add(packageName);
+    seenPackages.add(name);
 
-    // Determina si la licencia es restrictiva (GPL o AGPL)
-    const isRestrictive = pkg.license
-      ? ['GPL', 'AGPL'].some((l) =>
-          pkg.license.toUpperCase().includes(l),
-        )
-      : false;
+    const license = pkgJson.license || 'UNLICENSED';
+    const version = pkgJson.version || 'unknown';
 
-    // Extrae el repositorio si existe
+    // Determina si la licencia es restrictiva
+    const isRestrictive = license.toUpperCase().includes('GPL') ||
+                         license.toUpperCase().includes('AGPL');
+
+    // Extrae repositorio
     let repository = null;
-    if (pkg.repository) {
-      if (typeof pkg.repository === 'string') {
-        repository = pkg.repository;
-      } else if (typeof pkg.repository === 'object' && pkg.repository.url) {
-        repository = pkg.repository.url;
+    if (pkgJson.repository) {
+      if (typeof pkgJson.repository === 'string') {
+        repository = pkgJson.repository;
+      } else if (typeof pkgJson.repository === 'object' && pkgJson.repository.url) {
+        repository = pkgJson.repository.url;
       }
     }
 
     licenses.push({
-      name: packageName,
-      version: pkg.version,
-      license: pkg.license,
-      repository: repository,
+      name,
+      version,
+      license,
+      repository,
       restrictive: isRestrictive,
     });
-  });
-
-  // Ordena por nombre de paquete para consistencia
-  licenses.sort((a, b) => a.name.localeCompare(b.name));
-
-  return licenses;
+  } catch (err) {
+    // Silencia errores individuales, continúa con otros paquetes
+  }
 }
 
 /**
@@ -110,9 +127,7 @@ function extractLicenses(lockFile) {
 function writeLicensesFile(licenses) {
   try {
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(licenses, null, 2) + '\n');
-    console.log(
-      `✓ Generated ${OUTPUT_FILE} (${licenses.length} packages)`,
-    );
+    console.log(`✓ Generated ${OUTPUT_FILE} (${licenses.length} packages)`);
   } catch (err) {
     console.error('Error writing licenses.json:', err.message);
     process.exit(1);
@@ -120,22 +135,21 @@ function writeLicensesFile(licenses) {
 }
 
 /**
- * Punto de entrada del script
+ * Punto de entrada
  */
 function main() {
   try {
     ensureOutputDir();
-    const lockFile = readLockFile();
-    const licenses = extractLicenses(lockFile);
+    const licenses = extractLicensesFromNodeModules();
 
     if (licenses.length === 0) {
-      console.warn('Warning: No licenses found in package-lock.json');
+      console.warn('Warning: No licenses found');
     }
 
     writeLicensesFile(licenses);
     process.exit(0);
   } catch (err) {
-    console.error('Unexpected error:', err);
+    console.error('Unexpected error:', err.message);
     process.exit(1);
   }
 }
