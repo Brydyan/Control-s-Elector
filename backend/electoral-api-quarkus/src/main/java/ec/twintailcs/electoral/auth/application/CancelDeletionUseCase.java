@@ -28,9 +28,8 @@ public class CancelDeletionUseCase {
   /**
    * Cancela una solicitud de eliminación (recupera la cuenta).
    *
-   * <p>El token se valida comparándolo con el registro en deletion_audit. Si el token es válido
-   * y no han pasado 7 días, la cuenta vuelve a ACTIVO y el usuario recibe un email de
-   * confirmación.
+   * <p>El token se valida comparándolo con el registro en deletion_audit. Si el token es válido y
+   * no han pasado 7 días, la cuenta vuelve a ACTIVO y el usuario recibe un email de confirmación.
    *
    * @param token token de recuperación enviado al email del usuario
    * @throws InvitacionException 400 si el token es inválido o 409 si expiró (pasaron >7d)
@@ -50,8 +49,7 @@ public class CancelDeletionUseCase {
     // En una implementación más robusta, guardaríamos hash del token en deletion_audit
     DeletionAudit audit =
         DeletionAudit.find(
-                "wasRecovered = false ORDER BY deletedAt DESC",
-                new java.util.HashMap<>())
+                "wasRecovered = false ORDER BY deletedAt DESC", new java.util.HashMap<>())
             .firstResult();
 
     if (audit == null) {

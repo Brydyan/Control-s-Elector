@@ -1,6 +1,5 @@
 package ec.twintailcs.electoral.auth.application;
 
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.security.SecureRandom;
 import java.util.Base64;

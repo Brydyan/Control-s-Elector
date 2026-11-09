@@ -109,10 +109,8 @@ public class Usuario extends PanacheEntityBase {
   /**
    * Momento cuando se solicito la eliminacion de cuenta (soft-delete).
    *
-   * <p>NULL si la cuenta no esta siendo eliminada. Se usa para:
-   * - Marcar el momento T+0 de la eliminacion
-   * - Calcular T+30d para hard-delete automatico
-   * - Recuperar snapshot de auditoria
+   * <p>NULL si la cuenta no esta siendo eliminada. Se usa para: - Marcar el momento T+0 de la
+   * eliminacion - Calcular T+30d para hard-delete automatico - Recuperar snapshot de auditoria
    */
   @Column(name = "deleted_at")
   Instant deletedAt;

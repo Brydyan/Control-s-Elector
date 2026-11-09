@@ -9,8 +9,8 @@ import java.time.Instant;
  * entrega el correo. El adaptador de producción encola y se olvida; un test puede encolar y
  * observar.
  *
- * <p>No envía, no bloquea, no falla por SMTP. Los errores de envío se reintentan en segundo plano
- * y se auditan.
+ * <p>No envía, no bloquea, no falla por SMTP. Los errores de envío se reintentan en segundo plano y
+ * se auditan.
  */
 public interface DeletionEmailQueue {
 

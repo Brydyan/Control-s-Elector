@@ -57,8 +57,7 @@ public class DeletionAudit extends PanacheEntityBase {
   /**
    * Fecha límite para recuperacion (T+7d).
    *
-   * <p>Despues de esta fecha, el usuario no puede recuperar su cuenta clickeando el link en
-   * email.
+   * <p>Despues de esta fecha, el usuario no puede recuperar su cuenta clickeando el link en email.
    */
   @Column(name = "recovery_deadline", nullable = false)
   Instant recoveryDeadline;
@@ -82,8 +81,8 @@ public class DeletionAudit extends PanacheEntityBase {
   /**
    * Momento cuando se completo el hard-delete permanente (T+30d).
    *
-   * <p>NULL si aun no fue hard-deleted. Una vez completado, el usuario y sus datos personales
-   * estan eliminados permanentemente de la base (excepto referencias en actas electorales).
+   * <p>NULL si aun no fue hard-deleted. Una vez completado, el usuario y sus datos personales estan
+   * eliminados permanentemente de la base (excepto referencias en actas electorales).
    */
   @Column(name = "hard_deleted_at")
   Instant hardDeletedAt;
