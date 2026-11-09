@@ -9,8 +9,8 @@ import org.testcontainers.utility.DockerImageName;
  * Redis para los tests de rate limiting.
  *
  * <p>Levanta un contenedor Redis de Testcontainers que sube y baja solo. El servicio de
- * RateLimitingService requiere Redis para funcionar; esta clase lo proporciona en los tests sin
- * que el CI necesite configurar un servicio Redis aparte.
+ * RateLimitingService requiere Redis para funcionar; esta clase lo proporciona en los tests sin que
+ * el CI necesite configurar un servicio Redis aparte.
  */
 public class RedisTestResource implements QuarkusTestResourceLifecycleManager {
 
@@ -19,8 +19,7 @@ public class RedisTestResource implements QuarkusTestResourceLifecycleManager {
   @Override
   public Map<String, String> start() {
     container =
-        new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
-            .withExposedPorts(6379);
+        new GenericContainer<>(DockerImageName.parse("redis:7-alpine")).withExposedPorts(6379);
     container.start();
 
     String host = container.getHost();
