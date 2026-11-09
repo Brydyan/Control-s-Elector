@@ -5,9 +5,10 @@
   "homepage": "https://ionicframework.com/",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
+    "start": "npm run licenses:build && ng serve",
+    "build": "npm run licenses:build && ng build",
+    "watch": "npm run licenses:build && ng build --watch --configuration development",
+    "licenses:build": "node scripts/generate-licenses.js",
     "test": "vitest",
     "test:ci": "vitest run",
     "check:tokens": "node scripts/check-tokens.mjs",
