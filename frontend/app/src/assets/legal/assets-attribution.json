@@ -1,0 +1,30 @@
+[
+  {
+    "id": "icon-primeicons",
+    "name": "PrimeIcons",
+    "author": "PrimeFaces",
+    "license": "MIT",
+    "license_url": "https://github.com/primefaces/primeicons/blob/master/LICENSE"
+  },
+  {
+    "id": "ui-primeng",
+    "name": "PrimeNG",
+    "author": "PrimeFaces",
+    "license": "MIT",
+    "license_url": "https://github.com/primefaces/primeng/blob/master/LICENSE"
+  },
+  {
+    "id": "css-tailwind",
+    "name": "Tailwind CSS",
+    "author": "Tailwind Labs",
+    "license": "MIT",
+    "license_url": "https://github.com/tailwindlabs/tailwindcss/blob/master/LICENSE"
+  },
+  {
+    "id": "logo-control-electoral",
+    "name": "Control Electoral Logo",
+    "author": "Internal Design Team",
+    "license": "Proprietary",
+    "license_url": "#"
+  }
+]
