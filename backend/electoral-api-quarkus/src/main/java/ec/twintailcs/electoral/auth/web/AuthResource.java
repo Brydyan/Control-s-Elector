@@ -14,6 +14,7 @@ import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
 import ec.twintailcs.electoral.auth.web.dto.RefreshRequest;
 import ec.twintailcs.electoral.auth.web.dto.RegisterRequest;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import ec.twintailcs.electoral.common.web.RateLimited;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -70,6 +71,7 @@ public class AuthResource {
 
   @Inject UsuarioMapper mapper;
 
+  @RateLimited(limit = 5, windowSeconds = 300, identifier = "ip", endpoint = "login")
   @POST
   @Path("/login")
   public Response login(

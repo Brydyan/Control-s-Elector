@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "scrubbers": [
+    {
+      "type": "replace",
+      "redactWith": "[REDACTED]",
+      "matcher": {
+        "type": "contains",
+        "value": "email"
+      }
+    },
+    {
+      "type": "replace",
+      "redactWith": "[REDACTED]",
+      "matcher": {
+        "type": "contains",
+        "value": "password"
+      }
+    },
+    {
+      "type": "replace",
+      "redactWith": "[REDACTED]",
+      "matcher": {
+        "type": "contains",
+        "value": "authorization"
+      }
+    },
+    {
+      "type": "replace",
+      "redactWith": "[REDACTED]",
+      "matcher": {
+        "type": "contains",
+        "value": "token"
+      }
+    }
+  ]
+}

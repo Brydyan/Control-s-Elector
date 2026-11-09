@@ -65,6 +65,16 @@ export const routes: Routes = [
       ),
   },
   {
+    // Página de licencias de código abierto (T-COMPLIANCE-03).
+    // Pública a propósito: cualquier usuario debe poder acceder al listado
+    // de licencias de dependencias y atribuciones de assets.
+    path: 'licenses',
+    loadComponent: () =>
+      import('./features/legal/pages/licenses/licenses.page').then(
+        (m) => m.LicensesPage,
+      ),
+  },
+  {
     path: '',
     canActivate: [authGuard],
     loadComponent: () =>
