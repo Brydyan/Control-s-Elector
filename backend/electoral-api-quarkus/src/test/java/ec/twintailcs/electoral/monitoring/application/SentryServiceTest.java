@@ -4,8 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.sentry.Sentry;
-import io.sentry.SentryEvent;
-import io.sentry.SentryLevel;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -51,8 +49,7 @@ class SentryServiceTest {
   @Test
   @DisplayName("trackActaAccess envia evento con etiqueta de acceso a datos")
   void trackActaAccessEnviEventoConEtiqueta() {
-    assertDoesNotThrow(
-        () -> sentryService.trackActaAccess("user-456", "acta-789", "download"));
+    assertDoesNotThrow(() -> sentryService.trackActaAccess("user-456", "acta-789", "download"));
   }
 
   @Test
@@ -73,7 +70,8 @@ class SentryServiceTest {
   void trackCriticalErrorEnviEventoError() {
     assertDoesNotThrow(
         () ->
-            sentryService.trackCriticalError("NullPointerException", "Usuario no encontrado", "user-999"));
+            sentryService.trackCriticalError(
+                "NullPointerException", "Usuario no encontrado", "user-999"));
   }
 
   @Test
