@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Invitación reenviada — Control Electoral</title>
+    <title>Te reenviamos la invitación — Control's Elector</title>
     <style>
       body {
         margin: 0;
@@ -20,15 +20,117 @@
         border-radius: 8px;
         border: 1px solid #e4e7eb;
       }
+      .header {
+        margin: -32px -32px 24px;
+        padding: 28px 32px;
+        background: #1e40af;
+        color: #ffffff;
+        text-align: center;
+        border-radius: 7px 7px 0 0;
+      }
+      .header .logo {
+        margin: 0;
+        font-size: 20px;
+        font-weight: bold;
+      }
+      .header .subtitulo {
+        margin: 6px 0 0;
+        font-size: 13px;
+        opacity: 0.9;
+      }
       h1 {
         margin: 0 0 16px;
         font-size: 22px;
+        color: #102a43;
+      }
+      h2 {
+        margin: 24px 0 8px;
+        font-size: 16px;
         color: #102a43;
       }
       p {
         margin: 0 0 14px;
         line-height: 1.5;
         font-size: 15px;
+      }
+      .rol {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: #e6f4ea;
+        color: #14532d;
+        font-size: 13px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .credenciales {
+        margin: 20px 0;
+        padding: 20px;
+        border-left: 4px solid #1e40af;
+        border-radius: 4px;
+        background: #f9fafb;
+      }
+      .credenciales-titulo {
+        margin: 0 0 12px;
+        font-size: 16px;
+        color: #1e40af;
+      }
+      .credencial {
+        margin: 12px 0;
+      }
+      .credencial-label {
+        font-weight: bold;
+        color: #374151;
+      }
+      .credencial-valor {
+        margin-top: 4px;
+        padding: 10px 12px;
+        border-radius: 4px;
+        background: #f3f4f6;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        word-break: break-all;
+      }
+      .estado {
+        margin: 20px 0;
+        padding: 14px 16px;
+        border: 1px solid #e4e7eb;
+        border-radius: 8px;
+        background: #f9fafb;
+      }
+      .estado-titulo {
+        margin: 0 0 8px;
+        font-size: 13px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #616e7c;
+      }
+      .estado-linea {
+        display: flex;
+        gap: 10px;
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+      .estado-linea:last-child {
+        margin-bottom: 0;
+      }
+      .icono {
+        flex: 0 0 22px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        font-size: 12px;
+        line-height: 22px;
+        text-align: center;
+        color: #ffffff;
+      }
+      .icono.ok {
+        background: #16a34a;
+      }
+      .icono.pending {
+        background: #f97316;
       }
       .button {
         display: inline-block;
@@ -48,12 +150,21 @@
         border-radius: 4px;
         font-size: 14px;
       }
+      .aviso ul {
+        margin: 6px 0 0;
+        padding-left: 20px;
+      }
+      .soporte {
+        font-size: 13px;
+        color: #616e7c;
+      }
       .footer {
         margin-top: 28px;
         padding-top: 16px;
         border-top: 1px solid #e4e7eb;
         font-size: 12px;
         color: #616e7c;
+        text-align: center;
       }
       @media (max-width: 480px) {
         .container {
@@ -70,29 +181,104 @@
   </head>
   <body>
     <div class="container">
+      <div class="header">
+        <p class="logo">🗳️ Control's Elector</p>
+        <p class="subtitulo">Plataforma de Observación Electoral</p>
+      </div>
+
       <h1>Te reenviamos la invitación</h1>
       <p>Hola <strong>{{nombreCompleto}}</strong>,</p>
       <p>
-        El administrador te reenvió la invitación para activar tu cuenta de Control Electoral. El
-        link anterior, si lo tenías, ya no sirve.
+        Tu cuenta ya estaba <strong>creada</strong> en Control's Elector y
+        <strong>sigue sin activarse</strong>: por eso todavía no podés entrar. El administrador te
+        reenvió la invitación para que puedas activarla.
       </p>
-      <p style="text-align: center">
-        <a href="{{activationLink}}" class="button">Activar mi cuenta</a>
+      <p>
+        El enlace anterior, si lo tenías, ya no sirve.
       </p>
-      <div class="aviso">
-        <p style="margin: 0">
-          Este link expira en 24 horas. Si ya expiró, pedile al administrador que te envíe una
-          nueva invitación.
+
+      <div class="estado">
+        <p class="estado-titulo">Estado de tu cuenta</p>
+        <p class="estado-linea">
+          <span class="icono ok">&#10003;</span>
+          <span
+            ><strong>Cuenta creada.</strong> Ya existe en el sistema, con tu usuario y tu rol
+            listos.</span
+          >
+        </p>
+        <p class="estado-linea">
+          <span class="icono pending">&#8987;</span>
+          <span
+            ><strong>Activación pendiente.</strong> El enlace nuevo de abajo es lo que te falta:
+            al elegir tu contraseña, la cuenta queda activa y ya podés entrar.</span
+          >
         </p>
       </div>
+
+      <div class="credenciales">
+        <h2 class="credenciales-titulo">Activar tu Usuario</h2>
+
+        <div class="credencial">
+          <div class="credencial-label">👤 Tu usuario (Control):</div>
+          <div class="credencial-valor">{{usuarioCorto}}</div>
+        </div>
+
+        <div class="credencial">
+          <div class="credencial-label">📧 Tu correo (Control):</div>
+          <div class="credencial-valor">{{username}}</div>
+        </div>
+
+        <div class="credencial">
+          <div class="credencial-label">💬 Tu correo personal:</div>
+          <div class="credencial-valor">{{emailPersonal}}</div>
+        </div>
+
+        <div class="credencial">
+          <div class="credencial-label">🎭 Tu rol:</div>
+          <div class="credencial-valor"><span class="rol">{{rol}}</span></div>
+        </div>
+
+        <div class="credencial">
+          <div class="credencial-label">🔗 Enlace para activar tu usuario:</div>
+          <a href="{{activationLink}}" class="button">Activar Cuenta y Establecer Contraseña</a>
+        </div>
+      </div>
+
+      <h2>Próximos pasos</h2>
+      <ol>
+        <li>Hacé clic en el enlace "Activar Cuenta y Establecer Contraseña".</li>
+        <li>Ingresá una contraseña nueva y segura.</li>
+        <li>Confirmá la contraseña.</li>
+        <li>Vas a ver un resumen de tu cuenta.</li>
+        <li>Usá "Ir a Login" para iniciar sesión.</li>
+      </ol>
+
+      <div class="aviso">
+        <p style="margin: 0"><strong>⚠️ Importante:</strong></p>
+        <ul>
+          <li>Esta invitación expira en <strong>24 horas</strong>. Activa tu cuenta ahora.</li>
+          <li>No compartas este enlace: es tu credencial.</li>
+          <li>Solo tú deberías conocer tu contraseña definitiva.</li>
+          <li>Si no solicitaste esta cuenta, contacta de inmediato al equipo de Control's Elector.</li>
+        </ul>
+      </div>
+
       <p style="font-size: 13px; color: #616e7c">
         Si el botón no funciona, copiá esta dirección y abrila en el navegador:<br />
         {{activationLink}}
       </p>
+
+      <p class="soporte">
+        ¿Preguntas o problemas? Contacta al equipo de Control's Elector.
+      </p>
+
       <div class="footer">
-        <p style="margin: 0">
-          © 2026 Control Electoral — CNE Ecuador. Este mensaje es automático, no respondas a este
-          correo.
+        <p style="margin: 0">Control's Elector 🗳️ 2026</p>
+        <p style="margin: 5px 0 0 0; font-size: 11px">
+          Plataforma de Observación Electoral | Participación Cívica
+        </p>
+        <p style="margin: 5px 0 0 0; font-size: 11px">
+          Este mensaje es automático, no respondas a este correo.
         </p>
       </div>
     </div>

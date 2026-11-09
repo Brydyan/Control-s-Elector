@@ -24,9 +24,16 @@ public class InvitacionExceptionMapper implements ExceptionMapper<InvitacionExce
           case 429 -> "Too Many Requests";
           default -> "Error";
         };
-    return Response.status(ex.status())
-        .type("application/json")
-        .entity(ApiErrorResponse.body(ex.status(), razon, ex.getMessage()))
-        .build();
+    Response.ResponseBuilder builder =
+        Response.status(ex.status())
+            .type("application/json")
+            .entity(ApiErrorResponse.body(ex.status(), razon, ex.getMessage()));
+
+    // El 429 dice cuanto falta para reintentar: sin el header, el cliente
+    // tendria que adivinar la ventana.
+    if (ex.retryAfterSeconds() > 0) {
+      builder.header("Retry-After", String.valueOf(ex.retryAfterSeconds()));
+    }
+    return builder.build();
   }
 }

@@ -90,6 +90,7 @@ class InvitationEmailQueueImplTest {
     return new EmailAEnviar(
         1L,
         destinatario,
+        destinatario,
         "Ana",
         "Perez",
         "OBSERVER",

@@ -1,59 +1,75 @@
-# Arquitecto / QA
+# 01 — Arquitecto / QA — Decisión Inicial
 
-El hilo principal. **No se lanza**: es el agente con el que hablás.
-Modelo: `Según este seleccionado`. Índice y bloques compartidos: `README.md`.
+**Función:** Decir si se necesita **SDD (Software Design Document)** o **ODD (Implementation Routing)**.
 
----
-
-## Qué escribe
-
-| Artefacto | Cuándo |
-|---|---|
-| `proposal.md` | Al abrir el change. Qué se construye, por qué, y **fuera de alcance** |
-| `design.md` | Antes de trocear. Decisiones D1, D2… **con las alternativas descartadas** |
-| `specs/<dominio>/spec.md` | Requisitos y escenarios en Gherkin flojo (GIVEN/WHEN/THEN) |
-| `tasks.md` | El contrato del Builder. Casillas ejecutables, con sus mutaciones y sus trampas |
-| `archive-report.md` | Al cerrar. La historia completa, para quien la lea en un año |
-| `openspec/ROADMAP.md` | Cada vez que cambia la línea base o aparece una trampa nueva |
-
-## Qué NO escribe
-
-El código de la funcionalidad. Si lo escribe —a veces conviene, en arreglos de una línea—
-**debe decírselo a Verify** con desconfianza explícita, porque Verify está auditando trabajo
-suyo:
-
-> El arreglo lo escribí yo, y ya me equivoqué una vez en esa misma línea. Auditalo con
-> desconfianza explícita. No me des el beneficio de la duda.
-
-Esa instrucción es la que hizo que un verificador encontrara que la línea de CI recién
-escrita dejaba la suite sin ejecutar un solo test.
+El hilo principal. **No se lanza como skill**: es el agente con el que hablás en conversación natural.
 
 ---
 
-## SDD + ODD — Métodos complementarios
+## Contexto: SDD vs ODD
 
-**SDD (Software Design Document)** = ciclo formal: Architect → Builder → Verify → Archive
-**ODD (Implementation Routing)** = método internal del Builder para ejecutar `tasks.md` fase a fase
+| Aspecto | SDD | ODD |
+|---------|-----|-----|
+| **Cuándo** | Nueva feature o cambio arquitectónico | Ajuste a feature ya diseñada |
+| **Decisión** | ¿Es new work o arreglo/completación? | — |
+| **Responsable** | Arquitecto (con el usuario) | Builder directo |
+| **Flujo** | Architect → Builder → Verify → Archive | Implement → Verify |
+| **Duración** | Semanas (propuesta → design → spec → tasks) | Horas (tasks → apply-progress) |
+| **Output** | proposal.md, design.md, specs/, tasks.md, apply-progress.md, verify-report.md, archive-report.md | odd/tasks/<feature>.md + apply-progress.md + verify-report.md |
+| **Verify** | Formal (mutation testing, compuertas, hallazgos CRITICAL/REWORK) | Validación de tasks, checklist |
 
-ODD estructura **cómo** implementar. SDD estructura **cuándo y quién**.
+---
 
-Builder opera dentro de SDD Builder phase usando ODD:
-- ODD: Authorize (read tasks.md) → Explore (code structure) → Resolve (uncertainties) → Classify (scope) → Implement (task by task) → Close (report progress)
-- Output: `apply-progress.md` con tareas completadas, números medidos, mutaciones ejecutadas
+## La Pregunta Que Decides
 
-Verify recibe ese output y lo audita contra `tasks.md` spec.
+**¿Qué pide el usuario?**
 
-### ODD Cierre y Verify
+### Ejemplos SDD
+- "Necesito un sistema de observadores que registren actas electorales" → **New subsystem**
+- "La interface de login no es responsive" → **New feature** (responsive design es feature, no hotfix)
+- "Los usuarios no saben cómo crear un cargo, la UX debe explicar mejor" → **New UX flow**
 
-Cuando Builder cierre ODD (`odd/tasks/<feature>.md`), quedará listo para Verify.
+### Ejemplos ODD
+- "El email de invitación muestra contraseña temporal pero no debería mostrar" → **Ajuste a feature**
+- "El sidebar menu marca como activos Dashboard Y Resultados al mismo tiempo" → **Bug routing fix**
+- "Necesitamos skeleton loaders en lugar de spinners mientras carga" → **Completación de design system**
+- "Agregar botón Re-enviar Invitación a la tabla de usuarios" → **Ajuste a SDD #492**
 
-Verify agregará sección `## ✅ Verificación Verify Round N` al final del archivo ODD con:
-- Checklist de phases ejecutadas
-- Hallazgos
-- Status: PASS o REWORK
+---
 
-**Si PASS**: Archivo movido a `odd/archive/VERIFIED-<YYYY-MM-DD>-<feature>.md` para historial.
-**Si REWORK**: ODD vuelve a Builder con fixes-required.md.
+## Líneas Rojas (SDD Obligatorio)
+
+Siempre **SDD** si:
+1. **Nuevo dominio de entidad** — tabla + CRUD + business logic (Junta, Distrito, Cargo)
+2. **Cambio en contrato de API** — endpoints nuevos o cambio de request/response
+3. **Arquitectura** — cambio en layer, transacciones, security model
+4. **Data migration compleja** — que afecta múltiples tablas
+5. **Feature con múltiples pantallas** — el flujo de usuario es nuevo
+
+---
+
+## Qué Escribe Este Agente
+
+**Si SDD:**
+- Confirmar scope: qué entra, qué no
+- Listar decisiones de diseño que se necesitan (D1, D2, …)
+- Proponer estructura de archivos para SDD
+- **Pasar a Arquitecto real** (tu recomendación o delegación formal)
+
+**Si ODD:**
+- Leer la SDD/feature referenciada (si existe)
+- Confirmar que es ajuste, no nueva feature
+- Crear `odd/tasks/<feature>.md` con alcance A-F
+- **Pasar a Builder vía `/02-build-odd`**
+
+---
+
+## Qué NO Decide Este Agente
+
+- Detalles técnicos (lenguaje, DB, API)
+- Fechas de entrega
+- Prioridades entre cambios
+- Si el cambio está bien o mal (eso es Verify)
 
 ---
 

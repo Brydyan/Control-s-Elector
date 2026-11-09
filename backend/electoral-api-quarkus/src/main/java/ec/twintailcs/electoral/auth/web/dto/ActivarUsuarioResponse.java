@@ -9,9 +9,15 @@ import java.util.UUID;
  * @param publicId id publico del usuario activado
  * @param nombre nombre
  * @param apellido apellido
- * @param email email de la cuenta
+ * @param email correo de Control con el que inicia sesion
+ * @param emailPersonal correo de contacto de la persona; null si la cuenta se creo sin correo
  * @param rol rol asignado
  */
 @RegisterForReflection
 public record ActivarUsuarioResponse(
-    UUID publicId, String nombre, String apellido, String email, String rol) {}
+    UUID publicId,
+    String nombre,
+    String apellido,
+    String email,
+    String emailPersonal,
+    String rol) {}
