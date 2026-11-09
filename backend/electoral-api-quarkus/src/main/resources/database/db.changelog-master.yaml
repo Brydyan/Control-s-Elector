@@ -51,7 +51,7 @@ databaseChangeLog:
   # Cumplimiento legal (T-LEGAL-01): aceptación de términos y política de privacidad,
   # solicitudes al DPO, auditoría de exportaciones de datos. Va al final porque solo
   # ALTERea `usuario` y crea tablas nuevas con RLS.
-  - include: { file: database/changelog/026-legal-compliance.sql }
+  - include: { file: database/changelog/030-legal-compliance.sql }
   # Invitaciones de usuario por email (T-AUTH-INV-01): estado de activacion,
   # hash del token de activacion y marcas de tiempo. Va al final porque solo
   # ALTERea `usuario` y no depende del orden de ninguna otra tabla.
@@ -65,3 +65,6 @@ databaseChangeLog:
   # hard-delete automático (cron job). Incluye tabla de auditoría para GDPR.
   - include: { file: database/changelog/031-usuario-deletion-fields.sql }
   - include: { file: database/changelog/032-deletion-audit.sql }
+  # Invitaciones con 24 horas de vigencia (ODD #504 B): actualiza el default
+  # y la data existente. Va aquí porque modifica user_invitations (creada en 029).
+  - include: { file: database/changelog/033-user-invitation-24h-expiry.sql }
