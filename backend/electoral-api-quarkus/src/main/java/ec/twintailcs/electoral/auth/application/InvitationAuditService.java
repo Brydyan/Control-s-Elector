@@ -63,10 +63,41 @@ public class InvitationAuditService {
   /** El login fue rechazado porque la cuenta todavia no se activo. */
   public static final String LOGIN_REJECTED = "LOGIN_REJECTED";
 
+  /** Se creo una cuenta y la invitacion salio por email (ODD #504, A). */
+  public static final String USER_CREATED = "USER_CREATED";
+
+  /** Se creo una cuenta sin enviar invitacion (ODD #504, A). */
+  public static final String USER_CREATED_WITHOUT_EMAIL = "USER_CREATED_WITHOUT_EMAIL";
+
   private final AuditLogService auditLog;
 
   public InvitationAuditService(AuditLogService auditLog) {
     this.auditLog = auditLog;
+  }
+
+  /**
+   * Se creo una cuenta desde el panel de MASTER (ODD #504, A).
+   *
+   * <p>El ODD pide distinguir las dos formas: con email y sin email. La distincion importa: una
+   * cuenta creada sin invitacion esta esperando a que alguien le mande una, y sin este registro no
+   * hay forma de saber que paso.
+   *
+   * @param actorId quien creo la cuenta
+   * @param usuarioId id interno de la cuenta creada
+   * @param email correo de contacto
+   * @param conEmail si la invitacion salio por email
+   */
+  public void logUserCreated(Long actorId, Long usuarioId, String email, boolean conEmail) {
+    Map<String, Object> datos = new LinkedHashMap<>();
+    datos.put("email", email);
+    datos.put("invitacion_enviada", conEmail);
+    auditLog.record(
+        ENTIDAD,
+        usuarioId,
+        actorId,
+        conEmail ? USER_CREATED : USER_CREATED_WITHOUT_EMAIL,
+        datos,
+        null);
   }
 
   /** Se envio una invitacion. */

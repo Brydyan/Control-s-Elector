@@ -296,3 +296,17 @@ label {
     padding: var(--space-8) var(--space-6);
   }
 }
+
+/* Aviso legal del login (T-LEGAL-01): enlaces a los documentos que sirve el
+   backend. El texto va en muted para no competir con el formulario. */
+.legal-notice {
+  margin-top: var(--space-4);
+  font-size: var(--font-size-meta);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.legal-notice a {
+  color: var(--color-brand-primary);
+  text-decoration: underline;
+}

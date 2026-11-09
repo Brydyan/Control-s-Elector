@@ -1,11 +1,15 @@
 package ec.twintailcs.electoral.auth.web.dto.mapper;
 
+import ec.twintailcs.electoral.auth.domain.EstadoInvitacion;
 import ec.twintailcs.electoral.auth.domain.Sesion;
+import ec.twintailcs.electoral.auth.domain.UserInvitation;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
 import ec.twintailcs.electoral.auth.web.dto.SesionResponseDto;
 import ec.twintailcs.electoral.auth.web.dto.UsuarioResponseDto;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.time.Duration;
+import java.time.Instant;
 
 /**
  * Mapeo entre las entidades Panache y los DTOs que cruzan el cable.
@@ -48,7 +52,57 @@ public class UsuarioMapper {
         entity.getCreadoEn(),
         null,
         entity.getEstadoUsuario(),
-        entity.getInvitationSentAt());
+        entity.getInvitationSentAt(),
+        estadoInvitacion(entity),
+        vencimientoInvitacion(entity));
+  }
+
+  /**
+   * Estado de la invitacion de una cuenta (ODD #504, C).
+   *
+   * <p>Se deriva de las columnas que ya tiene el usuario y no de la tabla de invitaciones: leer esa
+   * tabla en el listado exigiria abrirle la RLS a quien solo puede leer los usuarios, y el dato que
+   * hace falta ya esta en {@code usuario}.
+   *
+   * <p>El orden importa:
+   *
+   * <ol>
+   *   <li>Una cuenta activa no espera invitacion.
+   *   <li>Una cuenta deshabilitada se muestra como tal: ofrecerle "reenviar invitacion" seria
+   *       invitar a alguien que no puede entrar.
+   *   <li>Una invitacion que ya vencio se muestra vencida.
+   *   <li>Una cuenta a la que nunca se le invito esta CREATED: existe pero no hay nada que
+   *       reenviar, todavia no.
+   * </ol>
+   */
+  private String estadoInvitacion(Usuario entity) {
+    if (entity.estaActivo()) {
+      return EstadoInvitacion.ACTIVE.valor();
+    }
+    if (!entity.isHabilitado()) {
+      return EstadoInvitacion.DISABLED.valor();
+    }
+    if (entity.getInvitationSentAt() == null) {
+      return EstadoInvitacion.CREATED.valor();
+    }
+    Instant vencimiento = vencimientoInvitacion(entity);
+    if (vencimiento != null && Instant.now().isAfter(vencimiento)) {
+      return EstadoInvitacion.EXPIRED.valor();
+    }
+    return EstadoInvitacion.INVITED.valor();
+  }
+
+  /**
+   * Momento en que vence la invitacion vigente, si la hay.
+   *
+   * <p>Es el ultimo envio mas la ventana de la invitacion (24 horas): el mismo plazo que aplica el
+   * token de activacion.
+   */
+  private Instant vencimientoInvitacion(Usuario entity) {
+    if (entity.getInvitationSentAt() == null) {
+      return null;
+    }
+    return entity.getInvitationSentAt().plus(Duration.ofHours(UserInvitation.HORAS_VIGENCIA));
   }
 
   /** Detalle de una sesion, con el email del usuario propietario. */

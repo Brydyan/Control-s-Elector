@@ -17,13 +17,13 @@ import { AuthApi } from '../../data/auth.api';
 /**
  * Requisitos de complejidad de la contraseña.
  *
- * Los identificadores son los mismos que usa el backend en `PasswordValidationResult`:
- * el checklist y el mensaje de error tienen que hablar el mismo idioma, y si
- * divergen el frontend muestra un ✓ por un requisito que el servidor va a
- * rechazar.
+ * La UI es **más estricta** que el backend: pide 12 caracteres y minúscula,
+ * mientras que `PasswordValidationResult` acepta 8 y no exige minúscula (política
+ * D8 del design). Endurecer el formulario no rechaza nada que el servidor vaya a
+ * aceptar: toda contraseña que pasa por acá la acepta el backend.
  */
 interface Requisito {
-  id: 'length' | 'uppercase' | 'number' | 'special_char';
+  id: 'length' | 'uppercase' | 'lowercase' | 'number' | 'special_char';
   texto: string;
   cumple: (valor: string) => boolean;
 }
@@ -31,13 +31,18 @@ interface Requisito {
 const REQUISITOS: Requisito[] = [
   {
     id: 'length',
-    texto: 'Mínimo 8 caracteres',
-    cumple: (v) => v.length >= 8,
+    texto: 'Mínimo 12 caracteres',
+    cumple: (v) => v.length >= 12,
   },
   {
     id: 'uppercase',
     texto: 'Una mayúscula (A-Z)',
     cumple: (v) => /[A-Z]/.test(v),
+  },
+  {
+    id: 'lowercase',
+    texto: 'Una minúscula (a-z)',
+    cumple: (v) => /[a-z]/.test(v),
   },
   { id: 'number', texto: 'Un número (0-9)', cumple: (v) => /[0-9]/.test(v) },
   {
@@ -80,8 +85,69 @@ export class ActivatePage implements OnInit {
   readonly cuentaActivada = signal<{
     nombre: string;
     email: string;
+    emailPersonal: string | null;
     rolNombre: string;
   } | null>(null);
+
+  /**
+   * Usuario de Control al que pertenece el token (ODD #504, B.5.1).
+   *
+   * <p>La pantalla lo muestra para que la persona sepa con qué credencial va a
+   * entrar antes de elegir la contraseña.
+   */
+  readonly usuarioControl = signal<string | null>(null);
+
+  /**
+   * El usuario de Control sin dominio: "juagarobs@control.ttcs" -> "juagarobs".
+   *
+   * <p>Son dos datos distintos y la persona los necesita separados: el usuario
+   * que la identifica y el correo con el que entra (ODD #504, A.5.2).
+   */
+  readonly usuarioCorto = computed(() => {
+    const correo = this.usuarioControl();
+    if (!correo) return null;
+    const arroba = correo.indexOf('@');
+    return arroba > 0 ? correo.slice(0, arroba) : correo;
+  });
+
+  /**
+   * Fuerza estimada de la contraseña (0 a 6).
+   *
+   * <p>Es una ayuda, no un control: el botón se habilita por los requisitos, no
+   * por la fuerza.
+   */
+  readonly fuerza = computed(() => {
+    const valor = this.passwordValue();
+    if (!valor) return 0;
+    let puntos = 0;
+    if (valor.length >= 8) puntos++;
+    if (valor.length >= 12) puntos++;
+    if (valor.length >= 16) puntos++;
+    if (/[A-Z]/.test(valor)) puntos++;
+    if (/[a-z]/.test(valor)) puntos++;
+    if (/[0-9]/.test(valor)) puntos++;
+    if (/[!@#$%^&*]/.test(valor)) puntos++;
+    return puntos;
+  });
+
+  /** La fuerza, con su nombre. */
+  readonly etiquetaFuerza = computed(() => {
+    const puntos = this.fuerza();
+    if (puntos <= 1) return 'MUY DÉBIL';
+    if (puntos === 2) return 'DÉBIL';
+    if (puntos === 3) return 'MEDIA';
+    if (puntos <= 5) return 'FUERTE';
+    return 'MUY FUERTE';
+  });
+
+  /**
+   * La persona confirmó que la contraseña es definitiva (ODD #504, B.5.1).
+   *
+   * <p>Es una señal y no un control del formulario a propósito: el botón se
+   * habilita con ella, y un `computed` solo se recalcula cuando cambia una
+   * señal.
+   */
+  readonly aceptaDefinitiva = signal(false);
 
   readonly form = this.fb.group({
     password: ['', [Validators.required]],
@@ -134,7 +200,10 @@ export class ActivatePage implements OnInit {
   /** El botón se habilita solo cuando todo está en su lugar. */
   readonly puedeEnviar = computed(
     () =>
-      this.todosLosRequisitosCumplidos() && this.coinciden() && !this.loading(),
+      this.todosLosRequisitosCumplidos() &&
+      this.coinciden() &&
+      this.aceptaDefinitiva() &&
+      !this.loading(),
   );
 
   ngOnInit(): void {
@@ -154,6 +223,7 @@ export class ActivatePage implements OnInit {
       .subscribe({
         next: (respuesta) => {
           if (respuesta.valid) {
+            this.usuarioControl.set(respuesta.username ?? null);
             this.estado.set('formulario');
           } else {
             this.estado.set('expirado');
@@ -161,6 +231,12 @@ export class ActivatePage implements OnInit {
         },
         error: () => this.estado.set('error'),
       });
+  }
+
+  /** Marca (o desmarca) la confirmación de la contraseña definitiva. */
+  marcarDefinitiva(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.aceptaDefinitiva.set(input.checked);
   }
 
   togglePassword(): void {
@@ -189,6 +265,7 @@ export class ActivatePage implements OnInit {
           this.cuentaActivada.set({
             nombre: `${cuenta.nombre} ${cuenta.apellido}`.trim(),
             email: cuenta.email,
+            emailPersonal: cuenta.emailPersonal ?? null,
             rolNombre: cuenta.rolNombre,
           });
           this.estado.set('activado');
@@ -199,16 +276,31 @@ export class ActivatePage implements OnInit {
       });
   }
 
-  /** Cuenta 5 segundos y manda al login. */
+  /** Cuenta 5 segundos y muestra el resumen de la cuenta. */
   private contarParaRedirigir(): void {
     this.countdown.set(5);
     const tick = setInterval(() => {
       this.countdown.update((c) => c - 1);
       if (this.countdown() <= 0) {
         clearInterval(tick);
-        this.irAlLogin();
+        this.verResumen();
       }
     }, 1000);
+  }
+
+  /**
+   * Va a la pantalla de resumen de la cuenta (ODD #504, B.5.2).
+   *
+   * <p>Los datos viajan en el estado de la navegacion: la persona llega desde
+   * el paso anterior de la misma sesion, no hace falta volver a pedirlos.
+   */
+  verResumen(): void {
+    const cuenta = this.cuentaActivada();
+    if (!cuenta) {
+      this.irAlLogin();
+      return;
+    }
+    this.router.navigate(['/auth/account-summary'], { state: { cuenta } });
   }
 
   irAlLogin(): void {

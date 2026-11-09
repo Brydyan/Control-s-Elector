@@ -70,7 +70,13 @@ class RlsIsolationIT {
           "008-configuracion.sql",
           "009-acta-observer-permisos.sql",
           "010-tablas-jpa.sql",
-          "011-rls.sql");
+          "011-rls.sql",
+          // T-AUTH-INV-02: `usuario.email_personal` y la tabla `user_invitations`
+          // con su RLS. Sin estos changesets los casos de invitacion de esta
+          // misma suite no tendrian tabla contra la que probar.
+          "029-user-invitations.sql",
+          // ODD #504: la invitacion vive 24 horas, no 30 dias.
+          "030-user-invitation-24h-expiry.sql");
 
   private Connection adminConn;
   private long obsAId;
@@ -321,8 +327,135 @@ class RlsIsolationIT {
   }
 
   // ---------------------------------------------------------------------
+  // T-AUTH-INV-02: RLS de la auditoria de invitaciones
+  // ---------------------------------------------------------------------
+
+  @Test
+  @DisplayName("cada usuario solo ve su propia invitacion y el MASTER las ve todas")
+  void cadaUsuarioSoloVeSuPropiaInvitacion() throws Exception {
+    insertInvitacion(obsAId, "obs-a@test.local");
+    insertInvitacion(obsBId, "obs-b@test.local");
+
+    assertThat(countVisible("user_invitations", obsAId, "OBSERVER"))
+        .as("obsA solo ve su invitacion")
+        .isEqualTo(1);
+    assertThat(countVisible("user_invitations", obsBId, "OBSERVER"))
+        .as("obsB solo ve su invitacion")
+        .isEqualTo(1);
+    assertThat(countVisible("user_invitations", masterId, "MASTER"))
+        .as("el MASTER ve todas")
+        .isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("sin contexto de RLS la invitacion no se ve: el correo de contacto no se filtra")
+  void sinContextoDeRlsLaInvitacionNoSeVe() throws Exception {
+    insertInvitacion(obsAId, "obs-a@test.local");
+
+    assertThat(countVisibleSinContexto("user_invitations"))
+        .as("sin identidad no se lee ninguna invitacion")
+        .isZero();
+  }
+
+  @Test
+  @DisplayName("la escritura exige que invited_by sea el usuario del contexto")
+  void laEscrituraExigeQueInvitedBySeaElContexto() throws Exception {
+    // Con el contexto de obsA no se puede registrar una invitacion en nombre de obsB.
+    // Para que la politica de insercion se tiene que violar, `invited_by` tiene
+    // que ser ALGUIEN QUE NO SEA el del contexto: si se pusiera obsA (que es el
+    // contexto) la invitacion seria legitima y la base la aceptaria.
+    SQLException thrown = null;
+    try (Connection conn =
+        DriverManager.getConnection(POSTGRES.getJdbcUrl(), RLS_USER_NAME, RLS_PASSWORD)) {
+      conn.setAutoCommit(false);
+      try (PreparedStatement ps =
+          conn.prepareStatement("SELECT set_config('app.current_user_id', ?, true)")) {
+        ps.setString(1, Long.toString(obsAId));
+        ps.execute();
+      }
+      try (PreparedStatement ps =
+          conn.prepareStatement(
+              "INSERT INTO user_invitations (usuario_id, email_personal, invited_by, expiry_at) VALUES (?, 'x@test.local', ?, NOW() + INTERVAL '1 day')")) {
+        ps.setLong(1, obsBId);
+        ps.setLong(2, obsBId);
+        ps.executeUpdate();
+      } catch (SQLException e) {
+        thrown = e;
+      }
+      conn.rollback();
+    }
+
+    assertThat((Object) thrown)
+        .as("la politica de insercion rechaza atribuir la invitacion a otro")
+        .isNotNull();
+    assertThat(thrown.getSQLState()).isEqualTo("42501");
+  }
+
+  // ---------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------
+
+  /**
+   * Cuenta las filas visibles de una tabla con el contexto de RLS de un usuario.
+   *
+   * <p>La tabla va por parametro porque el mismo helper sirve para {@code acta} y para las tablas
+   * del bloque legal: lo que se prueba en todos los casos es que las politicas aislan.
+   */
+  private int countVisible(String tabla, long userId, String rolName) throws SQLException {
+    try (Connection conn =
+        DriverManager.getConnection(POSTGRES.getJdbcUrl(), RLS_USER_NAME, RLS_PASSWORD)) {
+      conn.setAutoCommit(false);
+      try (PreparedStatement ps =
+          conn.prepareStatement("SELECT set_config('app.current_user_id', ?, true)")) {
+        ps.setString(1, Long.toString(userId));
+        ps.execute();
+      }
+      try (PreparedStatement ps =
+          conn.prepareStatement("SELECT set_config('app.current_user_rol', ?, true)")) {
+        ps.setString(1, rolName);
+        ps.execute();
+      }
+      int count;
+      try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM " + tabla);
+          ResultSet rs = ps.executeQuery()) {
+        rs.next();
+        count = rs.getInt(1);
+      }
+      conn.commit();
+      return count;
+    }
+  }
+
+  /** Cuenta las filas visibles SIN contexto de RLS (la sesion no identifica a nadie). */
+  private int countVisibleSinContexto(String tabla) throws SQLException {
+    try (Connection conn =
+        DriverManager.getConnection(POSTGRES.getJdbcUrl(), RLS_USER_NAME, RLS_PASSWORD)) {
+      conn.setAutoCommit(false);
+      int count;
+      try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM " + tabla);
+          ResultSet rs = ps.executeQuery()) {
+        rs.next();
+        count = rs.getInt(1);
+      }
+      conn.commit();
+      return count;
+    }
+  }
+
+  /** Inserta una fila de auditoria de invitacion como el administrador. */
+  private void insertInvitacion(long usuarioId, String emailPersonal) throws SQLException {
+    try (var stmt = adminConn.createStatement()) {
+      stmt.execute(
+          "INSERT INTO user_invitations (usuario_id, email_personal, invited_by, expiry_at) VALUES ("
+              + usuarioId
+              + ", '"
+              + emailPersonal
+              + "', "
+              + masterId
+              + ", NOW() + INTERVAL '1 day')");
+    }
+    adminConn.commit();
+  }
 
   private void insertActaEnviada(long usuarioId, long jrvId, long cargoId) throws SQLException {
     // El insert corre como admin (sin RLS efectiva o con bypass).

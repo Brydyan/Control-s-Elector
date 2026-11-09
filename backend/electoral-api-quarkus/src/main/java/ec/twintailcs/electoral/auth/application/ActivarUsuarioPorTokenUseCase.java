@@ -43,6 +43,7 @@ public class ActivarUsuarioPorTokenUseCase {
   private final InvitationAuditService auditService;
   private final InvitationEmailQueue emailQueue;
   private final TransactionSynchronizationRegistry synchronizationRegistry;
+  private final UserInvitationService invitationService;
 
   public ActivarUsuarioPorTokenUseCase(
       InvitationTokenService tokenService,
@@ -50,13 +51,15 @@ public class ActivarUsuarioPorTokenUseCase {
       PasswordHasher passwordHasher,
       InvitationAuditService auditService,
       InvitationEmailQueue emailQueue,
-      TransactionSynchronizationRegistry synchronizationRegistry) {
+      TransactionSynchronizationRegistry synchronizationRegistry,
+      UserInvitationService invitationService) {
     this.tokenService = tokenService;
     this.passwordValidator = passwordValidator;
     this.passwordHasher = passwordHasher;
     this.auditService = auditService;
     this.emailQueue = emailQueue;
     this.synchronizationRegistry = synchronizationRegistry;
+    this.invitationService = invitationService;
   }
 
   /**
@@ -118,6 +121,10 @@ public class ActivarUsuarioPorTokenUseCase {
 
     auditService.logActivationSuccess(usuario.getId());
 
+    // La invitacion que trajo a esta persona queda como activada: sin esto, el
+    // historico seguiria diciendo "INVITED" para una cuenta que ya funciona.
+    invitationService.marcarInvitacionActivada(usuario.getId());
+
     encolarConfirmacionDespuesDelCommit(usuario);
 
     return new ActivarUsuarioResponse(
@@ -125,6 +132,7 @@ public class ActivarUsuarioPorTokenUseCase {
         usuario.getNombre(),
         usuario.getApellido(),
         usuario.getEmail(),
+        usuario.getEmailPersonal(),
         usuario.getRolNombre());
   }
 
@@ -133,6 +141,7 @@ public class ActivarUsuarioPorTokenUseCase {
     EmailAEnviar confirmacion =
         new EmailAEnviar(
             usuario.getId(),
+            usuario.getEmail(),
             usuario.getEmail(),
             usuario.getNombre(),
             usuario.getApellido(),

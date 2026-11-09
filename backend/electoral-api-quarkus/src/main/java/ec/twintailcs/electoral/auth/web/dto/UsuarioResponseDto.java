@@ -15,6 +15,11 @@ import java.util.UUID;
  * distinguir a quien espera la activacion de a quien ya esta activo, y a quien ya le salio una
  * invitacion de a quien todavia no. Sin eso, la columna de casillas y la accion "re-enviar" no
  * pueden decidir nada.
+ *
+ * <p>{@code invitationStatus} (ODD #504, C) es el estado de la INVITACION, que no es lo mismo que
+ * el de la cuenta: CREATED (nunca se le invito), INVITED (invitacion vigente), EXPIRED (vencio),
+ * ACTIVE (la cuenta se activo) o DISABLED (la cuenta esta deshabilitada). Con {@code
+ * invitationExpiresAt} el panel puede avisar cuando la invitacion esta por caducar.
  */
 @RegisterForReflection
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -28,4 +33,6 @@ public record UsuarioResponseDto(
     Instant creadoEn,
     String passwordTemporal,
     String estadoUsuario,
-    Instant invitationSentAt) {}
+    Instant invitationSentAt,
+    String invitationStatus,
+    Instant invitationExpiresAt) {}

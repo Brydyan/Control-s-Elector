@@ -152,7 +152,9 @@ public class UsuarioAdminService {
         response.creadoEn(),
         password,
         response.estadoUsuario(),
-        response.invitationSentAt());
+        response.invitationSentAt(),
+        response.invitationStatus(),
+        response.invitationExpiresAt());
   }
 
   /** Actualizar nombre, apellido, rol y estado de habilitacion. */

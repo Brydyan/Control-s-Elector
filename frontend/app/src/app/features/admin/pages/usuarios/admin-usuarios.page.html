@@ -138,8 +138,8 @@
           </th>
           <th>Usuario</th>
           <th>Rol</th>
+          <th>Habilitado</th>
           <th>Estado</th>
-          <th>Activación</th>
           <th>Creado</th>
           <th>Acciones</th>
         </tr>
@@ -172,10 +172,20 @@
           <td>{{ usuario.rolNombre }}</td>
           <td>{{ usuario.habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
           <td>
-            @if (esInvitable(usuario)) {
-            <span class="state-badge state-pending">Pendiente</span>
-            } @else {
-            <span class="state-badge state-active">Activa</span>
+            <span
+              class="state-badge"
+              [class.state-invited]="estadoInvitacion(usuario) === 'INVITED'"
+              [class.state-expired]="estadoInvitacion(usuario) === 'EXPIRED'"
+              [class.state-active]="estadoInvitacion(usuario) === 'ACTIVE'"
+              [class.state-disabled]="estadoInvitacion(usuario) === 'DISABLED'"
+              [class.state-created]="estadoInvitacion(usuario) === 'CREATED'"
+              [attr.data-estado]="estadoInvitacion(usuario)"
+              >{{ etiquetaEstado(usuario) }}</span
+            >
+            @if (expiraPronto(usuario)) {
+            <small class="state-warning" data-testid="aviso-expiracion"
+              >expira en menos de 2 horas</small
+            >
             }
           </td>
           <td>{{ usuario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
@@ -191,7 +201,7 @@
               size="sm"
               icon="pi pi-ellipsis-v"
               [rounded]="true"
-              aria-label="Acciones de usuario"
+              ariaLabel="Acciones de usuario"
               (clicked)="menu.toggle($event)"
             />
           </td>
@@ -230,10 +240,17 @@
       >
       <span
         class="state-badge"
-        [class.state-pending]="esInvitable(usuario)"
-        [class.state-active]="!esInvitable(usuario)"
-        >{{ esInvitable(usuario) ? 'Pendiente de activar' : 'Activa' }}</span
+        [class.state-invited]="estadoInvitacion(usuario) === 'INVITED'"
+        [class.state-expired]="estadoInvitacion(usuario) === 'EXPIRED'"
+        [class.state-active]="estadoInvitacion(usuario) === 'ACTIVE'"
+        [class.state-disabled]="estadoInvitacion(usuario) === 'DISABLED'"
+        [class.state-created]="estadoInvitacion(usuario) === 'CREATED'"
+        [attr.data-estado]="estadoInvitacion(usuario)"
+        >{{ etiquetaEstado(usuario) }}</span
       >
+      @if (expiraPronto(usuario)) {
+      <small class="state-warning">expira en menos de 2 horas</small>
+      }
       <div class="actions">
         <p-menu
           #menuCard
@@ -246,7 +263,7 @@
           size="sm"
           icon="pi pi-ellipsis-v"
           [rounded]="true"
-          aria-label="Acciones de usuario"
+          ariaLabel="Acciones de usuario"
           (clicked)="menuCard.toggle($event)"
         />
       </div>
@@ -286,8 +303,56 @@
     <p-select [options]="roles" [(ngModel)]="rol" fluid />
   </label>
 
-  @if (error()) {
+  @if (!modoEdicion) {
+  <label class="field">
+    <span>Email personal</span>
+    <input
+      type="email"
+      [(ngModel)]="emailPersonal"
+      pInputText
+      placeholder="persona@ejemplo.com"
+      data-testid="email-personal"
+    />
+    <small class="field-hint">
+      Correo donde la persona recibirá la invitación con su link de activación.
+      Su usuario del sistema se genera solo a partir de su nombre, apellido y
+      rol.
+    </small>
+    @if (emailPersonal.trim().length > 0 && !emailValido()) {
+    <small class="field-error" data-testid="email-personal-error">
+      El email debe ser válido.
+    </small>
+    }
+  </label>
+
+  <div class="toggle-field">
+    <label class="toggle-label">
+      <input
+        type="checkbox"
+        data-testid="toggle-enviar-invitacion"
+        [checked]="enviarInvitacionPorEmail()"
+        (change)="cambiarEnviarInvitacionPorEmail($event)"
+      />
+      <span>Enviar Invitación por Email</span>
+    </label>
+    <small class="field-hint">
+      Si desactivas, solo se crea el usuario sin email: podrás enviarle la
+      invitación más tarde desde la tabla de usuarios.
+    </small>
+  </div>
+  } @if (error()) {
   <p-message severity="error" [text]="error() ?? ''" />
+  } @if (invitacionEnviada(); as invitacion) {
+  <div class="password-alert" role="status" data-testid="invitacion-enviada">
+    <strong>{{ invitacion.mensaje || mensajeDeInvitacion(invitacion) }}</strong
+    ><code>{{ invitacion.username }}</code
+    ><span
+      >{{ invitacion.status === 'CREATED' ? 'La cuenta quedó creada pero sin
+      activar: hasta que active la cuenta no puede entrar al sistema. Podés
+      mandarle la invitación desde la tabla.' : 'La persona entra al sistema con
+      ese usuario y elige su contraseña con el link del email.' }}</span
+    >
+  </div>
   } @if (passwordTemporal) {
   <div class="password-alert">
     <strong>Contraseña temporal</strong><code>{{ passwordTemporal }}</code
@@ -306,6 +371,17 @@
     <app-button [disabled]="submitting()" (clicked)="guardar()">
       {{ submitting() ? 'Guardando…' : 'Guardar' }}
     </app-button>
+    @if (!modoEdicion) {
+    <app-button
+      variant="secondary"
+      [disabled]="!puedeInvitar()"
+      [loading]="invitaando()"
+      (clicked)="invitar()"
+      data-testid="btn-invitar"
+    >
+      {{ invitaando() ? 'Enviando…' : 'Enviar invitación' }}
+    </app-button>
+    }
   </ng-template>
 </p-dialog>
 
@@ -336,5 +412,45 @@
   }
   <ng-template #footer>
     <app-button (clicked)="cerrarDetalles()">Cerrar</app-button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [visible]="!!usuarioAReenviar()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '28rem' }"
+  header="Reenviar invitación"
+  (visibleChange)="onVisibleReenvioChange($event)"
+>
+  @if (usuarioAReenviar(); as usuario) {
+  <div class="aviso-reenvio" data-testid="reenvio-confirmacion">
+    <p>
+      ¿Reenviar invitación a <strong>{{ usuario.email }}</strong>? Se genera un
+      link nuevo y el anterior deja de servir.
+    </p>
+    <small class="field-hint">
+      La invitación se envía a su correo personal y expira en 24 horas. La
+      cuenta sigue inactiva hasta que la persona elija su contraseña con el
+      enlace.
+    </small>
+  </div>
+  }
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      [disabled]="reenviando()"
+      (clicked)="cerrarReenvio()"
+    >
+      Cancelar
+    </app-button>
+    <app-button
+      [loading]="reenviando()"
+      (clicked)="confirmarReenvio()"
+      data-testid="btn-confirmar-reenvio"
+    >
+      {{ reenviando() ? 'Reenviando…' : 'Reenviar por email' }}
+    </app-button>
   </ng-template>
 </p-dialog>

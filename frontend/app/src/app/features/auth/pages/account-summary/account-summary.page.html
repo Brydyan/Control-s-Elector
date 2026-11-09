@@ -1,0 +1,39 @@
+<div class="summary-container">
+  <section class="panel" aria-live="polite">
+    <div class="success-icon" aria-hidden="true">
+      <i class="pi pi-check"></i>
+    </div>
+    <h1>¡Cuenta Activada!</h1>
+    <p class="subtitle">Tu cuenta está lista para usar</p>
+
+    <h2 class="resumen-titulo">Resumen de tu Cuenta</h2>
+
+    @if (cuenta(); as datos) {
+    <dl class="resumen" data-testid="resumen-cuenta">
+      <div>
+        <dt>👤 Usuario (Control)</dt>
+        <dd>{{ usuarioCorto() || datos.email }}</dd>
+      </div>
+      <div>
+        <dt>📧 Correo Control</dt>
+        <dd>{{ datos.email }}</dd>
+      </div>
+      <div>
+        <dt>💬 Correo Personal</dt>
+        <dd>{{ datos.emailPersonal || '—' }}</dd>
+      </div>
+      <div>
+        <dt>🎭 Rol de Control</dt>
+        <dd>{{ rolLegible() }}</dd>
+      </div>
+    </dl>
+    }
+
+    <p class="aviso">
+      ℹ️ Tu contraseña ha sido establecida correctamente. Ahora puedes iniciar
+      sesión en Control's Elector.
+    </p>
+
+    <p-button label="→ Ir a Login" [fluid]="true" (onClick)="irAlLogin()" />
+  </section>
+</div>
