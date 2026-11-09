@@ -11,7 +11,11 @@ package ec.twintailcs.electoral.auth.infrastructure.email;
  * reintentos. Un tipo por mensaje habria triplicado la cola y los tres caminos de reintento.
  *
  * @param usuarioId id interno del usuario; lo necesita la auditoria de cada intento
- * @param destinatario email del usuario
+ * @param destinatario a donde se envia el email. Puede ser distinto del login: en la invitacion con
+ *     email personal el mensaje va al correo de contacto de la persona
+ * @param username login del usuario (el email @control.ttcs con el que entra al sistema). Viaja
+ *     aparte del destinatario porque en la invitacion con email personal no son lo mismo, y sin el
+ *     la persona que recibe el correo no sabria con que credencial entrar
  * @param nombre nombre del usuario
  * @param apellido apellido del usuario
  * @param rol rol asignado
@@ -23,6 +27,7 @@ package ec.twintailcs.electoral.auth.infrastructure.email;
 public record EmailAEnviar(
     Long usuarioId,
     String destinatario,
+    String username,
     String nombre,
     String apellido,
     String rol,

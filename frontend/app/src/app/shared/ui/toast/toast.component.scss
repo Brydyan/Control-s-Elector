@@ -1,0 +1,20 @@
+/*
+ * El toast de la app (ODD 505, A.1).
+ *
+ * <p>Se redecora el toast de PrimeNG con los tokens del sistema —radio, sombra,
+ * ancho— y nada más: el fondo por severidad lo pone la libreria y los colores
+ * de estado ya viven en el tema.
+ *
+ * <p>No hay desenfoque de fondo: un panel de vidrio encima del contenido se
+ * come el contraste del texto y la app ya tiene superficies opacas para esto.
+ */
+
+:host ::ng-deep .p-toast {
+  width: 24rem;
+  max-width: calc(100vw - 2rem);
+}
+
+:host ::ng-deep .p-toast-message {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+}

@@ -281,9 +281,10 @@ Changes activos / preparados:
 
 ## 10. Priorización — Noviembre 2026 (ODD + SDD)
 
-**Actualización:** 2026-11-07  
+**Actualización:** 2026-11-08  
 **Contexto:** Auditoría compliance + bugs dashboard master + feature invitaciones usuarios  
 **Principio:** ODD (fixes rápidos) desbloquean SDD (features formales); criticidad por impacto en usuario
+**Status:** Phase 1 COMPLETE (T-LEGAL-01 ✅ + T-AUTH-INV-02 ✅ verified, both MERGE READY)
 
 ### Matriz de Priorización
 
@@ -292,7 +293,7 @@ Changes activos / preparados:
 | **1** | #478 | ODD | 1 | 🔴 CRÍTICO | ✅ SÍ (frontend↔backend) | ✅ VERIFIED 2026-11-07 |
 | **2** | #490 | ODD | — | ✅ DONE | ✅ RESOLVED | ✅ VERIFIED 2026-11-07 |
 | **3** | #482 | SDD | 13 | 🟡 ALTO | ✅ UNBLOCKED | ✅ VERIFIED 2026-11-08 |
-| **4** | #492 | SDD | 5 | 🟡 ALTO | ❌ Feature (users) | Ready for Builder |
+| **4** | #492 | SDD | 5 | 🟡 ALTO | ✅ UNBLOCKED | ✅ VERIFIED 2026-11-08 |
 | **5** | #486 | SDD | 5 | 🟠 MEDIO | ❌ Feature (consent) | Needs product decision |
 | **6** | #488 | SDD | 5 | 🟠 MEDIO | ❌ Monitoring | Needs Sentry setup |
 
@@ -339,14 +340,18 @@ T-LEGAL-01 #482 (Privacy + Terms — GDPR/RGPD)
 
 T-AUTH-INV-02 #492 (User Invitations + SMTP)
 ├─ 5 story points (4.5pt actual)
-├─ 6 tasks (DB, service, endpoint, form, tests)
-├─ Prerequisite: None (independent, can run in parallel with #482)
-├─ Salida: MASTER can invite users via SMTP with 24h activation token
-└─ Status: Ready for Builder (design complete)
+├─ 6 tasks (DB, service, endpoint, form, tests): ✅ ALL COMPLETED
+├─ 1 Verify round: R1 PASS (11/12 mutations confirmed, M6 survives by design)
+├─ Completado: 2026-11-08
+├─ Salida: MASTER invites users via SMTP with 24h activation token + email + auto-generated login
+├─ Tests: ✅ 92 backend (75+17), 767 frontend (760+7), 51 E2E (51+1 skipped)
+├─ Archivado: odd/archive/VERIFIED-2026-11-08-t-auth-inv-02-user-invitations-smtp.md
+└─ Status: ✅ VERIFIED (PASS, no blockers) — Outstanding: temp password feature (design deferred)
 ```
 
 **Estimación:** 18 story points, ~2-3 weeks  
-**Parallelizable:** Yes (no dependencies between them, can both start immediately after #478)
+**Ejecución actual:** 1 week (2026-11-07 to 2026-11-08): ODD#478 → SDD#482 → SDD#492 (sequential, not parallel as originally estimated)  
+**Resultado:** Both Phase 1 SDDs VERIFIED and MERGE READY
 
 #### **Phase 2: SDD Sprint 2 (Compliance — Week 3-4, conditional)**
 

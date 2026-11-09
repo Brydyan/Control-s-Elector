@@ -15,6 +15,13 @@ export interface CurrentUserDto {
   email: string;
   rol: string;
   permisos?: string[];
+  /**
+   * Version de los terminos aceptada por el usuario. `null` si nunca acepto.
+   *
+   * Opcional en el DTO: un backend viejo que no lo mande no rompe el login,
+   * solo deja al usuario con pendiente de aceptacion.
+   */
+  acceptedTermsVersion?: string | null;
 }
 
 export interface AuthResponseDto {
@@ -35,6 +42,12 @@ export interface ValidarTokenResponseDto {
   valid: boolean;
   usuarioId: string | null;
   expiresAt: string | null;
+  /**
+   * Login del usuario (el correo de Control con el que entra).
+   *
+   * Solo viene cuando el token es válido: quien tiene el token es esa persona.
+   */
+  username?: string | null;
 }
 
 /** Pedido de activación de cuenta. */
@@ -50,5 +63,7 @@ export interface ActivarResponseDto {
   nombre: string;
   apellido: string;
   email: string;
+  /** Correo de contacto de la persona; null si la cuenta se creó sin correo. */
+  emailPersonal?: string | null;
   rolNombre: string;
 }

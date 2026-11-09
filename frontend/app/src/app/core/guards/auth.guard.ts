@@ -1,10 +1,11 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
-import { map, of } from 'rxjs';
+import { CanActivateFn, Router, UrlTree } from '@angular/router';
+import { Observable, map, of, switchMap } from 'rxjs';
 
 import { PinAuthService } from '../../features/auth/services/pin-auth.service';
 import { AuthService } from '../../features/auth/services/auth.service';
 import { AuthStore } from '../../features/auth/services/auth.store';
+import { TermsAcceptanceService } from '../../features/legal/services/terms-acceptance.service';
 
 /**
  * Protects authenticated routes. If there is already an in-memory
@@ -18,6 +19,47 @@ import { AuthStore } from '../../features/auth/services/auth.store';
  * lugar de redirigir a `/login` (que también requiere red).
  */
 export const authGuard: CanActivateFn = () => {
+  const terms = inject(TermsAcceptanceService);
+  const router = inject(Router);
+
+  return evaluarSesion().pipe(
+    switchMap((sesion) => {
+      // `false` = bloqueado por el PIN local; UrlTree = no hay sesion.
+      if (sesion !== true) {
+        return of(sesion);
+      }
+
+      // T-LEGAL-01.8: encima de la sesion esta el visto bueno de los terminos.
+      // Quien no ha aceptado la version vigente no entra a las rutas protegidas.
+      return terms
+        .requiereAceptacion()
+        .pipe(
+          map((pendiente) =>
+            pendiente ? router.createUrlTree(['/terminos']) : true,
+          ),
+        );
+    }),
+  );
+};
+
+/**
+ * Sesion valida, sin mirar los terminos.
+ *
+ * <p>Existe aparte de {@link authGuard} por un motivo concreto: la pantalla de aceptacion
+ * (`/terminos`) necesita una sesion —sin sesion no hay a quien registrar la aceptacion— pero no
+ * puede pasar por el guard que exige la aceptacion, o la pagina se redirigiria a si misma en
+ * bucle.
+ */
+export const sessionGuard: CanActivateFn = () => evaluarSesion();
+
+/**
+ * Sesion valida o camino de vuelta al login.
+ *
+ * <p>Es el nucleo de los tres guards: decide si hay sesion y, si no, a donde va el usuario. Vive
+ * aparte para poder reutilizarla sin el chequeo de terminos (que es lo que separa
+ * {@link authGuard} de {@link sessionGuard}).
+ */
+function evaluarSesion(): Observable<boolean | UrlTree> {
   const store = inject(AuthStore);
   const auth = inject(AuthService);
   const router = inject(Router);
@@ -42,7 +84,7 @@ export const authGuard: CanActivateFn = () => {
       return router.createUrlTree(['/login']);
     }),
   );
-};
+}
 
 /** Keeps authenticated users away from /login (bounce to /home). */
 export const guestGuard: CanActivateFn = () => {

@@ -13,6 +13,7 @@ import {
   CargoDto,
   CargoRequest,
 } from '../../../../domain/models/configuracion.model';
+import { ToastService } from '../../../../../../core/services/toast.service';
 
 /**
  * T-FE-16 CargoModalComponent — Modal para crear/editar cargos electorales.
@@ -232,6 +233,7 @@ export class CargoModalComponent implements OnInit {
   private readonly api = inject(ConfiguracionApi);
   private readonly dialogRef = inject(DynamicDialogRef);
   private readonly config = inject(DynamicDialogConfig);
+  private readonly toast = inject(ToastService);
 
   data = this.config.data;
   form!: FormGroup;
@@ -267,6 +269,14 @@ export class CargoModalComponent implements OnInit {
     request$.subscribe({
       next: (cargo) => {
         this.loading = false;
+        // El exito se avisa con un toast (ODD 505, A.4): el modal se cierra y
+        // el operador necesita saber que salio bien. El error NO se avisa por
+        // toast: el modal ya lo muestra con su `role="alert"` y con el motivo
+        // (409, 400, otro), y repetirlo en dos sitios seria avisar dos veces.
+        this.toast.success(
+          this.data?.mode === 'edit' ? 'Cargo actualizado' : 'Cargo creado',
+          cargo.nombre,
+        );
         this.dialogRef.close({ success: true, cargo });
       },
       error: (err) => {

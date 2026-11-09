@@ -11,8 +11,8 @@
     <div class="state-block" data-testid="expirado">
       <h1>Este link expiró</h1>
       <p class="subtitle">
-        Los links de activación duran 24 horas. Pedile al administrador que te
-        envíe una invitación nueva.
+        Tu cuenta está creada pero sin activar: los links de activación duran 24
+        horas. Pedile al administrador que te envíe una invitación nueva.
       </p>
       <p-button
         label="Ir a iniciar sesión"
@@ -45,20 +45,14 @@
       <h1>¡Cuenta activada!</h1>
       <p class="subtitle">Bienvenido {{ cuentaActivada()?.nombre }}.</p>
 
-      <dl class="resumen">
-        <div>
-          <dt>Correo</dt>
-          <dd>{{ cuentaActivada()?.email }}</dd>
-        </div>
-        <div>
-          <dt>Rol</dt>
-          <dd>{{ cuentaActivada()?.rolNombre }}</dd>
-        </div>
-      </dl>
-
       <p class="countdown" data-testid="countdown">
-        Redirigiendo al inicio de sesión en {{ countdown() }} s…
+        Mostramos el resumen de tu cuenta en {{ countdown() }} s…
       </p>
+      <p-button
+        label="Ver el resumen de mi cuenta"
+        [fluid]="true"
+        (onClick)="verResumen()"
+      />
       <p-button
         label="Ir a iniciar sesión ahora"
         [fluid]="true"
@@ -67,14 +61,28 @@
     </div>
     } @default {
     <div class="state-block" data-testid="formulario">
-      <h1>Activá tu cuenta</h1>
+      <h1>🔐 Activar tu Cuenta</h1>
       <p class="subtitle">
-        Elegí la contraseña con la que vas a entrar al sistema.
+        Establece tu contraseña segura. Tu cuenta ya está creada: solo falta
+        activarla para poder entrar.
       </p>
+
+      @if (usuarioControl(); as usuario) {
+      <div class="usuario-control" data-testid="usuario-control">
+        <div>
+          <span>👤 Tu Usuario (Control)</span>
+          <strong>{{ usuarioCorto() || usuario }}</strong>
+        </div>
+        <div>
+          <span>📧 Tu correo (Control)</span>
+          <strong>{{ usuario }}</strong>
+        </div>
+      </div>
+      }
 
       <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
         <div class="form-group">
-          <label for="password">Contraseña</label>
+          <label for="password">Nueva Contraseña *</label>
           <div class="input-wrap">
             <i class="pi pi-lock input-icon" aria-hidden="true"></i>
             <input
@@ -90,8 +98,8 @@
               class="toggle-password"
               (click)="togglePassword()"
               [attr.aria-label]="
-                    showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'
-                  "
+                showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'
+              "
             >
               <i
                 [class]="showPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"
@@ -99,6 +107,9 @@
               ></i>
             </button>
           </div>
+          <small class="help-text">
+            Mínimo 12 caracteres, con mayúscula, minúscula, número y símbolo
+          </small>
         </div>
 
         <ul class="checklist" data-testid="checklist">
@@ -113,8 +124,20 @@
           }
         </ul>
 
+        <div class="fuerza" data-testid="fuerza">
+          <div class="fuerza-barra" aria-hidden="true">
+            <span
+              class="fuerza-relleno"
+              [style.width.%]="(fuerza() / 6) * 100"
+              [class.fuerza-media]="fuerza() > 0 && fuerza() < 4"
+              [class.fuerza-alta]="fuerza() >= 4"
+            ></span>
+          </div>
+          <span class="fuerza-etiqueta">Fuerza: {{ etiquetaFuerza() }}</span>
+        </div>
+
         <div class="form-group">
-          <label for="passwordConfirm">Repetí la contraseña</label>
+          <label for="passwordConfirm">Confirmar Contraseña *</label>
           <div class="input-wrap">
             <i class="pi pi-lock input-icon" aria-hidden="true"></i>
             <input
@@ -139,9 +162,22 @@
         <p-message severity="error" [text]="errorMessage()!" />
         }
 
+        <label class="check-confirmacion">
+          <input
+            type="checkbox"
+            data-testid="acepta-definitiva"
+            [checked]="aceptaDefinitiva()"
+            (change)="marcarDefinitiva($event)"
+          />
+          <span>
+            Entiendo que esta es mi contraseña definitiva y la guardaré en lugar
+            seguro.
+          </span>
+        </label>
+
         <p-button
           type="submit"
-          label="Activar cuenta"
+          label="✓ Activar Cuenta"
           [disabled]="!puedeEnviar()"
           [loading]="loading()"
           [fluid]="true"

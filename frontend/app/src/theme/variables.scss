@@ -8,3 +8,7 @@
 @use "./typography";
 @use "./utilities";
 @use "./tables";
+// ODD 505: el anillo de foco y los keyframes del sistema son parte de la capa
+// de tema: se cargan aqui para que los componentes no los repitan.
+@use "./focus-ring";
+@use "./animations";

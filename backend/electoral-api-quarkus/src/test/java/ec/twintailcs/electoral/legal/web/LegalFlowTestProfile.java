@@ -1,6 +1,6 @@
 package ec.twintailcs.electoral.legal.web;
 
-import ec.twintailcs.electoral.legal.support.PostgresLegalTestResource;
+import ec.twintailcs.electoral.shared.testing.PostgresTestResource;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.List;
 import java.util.Map;
@@ -28,7 +28,7 @@ public class LegalFlowTestProfile implements QuarkusTestProfile {
 
   @Override
   public List<TestResourceEntry> testResources() {
-    return List.of(new TestResourceEntry(PostgresLegalTestResource.class));
+    return List.of(new TestResourceEntry(PostgresTestResource.class));
   }
 
   @Override

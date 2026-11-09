@@ -7,12 +7,15 @@ import type { PagedResponse } from '../../../shared/models/page.model';
 import {
   CreateUsuarioRequest,
   EnviarInvitacionResponse,
+  InviteUsuarioRequest,
+  ResendInvitationResponse,
   SesionFiltros,
   SesionResponseDto,
   UpdateUsuarioRequest,
   UsuarioConPasswordTemporal,
   UsuarioFiltros,
   UsuarioResponseDto,
+  UserInvitationResponse,
 } from '../domain/models/admin.model';
 
 @Injectable({ providedIn: 'root' })
@@ -83,6 +86,39 @@ export class AdminApi {
       .post<EnviarInvitacionResponse>(
         `${environment.apiUrl}/auth/invitaciones`,
         { usuarioIds },
+      )
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  /**
+   * Invita a una persona: crea la cuenta y manda el email de activacion.
+   *
+   * <p>La respuesta no trae credenciales: el link de activacion sale por
+   * email, al correo de contacto que indico el MASTER.
+   */
+  invitarUsuario(
+    payload: InviteUsuarioRequest,
+  ): Observable<UserInvitationResponse> {
+    return this.http
+      .post<UserInvitationResponse>(
+        `${environment.apiUrl}/users/invite`,
+        payload,
+      )
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  /**
+   * Reenvia la invitacion de una cuenta que todavia no se activo (ODD #504, E).
+   *
+   * <p>El backend genera un link nuevo y deja sin efecto el anterior: la
+   * invitacion que ya no sirve no se puede reutilizar. Solo lo acepta para una
+   * cuenta en INVITED, EXPIRED o CREATED.
+   */
+  reenviarInvitacion(publicId: string): Observable<ResendInvitationResponse> {
+    return this.http
+      .post<ResendInvitationResponse>(
+        `${environment.apiUrl}/users/${publicId}/resend-invitation`,
+        {},
       )
       .pipe(catchError((err) => this.handleError(err)));
   }

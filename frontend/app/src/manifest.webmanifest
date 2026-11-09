@@ -1,6 +1,6 @@
 {
-  "name": "Control Electoral",
-  "short_name": "Control Electoral",
+  "name": "Control's Elector",
+  "short_name": "Control's Elector",
   "description": "Plataforma de observación y registro de resultados electorales en tiempo real para la Provincia de Santa Elena, Ecuador.",
   "lang": "es-EC",
   "start_url": "/dashboard",

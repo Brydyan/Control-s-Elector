@@ -8,4 +8,5 @@ export * from './error-state/error-state.component';
 export * from './kpi-card/kpi-card.component';
 export * from './table/table.component';
 export * from './table/table.model';
+export * from './toast/toast.component';
 export * from './icon-map';
