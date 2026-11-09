@@ -129,6 +129,16 @@ public class Usuario extends PanacheEntityBase {
   @Column(name = "deletion_status", nullable = false, length = 32)
   String deletionStatus = "ACTIVO";
 
+  /**
+   * Correo de contacto de la persona, distinto de su login.
+   *
+   * <p>El login ({@code email}) es la identidad de acceso del sistema y se genera solo a partir de
+   * nombre, apellido y rol. Este es el correo donde la persona recibe las invitaciones y por el que
+   * se la puede contactar. Es NULL en las cuentas que no fueron creadas por invitación.
+   */
+  @Column(name = "email_personal", length = 254)
+  String emailPersonal;
+
   public Long getId() {
     return id;
   }
@@ -260,6 +270,14 @@ public class Usuario extends PanacheEntityBase {
 
   public void setAcceptedTermsVersion(String acceptedTermsVersion) {
     this.acceptedTermsVersion = acceptedTermsVersion;
+  }
+
+  public String getEmailPersonal() {
+    return emailPersonal;
+  }
+
+  public void setEmailPersonal(String emailPersonal) {
+    this.emailPersonal = emailPersonal == null ? null : emailPersonal.trim().toLowerCase();
   }
 
   public Instant getAcceptedTermsAt() {

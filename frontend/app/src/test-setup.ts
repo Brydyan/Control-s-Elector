@@ -2,6 +2,8 @@ import 'zone.js';
 import 'zone.js/testing';
 // jsdom polyfill para IndexedDB (OfflineStorageService en T-FE-09).
 import 'fake-indexeddb/auto';
+// Los matchers de accesibilidad (ODD 505, E.2): `expect(resultados).toHaveNoViolations()`.
+import 'vitest-axe/extend-expect';
 import { getTestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,

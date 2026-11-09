@@ -225,13 +225,19 @@
   --color-text-on-brand-panel: var(--primitive-white);
 
   // 3. Espaciado Global (escala base 4px)
+  //
+  // La escala es de multiplos de 4px y cubre de 4 a 48 sin huecos: los saltos
+  // (6 -> 8 -> 10 -> 12) son los que usa el resto del sistema, asi que anadir
+  // los intermedios (7 y 9) completa la serie sin mover lo que ya existe.
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 20px;
   --space-6: 24px;
+  --space-7: 28px;
   --space-8: 32px;
+  --space-9: 36px;
   --space-10: 40px;
   --space-12: 48px;
 
@@ -279,6 +285,42 @@
   --shadow-overlay: 0 24px 64px -12px rgba(15, 23, 42, 0.45);
   /* La sombra de una superficie que apenas se desprende del fondo. */
   --shadow-surface: 0 1px 3px rgb(0 0 0 / 5%);
+
+  /*
+   * 5b. Anillo de foco (ODD 505, C).
+   *
+   * El foco tiene que verse: es la unica forma de que quien navega con teclado
+   * sepa donde esta. Va en token para que el color siga al de la marca y el
+   * grosor sea el mismo en toda la app.
+   */
+  --focus-ring-color: var(--color-brand-primary);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-style: solid;
+
+  /*
+   * 5c. Movimiento (ODD 505, D).
+   *
+   * Duraciones y curvas por separado: una transicion se compone de las dos, y
+   * `transition: all` se lleva por delante cambios que nadie pidio. Los rangos
+   * siguen la pauta de la casa: 100-300ms para lo que responde a la mano, nada
+   * de mas de 500ms.
+   */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Transiciones por propiedad: solo se anima lo que el elemento declara. */
+  --transition-opacity: opacity var(--duration-normal) var(--ease-out);
+  --transition-transform: transform var(--duration-normal) var(--ease-standard);
+  --transition-color: color var(--duration-fast) var(--ease-standard);
+  --transition-bg-color: background-color var(--duration-fast)
+    var(--ease-standard);
+  --transition-border: border-color var(--duration-fast) var(--ease-standard);
+  --transition-shadow: box-shadow var(--duration-normal) var(--ease-standard);
 
   /*
    * 6. Tokens de KPI (la tarjeta de indicador)

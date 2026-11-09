@@ -20,10 +20,12 @@ import { AuthStore } from '../../../auth/services/auth.store';
 import { AdminApi } from '../../data/admin.api';
 import {
   EnviarInvitacionResponse,
+  InvitationStatus,
   RolUsuario,
   UsuarioConPasswordTemporal,
   UsuarioFiltros,
   UsuarioResponseDto,
+  UserInvitationResponse,
 } from '../../domain/models/admin.model';
 
 /**
@@ -99,6 +101,27 @@ export class AdminUsuariosPage implements OnInit {
   apellido = '';
   rol: RolUsuario = 'OBSERVER';
   passwordTemporal: string | null = null;
+  /**
+   * Correo de contacto de la persona invitada (T-AUTH-INV-02).
+   *
+   * <p>Es distinto del login: el backend genera el login a partir de nombre,
+   * apellido y rol, y el correo de contacto es donde se manda la invitacion.
+   */
+  emailPersonal = '';
+  /** Hay una invitacion en vuelo. */
+  readonly invitaando = signal(false);
+  /** A quien se le mando la invitacion, para mostrarlo en la pantalla. */
+  readonly invitacionEnviada = signal<UserInvitationResponse | null>(null);
+  /**
+   * Toggle "Enviar Invitacion por Email" (ODD #504, A).
+   *
+   * <p>Apagado, la cuenta se crea y queda pendiente sin correo: el MASTER
+   * puede mandarle la invitacion despues con la accion de reenviar.
+   */
+  readonly enviarInvitacionPorEmail = signal(true);
+  /** Cuenta cuya invitacion se va a reenviar (modal de confirmacion). */
+  readonly usuarioAReenviar = signal<UsuarioResponseDto | null>(null);
+  readonly reenviando = signal(false);
   readonly roles: RolUsuario[] = ['MASTER', 'COORDINATOR', 'OBSERVER', 'ADMIN'];
 
   /** Filter options for the enabled state. */
@@ -186,6 +209,8 @@ export class AdminUsuariosPage implements OnInit {
     this.apellido = '';
     this.rol = 'OBSERVER';
     this.passwordTemporal = null;
+    this.emailPersonal = '';
+    this.invitacionEnviada.set(null);
     this.error.set(null);
     this.modalAbierto = true;
   }
@@ -240,6 +265,100 @@ export class AdminUsuariosPage implements OnInit {
       },
     });
   }
+  // ── Invitación de una persona (T-AUTH-INV-02) ─────────────────────────────
+
+  /**
+   * El correo de contacto tiene que tener forma de correo.
+   *
+   * <p>Es el subconjunto practico de RFC 5322: una arroba, algo antes y algo
+   * despues, y un punto en el dominio. El backend vuelve a validarlo con el
+   * validador de bean y con su propia comprobacion: aca es una ayuda, no la
+   * garantia.
+   */
+  emailValido(): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.emailPersonal.trim());
+  }
+
+  /**
+   * Toggle "Enviar Invitacion por Email" (ODD #504, A).
+   *
+   * <p>El checkbox es nativo a proposito: el estado vive en una signal y el
+   * input solo la refleja.
+   */
+  cambiarEnviarInvitacionPorEmail(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.enviarInvitacionPorEmail.set(input.checked);
+  }
+
+  /**
+   * Texto de exito de la invitacion (ODD #504, A.4).
+   *
+   * <p>El backend lo manda en `mensaje`; este es el respaldo para cuando no
+   * viene.
+   */
+  mensajeDeInvitacion(invitacion: UserInvitationResponse): string {
+    if (invitacion.status === 'CREATED') {
+      return 'Usuario creado. Puedes enviar invitación después.';
+    }
+    return `Invitación enviada a ${invitacion.emailPersonal}`;
+  }
+
+  /** El boton de invitar solo se habilita con los tres datos y un email valido. */
+  puedeInvitar(): boolean {
+    return (
+      !this.invitaando() &&
+      this.nombre.trim().length > 0 &&
+      this.apellido.trim().length > 0 &&
+      this.emailPersonal.trim().length > 0 &&
+      this.emailValido()
+    );
+  }
+
+  /**
+   * Invita a la persona: crea la cuenta y manda el email de activacion.
+   *
+   * <p>El mensaje de exito dice a que direccion se mando y con que login entra
+   * la persona: sin el login, quien recibe el correo no sabria como entrar.
+   */
+  invitar(): void {
+    if (!this.puedeInvitar()) {
+      this.error.set(
+        'Nombre, apellido y un email válido son obligatorios para invitar.',
+      );
+      return;
+    }
+
+    this.invitaando.set(true);
+    this.error.set(null);
+    this.invitacionEnviada.set(null);
+
+    this.service
+      .invitarUsuario({
+        nombre: this.nombre.trim(),
+        apellido: this.apellido.trim(),
+        emailPersonal: this.emailPersonal.trim(),
+        rolNombre: this.rol,
+        sendEmail: this.enviarInvitacionPorEmail(),
+      })
+      .subscribe({
+        next: (respuesta) => {
+          this.invitaando.set(false);
+          this.invitacionEnviada.set(respuesta);
+          // El formulario se limpia: la invitacion ya salio y dejar los datos
+          // cargados invita a mandar dos veces la misma persona.
+          this.nombre = '';
+          this.apellido = '';
+          this.emailPersonal = '';
+          this.rol = 'OBSERVER';
+          this.cargarUsuarios();
+        },
+        error: (err) => {
+          this.invitaando.set(false);
+          this.error.set(err?.message || 'No se pudo enviar la invitación.');
+        },
+      });
+  }
+
   deshabilitar(usuario: UsuarioResponseDto): void {
     if (!this.puedeAnular(usuario)) return;
     const mensaje = `¿Estás seguro de que deseas deshabilitar a ${usuario.email}? Perderá el acceso al sistema.`;
@@ -431,6 +550,143 @@ export class AdminUsuariosPage implements OnInit {
     };
   }
 
+  /**
+   * Estados en los que la cuenta admite una invitacion (ODD #504, D).
+   *
+   * <p>CREATED entra: la cuenta existe pero nunca se le invito, que es justo
+   * el caso para el que existe el reenvio.
+   */
+  puedeReenviarInvitacion(usuario: UsuarioResponseDto): boolean {
+    if (!this.esMaster()) return false;
+    const estado = usuario.invitationStatus;
+    if (!estado) {
+      // El backend no manda el estado (o la cuenta es de las viejas): se cae
+      // al criterio anterior, que es el estado de la cuenta.
+      return this.esInvitable(usuario);
+    }
+    return estado === 'INVITED' || estado === 'EXPIRED' || estado === 'CREATED';
+  }
+
+  /** Si a la cuenta ya se le mando una invitacion alguna vez. */
+  yaFueInvitado(usuario: UsuarioResponseDto): boolean {
+    if (usuario.invitationStatus) {
+      return usuario.invitationStatus !== 'CREATED';
+    }
+    return !!usuario.invitationSentAt;
+  }
+
+  /**
+   * Estado de la invitacion de la cuenta (ODD #504, C).
+   *
+   * <p>Si el backend no lo manda, se deduce de lo que si viaja: la cuenta
+   * activa, la habilitacion y si hubo algun envio.
+   */
+  estadoInvitacion(usuario: UsuarioResponseDto): InvitationStatus {
+    if (usuario.invitationStatus) return usuario.invitationStatus;
+    if (!usuario.habilitado) return 'DISABLED';
+    if (usuario.estadoUsuario === 'ACTIVO') return 'ACTIVE';
+    return usuario.invitationSentAt ? 'INVITED' : 'CREATED';
+  }
+
+  /** Texto del badge de estado. */
+  etiquetaEstado(usuario: UsuarioResponseDto): string {
+    switch (this.estadoInvitacion(usuario)) {
+      case 'INVITED':
+        return 'Invitado';
+      case 'EXPIRED':
+        return 'Vencida';
+      case 'ACTIVE':
+        return 'Activa';
+      case 'DISABLED':
+        return 'Deshabilitada';
+      default:
+        return 'Sin invitación';
+    }
+  }
+
+  /**
+   * Si la invitacion esta por caducar (ODD #504, B.3).
+   *
+   * <p>Con menos de dos horas para vencer, el operador tiene que saberlo:
+   * si no, la invitacion se vence sin que nadie la use.
+   */
+  expiraPronto(usuario: UsuarioResponseDto): boolean {
+    if (this.estadoInvitacion(usuario) !== 'INVITED') return false;
+    const expira = this.vencimientoDe(usuario);
+    if (!expira) return false;
+    const faltan = new Date(expira).getTime() - Date.now();
+    return faltan > 0 && faltan < 2 * 60 * 60 * 1000;
+  }
+
+  /** Momento en que vence la invitacion vigente, si la hay. */
+  private vencimientoDe(usuario: UsuarioResponseDto): string | null {
+    if (usuario.invitationExpiresAt) return usuario.invitationExpiresAt;
+    if (!usuario.invitationSentAt) return null;
+    const enviados = new Date(usuario.invitationSentAt).getTime();
+    return new Date(enviados + 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  /** Abre el modal de confirmacion del reenvio (ODD #504, D.2). */
+  abrirReenvio(usuario: UsuarioResponseDto): void {
+    if (!this.puedeReenviarInvitacion(usuario)) return;
+    this.usuarioAReenviar.set(usuario);
+    this.error.set(null);
+  }
+
+  /** El dialogo se cerro: se suelta la cuenta seleccionada. */
+  onVisibleReenvioChange(visible: boolean): void {
+    if (!visible) {
+      this.cerrarReenvio();
+    }
+  }
+
+  /** Cierra el modal de confirmacion. */
+  cerrarReenvio(): void {
+    if (this.reenviando()) return;
+    this.usuarioAReenviar.set(null);
+  }
+
+  /**
+   * Reenvia la invitacion (ODD #504, D.3).
+   *
+   * <p>El backend genera un link nuevo y deja sin efecto el anterior.
+   */
+  confirmarReenvio(): void {
+    const usuario = this.usuarioAReenviar();
+    if (!usuario || this.reenviando()) return;
+
+    this.reenviando.set(true);
+    this.resultadoInvitacion.set(null);
+
+    this.service.reenviarInvitacion(usuario.publicId).subscribe({
+      next: (respuesta) => {
+        this.reenviando.set(false);
+        this.usuarioAReenviar.set(null);
+        this.resultadoInvitacion.set({
+          tipo: 'ok',
+          titulo: 'Invitación re-enviada',
+          detalle:
+            respuesta.message ??
+            `Invitación re-enviada a ${respuesta.emailPersonal}`,
+          fallidos: [],
+        });
+        this.cargarUsuarios();
+      },
+      error: (err) => {
+        this.reenviando.set(false);
+        this.usuarioAReenviar.set(null);
+        this.resultadoInvitacion.set({
+          tipo: 'error',
+          titulo: 'No se pudo reenviar la invitación',
+          detalle:
+            err?.message ??
+            'El servidor no acepto el reenvío de la invitación.',
+          fallidos: [],
+        });
+      },
+    });
+  }
+
   obtenerAccionesUsuario(usuario: UsuarioResponseDto): MenuItem[] {
     const items: MenuItem[] = [
       {
@@ -440,14 +696,14 @@ export class AdminUsuariosPage implements OnInit {
       },
     ];
 
-    if (this.esMaster() && this.esInvitable(usuario)) {
+    if (this.puedeReenviarInvitacion(usuario)) {
       items.push({
-        label: usuario.invitationSentAt
+        label: this.yaFueInvitado(usuario)
           ? 'Reenviar invitación'
           : 'Enviar invitación',
         icon: 'pi pi-envelope',
-        disabled: this.enviandoInvitaciones(),
-        command: () => this.reenviarInvitacion(usuario),
+        disabled: this.enviandoInvitaciones() || this.reenviando(),
+        command: () => this.abrirReenvio(usuario),
       });
     }
 

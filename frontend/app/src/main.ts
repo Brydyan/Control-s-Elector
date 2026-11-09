@@ -11,6 +11,7 @@ import localeEs from '@angular/common/locales/es';
 import { provideServiceWorker } from '@angular/service-worker';
 import { providePrimeNG } from 'primeng/config';
 import * as Sentry from '@sentry/angular';
+import { MessageService } from 'primeng/api';
 
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
@@ -55,6 +56,10 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideRouter(routes, withPreloading(PreloadAllModules)),
     providePrimeNG({ theme: primengTheme, ripple: true }),
+    // El canal del toast (ODD 505, A): el `MessageService` de PrimeNG lleva los
+    // mensajes desde el `ToastService` hasta el `<p-toast>` del root. Sin esta
+    // instancia compartida, el toast se monta pero no muestra nada.
+    MessageService,
     // The service worker is what makes the field flow work without signal:
     // it caches the app shell and the last known reads.
     provideServiceWorker('ngsw-worker.js', {

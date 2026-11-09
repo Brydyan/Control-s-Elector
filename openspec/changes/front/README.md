@@ -11,11 +11,11 @@ Cambios frontend pendientes (nuevas funcionalidades), estructurados usando Spec-
 | T-FE-03 | AuthService y Manejo de Tokens | T-FE-01 | Pending |
 | T-FE-04 | Interceptors HTTP (JWT + Refresh) | T-FE-03 | Pending |
 | T-FE-05 | Pantalla de Login | T-FE-02, T-FE-03, T-FE-04 | Pending |
-| T-FE-06 | Observer: Lista de Actas Propias | T-FE-02, T-FE-03, T-FE-04, T-FE-05 | Pending |
+| T-FE-06 | Observer: Lista de Actas Propias | T-FE-02, T-FE-03, T-FE-04, T-FE-05 | 📋 SDD Ready (2026-11-08) |
 | T-FE-07 | Formulario de Registro de Acta | T-FE-06 | Pending |
 | T-FE-08 | Captura y Compresión de Imagen (WebP) | T-FE-01 | Pending |
 | T-FE-09 | Resiliencia Offline con IndexedDB | T-FE-07, T-FE-08 | Pending |
-| T-FE-10 | Coordinator: Gestión Global de Actas | T-FE-02, T-FE-03 | Pending |
+| T-FE-10 | Coordinator: Gestión Global de Actas | T-FE-02, T-FE-03 | 📋 SDD Ready (2026-11-08) |
 | T-FE-11 | Dashboard en Tiempo Real (Supabase Realtime) | T-FE-05 | ✓ Archived (2026-10-04) |
 | T-FE-12 | Componentes Compartidos (Shared) | T-FE-01 | ✓ Archived (2026-10-04) |
 | Fix Vitest Race | Fix condición de carrera Vitest + Ionic y compuerta estricta CI (`2026-09-25-fe-vitest-ionic-cleanup-race`) | ninguna | ✓ Archived (2026-10-04) |
@@ -109,6 +109,27 @@ T-FE-05 (Login)
 | T-FE-12 | String union types | IonModal confirm | Barrel shared |
 | T-FE-18 | NAV_CONFIG declarativo | Erradicación placeholders | Resiliencia offline sin mapRoute |
 | Vitest Race | Stubs + template vacía en AppComponent | isolate: true en vite.config.ts | Eliminación continue-on-error CI |
+
+## SDDs Recientes (Ready para Build)
+
+### T-FE-06 (2026-11-08)
+- **Ubicación:** `openspec/changes/front/2026-11-08-t-fe-06-observer-mis-actas/`
+- **Descripción:** Tabla interactiva `/observer/mis-actas` con filtros (JRV, estado, búsqueda)
+- **Fases:** A (Backend API) → B (Frontend componentes) → C (Tests) → D (A11y) → E (Mutaciones)
+- **Tiempo estimado:** 24-32 horas (3-4 días)
+- **Criticidad:** 🟡 ALTA (Observer sin visibilidad de su trabajo = blocker)
+- **Próximo paso:** `/02-build-sdd openspec/changes/front/2026-11-08-t-fe-06-observer-mis-actas/`
+
+### T-FE-10 (2026-11-08)
+- **Ubicación:** `openspec/changes/front/2026-11-08-t-fe-10-coordinator-actas/`
+- **Descripción:** Tabla global `/coordinator/actas` con supervisión, aprobación, disputa y corrección de actas (sin restricción JRV)
+- **Fases:** A (Backend API verification) → B (Frontend: tabla + modales APROBAR/DISPUTAR/CORREGIR/ANULAR) → C (Tests) → D (A11y) → E (Mutaciones)
+- **Tiempo estimado:** 24-32 horas (3-4 días)
+- **Criticidad:** 🔴 **CRÍTICA** (Impide cierre del proceso electoral, blocker MVP)
+- **Nota especial:** SDD retroactiva (código ya implementado en ActasListaPage + ActaDetallePage). Documenta decisiones + valida con tests + mutaciones.
+- **Próximo paso:** `/02-build-sdd openspec/changes/front/2026-11-08-t-fe-10-coordinator-actas/` (verificar + completar tests)
+
+---
 
 ## Trampas Documentadas
 
