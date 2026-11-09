@@ -1,0 +1,131 @@
+<div class="delete-account-section">
+  <!-- Botón para abrir modal -->
+  <div class="delete-button-container">
+    <p class="delete-section-title">Zona de Riesgo</p>
+    <p class="delete-section-description">
+      Una vez que elimines tu cuenta, no hay vuelta atrás.
+    </p>
+    <button
+      pButton
+      type="button"
+      label="Eliminar Cuenta Permanentemente"
+      icon="pi pi-trash"
+      class="p-button-danger"
+      (click)="openDeleteModal()"
+      [disabled]="isLoading()"
+    ></button>
+  </div>
+
+  <!-- Modal de confirmación oscuro -->
+  <p-dialog
+    [visible]="showModal()"
+    (visibleChange)="$event ? openDeleteModal() : closeModal()"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [header]="false"
+    [contentStyle]="{ padding: '0' }"
+    [styleClass]="'delete-account-modal'"
+    [showHeader]="false"
+  >
+    <div class="modal-content dark">
+      <!-- Header del modal -->
+      <div class="modal-header">
+        <h2>Eliminar Cuenta Permanentemente</h2>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-times"
+          class="p-button-rounded p-button-text"
+          (click)="closeModal()"
+        ></button>
+      </div>
+
+      <!-- Cuerpo del modal -->
+      <div class="modal-body">
+        <div class="warning-box">
+          <i class="pi pi-exclamation-triangle"></i>
+          <div>
+            <strong>¡Atención!</strong>
+            <p>
+              Tu cuenta se eliminará en <strong>30 días</strong>. Recibirás un
+              email de confirmación. Puedes cancelar la eliminación clickeando
+              el link en el email dentro de <strong>7 días</strong>.
+            </p>
+          </div>
+        </div>
+
+        <!-- Mensaje de acción -->
+        <div class="action-message">
+          <p>
+            Después de 30 días, tu cuenta y todos tus datos personales se
+            eliminarán permanentemente. Esta acción
+            <strong>no se puede deshacer</strong>.
+          </p>
+          <p>
+            Los datos de las actas electorales se conservarán por requisito
+            legal durante 7 años, pero tu información personal será eliminada.
+          </p>
+        </div>
+
+        <!-- Formulario de confirmación -->
+        <div class="form-section">
+          <label for="password" class="form-label">
+            Para confirmar, ingresa tu contraseña:
+          </label>
+          <div class="password-input-wrapper">
+            <input
+              #passwordInput
+              pInputText
+              [type]="passwordVisible() ? 'text' : 'password'"
+              id="password"
+              placeholder="Tu contraseña"
+              [(ngModel)]="password"
+              [disabled]="isLoading()"
+              (keyup.enter)="confirmDeletion()"
+              class="password-input"
+            />
+            <button
+              pButton
+              type="button"
+              [icon]="passwordVisible() ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              class="p-button-text password-toggle"
+              (click)="togglePasswordVisibility()"
+            ></button>
+          </div>
+        </div>
+
+        <!-- Mensaje de error -->
+        <p-message
+          *ngIf="error()"
+          severity="error"
+          [text]="error()"
+          styleClass="error-message"
+        ></p-message>
+      </div>
+
+      <!-- Footer del modal -->
+      <div class="modal-footer">
+        <button
+          pButton
+          type="button"
+          label="Cancelar"
+          icon="pi pi-times"
+          class="p-button-secondary"
+          (click)="closeModal()"
+          [disabled]="isLoading()"
+        ></button>
+        <button
+          pButton
+          type="button"
+          label="Confirmar Eliminación"
+          icon="pi pi-trash"
+          class="p-button-danger"
+          [loading]="isLoading()"
+          (click)="confirmDeletion()"
+          [disabled]="isLoading() || !password().trim()"
+        ></button>
+      </div>
+    </div>
+  </p-dialog>
+</div>
