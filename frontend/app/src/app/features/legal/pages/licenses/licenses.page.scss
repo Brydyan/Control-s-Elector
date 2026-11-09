@@ -11,7 +11,7 @@ h1,
 h2 {
   margin-top: 2rem;
   margin-bottom: 1rem;
-  color: #333;
+  color: var(--color-text-primary);
 
   &:first-child {
     margin-top: 0;
@@ -19,7 +19,7 @@ h2 {
 }
 
 .intro-text {
-  color: #666;
+  color: var(--color-text-secondary);
   line-height: 1.6;
   margin-bottom: 1.5rem;
 }
@@ -28,19 +28,19 @@ h2 {
 .error-message {
   padding: 2rem;
   text-align: center;
-  background: #f5f5f5;
+  background: var(--color-surface-raised);
   border-radius: 4px;
 
   p {
     margin: 0;
-    color: #666;
+    color: var(--color-text-secondary);
   }
 }
 
 .error-message {
-  background: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeaa7;
+  background: var(--color-status-warning-bg);
+  color: var(--color-status-warning);
+  border: 1px solid var(--color-status-warning-border);
 }
 
 /* ===== Licenses Table ===== */
@@ -48,7 +48,7 @@ h2 {
 .table-wrapper {
   overflow-x: auto;
   margin: 1.5rem 0;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-medium);
   border-radius: 4px;
 }
 
@@ -58,29 +58,29 @@ h2 {
   font-size: 0.95rem;
 
   thead {
-    background: #f5f5f5;
-    border-bottom: 2px solid #ddd;
+    background: var(--color-surface-raised);
+    border-bottom: 2px solid var(--color-border-medium);
 
     th {
       padding: 0.75rem;
       text-align: left;
       font-weight: 600;
-      color: #333;
+      color: var(--color-text-primary);
       white-space: nowrap;
     }
   }
 
   tbody {
     tr {
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid var(--color-border-subtle);
       transition: background-color 0.2s ease;
 
       &:hover {
-        background-color: #fafafa;
+        background-color: var(--color-surface-raised);
       }
 
       &.restrictive {
-        background-color: #fff8e1;
+        background-color: var(--color-status-warning-bg);
       }
 
       td {
@@ -89,13 +89,13 @@ h2 {
 
         &.name {
           font-weight: 500;
-          color: #0066cc;
+          color: var(--color-brand-primary);
           word-break: break-word;
         }
 
         &.version {
-          font-family: "Courier New", monospace;
-          color: #666;
+          font-family: var(--font-family-mono);
+          color: var(--color-text-secondary);
           font-size: 0.9rem;
         }
 
@@ -114,7 +114,7 @@ h2 {
           text-align: center;
 
           a {
-            color: #0066cc;
+            color: var(--color-brand-primary);
             text-decoration: none;
             font-size: 0.9rem;
 
@@ -124,7 +124,7 @@ h2 {
           }
 
           .no-repo {
-            color: #999;
+            color: var(--color-text-muted);
           }
         }
       }
@@ -139,8 +139,8 @@ h2 {
 
 .warning-badge {
   display: inline-block;
-  background: #ff6b6b;
-  color: white;
+  background: var(--color-status-danger);
+  color: var(--color-text-on-brand);
   padding: 0.25rem 0.5rem;
   border-radius: 3px;
   font-size: 0.75rem;
@@ -151,15 +151,15 @@ h2 {
 .summary {
   margin-top: 1rem;
   font-size: 0.95rem;
-  color: #666;
+  color: var(--color-text-secondary);
   font-style: italic;
 }
 
 .no-data {
   text-align: center;
-  color: #999;
+  color: var(--color-text-muted);
   padding: 1.5rem;
-  background: #f9f9f9;
+  background: var(--color-surface-raised);
   border-radius: 4px;
 }
 
@@ -168,7 +168,7 @@ h2 {
 .assets-section {
   margin-top: 2.5rem;
   padding-top: 2rem;
-  border-top: 2px solid #eee;
+  border-top: 2px solid var(--color-border-subtle);
 }
 
 .assets-list {
@@ -183,13 +183,13 @@ h2 {
     gap: 1rem;
     padding: 1rem;
     margin-bottom: 0.5rem;
-    background: #fafafa;
-    border-left: 4px solid #0066cc;
+    background: var(--color-surface-raised);
+    border-left: 4px solid var(--color-brand-primary);
     border-radius: 4px;
     transition: background-color 0.2s ease;
 
     &:hover {
-      background: #f0f7ff;
+      background: var(--color-status-info-bg);
     }
 
     .asset-info {
@@ -197,11 +197,11 @@ h2 {
 
       strong {
         display: block;
-        color: #333;
+        color: var(--color-text-primary);
         margin-bottom: 0.25rem;
       }
 
-      color: #666;
+      color: var(--color-text-secondary);
       font-size: 0.9rem;
     }
 
@@ -209,7 +209,7 @@ h2 {
       white-space: nowrap;
 
       a {
-        color: #0066cc;
+        color: var(--color-brand-primary);
         text-decoration: none;
         font-size: 0.9rem;
         font-weight: 500;
