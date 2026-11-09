@@ -5,7 +5,7 @@ import localeEs from '@angular/common/locales/es';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActaItem, CargoResumen } from '../../models/coordinator.model';
+import { ActaItem, CargoResumen } from '../../domain/models/coordinator.model';
 import type { PagedResponse } from '../../../../shared/models/page.model';
 import { CoordinatorApi } from '../../data/coordinator.api';
 import { AuthStore } from '../../../auth/services/auth.store';
