@@ -76,15 +76,16 @@ public class DeleteAccountResource {
       return Response.status(Response.Status.UNAUTHORIZED).build();
     }
 
-    RequestDeletionResponse response = requestDeletionUseCase.execute(usuario.getId(), request.getPassword());
+    RequestDeletionResponse response =
+        requestDeletionUseCase.execute(usuario.getId(), request.getPassword());
     return Response.ok(response).build();
   }
 
   /**
    * Cancela eliminación de cuenta (dentro de 7 días desde soft-delete).
    *
-   * <p>Público: el usuario que aún no ha iniciado sesión puede cancelar clickeando el link en
-   * el email. El token es de recuperación, válido máximo 7 días.
+   * <p>Público: el usuario que aún no ha iniciado sesión puede cancelar clickeando el link en el
+   * email. El token es de recuperación, válido máximo 7 días.
    *
    * <p>Responde 204 No Content si la cancelación fue exitosa.
    *
@@ -94,7 +95,10 @@ public class DeleteAccountResource {
   @POST
   @Path("/auth/cancel-deletion/{token}")
   public Response cancelDeletion(@PathParam("token") String token) {
-    log.info("Cancel deletion request with token: " + token.substring(0, Math.min(10, token.length())) + "...");
+    log.info(
+        "Cancel deletion request with token: "
+            + token.substring(0, Math.min(10, token.length()))
+            + "...");
 
     cancelDeletionUseCase.execute(token);
     return Response.noContent().build();

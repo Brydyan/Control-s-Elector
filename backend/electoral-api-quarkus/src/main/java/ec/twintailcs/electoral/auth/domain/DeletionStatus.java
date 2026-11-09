@@ -23,16 +23,16 @@ public enum DeletionStatus {
   /**
    * Usuario solicito soft-delete (recuperable).
    *
-   * <p>La cuenta no puede iniciar sesion. Recuperable durante 7 dias clickeando link en email
-   * (POST /api/user/cancel-deletion/{token}). Hard-delete automatico despues 30 dias.
+   * <p>La cuenta no puede iniciar sesion. Recuperable durante 7 dias clickeando link en email (POST
+   * /api/user/cancel-deletion/{token}). Hard-delete automatico despues 30 dias.
    */
   DELETED_PENDING,
 
   /**
    * Hard-delete permanente completado (no recuperable).
    *
-   * <p>Usuario y datos personales han sido eliminados, excepto referencias en actas electorales
-   * que se retienen por requisito legal (7 años).
+   * <p>Usuario y datos personales han sido eliminados, excepto referencias en actas electorales que
+   * se retienen por requisito legal (7 años).
    */
   DELETED_PERMANENT;
 

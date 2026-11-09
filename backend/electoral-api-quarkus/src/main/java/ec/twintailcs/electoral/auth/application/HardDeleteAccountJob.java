@@ -17,8 +17,8 @@ import java.util.List;
  * requisito legal (7 años).
  *
  * <p>TODO: En producción, este método se llama via cron job diario. Por ahora es un servicio
- * invocable manualmente o via admin endpoint. Se puede integrar con quarkus-scheduler agregando
- * la dependencia en pom.xml y usando @io.quarkus.scheduler.Scheduled(cron = "0 2 * * *")
+ * invocable manualmente o via admin endpoint. Se puede integrar con quarkus-scheduler agregando la
+ * dependencia en pom.xml y usando @io.quarkus.scheduler.Scheduled(cron = "0 2 * * *")
  */
 @ApplicationScoped
 public class HardDeleteAccountJob {

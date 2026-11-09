@@ -56,3 +56,7 @@ databaseChangeLog:
   # hash del token de activacion y marcas de tiempo. Va al final porque solo
   # ALTERea `usuario` y no depende del orden de ninguna otra tabla.
   - include: { file: database/changelog/028-invitaciones.sql }
+  # Derecho al olvido (T-COMPLIANCE-04): campos para soft-delete (30 días) y
+  # hard-delete automático (cron job). Incluye tabla de auditoría para GDPR.
+  - include: { file: database/changelog/029-usuario-deletion-fields.sql }
+  - include: { file: database/changelog/030-deletion-audit.sql }
