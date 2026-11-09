@@ -76,7 +76,7 @@ class RlsIsolationIT {
           // misma suite no tendrian tabla contra la que probar.
           "029-user-invitations.sql",
           // ODD #504: la invitacion vive 24 horas, no 30 dias.
-          "030-user-invitation-24h-expiry.sql");
+          "033-user-invitation-24h-expiry.sql");
 
   private Connection adminConn;
   private long obsAId;

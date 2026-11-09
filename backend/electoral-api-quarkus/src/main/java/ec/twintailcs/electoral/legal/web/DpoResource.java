@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.legal.web;
 
+import ec.twintailcs.electoral.common.web.RateLimited;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
 import ec.twintailcs.electoral.legal.application.DpoRateLimiter;
 import ec.twintailcs.electoral.legal.application.LegalService;
@@ -53,6 +54,7 @@ public class DpoResource {
    * @param cuerpo datos del formulario
    * @param xForwardedFor IP del cliente, puesta por el proxy
    */
+  @RateLimited(limit = 1, windowSeconds = 30, identifier = "ip", endpoint = "contact-dpo")
   @POST
   @Path("/contact-dpo")
   @Consumes(MediaType.APPLICATION_JSON)
