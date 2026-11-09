@@ -17,7 +17,7 @@
 -- en silencio sin hacer su trabajo.
 --
 -- Por eso el UPDATE va con la RLS apagada y se vuelve a prender en el mismo
--- changeset: el dueno de la tabla puede alternar la RLS de su propia tabla, y
+-- bloque: el dueno de la tabla puede alternar la RLS de su propia tabla, y
 -- la migracion termina con la tabla igual de protegida que estaba.
 -- =============================================================================
 
