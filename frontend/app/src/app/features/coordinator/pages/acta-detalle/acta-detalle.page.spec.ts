@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActaDetalleCompleto } from '../../models/coordinator.model';
+import { ActaDetalleCompleto } from '../../domain/models/coordinator.model';
 import { CoordinatorApi } from '../../data/coordinator.api';
 import { ActaDetallePage } from './acta-detalle.page';
 
