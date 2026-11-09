@@ -15,12 +15,10 @@ import java.util.Map;
 /**
  * Interceptor AOP que aplica rate limiting a métodos anotados con {@link RateLimited}.
  *
- * <p>El ciclo de vida es:
- * 1. Lee la anotación @RateLimited del método
- * 2. Obtiene la IP del cliente y el userId (si está autenticado)
- * 3. Llama a RateLimitingService para chequear el límite
- * 4. Si se excede: devuelve 429 con headers Retry-After y X-RateLimit-*
- * 5. Si se permite: ejecuta el método original
+ * <p>El ciclo de vida es: 1. Lee la anotación @RateLimited del método 2. Obtiene la IP del cliente
+ * y el userId (si está autenticado) 3. Llama a RateLimitingService para chequear el límite 4. Si se
+ * excede: devuelve 429 con headers Retry-After y X-RateLimit-* 5. Si se permite: ejecuta el método
+ * original
  *
  * <p>Precedencia: @Priority(Interceptor.Priority.APPLICATION)
  */

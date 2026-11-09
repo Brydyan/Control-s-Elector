@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit tests for RateLimitingService.
  *
- * <p>Estos tests verifican que el servicio funciona correctamente cuando Redis está disponible.
- * Los tests de mutation se usan para verificar que la lógica es correcta (por ejemplo, que sin
- * Redis el servicio falla abierto permitiendo las solicitudes).
+ * <p>Estos tests verifican que el servicio funciona correctamente cuando Redis está disponible. Los
+ * tests de mutation se usan para verificar que la lógica es correcta (por ejemplo, que sin Redis el
+ * servicio falla abierto permitiendo las solicitudes).
  */
 @QuarkusTest
 @DisplayName("RateLimitingService")
