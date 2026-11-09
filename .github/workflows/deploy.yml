@@ -53,9 +53,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H 100.119.184.75 >> ~/.ssh/known_hosts 2>/dev/null || true
+
       - name: Deploy to k3s-staging
         run: |
-          ssh -o StrictHostKeyChecking=no root@100.119.184.75 << 'EOF'
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@100.119.184.75 << 'EOF'
           kubectl set image deployment/electoral-api -n control-electoral electoral-api=${{ secrets.DOCKER_USERNAME }}/control-electoral-backend:latest
           kubectl set image deployment/electoral-frontend -n control-electoral electoral-frontend=${{ secrets.DOCKER_USERNAME }}/control-electoral-frontend:latest
           kubectl rollout status deployment/electoral-api -n control-electoral
