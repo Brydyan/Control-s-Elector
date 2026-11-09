@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.legal.web;
 import ec.twintailcs.electoral.auth.application.AuthException;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.security.CurrentUser;
+import ec.twintailcs.electoral.common.web.RateLimited;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
 import ec.twintailcs.electoral.legal.application.LegalService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -81,6 +82,7 @@ public class UserLegalResource {
    * sobrevive a un reinicio del backend, que es justo cuando un contador en memoria dejaria pasar
    * una exportacion de mas.
    */
+  @RateLimited(limit = 1, windowSeconds = 86400, identifier = "user", endpoint = "export-data")
   @GET
   @Path("/export-data")
   @Transactional
