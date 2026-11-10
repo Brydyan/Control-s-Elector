@@ -182,11 +182,11 @@
 }
 
 /*
- * S3 — palanca 2: el área de toque de las listas densas
- * ----------------------------------------------------
+ * S13 — palanca 2: el área de toque de las listas densas
+ * -------------------------------------------------------
  *
  * La fila del candidato es el control más tocado de la aplicación: es donde
- * el veedor escribe el acta con el dedo y donde un error seeteerita como voto
+ * el veedor escribe el acta con el dedo y donde un error se registra como voto
  * mal cargado. PrimeNG dibuja el input con la altura de su campo de texto —
  * por debajo de 44px— así que el piso lo pone esta hoja, no la global de
  * `theme/base.scss`, que sólo gobierna botones e iconos.
@@ -197,7 +197,7 @@
  * es la del control, no la del contenedor.
  */
 .candidate-input input {
-  min-height: 44px;
+  min-height: 2.75rem;
 }
 
 .draft-pill-notification {
