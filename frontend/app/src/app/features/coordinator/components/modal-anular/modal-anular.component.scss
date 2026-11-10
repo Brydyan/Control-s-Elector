@@ -1,6 +1,6 @@
 ::ng-deep .modal-anular-dialog {
   .p-dialog-header {
-    border-bottom: 2px solid var(--color-danger, #ef4444);
+    border-bottom: 2px solid var(--color-form-error);
   }
 }
 
@@ -21,12 +21,12 @@
   color: var(--color-text-on-surface);
 
   .required {
-    color: var(--color-danger, #ef4444);
+    color: var(--color-form-error);
   }
 }
 
 textarea {
-  border: 1px solid var(--color-border-subtle);
+  border: 1px solid var(--color-form-border);
   border-radius: 4px;
   padding: 0.75rem;
   font-family: inherit;
@@ -36,27 +36,27 @@ textarea {
 
   &:focus {
     outline: none;
-    border-color: var(--color-primary, #3b82f6);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    border-color: var(--color-brand-primary);
+    box-shadow: 0 0 0 2px var(--color-form-border);
   }
 
   &:disabled {
-    background-color: var(--color-background-disabled);
-    color: var(--color-text-disabled);
+    background-color: var(--color-form-disabled-bg);
+    color: var(--color-form-disabled-text);
     cursor: not-allowed;
   }
 
   &.error {
-    border-color: var(--color-danger, #ef4444);
+    border-color: var(--color-form-error);
 
     &:focus {
-      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+      box-shadow: 0 0 0 2px var(--color-form-error-bg);
     }
   }
 }
 
 .error-message {
   font-size: 0.75rem;
-  color: var(--color-danger, #ef4444);
+  color: var(--color-form-error);
   margin-top: -0.25rem;
 }
