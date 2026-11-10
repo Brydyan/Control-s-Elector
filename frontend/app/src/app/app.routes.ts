@@ -191,32 +191,13 @@ export const routes: Routes = [
       },
       {
         path: 'observer/mis-actas',
-        canActivate: [roleGuard],
-        loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
-          ),
-        data: {
-          roles: ['OBSERVER', 'MASTER'],
-          title: 'Mis Actas',
-          description:
-            'Historial, trazabilidad y estado de las actas electorales transmitidas.',
-          icon: 'document-text-outline',
-        },
+        redirectTo: '/modules/mis-actas',
+        pathMatch: 'full',
       },
       {
         path: 'actas',
-        canActivate: [roleGuard],
-        loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
-          ),
-        data: {
-          roles: ['COORDINATOR', 'MASTER', 'ADMIN'],
-          title: 'Gestión de Actas',
-          description: 'Módulo de consulta y supervisión de actas electorales.',
-          icon: 'document-text-outline',
-        },
+        redirectTo: '/modules/actas',
+        pathMatch: 'full',
       },
       {
         path: 'coordinator/actas',
@@ -263,31 +244,13 @@ export const routes: Routes = [
       },
       {
         path: 'evidencias',
-        canActivate: [roleGuard],
-        loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
-          ),
-        data: {
-          roles: ['OBSERVER', 'COORDINATOR', 'MASTER', 'ADMIN'],
-          title: 'Evidencias Fotográficas',
-          description: 'Visor y repositorio de capturas de actas y evidencias.',
-          icon: 'images-outline',
-        },
+        redirectTo: '/modules/evidencias',
+        pathMatch: 'full',
       },
       {
         path: 'evidencias/subir',
-        canActivate: [roleGuard],
-        loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
-          ),
-        data: {
-          roles: ['OBSERVER', 'MASTER'],
-          title: 'Subir Evidencia',
-          description: 'Carga de respaldos fotográficos de actas electorales.',
-          icon: 'cloud-upload-outline',
-        },
+        redirectTo: '/modules/evidencias-subir',
+        pathMatch: 'full',
       },
       { path: 'admin', redirectTo: 'admin/usuarios', pathMatch: 'full' },
       {
@@ -353,6 +316,18 @@ export const routes: Routes = [
       },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ],
+  },
+  {
+    path: 'modules/:name',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/placeholder/placeholder.page').then(
+        (m) => m.PlaceholderPage,
+      ),
+    data: {
+      title: 'Módulo no disponible',
+      description: 'Esta funcionalidad aún no está disponible.',
+    },
   },
   { path: '**', redirectTo: '' },
 ];
