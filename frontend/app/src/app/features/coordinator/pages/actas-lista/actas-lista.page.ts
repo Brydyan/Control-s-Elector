@@ -128,6 +128,7 @@ export class ActasListaPage implements OnInit, OnDestroy {
     { estado: 'EN_DISPUTA', label: 'En Disputa' },
     { estado: 'CORREGIDA', label: 'Corregidas' },
     { estado: 'APROBADA', label: 'Aprobadas' },
+    { estado: 'ANULADA', label: 'Anuladas' },
   ];
 
   ngOnInit(): void {
