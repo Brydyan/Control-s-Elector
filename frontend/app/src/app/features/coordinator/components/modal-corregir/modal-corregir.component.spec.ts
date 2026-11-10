@@ -241,6 +241,31 @@ describe('ModalCorregirComponent', () => {
       expect(component.isDisabledConfirm).toBeTrue();
     });
 
+    /**
+     * M6: Skip checksum validation in correction modal.
+     * Mutation: Remove checksum validation, always allow confirm.
+     * This test kills mutations that would bypass isChecksumCorregidoValido check.
+     */
+    it('should NEVER emit confirm when checksum is invalid (M6 mutation)', () => {
+      spyOn(component.confirm, 'emit');
+      component.correcionSufragantes.set(200); // Invalid: sum will be 195, not 200
+      component.correcionBlancos.set(10);
+      component.correcionNulos.set(5);
+      component.votosCorregidosMap.set(
+        new Map<number, number>([
+          [1, 100],
+          [2, 80],
+        ]),
+      );
+
+      component.confirmarCorrecion();
+
+      // Mutation would allow emit even with invalid checksum
+      // Correct behavior: MUST NOT emit, must show error
+      expect(component.confirm.emit).not.toHaveBeenCalled();
+      expect(component.errorCorregir()).toContain('suma de votos corregidos');
+    });
+
     it('should disable confirm button when submitting', () => {
       component.correcionSufragantes.set(195);
       component.correcionBlancos.set(10);

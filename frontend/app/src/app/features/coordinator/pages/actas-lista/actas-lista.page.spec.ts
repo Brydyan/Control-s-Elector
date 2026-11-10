@@ -205,6 +205,50 @@ describe('ActasListaPage', () => {
   });
 
   /**
+   * M1: ANULADA state visibility in tabs.
+   * Mutation: Hide ANULADA by default (estado filter).
+   * This test kills mutations that would remove ANULADA from tabsEstado.
+   */
+  it('should include ANULADA in estado tabs (M1 mutation)', () => {
+    const estadoLabels = component.tabsEstado.map((tab) => tab.estado);
+    expect(estadoLabels).toContain('ANULADA');
+    expect(component.tabsEstado.length).toBe(6); // TODAS + 5 estados
+  });
+
+  /**
+   * M1 Extended: Verify ANULADA tab can be selected and filters actas.
+   */
+  it('should load ANULADA actas when tab clicked', () => {
+    component.estadoSeleccionado = 'ANULADA';
+    component.cargarActas();
+    expect(coordinatorServiceMock.getActas).toHaveBeenCalledWith(
+      expect.objectContaining({ estado: 'ANULADA', page: 0, size: 20 }),
+    );
+  });
+
+  /**
+   * M1 Extended: Verify ANULADA count displays in badge.
+   */
+  it('should show correct count for ANULADA in tab badge', () => {
+    // Mock 5 ANULADA actas in the response
+    const mockPagedWithAnulada = {
+      data: [
+        { ...mockActas[0], estado: 'ANULADA' as any },
+        { ...mockActas[1], estado: 'ANULADA' as any },
+      ],
+      meta: { page: 0, size: 20, totalElements: 5, totalPages: 1 },
+    };
+
+    (coordinatorServiceMock.getActas as any).mockReturnValue(
+      of(mockPagedWithAnulada),
+    );
+
+    component.cargarActas();
+    const anuladaCount = component.conteoTab('ANULADA');
+    expect(anuladaCount).toBe(5);
+  });
+
+  /**
    * W4 FIX (S7): anular() 409 Conflict handling
    * When HTTP 409 is returned during annul (concurrent modification),
    * the component should auto-reload the list to reflect current state,
@@ -237,6 +281,41 @@ describe('ActasListaPage', () => {
     // Initial load + error handler reload = +1 call
     expect((coordinatorServiceMock.getActas as any).mock.calls.length).toBe(
       initialCallCount + 1,
+    );
+  });
+
+  /**
+   * M8: Return 403 instead of 409 on conflict.
+   * Mutation: Change backend to return 403 Forbidden instead of 409 Conflict.
+   * This test verifies 403 is handled differently (permission error, not conflict).
+   * 409 triggers auto-reload. 403 should show error message (forbidden access).
+   */
+  it('should NOT auto-reload on 403 Forbidden (different from 409 Conflict)', () => {
+    (coordinatorServiceMock.anularActa as any).mockReturnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 403,
+            statusText: 'Forbidden',
+            url: '/api/v1/coordinator/actas/1/anular',
+          }),
+      ),
+    );
+
+    const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
+    loginAs('MASTER');
+    const initialCallCount = (coordinatorServiceMock.getActas as any).mock.calls
+      .length;
+
+    vi.spyOn(window, 'prompt').mockReturnValue('Fraud detected');
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    component.anular(aprobada.id);
+
+    // ASSERTION: 403 should NOT trigger reload (different error semantics)
+    // 409 = conflict (reload), 403 = forbidden (show error, no reload)
+    expect((coordinatorServiceMock.getActas as any).mock.calls.length).toBe(
+      initialCallCount,
     );
   });
 });
