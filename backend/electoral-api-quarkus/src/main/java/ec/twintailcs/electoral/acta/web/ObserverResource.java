@@ -27,6 +27,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.nio.file.Files;
+import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -70,25 +71,32 @@ public class ObserverResource {
   @Inject ActaService actaService;
   @Inject IncidenciaService incidenciaService;
 
-  /** Actas registradas por el observer autenticado, con filtro opcional por estado. */
+  /**
+   * Actas registradas por el observer autenticado, paginadas con filtro opcional por estado.
+   *
+   * <p>Query params: estado (optional), page (default 0), size (default 20, max 50).
+   */
   @GET
   @Path("/mis-actas")
-  public List<ActaResponseDto> misActas(
-      @Parameter(
-              description = "Filtrar por estado del acta",
-              schema =
-                  @Schema(
-                      enumeration = {
-                        "BORRADOR",
-                        "ENVIADA",
-                        "EN_DISPUTA",
-                        "CORREGIDA",
-                        "APROBADA",
-                        "ANULADA"
-                      }))
+  public PagedResponse<ActaResponseDto> misActas(
+      @Parameter(description = "Filtrar por estado del acta")
           @QueryParam("estado")
-          String estado) {
-    return actaService.misActas(ParametrosActa.estado(estado));
+          String estado,
+      @Parameter(description = "Número de página (comenzando en 0)") @QueryParam("page")
+          Integer page,
+      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size") Integer size) {
+    int pageNum = page != null ? page : 0;
+    int pageSize = size != null ? size : 20;
+
+    // Validación: max size = 50
+    if (pageSize > 50) {
+      pageSize = 50;
+    }
+    if (pageSize <= 0) {
+      pageSize = 20;
+    }
+
+    return actaService.misActasPaginadas(ParametrosActa.estado(estado), pageNum, pageSize);
   }
 
   /** Actas en disputa que el observer autenticado tiene que corregir. */
