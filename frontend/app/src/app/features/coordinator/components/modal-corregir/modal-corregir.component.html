@@ -1,0 +1,123 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '48rem' }"
+  header="Corregir Acta de Escrutinio"
+>
+  <div class="correction-grid">
+    <div class="form-group">
+      <label for="corrSufragantes" class="form-label font-bold">
+        Total Sufragantes:
+      </label>
+      <input
+        id="corrSufragantes"
+        pInputText
+        type="number"
+        min="0"
+        [ngModel]="correcionSufragantes()"
+        (ngModelChange)="correcionSufragantes.set($event)"
+      />
+    </div>
+    <div class="form-group">
+      <label for="corrBlancos" class="form-label font-bold">
+        Votos Blancos:
+      </label>
+      <input
+        id="corrBlancos"
+        pInputText
+        type="number"
+        min="0"
+        [ngModel]="correcionBlancos()"
+        (ngModelChange)="correcionBlancos.set($event)"
+      />
+    </div>
+    <div class="form-group">
+      <label for="corrNulos" class="form-label font-bold">Votos Nulos:</label>
+      <input
+        id="corrNulos"
+        pInputText
+        type="number"
+        min="0"
+        [ngModel]="correcionNulos()"
+        (ngModelChange)="correcionNulos.set($event)"
+      />
+    </div>
+  </div>
+
+  <h3 class="correction-subtitle">Votos por Candidato</h3>
+  <div class="candidates-correction-list">
+    @for (c of candidatos; track c.id) {
+      <div class="candidate-correction-row">
+        <div class="cand-info">
+          <span class="cand-name font-bold">{{ c.nombre }}</span>
+          <span class="cand-sub td-muted">{{
+            c.partidoSiglas || "Lista"
+          }}</span>
+        </div>
+        <div class="cand-input-wrap">
+          <input
+            pInputText
+            type="number"
+            min="0"
+            class="cand-input"
+            [value]="votosCorregidosMap().get(c.id) || 0"
+            (input)="setVotoCorregido(c.id, $event)"
+          />
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Checksum banner in correction modal -->
+  <div
+    class="modal-checksum"
+    [class.modal-checksum--valid]="isChecksumCorregidoValido()"
+    [class.modal-checksum--invalid]="!isChecksumCorregidoValido()"
+  >
+    <span>
+      Suma calculada: <strong>{{ sumaVotosCorregidos() }}</strong> / Total
+      requerido: <strong>{{ correcionSufragantes() }}</strong> (Diferencia:
+      {{ diferenciaChecksumCorregida() > 0 ? "+" : ""
+      }}{{ diferenciaChecksumCorregida() }})
+    </span>
+    <span class="checksum-msg">
+      @if (isChecksumCorregidoValido()) {
+        <i class="pi pi-check" aria-hidden="true"></i> Total verificado
+      } @else {
+        <i class="pi pi-times" aria-hidden="true"></i> La suma no coincide con
+        el total de sufragantes
+      }
+    </span>
+  </div>
+
+  @if (errorCorregir()) {
+    <p-message severity="error" [text]="errorCorregir() ?? undefined" />
+  }
+
+  @if (error) {
+    <p-message severity="error" [text]="error" />
+  }
+
+  <ng-template #footer>
+    <app-button
+      variant="ghost"
+      size="md"
+      (clicked)="onVisibleChange(false)"
+      [disabled]="isSubmitting"
+    >
+      Cancelar
+    </app-button>
+    <app-button
+      variant="primary"
+      size="md"
+      (clicked)="confirmarCorrecion()"
+      [disabled]="isDisabledConfirm"
+      [loading]="isSubmitting"
+    >
+      Guardar Corrección
+    </app-button>
+  </ng-template>
+</p-dialog>

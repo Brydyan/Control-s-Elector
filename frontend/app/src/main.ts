@@ -17,6 +17,7 @@ import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/core/interceptors/auth.interceptor';
 import { SyncService } from './app/core/offline/sync.service';
+import { CookieConsentService } from './app/core/services/cookie-consent.service';
 import { primengTheme } from './theme/primeng-theme';
 import { environment } from './environments/environment';
 
@@ -33,8 +34,14 @@ registerLocaleData(localeEs);
  * - Production: 10% sampling to reduce costs and noise
  * - Dev/staging: 100% sampling for complete visibility
  * - PII scrubbing: auto-redact emails, passwords, authorization headers
+ *
+ * NOTE: Sentry is ALWAYS initialized (even without analytics consent) but
+ * only error tracking is enabled. Custom events are blocked without consent.
  */
 if (environment.sentryDsn) {
+  const consentService = new CookieConsentService();
+  const hasAnalyticsConsent = consentService.hasAnalyticsConsent();
+
   Sentry.init({
     dsn: environment.sentryDsn,
     environment: environment.production ? 'prod' : 'dev',
@@ -48,6 +55,11 @@ if (environment.sentryDsn) {
       return event;
     },
   });
+
+  // Only capture custom events if user has analytics consent
+  if (!hasAnalyticsConsent) {
+    Sentry.setTag('analytics_consent', 'denied');
+  }
 }
 
 bootstrapApplication(AppComponent, {
