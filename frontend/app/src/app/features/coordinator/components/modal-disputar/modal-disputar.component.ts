@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
-import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { Textarea } from 'primeng/textarea';
 import { ButtonComponent } from '../../../../shared/ui';
@@ -31,7 +30,6 @@ import { DisputarActaPayload } from '../../domain/models/coordinator.model';
     CommonModule,
     FormsModule,
     Dialog,
-    InputText,
     Message,
     Textarea,
     ButtonComponent,

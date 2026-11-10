@@ -42,7 +42,6 @@ import { DashboardApi } from '../../data/dashboard.api';
   standalone: true,
   imports: [
     CommonModule,
-    ButtonComponent,
     CardComponent,
     KpiCardComponent,
     BadgeComponent,

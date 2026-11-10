@@ -7,13 +7,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Dialog } from 'primeng/dialog';
-import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { TableModule } from 'primeng/table';
-import { Textarea } from 'primeng/textarea';
 import {
   BadgeComponent,
   BadgeVariant,
@@ -23,7 +20,6 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { mapError } from '../../../../shared/errors/error-handler';
-import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
 import {
   ActaDetalleCompleto,
   ActaItem,
@@ -47,18 +43,14 @@ type ErrorTarget = 'main' | 'disputa' | 'corregir';
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     BadgeComponent,
     ButtonComponent,
     CardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
-    ConfirmDialogComponent,
     Dialog,
-    InputText,
     Message,
     TableModule,
-    Textarea,
     ModalAprobarComponent,
     ModalDisputarComponent,
     ModalCorregirComponent,
@@ -157,17 +149,13 @@ export class ActaDetallePage implements OnInit, OnDestroy {
     reloadOnConflict: boolean,
   ): void {
     const mapped = mapError(err);
-    if (target === 'disputa') {
-      this.errorDisputa = mapped.message;
-    } else if (target === 'corregir') {
-      this.errorCorregir = mapped.message;
-    } else {
+    // Modal errors handled by modal components; only set main page error
+    if (target === 'main') {
       this.error.set(mapped.message);
     }
     this.submitting.set(false);
 
     if (mapped.type === 'conflict') {
-      this.errorEsConflicto = true;
       if (reloadOnConflict) {
         this.cargarDetalle();
       }
