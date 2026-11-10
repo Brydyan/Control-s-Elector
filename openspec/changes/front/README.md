@@ -11,7 +11,7 @@ Cambios frontend pendientes (nuevas funcionalidades), estructurados usando Spec-
 | T-FE-03 | AuthService y Manejo de Tokens | T-FE-01 | Pending |
 | T-FE-04 | Interceptors HTTP (JWT + Refresh) | T-FE-03 | Pending |
 | T-FE-05 | Pantalla de Login | T-FE-02, T-FE-03, T-FE-04 | Pending |
-| T-FE-06 | Observer: Lista de Actas Propias | T-FE-02, T-FE-03, T-FE-04, T-FE-05 | 📋 SDD Ready (2026-11-08) |
+| T-FE-06 | Observer: Lista de Actas Propias | T-FE-02, T-FE-03, T-FE-04, T-FE-05 | ✓ Archived (2026-11-10) |
 | T-FE-07 | Formulario de Registro de Acta | T-FE-06 | Pending |
 | T-FE-08 | Captura y Compresión de Imagen (WebP) | T-FE-01 | Pending |
 | T-FE-09 | Resiliencia Offline con IndexedDB | T-FE-07, T-FE-08 | Pending |
@@ -112,13 +112,12 @@ T-FE-05 (Login)
 
 ## SDDs Recientes (Ready para Build)
 
-### T-FE-06 (2026-11-08)
-- **Ubicación:** `openspec/changes/front/2026-11-08-t-fe-06-observer-mis-actas/`
+### T-FE-06 (2026-11-08) ✓ ARCHIVED (2026-11-10)
+- **Ubicación:** `openspec/archive/front/2026-11-08-t-fe-06-observer-mis-actas-VERIFIED/`
 - **Descripción:** Tabla interactiva `/observer/mis-actas` con filtros (JRV, estado, búsqueda)
-- **Fases:** A (Backend API) → B (Frontend componentes) → C (Tests) → D (A11y) → E (Mutaciones)
-- **Tiempo estimado:** 24-32 horas (3-4 días)
-- **Criticidad:** 🟡 ALTA (Observer sin visibilidad de su trabajo = blocker)
-- **Próximo paso:** `/02-build-sdd openspec/changes/front/2026-11-08-t-fe-06-observer-mis-actas/`
+- **Status:** ✅ CONFORM — Verification passed 2026-11-10
+- **Resultados:** 24 E2E tests, 10/10 mutations caught, 966 unit tests, coverage >92%
+- **Verdict:** Ready for merge to develop
 
 ### T-FE-10 (2026-11-08)
 - **Ubicación:** `openspec/changes/front/2026-11-08-t-fe-10-coordinator-actas/`
