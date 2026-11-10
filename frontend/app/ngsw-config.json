@@ -28,5 +28,33 @@
       }
     }
   ],
-  "dataGroups": []
+  "dataGroups": [
+    {
+      "name": "observer-api",
+      "urls": ["/api/v1/observer/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxAge": "1h",
+        "maxSize": 100
+      }
+    },
+    {
+      "name": "coordinator-api",
+      "urls": ["/api/v1/coordinator/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxAge": "30m",
+        "maxSize": 50
+      }
+    },
+    {
+      "name": "configuracion-api",
+      "urls": ["/api/v1/configuracion/**"],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxAge": "24h",
+        "maxSize": 100
+      }
+    }
+  ]
 }
