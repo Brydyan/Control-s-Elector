@@ -193,8 +193,8 @@ export const routes: Routes = [
         path: 'observer/mis-actas',
         canActivate: [roleGuard],
         loadComponent: () =>
-          import('./features/placeholder/placeholder.page').then(
-            (m) => m.PlaceholderPage,
+          import('./features/observer/pages/mis-actas/mis-actas.page').then(
+            (m) => m.MisActasPage,
           ),
         data: {
           roles: ['OBSERVER', 'MASTER'],

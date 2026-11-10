@@ -1,0 +1,52 @@
+<div class="mis-actas-container">
+  <header class="mis-actas-header">
+    <div class="header-titles">
+      <h1 class="page-title">Mis Actas</h1>
+      <p class="page-subtitle">
+        Historial, trazabilidad y estado de las actas electorales transmitidas
+      </p>
+    </div>
+
+    <button class="back-button" (click)="volver()" aria-label="Volver a JRVs">
+      <span class="pi pi-arrow-left" aria-hidden="true"></span>
+      Volver
+    </button>
+  </header>
+
+  <!-- Estado de carga -->
+  <app-loading-state
+    *ngIf="loading()"
+    message="Cargando tus actas..."
+  ></app-loading-state>
+
+  <!-- Estado de error -->
+  <app-error-state
+    *ngIf="!loading() && error()"
+    title="Error al cargar actas"
+    [message]="error() ?? undefined"
+    [showRetry]="true"
+    retryLabel="Reintentar"
+    (retry)="reintentar()"
+  ></app-error-state>
+
+  <!-- Estado vacío -->
+  <app-empty-state
+    *ngIf="!loading() && !error() && actas().length === 0"
+    icon="document-text-outline"
+    title="No tienes actas aún"
+    description="Las actas que transmitas aparecerán aquí"
+  ></app-empty-state>
+
+  <!-- Tabla de actas -->
+  <div
+    class="table-wrapper"
+    *ngIf="!loading() && !error() && actas().length > 0"
+  >
+    <app-table
+      [data]="actas()"
+      [columns]="columns"
+      emptyTitle="No tienes actas aún"
+      emptyDescription="Las actas que transmitas aparecerán aquí"
+    ></app-table>
+  </div>
+</div>
