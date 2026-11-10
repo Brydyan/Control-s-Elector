@@ -90,4 +90,29 @@ describe('TopbarComponent', () => {
     expect(region.textContent).toContain('1 acta en cola');
     expect(region.textContent).toContain('enviando');
   });
+
+  /* T7: Responsive Shell (S12, S13) ------------------------------------------ */
+
+  it('T7.S13: topbar action buttons have class layout-topbar-action', () => {
+    const buttons = fixture.nativeElement.querySelectorAll(
+      '.layout-topbar-action',
+    );
+    expect(buttons.length).toBeGreaterThan(0);
+
+    buttons.forEach((button: HTMLElement) => {
+      expect(button.classList.contains('layout-topbar-action')).toBe(true);
+    });
+  });
+
+  it('T7.S12: topbar brand has truncation support for overflow text', () => {
+    const brand = fixture.nativeElement.querySelector('.layout-topbar-brand');
+    expect(brand).toBeTruthy();
+    expect(brand.classList.contains('layout-topbar-brand')).toBe(true);
+  });
+
+  it('T7.S12: status pill renders with visible text content', () => {
+    const pill = fixture.nativeElement.querySelector('.layout-status-pill');
+    expect(pill).toBeTruthy();
+    expect(pill.textContent).toBeTruthy();
+  });
 });

@@ -305,3 +305,64 @@
   border: 1px solid var(--color-border-on-surface);
   border-radius: 12px;
 }
+
+/* Tablet and mobile responsive ----------------------------------------------- */
+
+@media (max-width: 1023px) {
+  .actas-lista-container {
+    padding: 16px;
+  }
+
+  .search-input-wrapper,
+  .cargo-select,
+  .canton-select {
+    min-width: auto;
+    flex: 1 1 100%;
+    min-width: 150px;
+  }
+}
+
+@media (max-width: 767px) {
+  .actas-lista-container {
+    padding: 12px;
+  }
+
+  .page-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .page-title-area {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+
+    .page-title {
+      font-size: 20px;
+    }
+  }
+
+  .search-and-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .search-input-wrapper,
+  .cargo-select,
+  .canton-select {
+    width: 100%;
+  }
+
+  .p-tab {
+    font-size: 13px;
+    padding: 0 8px;
+  }
+
+  .tab-badge {
+    margin-left: 4px;
+    padding: 0 4px;
+    font-size: 10px;
+  }
+}
