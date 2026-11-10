@@ -169,12 +169,10 @@ describe('regresion de rutas del menu (sin URL fantasma)', () => {
     }
   });
 
-  it('/observer/mis-actas existe y admite OBSERVER y MASTER', () => {
+  it('/observer/mis-actas redirige a /modules/mis-actas', () => {
     const r = findRoute(routes, 'observer/mis-actas');
     expect(r).toBeDefined();
-    expect(r!.data?.['roles']).toEqual(
-      expect.arrayContaining(['OBSERVER', 'MASTER']),
-    );
+    expect(r!.redirectTo).toBe('/modules/mis-actas');
   });
 
   it('/master/configuracion existe y admite MASTER', () => {
@@ -193,5 +191,27 @@ describe('regresion de rutas del menu (sin URL fantasma)', () => {
       expect(r, `falta la ruta ${path}`).toBeDefined();
       expect(r!.redirectTo).toBe('master/configuracion');
     }
+  });
+
+  it('rutas placeholder redirigen a /modules/:name', () => {
+    for (const [path, moduleName] of [
+      ['actas', 'actas'],
+      ['evidencias', 'evidencias'],
+      ['evidencias/subir', 'evidencias-subir'],
+    ]) {
+      const r = findRoute(routes, path);
+      expect(r, `falta la ruta ${path}`).toBeDefined();
+      expect(r!.redirectTo).toBe(`/modules/${moduleName}`);
+    }
+  });
+
+  it('/modules/:name carga PlaceholderPage con mensaje honesto', () => {
+    const moduleRoute = routes.find((r) => r.path === 'modules/:name');
+    expect(moduleRoute).toBeDefined();
+    expect(moduleRoute!.loadComponent).toBeDefined();
+    expect(moduleRoute!.data?.['title']).toBe('Módulo no disponible');
+    expect(moduleRoute!.data?.['description']).toContain(
+      'aún no está disponible',
+    );
   });
 });
