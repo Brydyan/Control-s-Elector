@@ -381,6 +381,28 @@
   --color-table-row-border: var(--color-border-on-surface);
   --color-table-row-hover-bg: var(--color-surface-raised);
   --color-table-caption-text: var(--color-text-muted);
+
+  /*
+   * 8. Tokens de formulario y componentes modales
+   *
+   * Estados de control y validación: error, success, warning, disabled.
+   */
+  --color-form-error: var(--color-status-danger);
+  --color-form-error-bg: var(--color-status-danger-bg);
+  --color-form-error-border: var(--color-status-danger-border);
+
+  --color-form-success: var(--color-status-success);
+  --color-form-success-bg: var(--color-status-success-bg);
+  --color-form-success-border: var(--color-status-success-border);
+
+  --color-form-warning: var(--color-status-warning);
+  --color-form-warning-bg: var(--color-status-warning-bg);
+  --color-form-warning-border: var(--color-status-warning-border);
+
+  --color-form-disabled-bg: var(--color-surface-raised);
+  --color-form-disabled-text: var(--color-text-muted-on-surface);
+
+  --color-form-border: var(--color-border-on-surface);
 }
 
 /*
@@ -525,6 +547,24 @@
   --color-table-row-border: var(--color-border-on-surface);
   --color-table-row-hover-bg: var(--color-surface-raised);
   --color-table-caption-text: var(--color-text-muted);
+
+  /* Tokens de formulario — heredan los valores del esquema oscuro de estado. */
+  --color-form-error: var(--color-status-danger);
+  --color-form-error-bg: var(--color-status-danger-bg);
+  --color-form-error-border: var(--color-status-danger-border);
+
+  --color-form-success: var(--color-status-success);
+  --color-form-success-bg: var(--color-status-success-bg);
+  --color-form-success-border: var(--color-status-success-border);
+
+  --color-form-warning: var(--color-status-warning);
+  --color-form-warning-bg: var(--color-status-warning-bg);
+  --color-form-warning-border: var(--color-status-warning-border);
+
+  --color-form-disabled-bg: var(--color-surface-raised);
+  --color-form-disabled-text: var(--color-text-muted-on-surface);
+
+  --color-form-border: var(--color-border-on-surface);
 }
 
 /*

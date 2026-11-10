@@ -1,0 +1,56 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '34rem' }"
+  header="Disputar Acta de Escrutinio"
+>
+  <p class="modal-desc">
+    Indica el motivo por el cual esta acta entra en disputa. El observador o
+    equipo de campo recibirá la notificación para su revisión o recuento.
+  </p>
+
+  <div class="form-group">
+    <label for="motivoDisputa" class="form-label font-bold">
+      Motivo de la Disputa:
+    </label>
+    <textarea
+      id="motivoDisputa"
+      pTextarea
+      rows="4"
+      [ngModel]="motivoDisputa()"
+      (ngModelChange)="motivoDisputa.set($event)"
+      placeholder="Ej: Inconsistencia numérica en votos de candidatos con respecto al acta física escaneada..."
+    ></textarea>
+  </div>
+
+  @if (errorDisputa()) {
+    <p-message severity="error" [text]="errorDisputa() ?? undefined" />
+  }
+
+  @if (error) {
+    <p-message severity="error" [text]="error" />
+  }
+
+  <ng-template #footer>
+    <app-button
+      variant="ghost"
+      size="md"
+      (clicked)="onVisibleChange(false)"
+      [disabled]="isSubmitting"
+    >
+      Cancelar
+    </app-button>
+    <app-button
+      variant="secondary"
+      size="md"
+      (clicked)="confirmarDisputa()"
+      [disabled]="isDisabledConfirm"
+      [loading]="isSubmitting"
+    >
+      Confirmar Disputa
+    </app-button>
+  </ng-template>
+</p-dialog>

@@ -1,12 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  Component,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Dialog } from 'primeng/dialog';
-import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { TableModule } from 'primeng/table';
-import { Textarea } from 'primeng/textarea';
 import {
   BadgeComponent,
   BadgeVariant,
@@ -16,7 +20,6 @@ import {
   LoadingStateComponent,
 } from '../../../../shared/ui';
 import { mapError } from '../../../../shared/errors/error-handler';
-import { ConfirmDialogComponent } from '@shared/components/confirm-dialog/confirm-dialog.component';
 import {
   ActaDetalleCompleto,
   ActaItem,
@@ -26,6 +29,12 @@ import {
   EstadoActa,
 } from '../../domain/models/coordinator.model';
 import { CoordinatorApi } from '../../data/coordinator.api';
+import {
+  ModalAprobarComponent,
+  ModalDisputarComponent,
+  ModalCorregirComponent,
+  ModalAnularComponent,
+} from '../../components';
 
 type ErrorTarget = 'main' | 'disputa' | 'corregir';
 
@@ -34,23 +43,25 @@ type ErrorTarget = 'main' | 'disputa' | 'corregir';
   standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     BadgeComponent,
     ButtonComponent,
     CardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
-    ConfirmDialogComponent,
     Dialog,
-    InputText,
     Message,
     TableModule,
-    Textarea,
+    ModalAprobarComponent,
+    ModalDisputarComponent,
+    ModalCorregirComponent,
+    ModalAnularComponent,
   ],
   templateUrl: './acta-detalle.page.html',
   styleUrls: ['./acta-detalle.page.scss'],
 })
 export class ActaDetallePage implements OnInit, OnDestroy {
+  @ViewChild(ModalCorregirComponent) modalCorregir?: ModalCorregirComponent;
+
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly coordinatorService = inject(CoordinatorApi);
@@ -79,18 +90,11 @@ export class ActaDetallePage implements OnInit, OnDestroy {
   errorEsConflicto = false;
   private successTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Modal / Action states
-  confirmAprobarAbierto = false;
-  modalDisputarAbierto = false;
-  motivoDisputa = '';
-  errorDisputa: string | null = null;
-
-  modalCorregirAbierto = false;
-  correcionSufragantes = 0;
-  correcionBlancos = 0;
-  correcionNulos = 0;
-  votosCorregidosMap: Map<number, number> = new Map();
-  errorCorregir: string | null = null;
+  // Modal visibility signals
+  readonly modalAprobarVisible = signal(false);
+  readonly modalDisputarVisible = signal(false);
+  readonly modalCorregirVisible = signal(false);
+  readonly modalAnularVisible = signal(false);
 
   // Image modal preview
   imagenZoomAbierto = false;
@@ -145,17 +149,13 @@ export class ActaDetallePage implements OnInit, OnDestroy {
     reloadOnConflict: boolean,
   ): void {
     const mapped = mapError(err);
-    if (target === 'disputa') {
-      this.errorDisputa = mapped.message;
-    } else if (target === 'corregir') {
-      this.errorCorregir = mapped.message;
-    } else {
+    // Modal errors handled by modal components; only set main page error
+    if (target === 'main') {
       this.error.set(mapped.message);
     }
     this.submitting.set(false);
 
     if (mapped.type === 'conflict') {
-      this.errorEsConflicto = true;
       if (reloadOnConflict) {
         this.cargarDetalle();
       }
@@ -191,136 +191,96 @@ export class ActaDetallePage implements OnInit, OnDestroy {
   }
 
   // APROBAR
-  abrirAprobar(): void {
-    this.confirmAprobarAbierto = true;
+  abrirModalAprobar(): void {
+    this.modalAprobarVisible.set(true);
   }
 
-  confirmarAprobar(): void {
-    this.confirmAprobarAbierto = false;
+  onAprobarConfirm(): void {
     this.submitting.set(true);
     this.error.set(null);
     this.errorEsConflicto = false;
 
     this.coordinatorService.aprobarActa(this.actaId).subscribe({
-      next: () => this.handleActionSuccess('¡Acta APROBADA exitosamente!'),
-      error: (err) => this.handleActionError(err, 'main', true),
+      next: () => {
+        this.modalAprobarVisible.set(false);
+        this.handleActionSuccess('¡Acta APROBADA exitosamente!');
+      },
+      error: (err) => {
+        this.handleActionError(err, 'main', true);
+      },
     });
   }
 
   // DISPUTAR
   abrirModalDisputar(): void {
-    this.motivoDisputa = '';
-    this.errorDisputa = null;
-    this.modalDisputarAbierto = true;
+    this.modalDisputarVisible.set(true);
   }
 
-  cerrarModalDisputar(): void {
-    this.modalDisputarAbierto = false;
-  }
-
-  confirmarDisputa(): void {
-    if (!this.motivoDisputa.trim()) {
-      this.errorDisputa = 'El motivo de la disputa es obligatorio.';
-      return;
-    }
-
+  onDisputarConfirm(payload: DisputarActaPayload): void {
     this.submitting.set(true);
-    this.errorDisputa = null;
-
-    const payload: DisputarActaPayload = {
-      motivo: this.motivoDisputa.trim(),
-    };
+    this.error.set(null);
+    this.errorEsConflicto = false;
 
     this.coordinatorService.disputarActa(this.actaId, payload).subscribe({
       next: () => {
-        this.modalDisputarAbierto = false;
+        this.modalDisputarVisible.set(false);
         this.handleActionSuccess('El acta ha sido puesta EN DISPUTA.');
       },
-      error: (err) => this.handleActionError(err, 'disputa', true),
+      error: (err) => this.handleActionError(err, 'main', true),
     });
   }
 
   // CORREGIR
   abrirModalCorregir(): void {
-    if (!this.data()) return;
-    this.correcionSufragantes = this.detalle.acta.totalSufragantes;
-    this.correcionBlancos = this.detalle.acta.votosBlancos;
-    this.correcionNulos = this.detalle.acta.votosNulos;
-    this.votosCorregidosMap.clear();
+    if (!this.data() || !this.modalCorregir) return;
 
+    const votesPerCandidate = new Map<number, number>();
     this.detalle.candidatos.forEach((c) => {
-      this.votosCorregidosMap.set(c.id, c.votos || 0);
+      votesPerCandidate.set(c.id, c.votos || 0);
     });
 
-    this.errorCorregir = null;
-    this.modalCorregirAbierto = true;
-  }
-
-  cerrarModalCorregir(): void {
-    this.modalCorregirAbierto = false;
-  }
-
-  setVotoCorregido(candidatoId: number, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const value = Math.max(0, parseInt(input.value, 10) || 0);
-    this.votosCorregidosMap.set(candidatoId, value);
-  }
-
-  get sumaVotosCorregidos(): number {
-    let total = 0;
-    this.votosCorregidosMap.forEach((v) => {
-      total += v;
+    this.modalCorregir.initializeForm({
+      totalSufragantes: this.detalle.acta.totalSufragantes,
+      votosBlancos: this.detalle.acta.votosBlancos,
+      votosNulos: this.detalle.acta.votosNulos,
+      votesPerCandidate,
     });
-    return total + (this.correcionBlancos || 0) + (this.correcionNulos || 0);
+
+    this.modalCorregirVisible.set(true);
   }
 
-  get diferenciaChecksumCorregida(): number {
-    return this.sumaVotosCorregidos - (this.correcionSufragantes || 0);
-  }
-
-  get isChecksumCorregidoValido(): boolean {
-    return (
-      this.correcionSufragantes > 0 &&
-      this.sumaVotosCorregidos === this.correcionSufragantes
-    );
-  }
-
-  confirmarCorrecion(): void {
-    if (!this.data()) return;
-
-    if (!this.isChecksumCorregidoValido) {
-      this.errorCorregir =
-        'La suma de votos corregidos (candidatos + blancos + nulos) debe ser exactamente igual al total de sufragantes.';
-      return;
-    }
-
-    const detalles = Array.from(this.votosCorregidosMap.entries()).map(
-      ([candidatoId, votos]) => ({
-        candidatoId,
-        votos,
-      }),
-    );
-
-    const payload: CorregirActaPayload = {
-      jrvId: this.detalle.acta.jrvId,
-      cargoId: this.detalle.acta.cargoId,
-      totalSufragantes: this.correcionSufragantes,
-      votosBlancos: this.correcionBlancos,
-      votosNulos: this.correcionNulos,
-      detalles,
-    };
-
+  onCorregirConfirm(payload: CorregirActaPayload): void {
     this.submitting.set(true);
-    this.errorCorregir = null;
+    this.error.set(null);
+    this.errorEsConflicto = false;
 
     this.coordinatorService.corregirActa(this.actaId, payload).subscribe({
       next: () => {
-        this.modalCorregirAbierto = false;
+        this.modalCorregirVisible.set(false);
         this.handleActionSuccess(
           'El acta ha sido CORREGIDA y quedó lista para aprobación.',
         );
       },
-      error: (err) => this.handleActionError(err, 'corregir', true),
+      error: (err) => this.handleActionError(err, 'main', true),
+    });
+  }
+
+  // ANULAR
+  abrirModalAnular(): void {
+    this.modalAnularVisible.set(true);
+  }
+
+  onAnularConfirm(motivo: string): void {
+    this.submitting.set(true);
+    this.error.set(null);
+    this.errorEsConflicto = false;
+
+    this.coordinatorService.anularActa(this.actaId, motivo).subscribe({
+      next: () => {
+        this.modalAnularVisible.set(false);
+        this.handleActionSuccess('El acta ha sido ANULADA exitosamente.');
+      },
+      error: (err) => this.handleActionError(err, 'main', true),
     });
   }
 

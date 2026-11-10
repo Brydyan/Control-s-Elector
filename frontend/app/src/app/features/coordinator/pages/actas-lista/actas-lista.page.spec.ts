@@ -5,7 +5,7 @@ import localeEs from '@angular/common/locales/es';
 import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActaItem, CargoResumen } from '../../models/coordinator.model';
+import { ActaItem, CargoResumen } from '../../domain/models/coordinator.model';
 import type { PagedResponse } from '../../../../shared/models/page.model';
 import { CoordinatorApi } from '../../data/coordinator.api';
 import { AuthStore } from '../../../auth/services/auth.store';
@@ -205,40 +205,37 @@ describe('ActasListaPage', () => {
   });
 
   /**
-   * W4 FIX (S7): anular() 409 Conflict handling
-   * When HTTP 409 is returned during annul (concurrent modification),
-   * the component should auto-reload the list to reflect current state,
-   * consistent with dispute/correct actions in acta-detalle.
+   * M1: ANULADA state visibility in tabs.
+   * Mutation: Hide ANULADA by default (estado filter).
+   * This test kills mutations that would remove ANULADA from tabsEstado.
    */
-  it('should auto-reload list on 409 Conflict from annul action', () => {
-    (coordinatorServiceMock.anularActa as any).mockReturnValue(
-      throwError(
-        () =>
-          new HttpErrorResponse({
-            status: 409,
-            statusText: 'Conflict',
-            url: '/api/v1/coordinator/actas/1/anular',
-          }),
-      ),
-    );
+  it('should include ANULADA in estado tabs (M1 mutation)', () => {
+    const estadoLabels = component.tabsEstado.map((tab) => tab.estado);
+    expect(estadoLabels).toContain('ANULADA');
+    expect(component.tabsEstado.length).toBe(6); // TODAS + 5 estados
+  });
 
-    const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
-    loginAs('MASTER');
-    const initialCallCount = (coordinatorServiceMock.getActas as any).mock.calls
-      .length;
-
-    // Mock window.prompt and confirm
-    vi.spyOn(window, 'prompt').mockReturnValue('Fraud detected');
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-
-    component.anular(aprobada.id);
-
-    // PRIMARY ASSERTION: Verify auto-reload on 409 (getActas called again)
-    // Initial load + error handler reload = +1 call
-    expect((coordinatorServiceMock.getActas as any).mock.calls.length).toBe(
-      initialCallCount + 1,
+  /**
+   * M1 Extended: Verify ANULADA tab can be selected and filters actas.
+   */
+  it('should load ANULADA actas when tab clicked', () => {
+    component.estadoSeleccionado = 'ANULADA';
+    component.cargarActas();
+    expect(coordinatorServiceMock.getActas).toHaveBeenCalledWith(
+      expect.objectContaining({ estado: 'ANULADA', page: 0, size: 20 }),
     );
   });
+
+  /**
+   * M1 Extended: Verify ANULADA count displays in badge.
+   */
+
+  /**
+   * NOTE: 409 Conflict handling for anular() moved to modal-anular component
+   * and tested in E2E (j5-409-conflict-reload.spec.ts).
+   * After Phase 1 refactoring, anular is modal-based, not direct method call.
+   * See: frontend/app/e2e/journeys/j5-409-conflict-reload.spec.ts
+   */
 });
 
 /**
