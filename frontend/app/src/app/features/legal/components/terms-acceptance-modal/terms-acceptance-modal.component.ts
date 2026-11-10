@@ -2,7 +2,6 @@ import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Dialog } from 'primeng/dialog';
 import { Message } from 'primeng/message';
 
-import { ButtonComponent } from '../../../../shared/ui/button/button.component';
 import { TermsAcceptanceService } from '../../services/terms-acceptance.service';
 import { describirErrorLegal } from '../../services/legal.service';
 
@@ -26,7 +25,7 @@ import { describirErrorLegal } from '../../services/legal.service';
 @Component({
   selector: 'app-terms-acceptance-modal',
   standalone: true,
-  imports: [Dialog, Message, ButtonComponent],
+  imports: [Dialog, Message],
   template: `
     <p-dialog
       [visible]="visible"

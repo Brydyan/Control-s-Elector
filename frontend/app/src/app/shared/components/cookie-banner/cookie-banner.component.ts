@@ -1,5 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { CookieConsentService } from '../../../core/services/cookie-consent.service';
 
 /**
@@ -12,7 +13,7 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
   templateUrl: './cookie-banner.component.html',
   styleUrl: './cookie-banner.component.scss',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
 })
 export class CookieBannerComponent implements OnInit {
   private consentService = inject(CookieConsentService);
