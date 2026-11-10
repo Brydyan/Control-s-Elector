@@ -222,7 +222,7 @@ que ocupa su sitio en el flujo y deja de tapar el contenido.
 - [x] Page routing `/evidencias` y `/evidencias/subir`
 - [x] Unit tests >70% (94.75%)
 - [x] E2E upload + view flows PASS
-- [ ] `/ux-designer` audit OK — **pendiente**
-- [ ] `/taste-skill` audit OK — **pendiente**
+- [x] `/ux-designer` audit OK — completado en 7752ff5
+- [x] `/taste-skill` audit OK — completado en 7752ff5
 - [x] apply-progress.md con numeros finales
 - [x] Listo para `/03-verify-odd`
