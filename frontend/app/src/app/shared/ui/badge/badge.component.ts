@@ -47,6 +47,8 @@ export class BadgeComponent {
         return 'warn';
       case 'ANULADA':
         return 'danger';
+      case 'BORRADOR':
+        return 'info';
       case 'CORREGIDA':
         return 'secondary';
       default:

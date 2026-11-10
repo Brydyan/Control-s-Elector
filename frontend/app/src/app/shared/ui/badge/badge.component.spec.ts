@@ -27,7 +27,7 @@ describe('BadgeComponent', () => {
       ['ENVIADA', 'p-tag-info'],
       ['EN_DISPUTA', 'p-tag-warn'],
       ['ANULADA', 'p-tag-danger'],
-      ['BORRADOR', 'p-tag-secondary'],
+      ['BORRADOR', 'p-tag-info'],
     ];
 
     for (const [variant, expected] of cases) {
