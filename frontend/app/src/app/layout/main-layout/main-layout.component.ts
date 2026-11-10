@@ -94,4 +94,17 @@ export class MainLayoutComponent {
     }
     return data;
   }
+
+  /**
+   * T8.S14: Skip link handler — focuses main content for keyboard navigation.
+   * Allows users to skip the topbar and sidebar and jump directly to content.
+   */
+  focusMainContent(event: Event): void {
+    event.preventDefault();
+    const mainElement = document.getElementById('layout-main');
+    if (mainElement) {
+      mainElement.focus();
+      mainElement.scrollIntoView();
+    }
+  }
 }

@@ -53,10 +53,10 @@ export class PlaceholderPage {
   private readonly route = inject(ActivatedRoute);
 
   readonly title =
-    (this.route.snapshot.data['title'] as string) || 'Módulo en Construcción';
+    (this.route.snapshot.data['title'] as string) || 'Módulo no disponible';
   readonly description =
     (this.route.snapshot.data['description'] as string) ||
-    'Esta vista estará disponible próximamente según el roadmap electoral.';
+    'Esta funcionalidad aún no está disponible. Por favor, verifica más tarde.';
   readonly icon =
-    (this.route.snapshot.data['icon'] as string) || 'construct-outline';
+    (this.route.snapshot.data['icon'] as string) || 'info-circle-outline';
 }

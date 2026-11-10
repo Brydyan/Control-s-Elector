@@ -10,6 +10,28 @@
  * are shared by the layout, the sidebar and the topbar.
  */
 
+/* T8.S14: Skip link for keyboard navigation --------------------------------- */
+
+.layout-skip-link {
+  position: fixed;
+  top: -40px;
+  left: 0;
+  display: block;
+  padding: 0.5rem 1rem;
+  background-color: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  text-decoration: none;
+  font-weight: 600;
+  z-index: 999;
+  border-radius: 0 0 var(--p-border-radius-md) 0;
+
+  &:focus,
+  &:focus-visible {
+    top: 0;
+    outline: none;
+  }
+}
+
 .layout-wrapper {
   min-height: 100vh;
   background-color: var(--color-surface-page);
@@ -64,7 +86,9 @@
   color: var(--p-text-color);
   text-decoration: none;
   white-space: nowrap;
-  flex-shrink: 0;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .layout-topbar-brand .pi {
@@ -108,8 +132,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border: none;
   border-radius: var(--p-border-radius-md);
   background: transparent;
@@ -173,6 +197,14 @@
   color: var(--p-text-muted-color);
   background: var(--p-content-hover-background);
   white-space: nowrap;
+  min-height: 2.75rem;
+}
+
+@media (max-width: 767px) {
+  .layout-status-pill {
+    font-size: 0.625rem;
+    padding: 0.25rem 0.5rem;
+  }
 }
 
 .layout-status-pill .dot {
@@ -436,9 +468,15 @@
   display: block;
 }
 
-@media (max-width: 991px) and (min-width: 768px) {
+/* Tablet breakpoints ----------------------------------------------------- */
+
+@media (min-width: 768px) and (max-width: 1023px) {
   .layout-topbar-brand span {
     display: none;
+  }
+
+  .layout-main-container {
+    padding: 5.5rem 1.5rem 0 1.5rem;
   }
 }
 
@@ -455,8 +493,8 @@
    * conexión y los indicadores de cola tienen su propia línea debajo del
    * brand y de las acciones primarias (avatar, tema, notificaciones). Si la
    * dejáramos en flex horizontal a 390px, el pill colisionaba con el wordmark
-   * y empujaba las acciones primarias fuera del viewport — S1 de
-   * `odd/tasks/frontend-responsive-shell.md`.
+   * y empujaba las acciones primarias fuera del viewport — S12 de
+   * `odd/tasks/frontend-design-system-hardening.md`.
    *
    * La altura pasa a `auto` para que crezca según el contenido y el padding
    * inferior del contenedor principal se ajusta para no tapar el contenido
@@ -469,6 +507,16 @@
     flex-direction: column;
     align-items: stretch;
     gap: 0.5rem;
+  }
+
+  .layout-topbar-brand {
+    min-width: 0;
+    max-width: 50%;
+  }
+
+  .layout-topbar-brand span {
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .layout-topbar-start {
@@ -487,11 +535,11 @@
   /*
    * El pill de conexión se pinta a la izquierda de su fila propia. Le
    * aseguramos `min-height: 44px` también en este bloque (lo cubre la regla
-   * global de T7.3, pero una redundancia explícita aquí deja la decisión de
+   * global, pero una redundancia explícita aquí deja la decisión de
    * mobile documentada sin tener que saltar entre breakpoints para leerla).
    */
   .layout-status-pill {
-    min-height: 44px;
+    min-height: 2.75rem;
     padding-inline: 0.875rem;
   }
 
