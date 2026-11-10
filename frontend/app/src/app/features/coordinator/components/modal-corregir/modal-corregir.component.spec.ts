@@ -63,7 +63,7 @@ describe('ModalCorregirComponent', () => {
 
   describe('Modal visibility', () => {
     it('should initialize with visible=false', () => {
-      expect(component.visible).toBeFalse();
+      expect(component.visible).toBeFalsy();
     });
 
     it('should emit visibleChange when closing', () => {
@@ -147,7 +147,7 @@ describe('ModalCorregirComponent', () => {
         ]),
       );
 
-      expect(component.isChecksumCorregidoValido()).toBeTrue();
+      expect(component.isChecksumCorregidoValido()).toBeTruthy();
     });
 
     it('should mark checksum as invalid when sum does not equal sufragantes', () => {
@@ -161,7 +161,7 @@ describe('ModalCorregirComponent', () => {
         ]),
       );
 
-      expect(component.isChecksumCorregidoValido()).toBeFalse();
+      expect(component.isChecksumCorregidoValido()).toBeFalsy();
     });
 
     it('should mark checksum as invalid when sufragantes is 0', () => {
@@ -175,7 +175,7 @@ describe('ModalCorregirComponent', () => {
         ]),
       );
 
-      expect(component.isChecksumCorregidoValido()).toBeFalse();
+      expect(component.isChecksumCorregidoValido()).toBeFalsy();
     });
   });
 
@@ -238,7 +238,7 @@ describe('ModalCorregirComponent', () => {
       );
       component.isSubmitting = false;
 
-      expect(component.isDisabledConfirm).toBeTrue();
+      expect(component.isDisabledConfirm).toBeTruthy();
     });
 
     /**
@@ -278,7 +278,7 @@ describe('ModalCorregirComponent', () => {
       );
       component.isSubmitting = true;
 
-      expect(component.isDisabledConfirm).toBeTrue();
+      expect(component.isDisabledConfirm).toBeTruthy();
     });
 
     it('should emit confirm event with correct payload', () => {
@@ -296,9 +296,8 @@ describe('ModalCorregirComponent', () => {
       component.confirmarCorrecion();
 
       expect(component.confirm.emit).toHaveBeenCalled();
-      const emittedPayload = (
-        component.confirm.emit as jasmine.Spy
-      ).calls.mostRecent().args[0] as CorregirActaPayload;
+      const emittedPayload = (component.confirm.emit as any).mock
+        .lastCall[0] as CorregirActaPayload;
       expect(emittedPayload.totalSufragantes).toBe(195);
       expect(emittedPayload.votosBlancos).toBe(10);
       expect(emittedPayload.votosNulos).toBe(5);
