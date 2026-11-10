@@ -34,7 +34,7 @@ describe('ModalDisputarComponent', () => {
 
   describe('Modal visibility', () => {
     it('should initialize with visible=false', () => {
-      expect(component.visible).toBeFalse();
+      expect(component.visible).toBeFalsy();
     });
 
     it('should emit visibleChange when closing', () => {
@@ -72,19 +72,19 @@ describe('ModalDisputarComponent', () => {
     it('should disable confirm button when motivo is empty', () => {
       component.motivoDisputa.set('');
       component.isSubmitting = false;
-      expect(component.isDisabledConfirm).toBeTrue();
+      expect(component.isDisabledConfirm).toBeTruthy();
     });
 
     it('should disable confirm button when submitting', () => {
       component.motivoDisputa.set('valid motivo');
       component.isSubmitting = true;
-      expect(component.isDisabledConfirm).toBeTrue();
+      expect(component.isDisabledConfirm).toBeTruthy();
     });
 
     it('should enable confirm button with valid motivo and not submitting', () => {
       component.motivoDisputa.set('valid motivo');
       component.isSubmitting = false;
-      expect(component.isDisabledConfirm).toBeFalse();
+      expect(component.isDisabledConfirm).toBeFalsy();
     });
   });
 

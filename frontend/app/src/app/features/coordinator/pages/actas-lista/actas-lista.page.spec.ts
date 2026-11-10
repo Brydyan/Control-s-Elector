@@ -231,40 +231,11 @@ describe('ActasListaPage', () => {
    */
 
   /**
-   * W4 FIX (S7): anular() 409 Conflict handling
-   * When HTTP 409 is returned during annul (concurrent modification),
-   * the component should auto-reload the list to reflect current state,
-   * consistent with dispute/correct actions in acta-detalle.
+   * NOTE: 409 Conflict handling for anular() moved to modal-anular component
+   * and tested in E2E (j5-409-conflict-reload.spec.ts).
+   * After Phase 1 refactoring, anular is modal-based, not direct method call.
+   * See: frontend/app/e2e/journeys/j5-409-conflict-reload.spec.ts
    */
-  it('should auto-reload list on 409 Conflict from annul action', () => {
-    (coordinatorServiceMock.anularActa as any).mockReturnValue(
-      throwError(
-        () =>
-          new HttpErrorResponse({
-            status: 409,
-            statusText: 'Conflict',
-            url: '/api/v1/coordinator/actas/1/anular',
-          }),
-      ),
-    );
-
-    const aprobada: ActaItem = { ...mockActas[0], estado: 'APROBADA' };
-    loginAs('MASTER');
-    const initialCallCount = (coordinatorServiceMock.getActas as any).mock.calls
-      .length;
-
-    // Mock window.prompt and confirm
-    vi.spyOn(window, 'prompt').mockReturnValue('Fraud detected');
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
-
-    component.anular(aprobada.id);
-
-    // PRIMARY ASSERTION: Verify auto-reload on 409 (getActas called again)
-    // Initial load + error handler reload = +1 call
-    expect((coordinatorServiceMock.getActas as any).mock.calls.length).toBe(
-      initialCallCount + 1,
-    );
-  });
 });
 
 /**
