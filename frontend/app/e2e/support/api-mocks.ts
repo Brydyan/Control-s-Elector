@@ -350,3 +350,189 @@ export async function mockCantonReportes(page: Page): Promise<void> {
     });
   });
 }
+
+// ---------------------------------------------------------------------------
+// Observer Mis Actas mocks (T-FE-06 E2E Phase C)
+// ---------------------------------------------------------------------------
+
+export const STUB_ACTAS_MIS_ACTAS = [
+  {
+    id: '1',
+    numeroActa: '001-2026-LIB',
+    jrvNombre: 'JRV-001 La Libertad',
+    fechaTransmision: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'TRANSMITIDO',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '2',
+    numeroActa: '002-2026-LIB',
+    jrvNombre: 'JRV-002 La Libertad',
+    fechaTransmision: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'TRANSMITIDO',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '3',
+    numeroActa: '003-2026-LIB',
+    jrvNombre: 'JRV-001 La Libertad',
+    fechaTransmision: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'REVISION',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '4',
+    numeroActa: '004-2026-LIB',
+    jrvNombre: 'JRV-003 La Libertad',
+    fechaTransmision: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'TRANSMITIDO',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '5',
+    numeroActa: '005-2026-LIB',
+    jrvNombre: 'JRV-002 La Libertad',
+    fechaTransmision: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'REVISION',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '6',
+    numeroActa: '006-2026-LIB',
+    jrvNombre: 'JRV-001 La Libertad',
+    fechaTransmision: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'TRANSMITIDO',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '7',
+    numeroActa: '007-2026-LIB',
+    jrvNombre: 'JRV-004 La Libertad',
+    fechaTransmision: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'TRANSMITIDO',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '8',
+    numeroActa: '008-2026-LIB',
+    jrvNombre: 'JRV-003 La Libertad',
+    fechaTransmision: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'REVISION',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '9',
+    numeroActa: '009-2026-LIB',
+    jrvNombre: 'JRV-002 La Libertad',
+    fechaTransmision: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'TRANSMITIDO',
+    accionLabel: 'Ver detalles',
+  },
+  {
+    id: '10',
+    numeroActa: '010-2026-LIB',
+    jrvNombre: 'JRV-001 La Libertad',
+    fechaTransmision: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    estado: 'TRANSMITIDO',
+    accionLabel: 'Ver detalles',
+  },
+];
+
+export const STUB_ACTAS_REVISION_ONLY = STUB_ACTAS_MIS_ACTAS.filter(
+  (a) => a.estado === 'REVISION',
+);
+
+/**
+ * Mock GET /api/v1/observer/mis-actas with pagination and filtering
+ * Supports page, size, estado query parameters
+ */
+export async function mockObserverMisActas(
+  page: Page,
+  options?: {
+    estado?: string;
+    page?: number;
+    size?: number;
+    status?: number;
+  },
+): Promise<void> {
+  const { estado, page: pageNum = 0, size = 10, status = 200 } = options || {};
+
+  await page.route(`${API}/observer/mis-actas*`, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+
+    const url = new URL(route.request().url());
+    const queryEstado = url.searchParams.get('estado');
+    const queryPage = parseInt(url.searchParams.get('page') || '0', 10);
+    const querySize = parseInt(url.searchParams.get('size') || '10', 10);
+
+    if (status !== 200) {
+      await route.fulfill({
+        status,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Server error', status }),
+      });
+      return;
+    }
+
+    // Filter by estado if provided
+    let filtered = STUB_ACTAS_MIS_ACTAS;
+    if (queryEstado) {
+      filtered = STUB_ACTAS_MIS_ACTAS.filter((a) => a.estado === queryEstado);
+    }
+
+    // Paginate
+    const totalElements = filtered.length;
+    const offset = queryPage * querySize;
+    const content = filtered.slice(offset, offset + querySize);
+    const totalPages = Math.ceil(totalElements / querySize);
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        content,
+        totalElements,
+        totalPages,
+        currentPage: queryPage,
+        size: querySize,
+      }),
+    });
+  });
+}
+
+/**
+ * Mock GET /api/v1/observer/mis-actas/:id/detalles (detail view)
+ */
+export async function mockObserverActaDetalle(page: Page, actaId: string): Promise<void> {
+  const acta = STUB_ACTAS_MIS_ACTAS.find((a) => a.id === actaId) || STUB_ACTAS_MIS_ACTAS[0];
+
+  await page.route(`${API}/observer/mis-actas/${actaId}`, async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...acta,
+          totalSufragantes: 300,
+          sufragantesProcesados: 280,
+          votos: {
+            candidato1: 150,
+            candidato2: 100,
+            blancos: 20,
+            nulos: 10,
+          },
+          jrvDetalles: {
+            numero: 'JRV-001',
+            parroquia: 'La Libertad',
+            canton: 'Los Ríos',
+          },
+        }),
+      });
+    } else {
+      await route.continue();
+    }
+  });
+}
