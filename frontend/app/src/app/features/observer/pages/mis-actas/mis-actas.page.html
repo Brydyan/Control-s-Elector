@@ -1,13 +1,18 @@
-<div class="mis-actas-container">
+<div class="mis-actas-container" data-testid="mis-actas-container">
   <header class="mis-actas-header">
     <div class="header-titles">
-      <h1 class="page-title">Mis Actas</h1>
+      <h1 class="page-title" data-testid="page-title">Mis Actas</h1>
       <p class="page-subtitle">
         Historial, trazabilidad y estado de las actas electorales transmitidas
       </p>
     </div>
 
-    <button class="back-button" (click)="volver()" aria-label="Volver a JRVs">
+    <button
+      class="back-button"
+      data-testid="btn-volver"
+      (click)="volver()"
+      aria-label="Volver a JRVs"
+    >
       <span class="pi pi-arrow-left" aria-hidden="true"></span>
       Volver
     </button>
@@ -16,12 +21,14 @@
   <!-- Estado de carga -->
   <app-loading-state
     *ngIf="loading()"
+    data-testid="loading-state"
     message="Cargando tus actas..."
   ></app-loading-state>
 
   <!-- Estado de error -->
   <app-error-state
     *ngIf="!loading() && error()"
+    data-testid="error-state"
     title="Error al cargar actas"
     [message]="error() ?? undefined"
     [showRetry]="true"
@@ -40,6 +47,7 @@
   <!-- Tabla de actas -->
   <div
     class="table-wrapper"
+    data-testid="actas-table"
     *ngIf="!loading() && !error() && actas().length > 0"
   >
     <app-table
