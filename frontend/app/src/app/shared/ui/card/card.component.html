@@ -4,7 +4,26 @@
       <div class="app-card__header">
         <div class="app-card__title-group">
           @if (headerTitle) {
-            <h3 class="app-card__title">{{ headerTitle }}</h3>
+            <ng-container [ngSwitch]="headingLevel">
+              <h1 *ngSwitchCase="'h1'" class="app-card__title">
+                {{ headerTitle }}
+              </h1>
+              <h2 *ngSwitchCase="'h2'" class="app-card__title">
+                {{ headerTitle }}
+              </h2>
+              <h3 *ngSwitchCase="'h3'" class="app-card__title">
+                {{ headerTitle }}
+              </h3>
+              <h4 *ngSwitchCase="'h4'" class="app-card__title">
+                {{ headerTitle }}
+              </h4>
+              <h5 *ngSwitchCase="'h5'" class="app-card__title">
+                {{ headerTitle }}
+              </h5>
+              <h6 *ngSwitchCase="'h6'" class="app-card__title">
+                {{ headerTitle }}
+              </h6>
+            </ng-container>
           }
           @if (subtitle) {
             <p class="app-card__subtitle">{{ subtitle }}</p>

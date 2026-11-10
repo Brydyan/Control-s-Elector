@@ -10,6 +10,28 @@
  * are shared by the layout, the sidebar and the topbar.
  */
 
+/* T8.S14: Skip link for keyboard navigation --------------------------------- */
+
+.layout-skip-link {
+  position: fixed;
+  top: -40px;
+  left: 0;
+  display: block;
+  padding: 0.5rem 1rem;
+  background-color: var(--p-primary-color);
+  color: var(--p-primary-contrast-color);
+  text-decoration: none;
+  font-weight: 600;
+  z-index: 999;
+  border-radius: 0 0 var(--p-border-radius-md) 0;
+
+  &:focus,
+  &:focus-visible {
+    top: 0;
+    outline: none;
+  }
+}
+
 .layout-wrapper {
   min-height: 100vh;
   background-color: var(--color-surface-page);

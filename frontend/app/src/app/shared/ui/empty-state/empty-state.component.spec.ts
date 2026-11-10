@@ -49,4 +49,27 @@ describe('EmptyStateComponent', () => {
     expect(titleEl.textContent).toContain('Sin registros');
     expect(descEl.textContent).toContain('No se encontraron actas pendientes');
   });
+
+  /* T8.S14: Configurable heading level for semantic HTML */
+
+  it('should render h2 heading by default', () => {
+    fixture.detectChanges();
+    const h2 = fixture.nativeElement.querySelector('h2.empty-state__title');
+    expect(h2).toBeTruthy();
+  });
+
+  it('should render h1 heading when headingLevel is "h1"', () => {
+    fixture.componentRef.setInput('title', 'Empty title');
+    fixture.componentRef.setInput('headingLevel', 'h1');
+    fixture.detectChanges();
+    const h1 = fixture.nativeElement.querySelector('h1.empty-state__title');
+    expect(h1).toBeTruthy();
+  });
+
+  it('should render h3 heading when headingLevel is "h3"', () => {
+    fixture.componentRef.setInput('headingLevel', 'h3');
+    fixture.detectChanges();
+    const h3 = fixture.nativeElement.querySelector('h3.empty-state__title');
+    expect(h3).toBeTruthy();
+  });
 });
