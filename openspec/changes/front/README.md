@@ -125,6 +125,13 @@ T-FE-05 (Login)
 
 ## ODDs Completadas (Defect Fixes & Hardening)
 
+### Frontend Visual Rebalance (2026-11-10)
+- **Ubicación:** `openspec/archive/frontend/2026-11-10-odd-frontend-visual-rebalance/`
+- **Descripción:** Navy institucional (#1c4a8e), página #eef2f7, card borders, banner quieto
+- **Resultado:** ✅ PASS — 419 tests, 0 regressions, WCAG AA 4.5:1+ on all surfaces
+- **Commits:** 14e0dc6 (8 cherry-picks incluidos)
+- **Status:** Merged to develop 2026-10-21, archived 2026-11-10
+
 ### Frontend UI Standardization (2026-11-10)
 - **Ubicación:** `openspec/archive/frontend/2026-11-10-odd-frontend-ui-standardization/`
 - **Descripción:** KpiCardComponent (5 tones) + TableComponent (responsive, actions, a11y)
