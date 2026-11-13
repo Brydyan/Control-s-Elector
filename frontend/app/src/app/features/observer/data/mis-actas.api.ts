@@ -2,22 +2,51 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
+import { EstadoActa } from '../domain/models/observer.model';
 
+/**
+ * Acta tal como la devuelve la API.
+ *
+ * <p>Es el `ActaResponseDto` del backend: los mismos campos y los mismos
+ * nombres. Antes esta interfaz describia un acta que el backend nunca emits
+ * (`numeroActa`, `jrvNombre`, `fechaTransmision`, `accionLabel`), de modo que
+ * la pantalla "Mis Actas" no podia funcionar contra la API real.
+ */
 export interface ActaDTO {
-  id: string;
-  numeroActa: string;
-  jrvNombre: string;
-  fechaTransmision: string; // ISO 8601
-  estado: 'TRANSMITIDO' | 'REVISION' | 'BORRADOR' | 'ENVIADA';
-  accionLabel: string;
+  id: number;
+  jrvId: number;
+  cargoId: number;
+  registradaPorId: number;
+  estado: EstadoActa;
+  totalSufragantes: number;
+  votosBlancos: number;
+  votosNulos: number;
+  fechaRegistro: string;
+  motivoAnulacion: string | null;
+  nombreCargo: string;
+  numeroJrv: string;
+  totalVotosCandidatos: number | null;
 }
 
-export interface PageResult<T> {
-  content: T[];
+/**
+ * Metadatos de la pagina, tal como los manda `PagedResponse` del backend.
+ */
+export interface PageMeta {
+  page: number;
+  size: number;
   totalElements: number;
   totalPages: number;
-  currentPage: number;
-  size: number;
+}
+
+/**
+ * Envoltura paginada de la API.
+ *
+ * <p>El backend responde `{data, meta}`: no es el envelope de Spring
+ * (`{content, currentPage}`), y leer el equivocado deja la tabla vacia.
+ */
+export interface PageResult<T> {
+  data: T[];
+  meta: PageMeta;
 }
 
 export interface ActaFilters {
