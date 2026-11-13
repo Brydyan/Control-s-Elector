@@ -60,4 +60,50 @@ public class IncidenciaRepository {
     }
     return out;
   }
+
+  /** Contar total de incidencias, con filtro opcional por JRV. */
+  public long contar(Long jrvId) {
+    String sql = "select count(*) from incidencia_jrv";
+    if (jrvId != null) {
+      sql = sql + " where jrv_id = :jrvId";
+    }
+    Query query = entityManager.createNativeQuery(sql);
+    if (jrvId != null) {
+      query.setParameter("jrvId", jrvId);
+    }
+    return ((Number) query.getSingleResult()).longValue();
+  }
+
+  /** Listado paginado de incidencias. */
+  public List<IncidenciaResponseDto> listar(Long jrvId, long size, long offset) {
+    String sql =
+        "select id, jrv_id, tipo, descripcion, evidencia_url, reportada_por_id, fecha_registro"
+            + " from incidencia_jrv";
+    if (jrvId != null) {
+      sql = sql + " where jrv_id = :jrvId";
+    }
+    sql = sql + " order by fecha_registro desc limit :size offset :offset";
+
+    Query query = entityManager.createNativeQuery(sql, Object[].class);
+    if (jrvId != null) {
+      query.setParameter("jrvId", jrvId);
+    }
+    query.setParameter("size", size);
+    query.setParameter("offset", offset);
+
+    List<Object[]> filas = query.getResultList();
+    List<IncidenciaResponseDto> out = new ArrayList<>();
+    for (Object[] fila : filas) {
+      out.add(
+          new IncidenciaResponseDto(
+              ((Number) fila[0]).longValue(),
+              ((Number) fila[1]).longValue(),
+              TipoIncidenciaJrv.valueOf((String) fila[2]),
+              (String) fila[3],
+              (String) fila[4],
+              ((Number) fila[5]).longValue(),
+              (Instant) fila[6]));
+    }
+    return out;
+  }
 }

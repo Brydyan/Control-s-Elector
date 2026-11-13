@@ -191,8 +191,18 @@ export const routes: Routes = [
       },
       {
         path: 'observer/mis-actas',
-        redirectTo: '/modules/mis-actas',
-        pathMatch: 'full',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/observer/pages/mis-actas/mis-actas.page').then(
+            (m) => m.MisActasPage,
+          ),
+        data: {
+          roles: ['OBSERVER', 'MASTER'],
+          title: 'Mis Actas',
+          description:
+            'Historial, trazabilidad y estado de las actas electorales transmitidas.',
+          icon: 'document-text-outline',
+        },
       },
       {
         path: 'actas',

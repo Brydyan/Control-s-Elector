@@ -81,6 +81,24 @@ public class ActaService {
         .toList();
   }
 
+  /** Actas registradas por el observer autenticado, paginadas con filtro opcional. */
+  @Transactional
+  public PagedResponse<ActaResponseDto> misActasPaginadas(EstadoActa estado, int page, int size) {
+    Long observerId = activarContexto();
+    ActaRepository.Filtros filtros =
+        new ActaRepository.Filtros(estado, null, null, null, observerId, null, null, null);
+
+    long total = repository.contar(filtros);
+    long offset = (long) page * size;
+
+    List<ActaResponseDto> data =
+        repository.listar(filtros, null, (long) size, offset).stream()
+            .map(mapper::toDtoSinSubtotal)
+            .toList();
+
+    return PagedResponse.of(data, page, size, total);
+  }
+
   /** Actas en estado EN_DISPUTA que el observer autenticado tiene que corregir. */
   @Transactional
   public List<ActaResponseDto> correccionesPendientes() {
@@ -92,6 +110,25 @@ public class ActaService {
         .stream()
         .map(mapper::toDtoSinSubtotal)
         .toList();
+  }
+
+  /** Actas en estado EN_DISPUTA paginadas, que el observer autenticado tiene que corregir. */
+  @Transactional
+  public PagedResponse<ActaResponseDto> correccionesPendientesPaginadas(int page, int size) {
+    Long observerId = activarContexto();
+    ActaRepository.Filtros filtros =
+        new ActaRepository.Filtros(
+            EstadoActa.EN_DISPUTA, null, null, null, observerId, null, null, null);
+
+    long total = repository.contar(filtros);
+    long offset = (long) page * size;
+
+    List<ActaResponseDto> data =
+        repository.listar(filtros, null, (long) size, offset).stream()
+            .map(mapper::toDtoSinSubtotal)
+            .toList();
+
+    return PagedResponse.of(data, page, size, total);
   }
 
   /** Todas las JRVs con su estado de registro. */

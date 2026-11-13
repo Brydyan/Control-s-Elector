@@ -125,13 +125,34 @@ T-FE-05 (Login)
 
 ## ODDs Completadas (Defect Fixes & Hardening)
 
+### Frontend Visual Rebalance (2026-11-10)
+- **Ubicación:** `openspec/archive/frontend/2026-11-10-odd-frontend-visual-rebalance/`
+- **Descripción:** Navy institucional (#1c4a8e), página #eef2f7, card borders, banner quieto
+- **Resultado:** ✅ PASS — 419 tests, 0 regressions, WCAG AA 4.5:1+ on all surfaces
+- **Commits:** 14e0dc6 (8 cherry-picks incluidos)
+- **Status:** Merged to develop 2026-10-21, archived 2026-11-10
+
+### Frontend UI Standardization (2026-11-10)
+- **Ubicación:** `openspec/archive/frontend/2026-11-10-odd-frontend-ui-standardization/`
+- **Descripción:** KpiCardComponent (5 tones) + TableComponent (responsive, actions, a11y)
+- **Resultado:** ✅ PASS — 753 tests (+172 KPI, +552 Table, +29 a11y), 0 regressions, WCAG AA
+- **Commits:** 0eeedca, cf484c7, 97f3fcc, 29845dc, d668d09, 30ee665
+- **Status:** Merged to develop 2026-11-07, archived 2026-11-10
+
 ### Frontend Design System Hardening (2026-11-10)
 - **Ubicación:** `openspec/archive/frontend/2026-11-10-odd-frontend-design-system-hardening/`
 - **Descripción:** 11 defect fixes (S1–S16): responsive shell, a11y hardening, copy clarification, offline safety, performance tuning
 - **Tareas:** T7 (responsive) → T8 (a11y) → T9 (copy) → T10 (offline) → T11 (docs)
 - **Resultado:** ✅ PASS — 939 tests (+21), 0 regressions, all mutations covered
 - **Commits:** 185bebb, 00ec4b7, ad0085e, 97b5539
-- **Merger:** Ready for develop
+- **Status:** Ready for merge
+
+### Evidencias Upload + Viewer (2026-11-10)
+- **Ubicación:** `openspec/archive/frontend/2026-11-10-odd-506-evidencias/`
+- **Descripción:** Visor + formulario de carga de evidencias fotográficas, backend listing endpoint
+- **Resultado:** ✅ PASS — 94.75% coverage, 1199 tests (+115), 0 regressions
+- **Commits:** 666ef54, 193f709, 172485b, 781fd59, 70ef1fb, a8ccbad, 7752ff5, e997044
+- **Status:** Ready for merge
 
 ---
 

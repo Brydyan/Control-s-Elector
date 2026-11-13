@@ -169,10 +169,14 @@ describe('regresion de rutas del menu (sin URL fantasma)', () => {
     }
   });
 
-  it('/observer/mis-actas redirige a /modules/mis-actas', () => {
+  it('/observer/mis-actas carga el componente MisActasPage con roleGuard', () => {
     const r = findRoute(routes, 'observer/mis-actas');
     expect(r).toBeDefined();
-    expect(r!.redirectTo).toBe('/modules/mis-actas');
+    expect(r!.loadComponent).toBeDefined();
+    expect(r!.canActivate).toBeDefined();
+    expect(r!.data?.['roles']).toEqual(
+      expect.arrayContaining(['OBSERVER', 'MASTER']),
+    );
   });
 
   it('/master/configuracion existe y admite MASTER', () => {
