@@ -101,15 +101,26 @@ if ! curl -sf http://${API_HOST}/actuator/health > /dev/null 2>&1; then
 fi
 echo -e "${GREEN}✓ Backend OK en ${API_HOST}${NC}"
 
-# Verificar fotos
+# Verificar fotos (múltiples formatos)
 echo -e "${YELLOW}[2/5] Verificando fotos...${NC}"
-PHOTO_COUNT=$(find ../../documents/pictures -name "acta-sample-*.jpg" 2>/dev/null | wc -l)
+PHOTOS=$(find ../../documents/pictures -type f \( -iname "acta-sample-*.jpg" -o -iname "acta-sample-*.jpeg" -o -iname "acta-sample-*.png" -o -iname "acta-sample-*.webp" \) 2>/dev/null | sort)
+PHOTO_COUNT=$(echo "$PHOTOS" | grep -c . || true)
+
 if [ "$PHOTO_COUNT" -eq 0 ]; then
   echo -e "${YELLOW}⚠ No se encontraron fotos en documents/pictures/${NC}"
+  echo -e "${YELLOW}  Formatos soportados: .jpg, .jpeg, .png, .webp${NC}"
   echo -e "${YELLOW}  Script usará dummy JPEG si no existen${NC}"
+  PHOTO_LIST=""
 else
-  echo -e "${GREEN}✓ $PHOTO_COUNT fotos encontradas${NC}"
+  echo -e "${GREEN}✓ $PHOTO_COUNT fotos encontradas:${NC}"
+  echo "$PHOTOS" | sed 's/^/  - /' | head -5
+  if [ "$PHOTO_COUNT" -gt 5 ]; then
+    echo "  ... y $(($PHOTO_COUNT - 5)) más"
+  fi
+  # Convertir rutas absolutas a relativas para K6
+  PHOTO_LIST=$(echo "$PHOTOS" | xargs -I {} basename {} | tr '\n' ',' | sed 's/,$//')
 fi
+echo ""
 
 # Crear directorio de resultados
 echo -e "${YELLOW}[3/5] Preparando directorios...${NC}"
@@ -171,6 +182,7 @@ k6 run scenarios/complete-electoral-flow.js \
   --duration "$DURATION" \
   --out json="$RESULTS_FILE" \
   -e API_HOST="${API_HOST}" \
+  -e PHOTO_LIST="${PHOTO_LIST}" \
   2>&1 | tee "$RESULTS_DIR/electoral-flow-${TIMESTAMP}.log"
 
 EXIT_CODE=$?
