@@ -7,6 +7,7 @@ import ec.twintailcs.electoral.acta.incidencia.web.dto.IncidenciaRequestDto;
 import ec.twintailcs.electoral.acta.incidencia.web.dto.IncidenciaResponseDto;
 import ec.twintailcs.electoral.auth.domain.RecursoNoEncontradoException;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
+import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -68,5 +69,16 @@ public class IncidenciaService {
   @Transactional
   public List<IncidenciaResponseDto> listar(Long jrvId) {
     return repository.listar(jrvId);
+  }
+
+  /** Listado paginado de incidencias, con filtro opcional por JRV. */
+  @Transactional
+  public PagedResponse<IncidenciaResponseDto> listarPaginado(Long jrvId, int page, int size) {
+    long total = repository.contar(jrvId);
+    long offset = (long) page * size;
+
+    List<IncidenciaResponseDto> data = repository.listar(jrvId, size, offset);
+
+    return PagedResponse.of(data, page, size, total);
   }
 }

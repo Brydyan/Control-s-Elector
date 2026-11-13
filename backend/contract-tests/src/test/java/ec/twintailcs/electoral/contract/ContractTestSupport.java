@@ -106,10 +106,25 @@ public abstract class ContractTestSupport {
     return JSON.writeValueAsString(body);
   }
 
-  /** Lee una respuesta JSON como lista de objetos. Falla la suite si no vino un 200. */
+  /** Lee una respuesta JSON como lista de objetos. Soporta PagedResponse.content o array directo. Falla si no es 200. */
   protected static List<Map<String, Object>> listar(Response r) {
     assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
-    return r.jsonPath().getList("$");
+    Object root = r.jsonPath().get("$");
+
+    // Si root es una List, es un array directo (no paginado)
+    if (root instanceof List) {
+      return (List<Map<String, Object>>) root;
+    }
+
+    // Si es un Map, es PagedResponse con .data
+    if (root instanceof Map) {
+      List<Map<String, Object>> data = r.jsonPath().getList("data");
+      assertThat(data).as("Respuesta tiene Map root pero sin .data: %s", r.asString()).isNotNull();
+      return data;
+    }
+
+    // Si no es ni List ni Map, el formato es inesperado
+    throw new AssertionError("Respuesta JSON tiene un formato inesperado: root es " + root.getClass().getSimpleName() + ", body: " + r.asString());
   }
 
   // ---------------------------------------------------------------------------------------------
