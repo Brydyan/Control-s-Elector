@@ -116,11 +116,11 @@ public abstract class ContractTestSupport {
       return (List<Map<String, Object>>) root;
     }
 
-    // Si es un Map, es PagedResponse con .content
+    // Si es un Map, es PagedResponse con .data
     if (root instanceof Map) {
-      List<Map<String, Object>> content = r.jsonPath().getList("content");
-      assertThat(content).as("Respuesta tiene Map root pero sin .content: %s", r.asString()).isNotNull();
-      return content;
+      List<Map<String, Object>> data = r.jsonPath().getList("data");
+      assertThat(data).as("Respuesta tiene Map root pero sin .data: %s", r.asString()).isNotNull();
+      return data;
     }
 
     // Si no es ni List ni Map, el formato es inesperado

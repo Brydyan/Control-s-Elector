@@ -295,7 +295,7 @@ class ObserverActasContractIT extends ContractTestSupport {
     Response r = as(token).get(OBSERVER + "/mis-actas");
 
     assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
-    List<Map<String, Object>> actas = r.jsonPath().getList("content");
+    List<Map<String, Object>> actas = r.jsonPath().getList("data");
     assertThat(actas).extracting(acta -> ((Number) acta.get("id")).longValue()).contains(actaId);
     assertThat(actas)
         .allSatisfy(
