@@ -28,11 +28,19 @@ const API_HOST = __ENV.API_HOST || 'localhost:8080';
 const API_BASE = `http://${API_HOST}/api/v1`;
 
 // Fotos disponibles en documents/pictures
-const PHOTO_SAMPLES = [
-  'acta-sample-1.jpg',
-  'acta-sample-2.jpg',
-  'acta-sample-3.jpg',
-];
+// Formatos soportados: jpg, jpeg, png, webp
+// Pasadas por run-local.sh como: PHOTO_LIST="foto1.jpg,foto2.png,foto3.webp"
+const PHOTO_SAMPLES = (__ENV.PHOTO_LIST || '')
+  .split(',')
+  .map((f) => f.trim())
+  .filter((f) => f.length > 0);
+
+// Fallback: si no hay fotos, usar dummy (esperamos que run-local.sh las haya encontrado)
+if (PHOTO_SAMPLES.length === 0) {
+  console.warn(
+    'No hay fotos reales. Usa: ./scripts/run-local.sh o PHOTO_LIST="..." k6 run ...'
+  );
+}
 
 // Rango de VUs: 1-14 OBSERVER, 15-19 COORDINATOR, 20+ ADMIN
 const OBSERVER_VU_START = 1;
@@ -166,17 +174,33 @@ function uploadActaWithPhoto(headers, jrvId, observerVu, actaIndex) {
     const actaId = borradorRes.json('id');
 
     // 3b. Subir foto (leer del filesystem)
-    const photoPath = `../../documents/pictures/${PHOTO_SAMPLES[actaIndex % PHOTO_SAMPLES.length]}`;
     let photoBase64;
+    let mimeType = 'image/jpeg';
 
-    try {
-      const photoData = fs.readFileSync(photoPath, 'b');
-      photoBase64 = http.file(photoData, 'photo.jpg', 'image/jpeg');
-    } catch (err) {
-      console.warn(
-        `Photo not found at ${photoPath}, using placeholder: ${err}`
-      );
-      // Fallback: pequeña foto dummy si no existen las reales
+    if (PHOTO_SAMPLES.length > 0) {
+      const photoFilename = PHOTO_SAMPLES[actaIndex % PHOTO_SAMPLES.length];
+      const photoPath = `../../documents/pictures/${photoFilename}`;
+
+      try {
+        const photoData = fs.readFileSync(photoPath, 'b');
+
+        // Detectar MIME type por extensión
+        if (photoFilename.endsWith('.png')) {
+          mimeType = 'image/png';
+        } else if (photoFilename.endsWith('.webp')) {
+          mimeType = 'image/webp';
+        }
+        // jpg, jpeg → image/jpeg (default)
+
+        photoBase64 = http.file(photoData, photoFilename, mimeType);
+      } catch (err) {
+        console.warn(
+          `Photo not found at ${photoPath}, using dummy: ${err.message}`
+        );
+        photoBase64 = generateDummyPhotoBase64();
+      }
+    } else {
+      // Sin fotos disponibles, usar dummy
       photoBase64 = generateDummyPhotoBase64();
     }
 

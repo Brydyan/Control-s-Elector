@@ -10,28 +10,48 @@ frontend/app/tests/load/
 │   ├── login.js                    ← baseline (5 min, CI)
 │   └── complete-electoral-flow.js  ← full (10 min, local/staging)
 ├── scripts/
-│   └── run-local.sh                ← ejecutor
+│   └── run-local.sh                ← ejecutor (descubre fotos automático)
 └── documents/pictures/
-    ├── acta-sample-1.jpg           ← 250 KB
-    ├── acta-sample-2.jpg           ← 280 KB
-    └── acta-sample-3.jpg           ← 270 KB
+    ├── acta-sample-1.jpg           ← 250 KB (JPEG)
+    ├── acta-sample-2.png           ← 500 KB (PNG)
+    └── acta-sample-3.webp          ← 150 KB (WEBP high-compression)
 ```
 
-## Fotos: Compresión Recomendada
+## Fotos: Formatos y Compresión
 
-**Tienes que llevar fotos reales a `documents/pictures/`**
+**Formatos soportados:**
+- `*.jpg`, `*.jpeg` — JPEG (cámara digital, más común)
+- `*.png` — PNG (lossless, sin compresión)
+- `*.webp` — WEBP (alta compresión, moderno)
+
+**Llevar fotos reales a `documents/pictures/`**
 
 ```bash
-# Verificar tamaño
-ls -lh documents/pictures/acta-sample-*.jpg
+# Script busca automáticamente:
+acta-sample-*.jpg
+acta-sample-*.jpeg
+acta-sample-*.png
+acta-sample-*.webp
 
-# Si son > 1MB, comprimir
-mogrify -resize 50% -quality 75 acta-sample-1.jpg  # ~250 KB
+# Verificar tamaño
+ls -lh documents/pictures/acta-sample-*
+
+# Si son > 1MB, comprimir según formato
+# JPEG Q=75
+convert acta-sample-1.jpg -quality 75 acta-sample-1.jpg  # ~250 KB
+
+# WEBP (mejor compresión)
+cwebp -q 75 acta-sample-1.jpg -o acta-sample-1.webp  # ~150 KB
+
+# PNG (si prefieres lossless)
+# PNG típicamente > 500 KB, más lento que JPEG/WEBP
 ```
 
-**Targets:**
+**Targets recomendados:**
 - JPEG Q=75: 200-300 KB
-- 280 fotos × 250 KB = ~70 MB
+- WEBP Q=75: 100-200 KB
+- PNG: 400-800 KB
+- **280 fotos × 250 KB promedio = ~70 MB**
 
 ## Ejecutar Local
 
@@ -57,11 +77,18 @@ cd frontend/app/tests/load
 
 ## Timing Real
 
+Con fotos reales (promedio 250 KB):
+
 | VUs | Duration | Uploads | Validations | Wall-Clock |
 |-----|----------|---------|-------------|------------|
 | 20  | 10m      | 280     | 56 c/u      | 10-12 min  |
 | 14  | 5m       | 280     | 56 c/u      | 5-6 min    |
 | 5   | 2m       | 140     | 28 c/u      | 2-3 min    |
+
+**Por formato (280 fotos):**
+- JPEG (250 KB): 10-12 min
+- WEBP (150 KB): 7-9 min ⭐ recomendado
+- PNG (500 KB): 15-18 min (más lento)
 
 ## Resultados
 
