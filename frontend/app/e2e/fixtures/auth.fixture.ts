@@ -10,9 +10,17 @@ import {
   TOKENS,
 } from '../support/api-mocks';
 import { mockLegalVersion } from '../support/legal-mocks';
-import { versionTerminosVigente, scriptTerminosAceptados, CLAVE_TERMINOS_ACEPTADOS } from '../support/consent';
+import {
+  versionTerminosVigente,
+  scriptTerminosAceptados,
+  CLAVE_TERMINOS_ACEPTADOS,
+} from '../support/consent';
+import {
+  USUARIOS_SEED,
+  type RolE2E,
+} from '../support/usuarios-seed';
 
-type UserRole = 'MASTER' | 'OBSERVER' | 'COORDINATOR';
+type UserRole = RolE2E;
 
 const USERS = {
   MASTER: MASTER_USER,
@@ -20,25 +28,7 @@ const USERS = {
   COORDINATOR: COORDINATOR_USER,
 };
 
-/**
- * Usuarios reales del seed, para los specs que hablan con la API de verdad.
- *
- * <p>La password es la misma para todos: es el hash que siembran las
- * migraciones `025-data-seed.sql` y `026-admin-inicial.sql`.
- *
- * <p>Ojo con el MASTER: `admsismas@control.ttcs` era el admin que creaba el
- * `DataSeeder` del backend Spring. En Quarkus ese seeder ya no existe —lo
- * sustituyo la migracion `026-admin-inicial.sql`— y el master sembrado es
- * `admin@control-elector.local`. Con el correo viejo el login devuelve 401.
- */
-export const USUARIOS_SEED: Record<UserRole, { email: string; password: string }> = {
-  MASTER: { email: 'admin@control-elector.local', password: 'admin12345' },
-  OBSERVER: { email: 'observervera@example.local', password: 'admin12345' },
-  COORDINATOR: {
-    email: 'coordinatorcortes@example.local',
-    password: 'admin12345',
-  },
-};
+export { USUARIOS_SEED };
 
 /**
  * Pre-authenticates a page as the specified role.
