@@ -40,24 +40,24 @@ export class MisActasPage implements OnInit {
 
   readonly columns: TableColumn<ActaDTO>[] = [
     {
-      key: 'numeroActa',
-      header: '#Acta',
-      width: '100px',
-      align: 'start',
-    },
-    {
-      key: 'jrvNombre',
+      key: 'numeroJrv',
       header: 'JRV',
-      width: '120px',
+      width: '140px',
       align: 'start',
     },
     {
-      key: 'fechaTransmision',
-      header: 'Fecha Transmisión',
+      key: 'nombreCargo',
+      header: 'Cargo',
+      width: '160px',
+      align: 'start',
+    },
+    {
+      key: 'fechaRegistro',
+      header: 'Fecha de registro',
       width: '160px',
       align: 'start',
       value: (row) => {
-        const date = new Date(row.fechaTransmision);
+        const date = new Date(row.fechaRegistro);
         return date.toLocaleDateString('es-ES', {
           year: 'numeric',
           month: '2-digit',
@@ -92,8 +92,8 @@ export class MisActasPage implements OnInit {
 
     this.misActasService.getMisActas(this.filters()).subscribe({
       next: (response) => {
-        this.actas.set(response.content);
-        this.totalItems.set(response.totalElements);
+        this.actas.set(response.data);
+        this.totalItems.set(response.meta.totalElements);
         this.loading.set(false);
       },
       error: (err) => {

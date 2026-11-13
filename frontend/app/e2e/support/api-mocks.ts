@@ -56,6 +56,16 @@ export const TOKENS = {
   COORDINATOR: stubToken('COORDINATOR', COORDINATOR_USER.email),
 };
 
+/**
+ * Fecha ISO de hace `dias` dias.
+ *
+ * @param dias cantidad de dias hacia atras
+ * @returns la fecha en ISO 8601
+ */
+function haceDias(dias: number): string {
+  return new Date(Date.now() - dias * 24 * 60 * 60 * 1000).toISOString();
+}
+
 // ---------------------------------------------------------------------------
 // Auth mocks
 // ---------------------------------------------------------------------------
@@ -297,27 +307,38 @@ export async function mockImagenUpload(page: Page, status = 200): Promise<void> 
 // Coordinator mocks (J4 — Dispute/Correction flow)
 // ---------------------------------------------------------------------------
 
+/**
+ * Mock de `GET /api/v1/coordinator/actas`.
+ *
+ * <p>La bandeja del coordinator vive en `/api/v1/coordinator/actas`, no en
+ * `/api/v1/observer/actas`: mockear la ruta equivocada deja la peticion real
+ * salir a la red sin que nadie la intercepte.
+ *
+ * @param page pagina con la que trabajar
+ */
 export async function mockCoordinatorMisActas(page: Page): Promise<void> {
-  await page.route(`${API}/observer/actas`, async (route) => {
-    if (route.request().method() === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          {
+  await page.route(`${API}/coordinator/actas`, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        paginar([
+          crearActaStub({
             id: 999,
-            jrvId: STUB_JRV_1.jrvId,
-            cargoId: STUB_CARGO_1.id,
             estado: 'ENVIADA',
             totalSufragantes: 300,
-            votos: { rodriguez: 150, lopez: 100, blancos: 30, nulos: 20 },
-            createdAt: new Date().toISOString(),
-          },
+            votosBlancos: 30,
+            votosNulos: 20,
+            totalVotosCandidatos: 250,
+          }),
         ]),
-      });
-    } else {
-      await route.continue();
-    }
+      ),
+    });
   });
 }
 
@@ -364,96 +385,121 @@ export async function mockCantonReportes(page: Page): Promise<void> {
 // Observer Mis Actas mocks (T-FE-06 E2E Phase C)
 // ---------------------------------------------------------------------------
 
-export const STUB_ACTAS_MIS_ACTAS = [
-  {
-    id: '1',
-    numeroActa: '001-2026-LIB',
-    jrvNombre: 'JRV-001 La Libertad',
-    fechaTransmision: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'TRANSMITIDO',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '2',
-    numeroActa: '002-2026-LIB',
-    jrvNombre: 'JRV-002 La Libertad',
-    fechaTransmision: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'TRANSMITIDO',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '3',
-    numeroActa: '003-2026-LIB',
-    jrvNombre: 'JRV-001 La Libertad',
-    fechaTransmision: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'REVISION',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '4',
-    numeroActa: '004-2026-LIB',
-    jrvNombre: 'JRV-003 La Libertad',
-    fechaTransmision: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'TRANSMITIDO',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '5',
-    numeroActa: '005-2026-LIB',
-    jrvNombre: 'JRV-002 La Libertad',
-    fechaTransmision: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'REVISION',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '6',
-    numeroActa: '006-2026-LIB',
-    jrvNombre: 'JRV-001 La Libertad',
-    fechaTransmision: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'TRANSMITIDO',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '7',
-    numeroActa: '007-2026-LIB',
-    jrvNombre: 'JRV-004 La Libertad',
-    fechaTransmision: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'TRANSMITIDO',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '8',
-    numeroActa: '008-2026-LIB',
-    jrvNombre: 'JRV-003 La Libertad',
-    fechaTransmision: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'REVISION',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '9',
-    numeroActa: '009-2026-LIB',
-    jrvNombre: 'JRV-002 La Libertad',
-    fechaTransmision: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'TRANSMITIDO',
-    accionLabel: 'Ver detalles',
-  },
-  {
-    id: '10',
-    numeroActa: '010-2026-LIB',
-    jrvNombre: 'JRV-001 La Libertad',
-    fechaTransmision: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-    estado: 'TRANSMITIDO',
-    accionLabel: 'Ver detalles',
-  },
-];
+/**
+ * Estados reales de un acta.
+ *
+ * <p>Es el enum `EstadoActa` del backend: BORRADOR → ENVIADA → EN_DISPUTA →
+ * CORREGIDA → APROBADA → ANULADA. Un mock con `TRANSMITIDO` o `REVISION` no
+ * describe nada que la API pueda devolver.
+ */
+export const ESTADOS_ACTA = [
+  'BORRADOR',
+  'ENVIADA',
+  'EN_DISPUTA',
+  'CORREGIDA',
+  'APROBADA',
+  'ANULADA',
+] as const;
 
-export const STUB_ACTAS_REVISION_ONLY = STUB_ACTAS_MIS_ACTAS.filter(
-  (a) => a.estado === 'REVISION',
-);
+export type EstadoActa = (typeof ESTADOS_ACTA)[number];
 
 /**
- * Mock GET /api/v1/observer/mis-actas with pagination and filtering
- * Supports page, size, estado query parameters
+ * Forma de `ActaResponseDto`, el DTO que devuelve el backend.
+ *
+ * <p>Los mocks tienen que hablar este idioma: si el stub inventa campos
+ * (`numeroActa`, `accionLabel`, `urlEvidencia`) o inventa estados, el test
+ * valida el mock y no el sistema.
+ */
+export interface ActaResponseStub {
+  id: number;
+  jrvId: number;
+  cargoId: number;
+  registradaPorId: number;
+  estado: EstadoActa;
+  totalSufragantes: number;
+  votosBlancos: number;
+  votosNulos: number;
+  fechaRegistro: string;
+  motivoAnulacion: string | null;
+  nombreCargo: string;
+  numeroJrv: string;
+  totalVotosCandidatos: number | null;
+}
+
+/** Meta de `PagedResponse`: es lo que el backend devuelve en `meta`. */
+export interface PageMetaStub {
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+/** Envoltura paginada: `{data, meta}`, la forma de `PagedResponse`. */
+export interface PagedResponseStub<T> {
+  data: T[];
+  meta: PageMetaStub;
+}
+
+/**
+ * Construye un acta con la forma del DTO del backend.
+ *
+ * @param overrides campos a overriding del stub base
+ * @returns el acta con la forma de `ActaResponseDto`
+ */
+export function crearActaStub(
+  overrides: Partial<ActaResponseStub> = {},
+): ActaResponseStub {
+  return {
+    id: 1,
+    jrvId: STUB_JRV_1.jrvId,
+    cargoId: STUB_CARGO_1.id,
+    registradaPorId: 4,
+    estado: 'ENVIADA',
+    totalSufragantes: 300,
+    votosBlancos: 20,
+    votosNulos: 10,
+    fechaRegistro: new Date().toISOString(),
+    motivoAnulacion: null,
+    nombreCargo: STUB_CARGO_1.nombre,
+    numeroJrv: STUB_JRV_1.numero,
+    totalVotosCandidatos: 270,
+    ...overrides,
+  };
+}
+
+/**
+ * Envuelve una lista en la envoltura paginada del backend.
+ *
+ * @param data elementos de la pagina
+ * @param page pagina actual (base 0)
+ * @param size tamano de la pagina
+ * @returns el `PagedResponse` que devuelve la API
+ */
+export function paginar<T>(
+  data: T[],
+  page = 0,
+  size = 10,
+): PagedResponseStub<T> {
+  return {
+    data,
+    meta: {
+      page,
+      size,
+      totalElements: data.length,
+      totalPages: data.length === 0 ? 0 : 1,
+    },
+  };
+}
+
+/**
+ * Mock de `GET /api/v1/observer/mis-actas` con paginacion.
+ *
+ * <p>El backend responde con `PagedResponse` (`{data, meta}`), no con
+ * `{content, currentPage}`: el envelope de Spring y el de Quarkus no son el
+ * mismo, y el test tiene que hablar el del backend.
+ *
+ * @param page pagina con la que trabajar
+ * @param options filtro por estado y status simulado
  */
 export async function mockObserverMisActas(
   page: Page,
@@ -465,6 +511,19 @@ export async function mockObserverMisActas(
   },
 ): Promise<void> {
   const { estado, page: pageNum = 0, size = 10, status = 200 } = options || {};
+
+  const actas: ActaResponseStub[] = [
+    crearActaStub({ id: 1, estado: 'ENVIADA', fechaRegistro: haceDias(2) }),
+    crearActaStub({ id: 2, estado: 'ENVIADA', fechaRegistro: haceDias(1) }),
+    crearActaStub({ id: 3, estado: 'EN_DISPUTA', fechaRegistro: haceDias(3) }),
+    crearActaStub({ id: 4, estado: 'ENVIADA', fechaRegistro: haceDias(4) }),
+    crearActaStub({ id: 5, estado: 'EN_DISPUTA', fechaRegistro: haceDias(5) }),
+    crearActaStub({ id: 6, estado: 'ENVIADA', fechaRegistro: haceDias(6) }),
+    crearActaStub({ id: 7, estado: 'APROBADA', fechaRegistro: haceDias(7) }),
+    crearActaStub({ id: 8, estado: 'ENVIADA', fechaRegistro: haceDias(8) }),
+    crearActaStub({ id: 9, estado: 'CORREGIDA', fechaRegistro: haceDias(9) }),
+    crearActaStub({ id: 10, estado: 'ENVIADA', fechaRegistro: haceDias(10) }),
+  ];
 
   await page.route(`${API}/observer/mis-actas*`, async (route) => {
     if (route.request().method() !== 'GET') {
@@ -487,58 +546,58 @@ export async function mockObserverMisActas(
     }
 
     // Filter by estado if provided
-    let filtered = STUB_ACTAS_MIS_ACTAS;
+    let filtered = actas;
     if (queryEstado) {
-      filtered = STUB_ACTAS_MIS_ACTAS.filter((a) => a.estado === queryEstado);
+      filtered = actas.filter((a) => a.estado === queryEstado);
     }
 
     // Paginate
     const totalElements = filtered.length;
     const offset = queryPage * querySize;
     const content = filtered.slice(offset, offset + querySize);
-    const totalPages = Math.ceil(totalElements / querySize);
+    const totalPages = querySize <= 0 ? 0 : Math.ceil(totalElements / querySize);
 
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        content,
-        totalElements,
-        totalPages,
-        currentPage: queryPage,
-        size: querySize,
+        data: content,
+        meta: {
+          page: queryPage,
+          size: querySize,
+          totalElements,
+          totalPages,
+        },
       }),
     });
   });
 }
 
 /**
- * Mock GET /api/v1/observer/mis-actas/:id/detalles (detail view)
+ * Mock de `GET /api/v1/observer/actas/{id}` con el detalle completo.
+ *
+ * <p>La ruta real es `/observer/actas/{id}`: `/observer/mis-actas/{id}` no
+ * existe en el backend, y un mock de una ruta que nadie llama no prueba nada.
+ *
+ * @param page pagina con la que trabajar
+ * @param actaId id del acta
  */
-export async function mockObserverActaDetalle(page: Page, actaId: string): Promise<void> {
-  const acta = STUB_ACTAS_MIS_ACTAS.find((a) => a.id === actaId) || STUB_ACTAS_MIS_ACTAS[0];
+export async function mockObserverActaDetalle(
+  page: Page,
+  actaId: string,
+): Promise<void> {
+  const id = Number(actaId);
+  const acta = crearActaStub({
+    id: Number.isFinite(id) ? id : 1,
+    estado: 'ENVIADA',
+  });
 
-  await page.route(`${API}/observer/mis-actas/${actaId}`, async (route) => {
+  await page.route(`${API}/observer/actas/${actaId}`, async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({
-          ...acta,
-          totalSufragantes: 300,
-          sufragantesProcesados: 280,
-          votos: {
-            candidato1: 150,
-            candidato2: 100,
-            blancos: 20,
-            nulos: 10,
-          },
-          jrvDetalles: {
-            numero: 'JRV-001',
-            parroquia: 'La Libertad',
-            canton: 'Los Ríos',
-          },
-        }),
+        body: JSON.stringify(acta),
       });
     } else {
       await route.continue();

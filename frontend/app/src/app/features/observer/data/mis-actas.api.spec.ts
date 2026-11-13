@@ -7,6 +7,23 @@ import { MisActasService, ActaDTO, PageResult } from './mis-actas.api';
 import { environment } from '../../../../environments/environment';
 
 describe('MisActasService', () => {
+  /** Acta con la forma de `ActaResponseDto`, el DTO que devuelve el backend. */
+  const ACTA_STUB: ActaDTO = {
+    id: 1,
+    jrvId: 1,
+    cargoId: 1,
+    registradaPorId: 4,
+    estado: 'ENVIADA',
+    totalSufragantes: 300,
+    votosBlancos: 20,
+    votosNulos: 10,
+    fechaRegistro: '2026-11-08T15:30:00Z',
+    motivoAnulacion: null,
+    nombreCargo: 'Alcalde/sa',
+    numeroJrv: 'JRV-SE-001',
+    totalVotosCandidatos: 270,
+  };
+
   let service: MisActasService;
   let httpMock: HttpTestingController;
   const baseUrl = `${environment.apiUrl}/observer/mis-actas`;
@@ -28,20 +45,8 @@ describe('MisActasService', () => {
   describe('getMisActas', () => {
     it('should fetch actas with pagination', () => {
       const mockResponse: PageResult<ActaDTO> = {
-        content: [
-          {
-            id: '1',
-            numeroActa: '001',
-            jrvNombre: 'J-1',
-            fechaTransmision: '2026-11-08T15:30:00Z',
-            estado: 'TRANSMITIDO',
-            accionLabel: 'Ver detalles',
-          },
-        ],
-        totalElements: 10,
-        totalPages: 1,
-        currentPage: 0,
-        size: 10,
+        data: [ACTA_STUB],
+        meta: { page: 0, size: 10, totalElements: 10, totalPages: 1 },
       };
 
       service
@@ -52,8 +57,8 @@ describe('MisActasService', () => {
           jrvId: null,
         })
         .subscribe((result) => {
-          expect(result.content.length).toBe(1);
-          expect(result.totalElements).toBe(10);
+          expect(result.data.length).toBe(1);
+          expect(result.meta.totalElements).toBe(10);
         });
 
       const req = httpMock.expectOne((request) => {
@@ -71,26 +76,22 @@ describe('MisActasService', () => {
 
     it('should include estado filter when provided', () => {
       const mockResponse: PageResult<ActaDTO> = {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-        currentPage: 0,
-        size: 10,
+        data: [],
+        meta: { page: 0, size: 10, totalElements: 0, totalPages: 0 },
       };
 
       service
         .getMisActas({
           page: 0,
           size: 10,
-          estado: 'TRANSMITIDO',
+          estado: 'ENVIADA',
           jrvId: null,
         })
         .subscribe();
 
       const req = httpMock.expectOne((request) => {
         return (
-          request.url === baseUrl &&
-          request.params.get('estado') === 'TRANSMITIDO'
+          request.url === baseUrl && request.params.get('estado') === 'ENVIADA'
         );
       });
 
@@ -100,11 +101,8 @@ describe('MisActasService', () => {
 
     it('should include jrvId filter when provided', () => {
       const mockResponse: PageResult<ActaDTO> = {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-        currentPage: 0,
-        size: 10,
+        data: [],
+        meta: { page: 0, size: 10, totalElements: 0, totalPages: 0 },
       };
 
       service
@@ -128,11 +126,8 @@ describe('MisActasService', () => {
 
     it('should not include null filters in query params', () => {
       const mockResponse: PageResult<ActaDTO> = {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-        currentPage: 0,
-        size: 10,
+        data: [],
+        meta: { page: 0, size: 10, totalElements: 0, totalPages: 0 },
       };
 
       service
@@ -158,18 +153,15 @@ describe('MisActasService', () => {
 
     it('should handle multiple filters simultaneously', () => {
       const mockResponse: PageResult<ActaDTO> = {
-        content: [],
-        totalElements: 0,
-        totalPages: 0,
-        currentPage: 0,
-        size: 10,
+        data: [],
+        meta: { page: 0, size: 10, totalElements: 0, totalPages: 0 },
       };
 
       service
         .getMisActas({
           page: 1,
           size: 20,
-          estado: 'REVISION',
+          estado: 'EN_DISPUTA',
           jrvId: 'jrv-456',
         })
         .subscribe();
@@ -179,7 +171,7 @@ describe('MisActasService', () => {
           request.url === baseUrl &&
           request.params.get('page') === '1' &&
           request.params.get('size') === '20' &&
-          request.params.get('estado') === 'REVISION' &&
+          request.params.get('estado') === 'EN_DISPUTA' &&
           request.params.get('jrvId') === 'jrv-456'
         );
       });

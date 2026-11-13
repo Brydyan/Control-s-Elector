@@ -13,21 +13,26 @@ describe('MisActasPage', () => {
   let mockMisActasService: jasmine.SpyObj<MisActasService>;
   let mockRouter: jasmine.SpyObj<Router>;
 
+  /** Acta con la forma de `ActaResponseDto`, el DTO que devuelve el backend. */
   const mockActaDTO: ActaDTO = {
-    id: '1',
-    numeroActa: '001',
-    jrvNombre: 'J-1',
-    fechaTransmision: '2026-11-08T15:30:00Z',
-    estado: 'TRANSMITIDO',
-    accionLabel: 'Ver detalles',
+    id: 1,
+    jrvId: 1,
+    cargoId: 1,
+    registradaPorId: 4,
+    estado: 'ENVIADA',
+    totalSufragantes: 300,
+    votosBlancos: 20,
+    votosNulos: 10,
+    fechaRegistro: '2026-11-08T15:30:00Z',
+    motivoAnulacion: null,
+    nombreCargo: 'Alcalde/sa',
+    numeroJrv: 'JRV-SE-001',
+    totalVotosCandidatos: 270,
   };
 
   const mockPageResult: PageResult<ActaDTO> = {
-    content: [mockActaDTO],
-    totalElements: 1,
-    totalPages: 1,
-    currentPage: 0,
-    size: 10,
+    data: [mockActaDTO],
+    meta: { page: 0, size: 10, totalElements: 1, totalPages: 1 },
   };
 
   beforeEach(async () => {
@@ -174,9 +179,10 @@ describe('MisActasPage', () => {
     it('should navigate to acta detail on onRowClick', () => {
       component.onRowClick(mockActaDTO);
 
+      // El id del acta es numerico en el DTO del backend.
       expect(mockRouter.navigate).toHaveBeenCalledWith([
         '/observer/mis-actas',
-        '1',
+        1,
         'detalles',
       ]);
     });
@@ -204,16 +210,16 @@ describe('MisActasPage', () => {
   describe('table columns', () => {
     it('should have correct columns defined', () => {
       expect(component.columns.length).toBeGreaterThan(0);
-      expect(component.columns[0].key).toBe('numeroActa');
-      expect(component.columns[1].key).toBe('jrvNombre');
-      expect(component.columns[2].key).toBe('fechaTransmision');
+      expect(component.columns[0].key).toBe('numeroJrv');
+      expect(component.columns[1].key).toBe('nombreCargo');
+      expect(component.columns[2].key).toBe('fechaRegistro');
       expect(component.columns[3].key).toBe('estado');
     });
 
     it('should have appropriate headers for columns', () => {
-      expect(component.columns[0].header).toBe('#Acta');
-      expect(component.columns[1].header).toBe('JRV');
-      expect(component.columns[2].header).toBe('Fecha Transmisión');
+      expect(component.columns[0].header).toBe('JRV');
+      expect(component.columns[1].header).toBe('Cargo');
+      expect(component.columns[2].header).toBe('Fecha de registro');
       expect(component.columns[3].header).toBe('Estado');
     });
   });
