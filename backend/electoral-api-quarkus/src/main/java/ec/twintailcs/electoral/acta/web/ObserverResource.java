@@ -102,8 +102,22 @@ public class ObserverResource {
   /** Actas en disputa que el observer autenticado tiene que corregir. */
   @GET
   @Path("/correcciones-pendientes")
-  public List<ActaResponseDto> correccionesPendientes() {
-    return actaService.correccionesPendientes();
+  public PagedResponse<ActaResponseDto> correccionesPendientes(
+      @Parameter(description = "Número de página (comenzando en 0)") @QueryParam("page")
+          Integer page,
+      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size") Integer size) {
+    int pageNum = page != null ? page : 0;
+    int pageSize = size != null ? size : 20;
+
+    // Validación: max size = 50
+    if (pageSize > 50) {
+      pageSize = 50;
+    }
+    if (pageSize <= 0) {
+      pageSize = 20;
+    }
+
+    return actaService.correccionesPendientesPaginadas(pageNum, pageSize);
   }
 
   /** JRVs con su estado de registro. */
