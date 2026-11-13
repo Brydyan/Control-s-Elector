@@ -209,7 +209,8 @@ public class CoordinatorResource {
       @QueryParam("jrvId") Long jrvId,
       @Parameter(description = "Número de página (comenzando en 0)") @QueryParam("page")
           Integer page,
-      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size") Integer size) {
+      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size")
+          Integer size) {
     autorizador.exigir("COORDINATOR", "MASTER", "ADMIN");
 
     int pageNum = page != null ? page : 0;
