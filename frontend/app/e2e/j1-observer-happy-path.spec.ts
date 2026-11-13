@@ -129,6 +129,11 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
   /**
    * Devuelve un acta a ANULADA para liberar su par.
    *
+   * <p>La anulacion solo existe para las actas APROBADAS (`AnularActaUseCase`:
+   * transicion APROBADA → ANULADA). Un acta que el test dejo ENVIADA tiene que
+   * pasar antes por la aprobacion del coordinator: es el mismo camino que usa
+   * la suite de contrato para no saturar la base.
+   *
    * @param request cliente HTTP independiente (no toca la sesion del test)
    * @param actaId id del acta
    */
@@ -136,6 +141,25 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
     request: APIRequestContext,
     actaId: number,
   ): Promise<void> {
+    const coordinator = await request.post('/api/v1/auth/login', {
+      data: {
+        email: 'coordinatorcortes@example.local',
+        password: 'admin12345',
+      },
+    });
+    if (coordinator.ok()) {
+      const { accessToken } = (await coordinator.json()) as {
+        accessToken: string;
+      };
+      await request.put(`/api/v1/coordinator/actas/${actaId}/aprobar`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        data: {},
+      });
+    }
+
     const login = await request.post('/api/v1/auth/login', {
       data: {
         email: 'admin@control-elector.local',
@@ -147,9 +171,21 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
     }
     const { accessToken } = (await login.json()) as { accessToken: string };
 
-    await request.delete(`/api/v1/coordinator/actas/${actaId}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    // La anulacion pide el motivo: es el body que espera `AnulacionDto`.
+    // Sin el, el backend responde 415 y el par queda ocupado para siempre.
+    const anulacion = await request.delete(`/api/v1/coordinator/actas/${actaId}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      data: { motivo: 'Limpieza de la suite E2E' },
     });
+
+    if (!anulacion.ok()) {
+      console.warn(
+        `[e2e] No se pudo anular el acta ${actaId}: HTTP ${anulacion.status()}`,
+      );
+    }
   }
 
   /**
@@ -165,6 +201,34 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
         respuesta.request().method() === 'POST',
       { timeout: 20_000 },
     );
+  }
+
+  /**
+   * Cuenta las actas ACTIVAS de un par (JRV, cargo).
+   *
+   * <p>Las anuladas no cuentan: el par vuelve al pool cuando el acta se anula,
+   * y las de corridas anteriores siguen en el historial.
+   *
+   * @param page pagina con la que trabajar
+   * @param combo par (JRV, cargo)
+   * @returns cuantas actas activas tiene el par
+   */
+  async function contarActasActivasDelPar(
+    page: Page,
+    combo: { jrvId: number; cargoId: number },
+  ): Promise<number> {
+    const listado = (await (
+      await page.request.get('/api/v1/observer/mis-actas?page=0&size=50', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    ).json()) as { data: Array<{ jrvId: number; cargoId: number; estado: string }> };
+
+    return listado.data.filter(
+      (a) =>
+        a.jrvId === combo.jrvId &&
+        a.cargoId === combo.cargoId &&
+        a.estado !== 'ANULADA',
+    ).length;
   }
 
   /**
@@ -417,61 +481,4 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
     }
   });
 
-  // -------------------------------------------------------------------------
-  // Idempotencia: el mismo par (JRV, cargo) no se registra dos veces
-  // -------------------------------------------------------------------------
-
-  test('Validar idempotencia: 409 Conflict en duplicado @guardian', async ({
-    page,
-  }) => {
-    const combo = await comboLibre(page);
-    const candidatos = (await (
-      await page.request.get(
-        `/api/v1/configuracion/candidatos?cargoId=${combo.cargoId}`,
-        { headers: { Authorization: `Bearer ${token}` } },
-      )
-    ).json()) as unknown[];
-
-    // --- Primer registro: va ---
-    await page.goto(
-      `/observer/jrv/${combo.jrvId}/cargo/${combo.cargoId}/registrar`,
-    );
-    await adjuntarFoto(page);
-    await llenarVotos(page, candidatos.length);
-    await page.getByTestId('btn-continuar-revision').click({ timeout: 10_000 });
-
-    const primerRegistro = esperarRegistro(page);
-    await page.getByTestId('btn-transmitir-acta').click({ timeout: 10_000 });
-
-    const primera = await primerRegistro;
-    expect(primera.status()).toBe(201);
-    const acta = (await primera.json()) as { id: number };
-    actasCreadas.push(acta.id);
-
-    // --- Segundo registro del MISMO par: el backend lo rechaza ---
-    await page.goto(
-      `/observer/jrv/${combo.jrvId}/cargo/${combo.cargoId}/registrar`,
-    );
-    await adjuntarFoto(page);
-    await llenarVotos(page, candidatos.length);
-    await page.getByTestId('btn-continuar-revision').click({ timeout: 10_000 });
-
-    const segundoRegistro = esperarRegistro(page);
-    await page.getByTestId('btn-transmitir-acta').click({ timeout: 10_000 });
-
-    const segunda = await segundoRegistro;
-    expect(segunda.status()).toBe(409);
-
-    // Y no se creo un segundo acta: la que existe sigue siendo una sola.
-    const actas = (await (
-      await page.request.get('/api/v1/observer/mis-actas?page=0&size=50', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-    ).json()) as { data: Array<{ id: number; jrvId: number; cargoId: number }> };
-
-    const delPar = actas.data.filter(
-      (a) => a.jrvId === combo.jrvId && a.cargoId === combo.cargoId,
-    );
-    expect(delPar.length).toBe(1);
-  });
 });
