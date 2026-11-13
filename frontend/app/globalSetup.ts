@@ -124,11 +124,16 @@ async function aceptarModalTerminos(pagina: import('@playwright/test').Page) {
  * Entra con un usuario real del seed y acepta los terminos.
  *
  * @param pagina pagina con la que trabajar
+ * @param baseUrl origen de la app; el contexto del global setup no hereda el
+ *   `baseURL` del config, asi que las rutas tienen que ser absolutas
  */
-async function iniciarSesionReal(pagina: import('@playwright/test').Page) {
+async function iniciarSesionReal(
+  pagina: import('@playwright/test').Page,
+  baseUrl: string,
+) {
   const usuario = USUARIOS_SEED.OBSERVER;
 
-  await pagina.goto('/login');
+  await pagina.goto(`${baseUrl}/login`);
   await pagina.locator('#email').fill(usuario.email);
   await pagina.locator('#password').fill(usuario.password);
   await pagina
@@ -190,7 +195,7 @@ export default async function globalSetup(config: FullConfig): Promise<void> {
     // tests con mocks siguen funcionando: ellos llevan su propia sesion.
     if (online) {
       try {
-        await iniciarSesionReal(pagina);
+        await iniciarSesionReal(pagina, baseUrl);
       } catch (error) {
         console.warn(
           `[e2e] No se pudo iniciar sesion real: ${String(error)}`,
