@@ -329,8 +329,7 @@ class ObserverActasContractIT extends ContractTestSupport {
 
     Response r = as(token).get(OBSERVER + "/correcciones-pendientes");
 
-    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
-    List<Map<String, Object>> pendientes = r.jsonPath().getList("$");
+    List<Map<String, Object>> pendientes = listar(r);
     assertThat(pendientes).extracting(acta -> ((Number) acta.get("id")).longValue()).contains(actaId);
     assertThat(pendientes)
         .allSatisfy(
