@@ -17,7 +17,7 @@ COPY src ./src
 RUN mvn -B package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
-FROM eclipse-temurin:25-jre
+FROM eclipse-temurin:25-jre-noble
 WORKDIR /app
 
 RUN apt-get update && \
