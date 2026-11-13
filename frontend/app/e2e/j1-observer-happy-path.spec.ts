@@ -481,4 +481,54 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
     }
   });
 
+  // -------------------------------------------------------------------------
+  // Idempotencia: el mismo par (JRV, cargo) no se registra dos veces
+  // -------------------------------------------------------------------------
+
+  test('Validar idempotencia: 409 Conflict en duplicado @guardian', async ({
+    page,
+  }) => {
+    const combo = await comboLibre(page);
+    const candidatos = (await (
+      await page.request.get(
+        `/api/v1/configuracion/candidatos?cargoId=${combo.cargoId}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+    ).json()) as unknown[];
+
+    // --- Primer registro: va ---
+    await page.goto(
+      `/observer/jrv/${combo.jrvId}/cargo/${combo.cargoId}/registrar`,
+    );
+    await adjuntarFoto(page);
+    await llenarVotos(page, candidatos.length);
+    await page.getByTestId('btn-continuar-revision').click({ timeout: 10_000 });
+
+    const primerRegistro = esperarRegistro(page);
+    await page.getByTestId('btn-transmitir-acta').click({ timeout: 10_000 });
+
+    const primera = await primerRegistro;
+    expect(primera.status()).toBe(201);
+    const acta = (await primera.json()) as { id: number };
+    actasCreadas.push(acta.id);
+
+    // --- Segundo registro del MISMO par: el backend lo rechaza ---
+    const activasAntes = await contarActasActivasDelPar(page, combo);
+
+    await page.goto(
+      `/observer/jrv/${combo.jrvId}/cargo/${combo.cargoId}/registrar`,
+    );
+    await adjuntarFoto(page);
+    await llenarVotos(page, candidatos.length);
+    await page.getByTestId('btn-continuar-revision').click({ timeout: 10_000 });
+
+    const segundoRegistro = esperarRegistro(page);
+    await page.getByTestId('btn-transmitir-acta').click({ timeout: 10_000 });
+
+    const segunda = await segundoRegistro;
+    expect(segunda.status()).toBe(409);
+
+    // Y no se creo un segundo acta: las activas del par siguen siendo las mismas.
+    expect(await contarActasActivasDelPar(page, combo)).toBe(activasAntes);
+  });
 });
