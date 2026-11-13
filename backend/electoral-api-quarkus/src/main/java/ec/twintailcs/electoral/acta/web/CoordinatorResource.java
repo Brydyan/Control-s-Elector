@@ -205,10 +205,25 @@ public class CoordinatorResource {
   /** Listado de incidencias operativas de JRV, con filtro opcional por JRV. */
   @GET
   @Path("/incidencias")
-  public List<IncidenciaResponseDto> listarIncidencias(@QueryParam("jrvId") Long jrvId) {
+  public PagedResponse<IncidenciaResponseDto> listarIncidencias(
+      @QueryParam("jrvId") Long jrvId,
+      @Parameter(description = "Número de página (comenzando en 0)") @QueryParam("page")
+          Integer page,
+      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size") Integer size) {
     autorizador.exigir("COORDINATOR", "MASTER", "ADMIN");
 
-    return incidenciaService.listar(jrvId);
+    int pageNum = page != null ? page : 0;
+    int pageSize = size != null ? size : 20;
+
+    // Validación: max size = 50
+    if (pageSize > 50) {
+      pageSize = 50;
+    }
+    if (pageSize <= 0) {
+      pageSize = 20;
+    }
+
+    return incidenciaService.listarPaginado(jrvId, pageNum, pageSize);
   }
 
   /**
