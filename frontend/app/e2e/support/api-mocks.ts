@@ -1,5 +1,7 @@
 import { Page } from '@playwright/test';
 
+import { versionTerminosVigente } from './consent';
+
 /** Base URL of the API as seen by the Angular app (matches environment.apiUrl). */
 const API = '**/api/v1';
 
@@ -89,6 +91,7 @@ export async function mockAuthMe(
         nombre: user.nombre,
         apellido: user.apellido,
         rol: user.rol,
+        acceptedTermsVersion: versionTerminosVigente(),
       }),
     });
   });
@@ -134,6 +137,12 @@ export async function mockAuthRefresh(
     apellido: user.apellido,
     rol: user.rol,
     permisos: [],
+    /**
+     * Sin esto, la app cree que el usuario nunca acepto los terminos y el
+     * guard `authGuard` manda a `/terminos`: la navegacion del test nunca
+     * llega a la pantalla que queria probar.
+     */
+    acceptedTermsVersion: versionTerminosVigente(),
   };
 
   await page.route(`${API}/auth/refresh`, async (route) => {
