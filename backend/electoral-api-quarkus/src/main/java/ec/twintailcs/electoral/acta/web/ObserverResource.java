@@ -11,6 +11,7 @@ import ec.twintailcs.electoral.acta.web.dto.JrvConEstadoDto;
 import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.evidencia.application.ArchivoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaInvalidaException;
+import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -27,9 +28,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.nio.file.Files;
-import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import java.util.List;
-import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
 import org.jboss.resteasy.reactive.RestForm;
 import org.jboss.resteasy.reactive.multipart.FileUpload;
@@ -79,12 +78,11 @@ public class ObserverResource {
   @GET
   @Path("/mis-actas")
   public PagedResponse<ActaResponseDto> misActas(
-      @Parameter(description = "Filtrar por estado del acta")
-          @QueryParam("estado")
-          String estado,
+      @Parameter(description = "Filtrar por estado del acta") @QueryParam("estado") String estado,
       @Parameter(description = "Número de página (comenzando en 0)") @QueryParam("page")
           Integer page,
-      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size") Integer size) {
+      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size")
+          Integer size) {
     int pageNum = page != null ? page : 0;
     int pageSize = size != null ? size : 20;
 
@@ -105,7 +103,8 @@ public class ObserverResource {
   public PagedResponse<ActaResponseDto> correccionesPendientes(
       @Parameter(description = "Número de página (comenzando en 0)") @QueryParam("page")
           Integer page,
-      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size") Integer size) {
+      @Parameter(description = "Tamaño de la página (máximo 50)") @QueryParam("size")
+          Integer size) {
     int pageNum = page != null ? page : 0;
     int pageSize = size != null ? size : 20;
 
