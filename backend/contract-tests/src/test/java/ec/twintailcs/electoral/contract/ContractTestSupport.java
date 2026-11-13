@@ -106,10 +106,10 @@ public abstract class ContractTestSupport {
     return JSON.writeValueAsString(body);
   }
 
-  /** Lee una respuesta JSON como lista de objetos. Falla la suite si no vino un 200. */
+  /** Lee una respuesta JSON como lista de objetos desde PagedResponse.content. Falla la suite si no vino un 200. */
   protected static List<Map<String, Object>> listar(Response r) {
     assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
-    return r.jsonPath().getList("$");
+    return r.jsonPath().getList("content");
   }
 
   // ---------------------------------------------------------------------------------------------
