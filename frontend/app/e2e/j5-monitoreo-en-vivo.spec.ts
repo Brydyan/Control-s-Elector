@@ -42,7 +42,11 @@ test.describe('J5 — Monitoreo en Vivo (MASTER Dashboard)', () => {
               votosBlancos: 15,
               votosNulos: 8,
               fechaRegistro: '2026-11-05T10:30:00',
-              urlEvidencia: 'https://s3.example.com/foto1.jpg',
+              registradaPorId: 4,
+              motivoAnulacion: null,
+              nombreCargo: 'Alcalde/sa',
+              numeroJrv: 'JRV-001',
+              totalVotosCandidatos: 277,
             },
             {
               id: 2,
@@ -53,13 +57,17 @@ test.describe('J5 — Monitoreo en Vivo (MASTER Dashboard)', () => {
               votosBlancos: 12,
               votosNulos: 10,
               fechaRegistro: '2026-11-05T11:45:00',
-              urlEvidencia: 'https://s3.example.com/foto2.jpg',
+              registradaPorId: 4,
+              motivoAnulacion: null,
+              nombreCargo: 'Alcalde/sa',
+              numeroJrv: 'JRV-002',
+              totalVotosCandidatos: 258,
             },
           ],
           meta: {
             totalElements: 2,
             page: 0,
-            pageSize: 50,
+            size: 50,
             totalPages: 1,
           },
         }),
@@ -120,7 +128,7 @@ test.describe('J5 — Monitoreo en Vivo (MASTER Dashboard)', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: [], meta: { totalElements: 0, page: 0, pageSize: 50, totalPages: 1 } }),
+        body: JSON.stringify({ data: [], meta: { totalElements: 0, page: 0, size: 50, totalPages: 1 } }),
       });
     });
 
@@ -161,7 +169,7 @@ test.describe('J5 — Monitoreo en Vivo (MASTER Dashboard)', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ data: [], meta: { totalElements: 0, page: 0, pageSize: 50, totalPages: 1 } }),
+        body: JSON.stringify({ data: [], meta: { totalElements: 0, page: 0, size: 50, totalPages: 1 } }),
       });
     });
 
@@ -216,10 +224,14 @@ test.describe('J5 — Monitoreo en Vivo (MASTER Dashboard)', () => {
               votosBlancos: 15,
               votosNulos: 8,
               fechaRegistro: '2026-11-05T10:30:00',
-              urlEvidencia: 'https://s3.example.com/foto1.jpg',
+              registradaPorId: 4,
+              motivoAnulacion: null,
+              nombreCargo: 'Alcalde/sa',
+              numeroJrv: 'JRV-001',
+              totalVotosCandidatos: 277,
             },
           ],
-          meta: { totalElements: 1, page: 0, pageSize: 50, totalPages: 1 },
+          meta: { totalElements: 1, page: 0, size: 50, totalPages: 1 },
         }),
       });
     });

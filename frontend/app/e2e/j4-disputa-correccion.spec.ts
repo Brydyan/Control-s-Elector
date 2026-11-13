@@ -119,7 +119,9 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
     // Step 3: Observer can re-open and edit
 
     await page.route('**/api/v1/observer/actas/999', async (route) => {
-      // When editing disputed acta, form should hydrate with previous values
+      // When editing disputed acta, form should hydrate with previous values.
+      // The shape is the backend's `ActaDetalleCompletoDto`: base fields of
+      // `ActaResponseDto` plus `detalles`, `motivoDisputa` and `urlEvidencia`.
       if (route.request().method() === 'GET') {
         await route.fulfill({
           status: 200,
@@ -128,11 +130,33 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
             id: 999,
             jrvId: STUB_JRV_1.jrvId,
             cargoId: STUB_CARGO_1.id,
-            estado: 'DISPUTADA',
-            disputeReason: 'Cifras no coinciden con Padrón Electoral',
+            registradaPorId: 4,
+            estado: 'EN_DISPUTA',
+            motivoDisputa: 'Cifras no coinciden con Padrón Electoral',
             totalSufragantes: SUFRAGANTES,
-            votos: VOTOS_INICIALES,
-            createdAt: new Date().toISOString(),
+            votosBlancos: VOTOS_INICIALES.blancos,
+            votosNulos: VOTOS_INICIALES.nulos,
+            fechaRegistro: new Date().toISOString(),
+            motivoAnulacion: null,
+            nombreCargo: STUB_CARGO_1.nombre,
+            numeroJrv: STUB_JRV_1.numero,
+            totalVotosCandidatos: 250,
+            evidenciaPublicId: null,
+            urlEvidencia: null,
+            detalles: [
+              {
+                candidatoId: 101,
+                candidatoNombre: 'Carlos Rodríguez',
+                partidoSiglas: 'MC',
+                votos: VOTOS_INICIALES.rodriguez,
+              },
+              {
+                candidatoId: 102,
+                candidatoNombre: 'Ana López',
+                partidoSiglas: 'AP',
+                votos: VOTOS_INICIALES.lopez,
+              },
+            ],
           }),
         });
       } else if (route.request().method() === 'PUT') {
@@ -144,9 +168,16 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
             id: 999,
             jrvId: STUB_JRV_1.jrvId,
             cargoId: STUB_CARGO_1.id,
-            estado: 'ACEPTADA',
+            registradaPorId: 4,
+            estado: 'CORREGIDA',
             totalSufragantes: SUFRAGANTES,
-            votos: VOTOS_CORREGIDOS,
+            votosBlancos: VOTOS_CORREGIDOS.blancos,
+            votosNulos: VOTOS_CORREGIDOS.nulos,
+            fechaRegistro: new Date().toISOString(),
+            motivoAnulacion: null,
+            nombreCargo: STUB_CARGO_1.nombre,
+            numeroJrv: STUB_JRV_1.numero,
+            totalVotosCandidatos: 260,
           }),
         });
       }
@@ -228,27 +259,30 @@ test.describe('J4 — Disputa y Corrección de Actas', () => {
           id: 999,
           jrvId: STUB_JRV_1.jrvId,
           cargoId: STUB_CARGO_1.id,
-          estado: 'ACEPTADA',
+          registradaPorId: 4,
+          estado: 'CORREGIDA',
           totalSufragantes: SUFRAGANTES,
-          votos: VOTOS_CORREGIDOS,
-          history: [
+          votosBlancos: VOTOS_CORREGIDOS.blancos,
+          votosNulos: VOTOS_CORREGIDOS.nulos,
+          fechaRegistro: new Date().toISOString(),
+          motivoAnulacion: null,
+          nombreCargo: STUB_CARGO_1.nombre,
+          numeroJrv: STUB_JRV_1.numero,
+          totalVotosCandidatos: 260,
+          evidenciaPublicId: null,
+          urlEvidencia: null,
+          detalles: [
             {
-              version: 1,
-              estado: 'ENVIADA',
-              votos: VOTOS_INICIALES,
-              timestamp: new Date(Date.now() - 600000).toISOString(),
+              candidatoId: 101,
+              candidatoNombre: 'Carlos Rodríguez',
+              partidoSiglas: 'MC',
+              votos: VOTOS_CORREGIDOS.rodriguez,
             },
             {
-              version: 2,
-              estado: 'DISPUTADA',
-              reason: 'Votos no cuadran',
-              timestamp: new Date(Date.now() - 300000).toISOString(),
-            },
-            {
-              version: 3,
-              estado: 'ACEPTADA',
-              votos: VOTOS_CORREGIDOS,
-              timestamp: new Date().toISOString(),
+              candidatoId: 102,
+              candidatoNombre: 'Ana López',
+              partidoSiglas: 'AP',
+              votos: VOTOS_CORREGIDOS.lopez,
             },
           ],
         }),
