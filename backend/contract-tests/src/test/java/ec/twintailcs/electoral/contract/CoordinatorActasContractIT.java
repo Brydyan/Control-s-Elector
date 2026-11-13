@@ -387,7 +387,7 @@ class CoordinatorActasContractIT extends ContractTestSupport {
     Response r = as(coordinator).get(COORDINATOR + "/incidencias");
 
     assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
-    List<Map<String, Object>> incidencias = r.jsonPath().getList("$");
+    List<Map<String, Object>> incidencias = r.jsonPath().getList("content");
     assertThat(incidencias).isNotNull();
     assertThat(incidencias)
         .allSatisfy(
@@ -409,7 +409,7 @@ class CoordinatorActasContractIT extends ContractTestSupport {
     Response r = as(admin).get(COORDINATOR + "/incidencias");
 
     assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
-    assertThat(r.jsonPath().getList("$")).isNotNull();
+    assertThat(r.jsonPath().getList("content")).isNotNull();
   }
 
   // -----------------------------------------------------------------------------------------------
