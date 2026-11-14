@@ -68,3 +68,6 @@ databaseChangeLog:
   # Invitaciones con 24 horas de vigencia (ODD #504 B): actualiza el default
   # y la data existente. Va aquí porque modifica user_invitations (creada en 029).
   - include: { file: database/changelog/033-user-invitation-24h-expiry.sql }
+  # K6 load test users: 14 OBSERVERs, 5 COORDINATORs, 1 ADMIN
+  # Contexto seed: solo en dev local, no en tests o producción
+  - include: { file: database/changelog/034-k6-load-test-users.sql }

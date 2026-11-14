@@ -18,7 +18,6 @@
 import http from 'k6/http';
 import { check, sleep, group } from 'k6';
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js';
-import fs from 'k6/fs';
 
 // ============================================================================
 // CONFIGURACIÓN
@@ -94,7 +93,7 @@ function observerUploadFlow(vu) {
     const loginRes = http.post(
       `${API_BASE}/auth/login`,
       JSON.stringify({
-        email: `obs${vu}@electoral.ec`,
+        email: `obs${vu}@k6.local`,
         password: 'SecurePass123!',
       }),
       { headers: { 'Content-Type': 'application/json' } }
@@ -126,15 +125,19 @@ function observerUploadFlow(vu) {
       return;
     }
 
-    const jrvs = jrvsRes.json('data');
+    const jrvs = jrvsRes.json();
     if (!jrvs || jrvs.length === 0) {
       console.warn(`Observer ${vu} has no JRVs assigned`);
       return;
     }
 
-    // 3. Subir 20 actas
+    // Distribuir VUs a JRVs diferentes para evitar conflicto 409 (una acta activa por JRV+cargo)
+    const jrvIndex = vu % jrvs.length;
+    const jrv = jrvs[jrvIndex];
+    console.log(`OBSERVER-${vu}: Total JRVs=${jrvs.length}, Assigned JRV index=${jrvIndex}, JRV ID=${jrv.id}`);
+
+    // 3. Subir 20 actas (todas en la misma JRV pero diferentes cargos)
     for (let i = 0; i < 20; i++) {
-      const jrv = jrvs[i % jrvs.length];
       uploadActaWithPhoto(headers, jrv.id, vu, i);
 
       // Pequeño delay para no saturar
@@ -149,13 +152,22 @@ function observerUploadFlow(vu) {
  */
 function uploadActaWithPhoto(headers, jrvId, observerVu, actaIndex) {
   group(`Upload Acta #${actaIndex}`, () => {
-    // 3a. Guardar borrador
+    // 3a. Guardar borrador (cada acta en un cargo diferente)
+    // NOTA: cargo 1 (Alcalde/sa) ya existe en seed data para todas las JRVs en estado ENVIADA/EN_DISPUTA/etc.
+    // Ciclar cargos 2-5 para evitar conflictos 409 con actas de seed.
+    const cargoId = ((actaIndex % 4) + 2); // Ciclar entre cargos 2-5
     const borradorRes = http.post(
       `${API_BASE}/observer/actas/borrador`,
       JSON.stringify({
         jrvId,
-        cargoId: 1,
+        cargoId,
         totalSufragantes: 300,
+        detalles: [
+          { candidatoId: 101, votos: 180 },
+          { candidatoId: 102, votos: 100 },
+        ],
+        votosBlancos: 10,
+        votosNulos: 10,
       }),
       { headers }
     );
@@ -166,10 +178,12 @@ function uploadActaWithPhoto(headers, jrvId, observerVu, actaIndex) {
 
     if (borradorRes.status !== 201) {
       console.error(
-        `Observer ${observerVu} save draft failed: ${borradorRes.status}`
+        `Observer ${observerVu} Acta#${actaIndex} save draft FAILED: status=${borradorRes.status} jrvId=${jrvId} cargoId=${cargoId} response=${borradorRes.body}`
       );
       return;
     }
+
+    console.log(`Observer ${observerVu} Acta#${actaIndex} draft created: jrvId=${jrvId} cargoId=${cargoId}`);
 
     const actaId = borradorRes.json('id');
 
@@ -182,7 +196,7 @@ function uploadActaWithPhoto(headers, jrvId, observerVu, actaIndex) {
       const photoPath = `../../documents/pictures/${photoFilename}`;
 
       try {
-        const photoData = fs.readFileSync(photoPath, 'b');
+        const photoData = open(photoPath, 'b');
 
         // Detectar MIME type por extensión
         if (photoFilename.endsWith('.png')) {
@@ -219,17 +233,10 @@ function uploadActaWithPhoto(headers, jrvId, observerVu, actaIndex) {
       return;
     }
 
-    // 3c. Enviar acta completada
+    // 3c. Enviar acta completada (borrador → enviada)
     const enviarRes = http.post(
-      `${API_BASE}/observer/actas`,
-      JSON.stringify({
-        actaId,
-        votos: [
-          { candidatoId: 101, votos: 180 },
-          { candidatoId: 102, votos: 100 },
-          { blancos: 10, nulos: 10 },
-        ],
-      }),
+      `${API_BASE}/observer/actas/${actaId}/enviar`,
+      JSON.stringify({}),
       { headers }
     );
 
@@ -443,7 +450,7 @@ function coordinatorValidateFlow(vu) {
     const loginRes = http.post(
       `${API_BASE}/auth/login`,
       JSON.stringify({
-        email: `coord${vu}@electoral.ec`,
+        email: `coord${vu}@k6.local`,
         password: 'SecurePass123!',
       }),
       { headers: { 'Content-Type': 'application/json' } }
@@ -546,7 +553,7 @@ function adminDashboardFlow(vu) {
     const loginRes = http.post(
       `${API_BASE}/auth/login`,
       JSON.stringify({
-        email: 'admin@electoral.ec',
+        email: 'admin@k6.local',
         password: 'SecurePass123!',
       }),
       { headers: { 'Content-Type': 'application/json' } }
