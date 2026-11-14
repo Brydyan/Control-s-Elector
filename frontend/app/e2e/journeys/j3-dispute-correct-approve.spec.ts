@@ -1,94 +1,124 @@
-import { test, expect, Page } from '@playwright/test';
-import { ActasListaPage, ActaDetallePage } from '../fixtures/pages';
+import { expect } from '@playwright/test';
+import { test } from '../fixtures/auth.fixture';
+import { loginReal } from '../fixtures/auth.fixture';
+import { ActaDetallePage } from '../fixtures/pages';
+import {
+  anular,
+  aprobar,
+  registrarActa,
+  tokenDe,
+} from '../fixtures/actas-real';
 
 /**
  * T-FE-10 J3: Dispute → Correct → Approve
  *
  * User journey:
- * 1. Navigate to acta in ENVIADA state
- * 2. Dispute acta (click Disputar → fill motivo → confirm)
- * 3. Verify estado changed to EN_DISPUTA
- * 4. Correct acta (click Corregir → adjust votes → verify checksum → confirm)
- * 5. Verify estado changed to CORREGIDA
- * 6. Approve acta
- * 7. Verify estado changed to APROBADA
+ * 1. An ENVIADA acta is disputed by the coordinator (with a reason)
+ * 2. The observer corrects the votes of the disputed acta
+ * 3. The coordinator approves it
+ *
+ * El ciclo completo de la maquina de estados, contra la API real:
+ * ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA.
  */
 
 test.describe('J3: Dispute → Correct → Approve Flow', () => {
-  let page: Page;
-  let lista: ActasListaPage;
-  let detalle: ActaDetallePage;
 
-  test.beforeEach(async ({ browser }) => {
-    page = await browser.newPage();
-    lista = new ActasListaPage(page);
-    detalle = new ActaDetallePage(page);
-    await lista.goto();
+  // El inbox y el detalle se prueban sobre la tabla de escritorio. En movil la
+  // tabla compartida se reemplaza por tarjetas, asi que estos journeys (que
+  // assertan sobre filas, menus y paginador de la tabla) no aplican.
+  test.skip(
+    ({ viewport }) => !!viewport && viewport.width < 768,
+    'Journey de escritorio: en movil la tabla se reemplaza por tarjetas.',
+  );
+  const OBSERVER = { email: 'observervera@example.local', password: 'admin12345' };
+
+  let actaId = 0;
+
+  test.beforeEach(async ({ request }) => {
+    const tokenObserver = await tokenDe(
+      request,
+      OBSERVER.email,
+      OBSERVER.password,
+    );
+    actaId = await registrarActa(request, tokenObserver);
   });
 
-  test.afterEach(async () => {
-    await page.close();
+  test.afterEach(async ({ request }) => {
+    if (actaId) {
+      await anular(request, actaId);
+    }
   });
 
-  test('should complete dispute → correct → approve workflow', async () => {
-    // Navigate to detail page
-    await lista.clickActaRow(0);
-    await page.waitForTimeout(500);
+  test('should complete dispute → correct → approve workflow', async ({
+    page,
+    request,
+  }) => {
+    // --- 1. El coordinator disputa el acta ---
+    await loginReal(page, 'COORDINATOR');
+    const detalle = new ActaDetallePage(page);
+    await detalle.goto(actaId);
 
-    // === DISPUTE ===
     await detalle.clickDisputar();
     await detalle.verifyModalOpen('Disputar');
 
-    // Fill motivo
-    await detalle.fillModalInput('Motivo de la Disputa', 'Inconsistencia numérica');
+    await page
+      .locator('#motivoDisputa')
+      .fill('Inconsistencia numérica en los votos de candidatos');
+    await page
+      .locator('[role="dialog"] button')
+      .filter({ hasText: /Confirmar Disputa/ })
+      .last()
+      .click();
 
-    // Confirm dispute
-    await detalle.clickModalConfirm();
-    await detalle.verifyModalClosed();
+    await expect(page.locator('app-badge').first()).toContainText('En Disputa', {
+      timeout: 15_000,
+    });
 
-    // Verify toast
-    await lista.verifyToastMessage('Acta en disputa');
+    // --- 2. El observer corrige el acta ---
+    await loginReal(page, 'OBSERVER');
+    await page.goto(`/observer/acta/${actaId}/corregir`);
 
-    // Verify status changed to EN_DISPUTA
-    let status = await detalle.getActaStatus();
-    expect(status).toContain('EN_DISPUTA');
+    await expect(page.getByTestId('form-card')).toBeVisible({
+      timeout: 15_000,
+    });
+    // El motivo de la disputa le llega al observer.
+    await expect(page.getByTestId('dispute-banner')).toBeVisible();
 
-    // === CORRECT ===
-    await page.waitForTimeout(500);
-    await detalle.clickCorregir();
-    await detalle.verifyModalOpen('Corregir');
+    // Votos que cuadran con el padron.
+    await page.getByTestId('input-total-sufragantes').fill('10');
+    await page.getByTestId('input-votos-blancos').fill('1');
+    await page.getByTestId('input-votos-nulos').fill('1');
 
-    // Fill correction votes (adjust first candidate)
-    await detalle.fillModalInput('Votos Candidato 1', '50');
+    const camposCandidato = page.getByTestId('input-votos-candidato');
+    const totalCandidatos = await camposCandidato.count();
+    for (let i = 0; i < totalCandidatos; i++) {
+      await camposCandidato.nth(i).fill(String(i === 0 ? 8 : 0));
+    }
 
-    // Verify checksum validates
-    await detalle.verifyChecksumValid();
+    await expect(page.getByTestId('checksum-valid')).toBeVisible({
+      timeout: 10_000,
+    });
 
-    // Confirm correction
-    await detalle.clickModalConfirm();
-    await detalle.verifyModalClosed();
+    await page.getByTestId('btn-enviar-correccion').click();
 
-    // Verify toast
-    await lista.verifyToastMessage('Acta corregida');
+    await expect(page.getByTestId('success-message')).toBeVisible({
+      timeout: 15_000,
+    });
 
-    // Verify status changed to CORREGIDA
-    status = await detalle.getActaStatus();
-    expect(status).toContain('CORREGIDA');
+    // --- 3. El coordinator aprueba el acta corregida ---
+    await loginReal(page, 'COORDINATOR');
+    await detalle.goto(actaId);
 
-    // === APPROVE ===
-    await page.waitForTimeout(500);
+    await expect(page.locator('app-badge').first()).toContainText('Corregida', {
+      timeout: 15_000,
+    });
+
     await detalle.clickAprobar();
     await detalle.verifyModalOpen('Aprobar');
-
-    // Confirm approval
     await detalle.clickModalConfirm();
-    await detalle.verifyModalClosed();
 
-    // Verify toast
-    await lista.verifyToastMessage('Acta aprobada');
-
-    // Verify final status APROBADA
-    status = await detalle.getActaStatus();
-    expect(status).toContain('APROBADA');
+    await expect(page.locator('.success-banner')).toContainText('APROBADA', {
+      timeout: 15_000,
+    });
   });
 });

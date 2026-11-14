@@ -9,26 +9,30 @@ export class ActasListaPage {
 
   async goto() {
     await this.page.goto('/coordinator/actas');
-    // Wait for table to load
-    await this.page.waitForSelector('[role="table"]', { timeout: 5000 });
+    // La tabla es la de PrimeNG (`p-table`): un <table> nativo, sin atributo
+    // `role`, asi que el selector tiene que ser por etiqueta.
+    await this.page.waitForSelector('table', { timeout: 15_000 });
   }
 
   async clickEstadoTab(estado: string) {
-    const tabButton = this.page.locator(`button:has-text("${estado}")`).first();
-    await tabButton.click();
+    // Los tabs de PrimeNG se anuncian con role="tab".
+    const tab = this.page.getByRole('tab', { name: new RegExp(estado) }).first();
+    await tab.click();
     // Wait for table to update
     await this.page.waitForTimeout(500);
   }
 
   async verifyEstadoTabsContain(estados: string[]) {
     for (const estado of estados) {
-      const tab = this.page.locator(`button:has-text("${estado}")`);
-      await expect(tab).toBeVisible();
+      const tab = this.page.getByRole('tab', { name: new RegExp(estado) });
+      await expect(tab.first()).toBeVisible();
     }
   }
 
   async filterBySearch(term: string) {
-    const searchInput = this.page.locator('input[aria-label="Buscar por JRV"]');
+    const searchInput = this.page.locator(
+      'input[aria-label="Buscar por JRV, ID o estado"]',
+    );
     await searchInput.fill(term);
     await this.page.waitForTimeout(300); // debounce
   }
@@ -44,7 +48,9 @@ export class ActasListaPage {
   }
 
   async goToNextPage() {
-    const nextButton = this.page.locator('button:has-text("Next")').first();
+    // El paginador de PrimeNG no pone texto en el boton: la clase es lo unico
+    // estable.
+    const nextButton = this.page.locator('.p-paginator-next').first();
     await nextButton.click();
     await this.page.waitForTimeout(500);
   }
@@ -71,11 +77,15 @@ export class ActaDetallePage {
 
   async goto(actaId: number) {
     await this.page.goto(`/coordinator/actas/${actaId}`);
-    await this.page.waitForSelector('h1', { timeout: 5000 });
+    // El detalle no tiene <h1>: el titulo lo pone el layout. Lo que marca que
+    // los datos llegaron es el contenedor del contenido.
+    await this.page.waitForSelector('.acta-detail-content', { timeout: 15_000 });
   }
 
   async clickAprobar() {
-    const button = this.page.locator('button:has-text("Aprobar")').first();
+    // El boton de la pantalla dice "Aprobar Acta"; el del modal dice solo
+    // "Aprobar", asi que el texto largo los distingue.
+    const button = this.page.locator('button:has-text("Aprobar Acta")').first();
     await button.click();
   }
 
@@ -100,8 +110,13 @@ export class ActaDetallePage {
   }
 
   async clickModalConfirm() {
-    const button = this.page.locator('button:has-text("Confirmar")').last();
-    await button.click();
+    // Cada modal de accion confirma con su propio verbo ("Aprobar",
+    // "Disputar", "Corregir", "Anular"), no con un "Confirmar" generico.
+    const boton = this.page
+      .locator('[role="dialog"] button')
+      .filter({ hasText: /Aprobar|Disputar|Corregir|Anular|Confirmar/ })
+      .last();
+    await boton.click();
   }
 
   async verifyModalOpen(title: string) {
@@ -125,7 +140,7 @@ export class ActaDetallePage {
   }
 
   async getActaStatus() {
-    const badge = this.page.locator('[class*="badge"]').first();
+    const badge = this.page.locator('app-badge').first();
     return badge.textContent();
   }
 }
