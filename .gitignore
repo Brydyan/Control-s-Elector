@@ -139,6 +139,7 @@ target/jacoco/
 # ─── Load Testing (K6) ────────────────────────────────────────────────────────
 k6-results/
 k6-output/
+frontend/app/tests/load/results/
 *.html.report
 results.json
 metrics.json
@@ -146,6 +147,7 @@ summary.json
 *.csv.report
 .k6/
 k6-screenshots/
+**/*.json.report
 
 # ─── Tools & Scripts ──────────────────────────────────────────────────────────
 # Local tool outputs, cache
