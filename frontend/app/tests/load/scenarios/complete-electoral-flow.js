@@ -161,8 +161,8 @@ function uploadActaWithPhoto(headers, jrvId, observerVu, actaIndex) {
         cargoId,
         totalSufragantes: 300,
         detalles: [
-          { candidatoId: 101, votos: 180 },
-          { candidatoId: 102, votos: 100 },
+          { candidatoId: 1, votos: 180 },
+          { candidatoId: 2, votos: 100 },
         ],
         votosBlancos: 10,
         votosNulos: 10,
