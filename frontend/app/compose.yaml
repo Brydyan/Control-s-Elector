@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: control-electoral-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: electoral
+      POSTGRES_USER: electoral
+      POSTGRES_PASSWORD: electoral
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U electoral"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rustfs:
+    image: chojnacki/rustfs:latest
+    container_name: control-electoral-s3
+    ports:
+      - "9090:9090"
+    volumes:
+      - s3_data:/data
+    environment:
+      RUST_LOG: info
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  s3_data:
