@@ -108,3 +108,51 @@ quedarse con los 10 que sí aportan.
 
 `feat/backend-native-image` (`feat/backend-quarkus-cutover`, tip `289b9bb`) tiene respaldo local
 en `backup/quarkus-cutover-pre-rebase`.
+
+### L5 — 2026-11-15 — Verificacion: el reapilado ya estaba ejecutado
+
+Al abrir este ODD, las ramas sobre las que operan sus cinco tasks **ya no existian**: ni
+`feat/backend-quarkus-cutover` (el #150), ni `feat/backend-native-image` (el #151), ni el
+respaldo `backup/quarkus-cutover-pre-rebase`. La base del reapilado,
+`origin/test/backend-quarkus-coverage`, sigue como ref remoto pero **no tiene ancestro
+comun con HEAD**: es una linea de historia abandonada. El stack se reconstruyo, se mergeo,
+y las ramas se borraron despues del merge.
+
+Los 10 commits unicos de L2 no existen con esos hashes —los objetos ya no estan en el
+repo— pero **si existen con hashes nuevos**, con los mismos mensajes y en el mismo orden.
+Esa es la huella de una reescritura de historia, o sea del cherry-pick que T1 describe:
+
+| L2 (hash viejo) | HEAD (hash nuevo) |
+|---|---|
+| `0e2324b` | `4ebb4ce` |
+| `ec679fb` | `e8d5e35` |
+| `3a076d4` | `b108ced` |
+| `7691a36` | `63a8686` |
+| `6ec0876` | `525f0e9` |
+| `6b16a6e` | `83776a6` |
+| `357cdd4` | `32156be` |
+| `e32402e` | `6f2801e` |
+| `2e020f1` | `74df4d7` |
+| `289b9bb` | `2b39eb8` |
+
+Los diez estan en la historia de HEAD, ninguno se discardo.
+
+**T3 se volvio a correr hoy**, porque es el unico task con un artefacto verificable: la
+evidencia se saco de la API HTTP de los registries, sin Docker (token anonimo → manifest
+→ config → contenido de las capas).
+
+- **S9 reproducido**: `quay.io/quarkus/ubi-quarkus-runtime-image:jdk-21` → HTTP 401;
+  `quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25` → HTTP 200.
+- **S10 reproducido**: la imagen de runtime en uso (`registry.access.redhat.com/ubi9/ubi-minimal:9.7`)
+  trae `curl`, `bash` y `sh`, y **no** trae `java`; la candidata descartada
+  (`quay.io/quarkus/ubi9-quarkus-micro-image:2.0`) trae shell pero **no** trae `curl`,
+  o sea que su `HEALTHCHECK` nunca habria pasado. Las dos afirmaciones que el comentario
+  del `Dockerfile.native` hacia y nunca se habian medido, son ciertas.
+
+Lo unico que queda **no verificable** es **S7** (el `--force-with-lease` y el respaldo
+previo): el ref del respaldo ya no existe y el reflog local no lo conserva. No es que
+haya fallado; es que no queda evidencia. Queda anotado como tal, no como cumplido.
+
+La frontera de la rebanada, revisada: los dos puntos que el ODD dejaba afuera ya estan
+cerrados. El login local (`DataSeeder` vs `APP_SEED_ADMIN_EMAIL`) lo cerro el ODD
+`quarkus-deps-jdk25`, y el `proxy.conf.json` ahora apunta a `:8080`, no a `:8081`.
