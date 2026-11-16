@@ -27,14 +27,29 @@
 -- EL HASH DE ABAJO ES DE UNA CONTRASENA CONOCIDA Y ESTA EN EL HISTORIAL DE
 -- GIT. Quien lea el repositorio puede entrar como MASTER.
 --
--- Es aceptable SOLO en desarrollo. En staging y produccion este changeset no
+-- Es aceptable SOLO en desarrollo. En staging y produccion este changeset NO
 -- debe correr: la cuenta se provisiona a mano con credenciales propias.
--- El mecanismo para eso ya existe y hoy esta inerte —
--- `quarkus.liquibase.contexts=${QUARKUS_LIQUIDASE_CONTEXTS:seed}` — pero NADIE
--- setea esa variable, ni en compose ni en k8s ni en railway.json, asi que en
--- todos los entornos corre el default `seed`. Poner el `context: seed` explicito
--- es lo que hace que este archivo se pueda excluir con
--- `QUARKUS_LIQUIDASE_CONTEXTS=vacio` sin tocar el changelog maestro.
+--
+-- ─── El contexto que lo apaga ──────────────────────────────────────────────
+--
+-- Este changeset tiene su PROPIO contexto, `bootstrap-admin`, separado del
+-- `seed` del seed de referencia. La separacion es deliberada: el `seed` carga
+-- los datos de referencia que el producto NECESITA en produccion (cargos,
+-- partidos, candidatos, JRVs, geografia), mientras que este admin es un
+-- artefacto de desarrollo. Si compartieran contexto no habria forma de dejar
+-- correr uno y dejar de correr el otro.
+--
+-- El default de la app es `QUARKUS_LIQUIDASE_CONTEXTS=seed`: produccion corre
+-- el seed de referencia y NO crea este admin. Para el stack local y para los
+-- jobs de CI que necesitan esa cuenta, el valor es `seed,bootstrap-admin`.
+--
+-- OJO, y esto se verifico contra la API de Liquibase 5.0.3 (no de memoria):
+-- una lista de contextos de runtime VACIA no excluye nada. Con `Contexts` vacio,
+-- `ContextExpression.matches()` devuelve true para cualquier contexto, asi que
+-- `QUARKUS_LIQUIDASE_CONTEXTS=` (vacio) corre TODO, incluido este changeset.
+-- Para excluirlo hay que pasar una lista NO vacia que no contenga
+-- `bootstrap-admin` (por ejemplo `seed`). La version anterior de este archivo
+-- afirmaba lo contrario y por eso el admin se creaba en produccion.
 --
 -- Para rotatear la contrasena en desarrollo:
 --
@@ -44,7 +59,7 @@
 -- mismo algoritmo y costo que usa el backend Spring).
 -- =============================================================================
 
--- changeset electoral:026-01-admin-inicial context:seed
+-- changeset electoral:026-01-admin-inicial context:bootstrap-admin
 INSERT INTO usuario (email, nombre, apellido, password_hash, rol_id, habilitado, creado_en)
 SELECT
     'admin@control-elector.local',

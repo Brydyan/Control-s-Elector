@@ -6,11 +6,11 @@ import { versionTerminosVigente } from './consent';
 const API = '**/api/v1';
 
 // ---------------------------------------------------------------------------
-// Seed data — mirrors what DataSeeder creates on a fresh dev environment
+// Seed data — mirrors what the backend seeds on a fresh dev environment
 // ---------------------------------------------------------------------------
 
 export const MASTER_USER = {
-  email: 'admsismas@control.ttcs',
+  email: 'admin@control-elector.local',
   password: 'admin12345',
   nombre: 'Admin',
   apellido: 'Sistema',

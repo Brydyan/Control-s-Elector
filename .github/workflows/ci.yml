@@ -246,7 +246,7 @@ jobs:
             -e SERVER_PORT=8080 \
             -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
             -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
-            -e APP_SEED_ADMIN_PASSWORD=admin12345 \
+            -e QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin \
             -e AWS_ACCESS_KEY_ID=rustfsadmin \
             -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
             -e AWS_S3_ENDPOINT=http://localhost:9000 \

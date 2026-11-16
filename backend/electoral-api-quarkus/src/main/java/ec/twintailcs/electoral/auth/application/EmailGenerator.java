@@ -60,11 +60,12 @@ public class EmailGenerator {
   /**
    * Genera el email BASE, sin resolver colisiones.
    *
-   * <p>Es lo que necesita el seeder del usuario MASTER: el email del admin tiene que ser siempre el
-   * mismo ({@code admsismas@control.ttcs}), no uno con sufijo, porque ahi se busca si el
-   * administrador ya fue creado.
+   * <p>Es el paso previo de {@link #generar(String, String, String)}: el email sin sufijo, con el
+   * que se prueba si el usuario ya existe. Antes era publico porque el `DataSeeder` lo usaba para
+   * calcular el email del admin de arranque y buscarlo por el; ese seeder ya no existe y el admin
+   * lo crea la migracion `026-admin-inicial.sql`, asi que el metodo paso a ser privado.
    */
-  public String generarBase(String nombre, String apellido, String rol) {
+  private String generarBase(String nombre, String apellido, String rol) {
     return normalizar(nombre, 3) + normalizar(apellido, 3) + normalizar(rol, 3) + "@" + DOMAIN;
   }
 

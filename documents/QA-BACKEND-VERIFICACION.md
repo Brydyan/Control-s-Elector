@@ -69,7 +69,7 @@ Flujo secuencial para verificar el ciclo de vida real de un acta en la API:
 # Login como MASTER / Admin:
 RESP_AUTH=$(curl -s -X POST http://localhost:8081/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admsismas@control.ttcs","password":"admin12345"}')
+  -d '{"email":"admin@control-elector.local","password":"admin12345"}')
 
 echo "$RESP_AUTH"
 

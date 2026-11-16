@@ -39,9 +39,10 @@ databaseChangeLog:
   - include: { file: database/changelog/025-00-usuario-public-id-default.sql }
   - include: { file: database/changelog/025-data-seed.sql }
   # El admin inicial va al final: necesita `rol` con nombre MASTER, que crea el
-  # seed de RBAC. Lleva `context: seed` explicito para poder excluirlo con
-  # QUARKUS_LIQUIDASE_CONTEXTS vacio en staging/produccion. Ver el aviso de
-  # seguridad en el archivo.
+  # seed de RBAC. Lleva `context: bootstrap-admin` explicito —propio, no el del
+  # seed de referencia— para que produccion pueda correr los datos de
+  # referencia sin crear esta cuenta, que tiene una contrasena conocida y
+  # versionada. Ver el aviso de seguridad en el archivo.
   - include: { file: database/changelog/026-admin-inicial.sql }
   # Repara el hash de las cuentas de referencia del 025, que se creo con un
   # placeholder de 61 caracteres en vez de un BCrypt de 60 y por lo tanto no

@@ -137,10 +137,14 @@ services:
       APP_JWT_REFRESH_PEPPER: ${APP_JWT_REFRESH_PEPPER:-dev-only-control-elector-refresh-pepper}
       # Bootstrap admin
       # El admin inicial lo siembra la migracion 026-admin-inicial.sql, no una
-      # variable de entorno. En staging/produccion se corre con
-      # QUARKUS_LIQUIDASE_CONTEXTS vacio para no crearlo: la cuenta se
-      # provisiona a mano. Ver el aviso de seguridad en el changelog.
-      QUARKUS_LIQUIDASE_CONTEXTS: ${QUARKUS_LIQUIDASE_CONTEXTS:-seed}
+      # variable de entorno. Este es el stack LOCAL, asi que pide el contexto
+      # `bootstrap-admin`: la suite de E2E y la de contrato inician sesion con
+      # esa cuenta. En staging/produccion se corre solo `seed` y la cuenta se
+      # provisiona a mano (ver k8s/configmap.yaml).
+      # OJO: una lista de contextos VACIA no excluye nada — con `Contexts` vacio
+      # Liquibase corre todos los changesets. Ver el aviso de seguridad en el
+      # changelog 026-admin-inicial.sql.
+      QUARKUS_LIQUIDASE_CONTEXTS: ${QUARKUS_LIQUIDASE_CONTEXTS:-seed,bootstrap-admin}
     ports:
       - "8083:80"
     depends_on:
