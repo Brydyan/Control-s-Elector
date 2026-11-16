@@ -6,10 +6,11 @@
 -- Reemplaza la parte de permisos + rol_permiso de DataSeeder.java. Es data
 -- deterministica del modelo electoral, ideal para versionar en Liquibase.
 --
--- El usuario admin inicial NO se siembra aca (su password_hash es un BCrypt
--- generado en runtime desde app.seed.admin-password). Ver /MIGRATIONS.md
--- seccion 4 para las opciones. Al final de este archivo queda documentada la
--- variante B (hash pre-generado) por si se decide moverlo a SQL.
+-- El usuario admin inicial NO se siembra aca. La "variante B" que se
+-- documento al final de este archivo —sembrarlo en SQL con el hash
+-- pre-generado— es la que termino ejecutandose: esta en
+-- 026-admin-inicial.sql, con su propio contexto de Liquibase
+-- (`bootstrap-admin`) para que se pueda excluir en staging y produccion.
 --
 -- ============================================================================
 

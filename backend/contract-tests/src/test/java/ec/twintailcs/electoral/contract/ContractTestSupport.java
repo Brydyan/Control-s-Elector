@@ -42,10 +42,10 @@ import tools.jackson.databind.json.JsonMapper;
  *   <li>{@code contract.baseUrl} / {@code CONTRACT_BASE_URL} — URL del backend. Default {@code
  *       http://localhost:8083} (stack de desarrollo local).
  *   <li>{@code contract.master.email} / {@code CONTRACT_MASTER_EMAIL} — email del MASTER seedeado.
- *       Default {@code admsismas@control.ttcs} (derivado por el {@code DataSeeder}: 3 letras de
- *       nombre + 3 de apellido + 3 de rol).
+ *       Default {@code admin@control-elector.local} (el que crea la migracion
+ *       {@code 026-admin-inicial.sql}, en el contexto {@code bootstrap-admin}).
  *   <li>{@code contract.master.password} / {@code CONTRACT_MASTER_PASSWORD} — password del MASTER
- *       seedeado. Default {@code admin12345} ({@code app.seed.admin-password}).
+ *       seedeado. Default {@code admin12345} (la contrasena fija del changelog).
  * </ul>
  */
 public abstract class ContractTestSupport {

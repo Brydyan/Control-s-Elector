@@ -204,3 +204,91 @@ la suite unitaria sobre `openjdk 25.0.5` (83 tests, 0 fallos). El AOT nativo no 
 construir fuera de CI: el `native-image` pide 6-8 GB de RSS y la imagen de builder no
 corre sin Docker. Lo construye el job `Backend Native Image`, que ya usa el builder de
 Mandrel 25.
+
+### L7 — 2026-11-15 — El admin de arranque se creaba en produccion (T3)
+
+La migracion `026-admin-inicial.sql` ya existia y el `DataSeeder` ya no estaba, pero
+**S8 no se cumplia**: el admin de arranque, con su contrasena conocida y versionada, se
+seguia creando en staging y produccion.
+
+La causa era el contexto. El admin vivia en `context: seed`, y el default de la app era
+`quarkus.liquibase.contexts=${QUARKUS_LIQUIDASE_CONTEXTS:seed}`. Nadie seteaba la variable
+—ni compose, ni k8s, ni railway.json—, asi que en todos los entornos corria `seed`, y con
+el corria el admin. El comentario del propio changelog decia que la cuenta se podia
+excluir con `QUARKUS_LIQUIDASE_CONTEXTS=vacio`.
+
+**Eso es falso, y se verifico contra la API de Liquibase 5.0.3, no de memoria:** con
+`Contexts` vacio, `ContextExpression.matches()` devuelve `true` para cualquier contexto.
+Una lista de contextos de runtime vacia no excluye nada: corre TODO. Para excluir un
+changeset hay que pasar una lista **no vacia** que no contenga su contexto.
+
+Medido con una sonda que parsea el changelog y simula el gate:
+
+| contextos de runtime | corren | se salta |
+|---|---|---|
+| (vacio) | 89 / 89 | — |
+| `seed` | 88 / 89 | `026-01-admin-inicial` |
+| `bootstrap-admin` | 87 / 89 | `025-01-data-seed-dev`, `034-01-k6-load-test-users` |
+| `seed,bootstrap-admin` | 89 / 89 | — |
+
+#### El arreglo
+
+El admin recibe **su propio contexto**, `bootstrap-admin`, separado del `seed`:
+
+- `026-admin-inicial.sql` pasa a `context: bootstrap-admin`.
+- El default de la app sigue siendo `seed`: produccion corre los datos de referencia y
+  **no** crea el admin. El default es fail-closed para la cuenta.
+- `compose.yaml` (stack local) y los jobs de CI que inician sesion como MASTER piden
+  `seed,bootstrap-admin`.
+- `k8s/configmap.yaml` lo dice de forma explicita: `QUARKUS_LIQUIDASE_CONTEXTS: "seed"`.
+
+El `seed` no se puede apagar en produccion: es el unico que trae los datos de referencia
+que el producto necesita (cargos, partidos, candidatos, JRVs, geografia). Por eso el
+admin necesitaba un contexto aparte, y no un "seed" apagado.
+
+#### El checksum no se movio
+
+Cambiar el `context` de un changeset **no** altera su checksum: el contexto es del
+changeset, no del cambio, y el checksum se calcula sobre el SQL. Verificado: los 89
+checksums del changelog quedaron **identicos** antes y despues.
+
+Si habria que editar el *cuerpo* de un changeset ya aplicado, en cambio, el checksum
+cambia y las bases ya migradas fallan la validacion. Por eso, al corregir comentarios
+del `018-notification-seed.sql` y del bloque final del `002-rbac-seed.sql`, esas
+ediciones se **revirtieron**: la sonda mostro que cambiaban el checksum de
+`018-01-notification-seed` y de `002-02-rol-permiso`. Los comentarios que quedan
+*antes* de la linea `-- changeset` si se pueden tocar sin riesgo. Es la misma politica
+que el `027-repara-hash-cuentas-referencia.sql` documenta para el `025`.
+
+#### Lo que tambien se limpio (T3)
+
+- `EmailGenerator.generarBase()` era publico solo porque el `DataSeeder` lo usaba. Sin
+  llamadores, paso a `private`.
+- `APP_SEED_ADMIN_EMAIL` / `APP_SEED_ADMIN_PASSWORD` no los leia nadie: `DataSeeder` era
+  el unico que las miraba y ya no existe. Se quitaron de `.env.example`, de `ci.yml`, de
+  `ci-native.yml` y de `load-test-baseline.yml`.
+- La documentacion que describia al `DataSeeder` y al email `admsismas@control.ttcs`
+  (que no existia desde el corte a Quarkus) se actualizo en `documents/CREDENCIALES.md`,
+  `documents/QA-BACKEND-VERIFICACION.md`, `backend/contract-tests/README.md` y los mocks
+  de E2E.
+- El test negativo de login de la suite de contrato usaba `admsismas@control.ttcs`: un
+  email que no existe, asi que el 401 no probaba lo que decia probar. Ahora usa la
+  cuenta real, para que el 401 sea por la contrasena y no por el usuario inexistente.
+
+#### Lo que queda abierto, y NO es de este feature
+
+El `025-data-seed.sql` siembra, en el mismo contexto `seed`, cinco cuentas de referencia
+—`mastersolon@example.local` (MASTER), `coordinatorcortes@example.local`,
+`adminpalma@example.local` y dos OBSERVER— con la contrasena `admin12345`, y el
+`034-k6-load-test-users.sql` siembra veinte cuentas mas con `SecurePass123!`, una de ellas
+ADMIN. En produccion, con `seed` corrido, esas cuentas tambien existen.
+
+Eso es **la misma clase de defecto que S8**, pero de otro feature: son datos de
+referencia y de load test, mezclados en changesets que ya corrieron en todas las bases.
+Arreglarlo en serio pide partir el changeset `025` (que no se puede editar sin romper el
+checksum), decidir que datos de referencia se quedan para produccion y borrar las
+filas que ya quedaron — y borrar datos esta fuera de la frontera de esta rebanada, por
+la misma razon que los 17 admins duplicados.
+
+Queda como **hallazgo abierto**, con decision del operador: es un ODD propio, no un
+detalle de este.

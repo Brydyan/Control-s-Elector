@@ -100,7 +100,7 @@ jobs:
             -e SERVER_PORT=8080 \
             -e APP_JWT_SECRET=ci-only-load-test-secret-at-least-32-chars \
             -e APP_JWT_REFRESH_PEPPER=ci-only-load-test-pepper \
-            -e APP_SEED_ADMIN_PASSWORD=admin12345 \
+            -e QUARKUS_LIQUIDASE_CONTEXTS=seed \
             -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true \
             -e QUARKUS_HIBERNATE_GENERATION=none \
             -e AWS_ACCESS_KEY_ID=rustfsadmin \
