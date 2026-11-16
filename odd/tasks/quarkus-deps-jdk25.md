@@ -292,3 +292,42 @@ la misma razon que los 17 admins duplicados.
 
 Queda como **hallazgo abierto**, con decision del operador: es un ODD propio, no un
 detalle de este.
+
+### L8 — 2026-11-15 — El filtro por path del job nativo, verificado (T4)
+
+El filtro ya estaba aplicado desde `736980d`. Se reverifico el par completo —filtro
+**y** regla de required— porque **S10** dice que se cambian juntos o no se cambian.
+
+El filtro esta en `.github/workflows/ci-native.yml`, en `pull_request` y en `push`:
+
+```
+backend/electoral-api-quarkus/**   # el modulo: pom, src, Dockerfile.native, mvnw, .mvn
+backend/contract-tests/**           # la suite que corre contra el binario nativo
+.github/workflows/ci.yml
+.github/workflows/ci-native.yml
+```
+
+No falta nada de lo que puede cambiar el resultado del build nativo: no hay pom
+agregador en la raiz (los unicos dos poms estan bajo `backend/`) y el wrapper de
+Maven vive dentro del modulo. El `paths` de `ci.yml` esta de mas —el workflow
+`ci.yml` no interviene en el build nativo—, pero un filtro mas ancho solo cuesta
+tiempo de CI; lo que no puede pasar es que falte algo.
+
+El otro lado del par:
+
+| workflow | filtro de paths en el trigger | checks requeridos |
+|---|---|---|
+| `ci.yml` | **NO** (el filtro va en el job `changes`) | si — 6 checks |
+| `ci-native.yml` | si | **no** |
+
+Por eso el par se sostiene. El `ci.yml` no puede filtrar en el trigger: un workflow
+que no arranca deja sus checks en "Pending" para siempre y bloquea el PR. El
+`ci-native.yml` si filtra, y a cambio no tiene ningun check requerido, asi que un PR
+que no toca el backend no queda esperando un reporte que nunca llega.
+
+Lo unico que **no** se pudo verificar desde el repo es el estado real del ruleset de
+`develop` en GitHub: la API de rulesets responde 404 sin autenticacion de admin. La
+afirmacion "el job nativo no es un check requerido" sale del header del propio
+`ci-native.yml` y de la lista de los 6 checks requeridos que documenta `ci.yml`, no de
+una lectura del ruleset. Si alguien lopromociona a requerido, hay que quitarle el
+filtro en el mismo cambio.
