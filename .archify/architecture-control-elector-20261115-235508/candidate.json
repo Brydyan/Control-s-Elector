@@ -1,0 +1,596 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Control's Elector — runtime de producción y cadena GitOps",
+    "locale": "es",
+    "output": ".archify/architecture-control-elector-20261115-235508/control-elector-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/Brydyan/Control-s-Elector.git",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "3d20fe57500e93a905a227030487e740aa3e647c"
+    },
+    "translations": {
+      "page.title": "{title} Diagrama",
+      "diagram.description.architecture": "Un diagrama de arquitectura generado por Archify.",
+      "node.context.architecture": "Componente de arquitectura",
+      "node.focus": "Enfocar {label}",
+      "node.focus.detail": "Enfocar {label}, {detail}",
+      "legend.title": "Leyenda",
+      "legend.architecture.frontend": "Frontend",
+      "legend.architecture.backend": "Backend",
+      "legend.architecture.database": "Base de datos",
+      "legend.architecture.cloud": "Nube",
+      "legend.architecture.security": "Seguridad",
+      "legend.architecture.messagebus": "Bus de mensajes",
+      "legend.architecture.external": "Externo",
+      "viewer.kind.frontend": "Frontend",
+      "viewer.kind.backend": "Backend",
+      "viewer.kind.database": "Base de datos",
+      "viewer.kind.cloud": "Nube",
+      "viewer.kind.security": "Seguridad",
+      "viewer.kind.messagebus": "Bus de mensajes",
+      "viewer.kind.external": "Externo",
+      "viewer.kind.neutral": "Neutro",
+      "viewer.kind.node": "Nodo",
+      "viewer.toolbar.actions": "Acciones del diagrama",
+      "viewer.theme.toggle": "Cambiar el tema de color",
+      "viewer.theme.toggle.title": "Cambiar el tema (T)",
+      "viewer.theme.dark": "Oscuro",
+      "viewer.theme.light": "Claro",
+      "viewer.motion.live": "En vivo",
+      "viewer.motion.still": "Quieto",
+      "viewer.motion.pause": "Pausar el movimiento",
+      "viewer.motion.resume": "Reanudar el movimiento",
+      "viewer.present.enter": "Entrar en modo presentación",
+      "viewer.present.exit": "Salir del modo presentación",
+      "viewer.export.button": "Exportar",
+      "viewer.export.menu": "Exportar",
+      "viewer.export.subtitle": "Salidas portables y limpias",
+      "viewer.export.image": "Imagen",
+      "viewer.export.raster": "Imágenes rasterizadas",
+      "viewer.export.editable": "Vector editable",
+      "viewer.export.svg.auto": "SVG · Automático",
+      "viewer.export.svg.light": "SVG · Claro",
+      "viewer.export.svg.dark": "SVG · Oscuro",
+      "viewer.export.copyDiagram": "Copiar el diagrama",
+      "viewer.export.clipboardPng": "PNG al portapapeles",
+      "viewer.export.vectorMotion": "Vector y movimiento",
+      "viewer.export.unsupported": "No compatible con este navegador",
+      "viewer.common.close": "Cerrar",
+      "viewer.common.clear": "Limpiar",
+      "viewer.common.copied": "Copiado",
+      "viewer.common.copyFailed": "Error al copiar",
+      "viewer.common.copyLink": "Copiar el enlace",
+      "viewer.guide.title": "Explorar este sistema",
+      "viewer.guide.open": "Abrir la guía del diagrama",
+      "viewer.guide.close": "Cerrar la guía del diagrama",
+      "viewer.guide.find": "Buscar cualquier nodo",
+      "viewer.guide.route": "Trazar una ruta",
+      "viewer.guide.map": "Ver el sistema completo",
+      "viewer.guide.lens": "Comparar clases semánticas",
+      "viewer.finder.title": "Buscar un nodo",
+      "viewer.finder.close": "Cerrar el buscador de nodos",
+      "viewer.finder.placeholder": "Buscar etiquetas o IDs",
+      "viewer.finder.results": "Nodos del diagrama",
+      "viewer.finder.empty": "Sin nodos coincidentes",
+      "viewer.passport.eyebrow": "Pasaporte semántico",
+      "viewer.passport.metadata": "Metadatos del nodo",
+      "viewer.passport.evidence": "Evidencia verificada en el código",
+      "viewer.passport.verified": "Fuente verificada",
+      "viewer.passport.close": "Cerrar el pasaporte semántico",
+      "viewer.route.eyebrow": "Ruta",
+      "viewer.route.instructions": "Haz clic en un inicio y luego en un destino. Los caminos siguen las flechas.",
+      "viewer.lens.eyebrow": "Lente semántica",
+      "viewer.lens.title": "Comparar clases del sistema",
+      "viewer.radar.title": "Radar semántico",
+      "viewer.outline.title": "Índice de nodos",
+      "viewer.nav.zoomIn": "Acercar",
+      "viewer.nav.zoomOut": "Alejar",
+      "viewer.nav.reset": "Restablecer la vista"
+    }
+  },
+  "components": [
+    {
+      "id": "spa",
+      "type": "frontend",
+      "label": "SPA Angular 17+/Ionic",
+      "sublabel": "features por rol",
+      "tag": "escritorio y movil",
+      "pos": [
+        30,
+        250
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "frontend/app/src/app/app.routes.ts",
+          "label": "enrutado por rol"
+        },
+        {
+          "path": "frontend/app/src/app/features/observer/pages/registrar-acta/registrar-acta.page.ts",
+          "label": "modulos por rol"
+        }
+      ]
+    },
+    {
+      "id": "mobile",
+      "type": "external",
+      "label": "Cliente movil offline",
+      "sublabel": "IndexedDB + reintento",
+      "tag": "observa y registra",
+      "pos": [
+        30,
+        360
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": "frontend/app/src/app/core/offline/sync.service.ts",
+          "line": 49,
+          "label": "Idempotency-Key"
+        },
+        {
+          "path": "frontend/app/src/app/core/offline/http-acta-transmitter.ts",
+          "line": 11,
+          "label": "reenvio de cabecera"
+        }
+      ]
+    },
+    {
+      "id": "ingress",
+      "type": "security",
+      "label": "Ingress Kubernetes",
+      "sublabel": "TLS · api.twintailcs.xyz",
+      "pos": [
+        290,
+        250
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "k8s/backend.yaml",
+          "line": 72,
+          "label": "host del ingress"
+        },
+        {
+          "path": "k8s/frontend.yaml",
+          "label": "ingress del frontend"
+        }
+      ]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "API Quarkus · imagen nativa",
+      "sublabel": "resource → application → domain → persistence",
+      "tag": "sin JVM",
+      "pos": [
+        560,
+        240
+      ],
+      "size": [
+        190,
+        80
+      ],
+      "sources": [
+        {
+          "path": "backend/electoral-api-quarkus/pom.xml",
+          "label": "modulo unico"
+        },
+        {
+          "path": "backend/electoral-api-quarkus/Dockerfile.native",
+          "line": 22,
+          "label": "builder Mandrel 25"
+        }
+      ]
+    },
+    {
+      "id": "acta",
+      "type": "backend",
+      "label": "Ciclo de vida del acta",
+      "sublabel": "BORRADOR → ANULADA",
+      "pos": [
+        870,
+        240
+      ],
+      "size": [
+        190,
+        80
+      ],
+      "sources": [
+        {
+          "path": "backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/acta/domain/EstadoActa.java",
+          "line": 9,
+          "label": "maquina de estados"
+        }
+      ]
+    },
+    {
+      "id": "evidencia",
+      "type": "backend",
+      "label": "Modulo de evidencias",
+      "sublabel": "compresion .webp en cliente",
+      "pos": [
+        870,
+        390
+      ],
+      "size": [
+        190,
+        60
+      ],
+      "sources": [
+        {
+          "path": "backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/evidencia/application/usecase/SubirEvidenciaUseCase.java",
+          "line": 34,
+          "label": "subida de evidencia"
+        },
+        {
+          "path": "backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/evidencia/domain/Evidencia.java",
+          "line": 36,
+          "label": "metadatos"
+        }
+      ]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL 16",
+      "sublabel": "RLS forzado en acta, evidencia y audit_log",
+      "pos": [
+        1180,
+        240
+      ],
+      "size": [
+        190,
+        80
+      ],
+      "sources": [
+        {
+          "path": "backend/electoral-api-quarkus/src/main/resources/database/changelog/011-rls.sql",
+          "line": 11,
+          "label": "ENABLE + FORCE RLS"
+        },
+        {
+          "path": "backend/electoral-api-quarkus/src/main/resources/database/changelog/011-rls.sql",
+          "line": 19,
+          "label": "policies por rol"
+        }
+      ]
+    },
+    {
+      "id": "liquibase",
+      "type": "backend",
+      "label": "Liquibase",
+      "sublabel": "unico dueno del schema",
+      "tag": "corre al arrancar",
+      "pos": [
+        1180,
+        380
+      ],
+      "size": [
+        190,
+        60
+      ],
+      "sources": [
+        {
+          "path": "backend/electoral-api-quarkus/src/main/resources/application.properties",
+          "line": 70,
+          "label": "change-log"
+        },
+        {
+          "path": "backend/electoral-api-quarkus/src/main/resources/database/db.changelog-master.yaml",
+          "label": "changelog maestro"
+        }
+      ]
+    },
+    {
+      "id": "storage",
+      "type": "cloud",
+      "label": "Object storage",
+      "sublabel": "RustFS (dev) · Supabase S3 (prod)",
+      "pos": [
+        1180,
+        470
+      ],
+      "size": [
+        190,
+        60
+      ],
+      "sources": [
+        {
+          "path": "backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/storage/s3/S3StorageService.java",
+          "line": 31,
+          "label": "S3Client"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "rate limit distribuido",
+      "pos": [
+        560,
+        500
+      ],
+      "size": [
+        190,
+        60
+      ],
+      "sources": [
+        {
+          "path": "backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/common/application/RateLimitingService.java",
+          "line": 23,
+          "label": "RedisDataSource"
+        }
+      ]
+    },
+    {
+      "id": "observability",
+      "type": "external",
+      "label": "Observabilidad",
+      "sublabel": "health · Sentry · metricas de actas",
+      "pos": [
+        1180,
+        90
+      ],
+      "size": [
+        170,
+        60
+      ],
+      "sources": [
+        {
+          "path": "backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/monitoring/application/SentryService.java",
+          "line": 16,
+          "label": "error tracking"
+        },
+        {
+          "path": "backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/shared/web/HealthAliasResource.java",
+          "label": "health en /actuator/health"
+        }
+      ]
+    },
+    {
+      "id": "ghactions",
+      "type": "cloud",
+      "label": "GitHub Actions",
+      "sublabel": "CI + CD",
+      "pos": [
+        30,
+        680
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "sources": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "label": "suite de contrato y calidad"
+        },
+        {
+          "path": ".github/workflows/deploy.yml",
+          "label": "build y push de la imagen"
+        }
+      ]
+    },
+    {
+      "id": "dockerhub",
+      "type": "cloud",
+      "label": "Docker Hub",
+      "sublabel": "imagen nativa publicada",
+      "pos": [
+        290,
+        680
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": ".github/workflows/deploy.yml",
+          "line": 38,
+          "label": "tags de la imagen"
+        }
+      ]
+    },
+    {
+      "id": "argocd",
+      "type": "cloud",
+      "label": "ArgoCD",
+      "sublabel": "sync automatico · selfHeal",
+      "pos": [
+        560,
+        680
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "sources": [
+        {
+          "path": "k8s/argocd-application.yaml",
+          "label": "Application sobre k8s/"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Produccion · cluster k3s (namespace control-electoral)",
+      "wraps": [
+        "ingress",
+        "api",
+        "acta",
+        "evidencia",
+        "postgres",
+        "liquibase",
+        "storage",
+        "redis"
+      ],
+      "pad": 22
+    },
+    {
+      "kind": "region",
+      "label": "Cadena de entrega (fuera del cluster)",
+      "wraps": [
+        "ghactions",
+        "dockerhub",
+        "argocd"
+      ],
+      "pad": 18
+    }
+  ],
+  "connections": [
+    {
+      "from": "spa",
+      "to": "ingress",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "from": "mobile",
+      "to": "ingress",
+      "label": "HTTPS"
+    },
+    {
+      "from": "ingress",
+      "to": "api",
+      "label": "REST /api/v1 · JWT+RBAC",
+      "variant": "security",
+      "labelAt": [
+        500,
+        200
+      ]
+    },
+    {
+      "from": "api",
+      "to": "acta",
+      "label": "ciclo de vida",
+      "variant": "emphasis"
+    },
+    {
+      "from": "acta",
+      "to": "postgres",
+      "label": "SQL · RLS",
+      "variant": "security"
+    },
+    {
+      "from": "api",
+      "to": "evidencia",
+      "label": "evidencia"
+    },
+    {
+      "from": "evidencia",
+      "to": "postgres",
+      "label": "SQL · RLS",
+      "variant": "security"
+    },
+    {
+      "from": "evidencia",
+      "to": "storage",
+      "label": "PUT .webp"
+    },
+    {
+      "from": "liquibase",
+      "to": "postgres",
+      "label": "changelog",
+      "variant": "dashed"
+    },
+    {
+      "from": "api",
+      "to": "redis",
+      "label": "rate limit",
+      "variant": "dashed"
+    },
+    {
+      "from": "api",
+      "to": "observability",
+      "label": "health · traces · metricas",
+      "variant": "dashed",
+      "fromSide": "top",
+      "toSide": "top",
+      "via": [
+        [
+          655,
+          40
+        ],
+        [
+          1265,
+          40
+        ]
+      ],
+      "labelAt": [
+        960,
+        30
+      ]
+    },
+    {
+      "from": "ghactions",
+      "to": "dockerhub",
+      "label": "imagen nativa"
+    },
+    {
+      "from": "argocd",
+      "to": "ingress",
+      "label": "sincroniza k8s/ · selfHeal",
+      "variant": "dashed",
+      "labelAt": [
+        475,
+        416
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "RLS como capa obligatoria",
+      "items": [
+        "PostgreSQL 16 con ENABLE + FORCE ROW LEVEL SECURITY en acta, evidencia, audit_log y notificacion",
+        "Policies por rol: MASTER, COORDINATOR y ADMIN ven todo; OBSERVER solo lo propio",
+        "El backend fija app.current_user_id y app.current_user_rol por sesion"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Esquema y evidencias",
+      "items": [
+        "Liquibase es el unico dueno del schema: el backend Spring ya no existe",
+        "Las evidencias van a object storage como .webp; a Postgres solo los metadatos",
+        "El runtime es un unico modulo Quarkus compilado como ejecutable nativo"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Dos caminos de despliegue",
+      "items": [
+        "ArgoCD sincroniza k8s/ sobre develop con prune y selfHeal",
+        "El job CD ademas ejecuta kubectl set image con :latest, fuera de ArgoCD",
+        "El selfHeal revierte ese cambio y se pierde la trazabilidad del rollout"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Idempotencia del cliente movil",
+      "items": [
+        "El cliente offline-first reenvia Idempotency-Key con el PendingActa.id",
+        "La deduplicacion es del lado cliente: nunca se crea un acta duplicada",
+        "El backend todavia no consume la cabecera Idempotency-Key"
+      ]
+    }
+  ]
+}

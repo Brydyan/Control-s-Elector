@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "4b7bcfe8-bc63-4632-b53e-f73e3833485f",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-control-elector-20261115-235508/candidate.json",
+  "output": "/home/andy/Documentos/PROYECTOS/CONTROL/Control-s-Elector/.archify/architecture-control-elector-20261115-235508/control-elector-architecture.html",
+  "specification": {
+    "sha256": "81b88a4936fedb5044642566402237623d624da54204348f17ec388c2e3685cf",
+    "bytes": 15847
+  },
+  "artifact": {
+    "sha256": "b05e68e3315fe1e6cc3cb0fa94ccc91cbcc3bb12c9e601d5861dbc70eeaee244",
+    "bytes": 783582
+  }
+}
