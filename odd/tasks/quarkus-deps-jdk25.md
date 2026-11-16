@@ -121,3 +121,58 @@ Contexto que hay que tener presente al auditar: las dos veces que "se uso Quarku
 la libreria cruda" en este repo, el resultado fue **eliminar** una dependencia
 (`uuid-creator` → `Style.VERSION_7`) o **hacerla explicita** (`ApacheHttpClient`), nunca
 agregar una. Que T1 devuelva "no cambiar nada" es un resultado valido.
+
+### L5 — 2026-11-15 — Auditoria de dependencias rehecha (T1)
+
+La auditoria de L4 se escribio el 2026-10-22. Entre esa fecha y hoy entraron cuatro
+dependencias nuevas por features que llegaron despues (invitaciones, compliance de
+monitoring y de rate limiting), asi que el numero de L4 quedo viejo. La auditoria se
+volvio a correr contra el pom real.
+
+**Extensions de Quarkus declaradas: 11 directas** (10 de `io.quarkus` + 1 de
+`quarkiverse`). L4 contaba 13 porque incluia cuatro que hoy llegan **transitivas** y no
+declaradas: AWT, Agroal, Narayana JTA y Caffeine.
+
+| extension | para que |
+|---|---|
+| `quarkus-rest` | REST |
+| `quarkus-rest-jackson` | Jackson |
+| `quarkus-hibernate-orm-panache` | ORM Panache |
+| `quarkus-jdbc-postgresql` | JDBC PostgreSQL |
+| `quarkus-liquibase` | Liquibase |
+| `quarkus-hibernate-validator` | Bean Validation |
+| `quarkus-smallrye-health` | Health en `/actuator/health` |
+| `quarkus-smallrye-openapi` | OpenAPI |
+| `quarkus-mailer` | SMTP (nueva, T-AUTH-INV-01) |
+| `quarkus-redis-client` | Redis (nueva, T-COMPLIANCE-06) |
+| `quarkus-openpdf` (quarkiverse) | PDF del expediente |
+
+**Dependencias directas no-Quarkus: 5** (L4 decia 3).
+
+| dependencia | para que | hay extension equivalente | veredicto |
+|---|---|---|---|
+| `com.nimbusds:nimbus-jose-jwt` | JWT | no | se queda |
+| `software.amazon.awssdk:s3` | storage | `quarkus-amazon-s3`, descartada a proposito | se queda |
+| `software.amazon.awssdk:apache-client` | cliente HTTP del SDK | n/a (es una clase) | se queda |
+| `org.mindrot:jbcrypt` | hashing de password | no | se queda |
+| `io.sentry:sentry` | error tracking | **no**: `quarkus-sentry` no esta en el BOM 3.40.1 | se queda |
+
+Dos se eliminaron. Eran **peso muerto**, no alternativas a una extension:
+
+- **`io.sentry:sentry-logback`** — Quarkus no usa Logback como backend de logging (usa
+  JBoss Logging), asi que el appender de Logback no tendria donde engancharse. Y la
+  dependencia tampoco arrastra Logback: su pom solo declara el SDK, asi que el appender
+  queda sin su clase base. Verificado en el arbol de dependencias: `ch.qos.logback:*` no
+  aparece. Cero referencias en el codigo.
+- **`com.github.vladimir-bukhtoyarov:bucket4j-core`** — `RateLimitingService` implementa
+  la ventana fija a mano sobre `RedisDataSource`. Cero imports de `io.github.bucket4j` en
+  `src/` (main y test). El javadoc del servicio decia "Usa Bucket4j"; el codigo nunca lo
+  uso. Se corrigio el javadoc tambien, porque un comentario que miente es un defecto.
+
+Sobre el S3: la decision de no usar `quarkus-amazon-s3` sigue siendo coherente con el
+strangler y no se toca sin evidencia en contra. El `apache-client` es la version
+*explicita* de la misma politica: el artifact ya venia transitivo y se declara para poder
+referenciarlo desde el codigo sin depender del ServiceLoader.
+
+Resultado: **18 dependencias directas de compile -> 16**. Once son extensions y cinco son
+librerias crudas que no tienen alternativa en la plataforma.
