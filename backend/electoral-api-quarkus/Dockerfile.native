@@ -34,7 +34,7 @@ ENV MAVEN_OPTS=${MAVEN_OPTS}
 # tiene un wrapper global: invocar `mvn` acá moría con
 # `/bin/sh: mvn: command not found`. Se usa el Maven Wrapper del modulo, que
 # baja la version pineada en .mvn/wrapper/maven-wrapper.properties (3.9.16, la
-# misma linea 3.9.x que usa la imagen JVM de maven:3.9-eclipse-temurin-21).
+# misma linea 3.9.x que usa la imagen JVM de maven:3.9-eclipse-temurin-25).
 #
 # El cache va a `/home/quarkus/.m2` y no a `/root/.m2`: el build corre como el
 # usuario `quarkus` (uid 1001), y verificado que no puede escribir en /root, de

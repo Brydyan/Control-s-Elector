@@ -176,3 +176,31 @@ referenciarlo desde el codigo sin depender del ServiceLoader.
 
 Resultado: **18 dependencias directas de compile -> 16**. Once son extensions y cinco son
 librerias crudas que no tienen alternativa en la plataforma.
+
+### L6 — 2026-11-15 — Toolchain Java 25 verificado (T2)
+
+T2 ya venia aplicado desde el PR #152. Se reverifico cada superficie contra el repo:
+
+| superficie | estado |
+|---|---|
+| `backend/electoral-api-quarkus/pom.xml` | `maven.compiler.release=25` |
+| `backend/contract-tests/pom.xml` | `maven.compiler.release=25` |
+| `.github/workflows/ci.yml` | 4 jobs con `java-version: '25'` |
+| `.github/workflows/ci-native.yml` | 1 job con `java-version: '25'` |
+| `.github/workflows/load-test-baseline.yml` | 1 job con `java-version: '25'` |
+| `Dockerfile` | builder `maven:3.9-eclipse-temurin-25`, runtime `eclipse-temurin:25-jre-noble` |
+| `Dockerfile.native` | `quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25` |
+
+El task decia "5 jobs de CI". Hoy son **6**: entre la fecha del ODD y ahora se sumo el
+job de `load-test-baseline.yml`, que tambien compila y arranca el backend.
+
+Un comentario quedo viejo y se corrigio: `Dockerfile.native` decia que la imagen JVM
+era `maven:3.9-eclipse-temurin-21` cuando hace tiempo que es `-25`. No cambiaba el
+build —es un comentario— pero un comentario que describe la imagen equivocada manda
+a diagnosticar el error equivocado.
+
+Sobre **S9** (mover a Java 25 no rompe la suite ni el AOT): el modulo compila y corre
+la suite unitaria sobre `openjdk 25.0.5` (83 tests, 0 fallos). El AOT nativo no se puede
+construir fuera de CI: el `native-image` pide 6-8 GB de RSS y la imagen de builder no
+corre sin Docker. Lo construye el job `Backend Native Image`, que ya usa el builder de
+Mandrel 25.
