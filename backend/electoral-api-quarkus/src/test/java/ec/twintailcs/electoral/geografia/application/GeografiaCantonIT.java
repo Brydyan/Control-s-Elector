@@ -76,8 +76,27 @@ class GeografiaCantonIT {
   @DisplayName("rechaza un codigo repetido en la misma provincia")
   void crearCantonCodigoDuplicado() {
     Long provincia = provinciaId();
-    // "2401" es el codigo del canton Santa Elena del seed, en la misma provincia.
-    CantonRequest dto = new CantonRequest("Duplicado", "2401", provincia);
+    String codigo = "D" + Math.abs(UUID.randomUUID().getLeastSignificantBits() % 100000);
+    service.crearCanton(new CantonRequest("Primero", codigo, provincia), masterId(), "127.0.0.1");
+
+    // El mensaje de la validacion de la app ("en esa provincia") es lo que distingue el
+    // chequeo propio del indice unico de la base: sin el, la base responde 409 tambien, pero
+    // con otro mensaje.
+    CantonRequest dto = new CantonRequest("Duplicado", codigo, provincia);
+
+    assertThatThrownBy(() -> service.crearCanton(dto, masterId(), "127.0.0.1"))
+        .isInstanceOf(GeografiaConflictException.class)
+        .hasMessageContaining(codigo)
+        .hasMessageContaining("en esa provincia");
+  }
+
+  @Test
+  @DisplayName("rechaza un codigo que ya existe en otra provincia (el indice es global)")
+  void crearCantonCodigoDuplicadoEnOtraProvincia() {
+    Long provincia = provinciaId();
+    // "2401" es el codigo del canton Santa Elena del seed, en la provincia 1. El indice
+    // `ix_canton_codigo` es global: el codigo no se puede repetir ni cambiando de provincia.
+    CantonRequest dto = new CantonRequest("Huerfano del codigo", "2401", provincia);
 
     assertThatThrownBy(() -> service.crearCanton(dto, masterId(), "127.0.0.1"))
         .isInstanceOf(GeografiaConflictException.class)

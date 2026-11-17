@@ -84,6 +84,60 @@ class GeografiaContractIT extends ContractTestSupport {
   }
 
   @Test
+  @DisplayName("el arbol de geografia y el desglose del dashboard cuentan las mismas parroquias")
+  @SuppressWarnings("unchecked")
+  void elArbolDeGeografiaCoincideConElDesgloseDelDashboard() {
+    // Los dos endpoints leen la misma tabla con la misma jerarquia. Si uno de los dos cuelga una
+    // parroquia del canton equivocado (un JOIN mal puesto), los dos tellos dejan de coincidir.
+    // ADMIN puede leer los dos: `configuracion:read` para el arbol y el guard del dashboard.
+    String token = tokenFor("ADMIN");
+
+    Response arbol = as(token).get(GEOGRAFIA);
+    Response progreso = as(token).get("/api/v1/dashboard/progreso");
+    assertThat(arbol.statusCode()).as("body: %s", arbol.asString()).isEqualTo(200);
+    assertThat(progreso.statusCode()).as("body: %s", progreso.asString()).isEqualTo(200);
+
+    Map<Long, List<Long>> parroquiasDelArbol = new java.util.HashMap<>();
+    for (Map<String, Object> provincia :
+        arbol.jsonPath().<Map<String, Object>>getList("provincias")) {
+      for (Map<String, Object> canton :
+          (List<Map<String, Object>>) provincia.get("cantones")) {
+        List<Long> ids = new java.util.ArrayList<>();
+        for (Map<String, Object> parroquia :
+            (List<Map<String, Object>>) canton.get("parroquias")) {
+          ids.add(((Number) parroquia.get("id")).longValue());
+        }
+        ids.sort(Long::compareTo);
+        parroquiasDelArbol.put(((Number) canton.get("id")).longValue(), ids);
+      }
+    }
+
+    Map<Long, List<Long>> parroquiasDelDashboard = new java.util.HashMap<>();
+    for (Map<String, Object> canton : progreso.jsonPath().<Map<String, Object>>getList("$")) {
+      List<Long> ids = new java.util.ArrayList<>();
+      for (Map<String, Object> parroquia :
+          (List<Map<String, Object>>) canton.get("parroquias")) {
+        ids.add(((Number) parroquia.get("parroquiaId")).longValue());
+      }
+      ids.sort(Long::compareTo);
+      parroquiasDelDashboard.put(((Number) canton.get("cantonId")).longValue(), ids);
+    }
+
+    assertThat(parroquiasDelArbol)
+        .as("el arbol y el dashboard tienen que tener los mismos cantones: %s vs %s", parroquiasDelArbol, parroquiasDelDashboard)
+        .isNotEmpty();
+    assertThat(parroquiasDelDashboard)
+        .as("el dashboard tiene que traer el desglose: %s", progreso.asString())
+        .isNotEmpty();
+
+    for (Map.Entry<Long, List<Long>> entry : parroquiasDelArbol.entrySet()) {
+      assertThat(parroquiasDelDashboard.get(entry.getKey()))
+          .as("el canton %s tiene las mismas parroquias en el arbol y en el dashboard", entry.getKey())
+          .containsExactlyElementsOf(entry.getValue());
+    }
+  }
+
+  @Test
   @DisplayName("un ADMIN puede leer la geografia (configuracion:read)")
   void adminPuedeLeerLaGeografia() {
     Response r = as(tokenFor("ADMIN")).get(GEOGRAFIA);

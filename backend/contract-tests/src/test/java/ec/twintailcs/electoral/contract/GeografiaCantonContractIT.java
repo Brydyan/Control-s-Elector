@@ -62,6 +62,25 @@ class GeografiaCantonContractIT extends ContractTestSupport {
             .post(CANTONES);
 
     assertErrorShape(r, 409);
+    // El mensaje del chequeo propio dice "en esa provincia". El indice unico de la base
+    // tambien responde 409, pero con otro texto: asi se distingue una validacion de la
+    // aplicacion de la red de seguridad de la base.
+    assertThat(r.jsonPath().getString("message"))
+        .as("body: %s", r.asString())
+        .contains("en esa provincia");
+  }
+
+  @Test
+  @DisplayName("un canton con parroquias no se puede borrar: 409 con el numero de parroquias")
+  void cantonConParroquiasNoSeBorra() {
+    // El canton 1 del seed (Santa Elena) tiene parroquias: el borrado en cascada esta
+    // prohibido y el 409 dice cuantas parroquias lo bloquean.
+    Response r = as(masterToken()).delete(CANTONES + "/1");
+
+    assertErrorShape(r, 409);
+    assertThat(r.jsonPath().getString("fields.childrenCount"))
+        .as("body: %s", r.asString())
+        .isNotBlank();
   }
 
   @Test
