@@ -10,3 +10,11 @@ resources:
   - postgresql.yaml
   - backend.yaml
   - frontend.yaml
+
+# El script que crea el rol de aplicacion viaja al cluster como ConfigMap,
+# generado desde el MISMO archivo que usa el compose y CI: una sola fuente de
+# verdad para el SQL que crea el rol.
+configMapGenerator:
+  - name: app-role-script
+    files:
+      - create-app-role.sql=../scripts/db/create-app-role.sql

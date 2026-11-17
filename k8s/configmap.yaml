@@ -23,7 +23,12 @@ data:
   # El backend es el unico dueno del schema: sin esto nadie aplica las
   # migraciones de Liquibase. En Spring lo hacia `spring.liquibase.enabled=true`
   # de forma implicita.
-  QUARKUS_LIQUIDASE_MIGRATE_AT_START: "true"
+  #
+  # OFF en la API: la migracion corre en un initContainer del mismo Deployment,
+  # con las credenciales del dueno de la base y en modo migrate-only (migra y
+  # sale). Asi el contenedor de la API no tiene las credenciales del dueno y no
+  # puede saltarse RLS ni por accidente.
+  QUARKUS_LIQUIDASE_MIGRATE_AT_START: "false"
   # Contextos de Liquibase. `seed` carga los datos de referencia que el producto
   # necesita en produccion (cargos, partidos, candidatos, JRVs, geografia).
   #

@@ -101,11 +101,8 @@ services:
       # ejecuta y ninguna prueba puede afirmar que filtra.
       DB_USER: ${DB_APP_USER:-electoral_app}
       DB_PASSWORD: ${DB_APP_PASSWORD:-electoral_app_pass}
-      # La migración corre con el DUEÑO (el único que puede crear el schema).
-      # Lo hace un servicio aparte (db-migrate) con estas credenciales; el
-      # contenedor de la API no las tiene.
-      QUARKUS_LIQUIBASE_USERNAME: ${DB_USER:-electoral_user}
-      QUARKUS_LIQUIBASE_PASSWORD: ${DB_PASSWORD:-electoral_pass}
+      # Sin credenciales de migración: este contenedor no migra (lo hace el
+      # servicio `db-migrate`) y, sobre todo, no tiene las del dueño de la base.
 # The API listens on 80 inside the container so that the frontend's
       # nginx can reach it as `electoral-api:80`, the same shape the k8s
       # Service exposes (port 80 -> targetPort 8081).

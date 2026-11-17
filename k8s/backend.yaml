@@ -13,16 +13,79 @@ spec:
       labels:
         app: electoral-api
     spec:
+      volumes:
+      - name: app-role-script
+        configMap:
+          name: app-role-script
       initContainers:
       - name: wait-for-db
         image: postgres:16-alpine
         command: ['sh', '-c', 'until pg_isready -h postgresql -p 5432; do echo waiting for postgresql; sleep 2; done; sleep 5']
+      # Crea el rol con el que conecta la API. Va antes de la migracion porque
+      # el changeset que le da los permisos (036) solo se aplica si el rol
+      # existe. Es idempotente: corre en cada arranque y no rompe nada.
+      - name: create-app-role
+        image: postgres:16-alpine
+        command:
+        - sh
+        - -c
+        - |
+          export PGPASSWORD="$DB_PASSWORD"
+          psql -h postgresql -p 5432 -U "$DB_USER" -d "$DB_NAME" \
+            -v ON_ERROR_STOP=1 \
+            -v app_role="$DB_APP_USER" \
+            -v app_password="$DB_APP_PASSWORD" \
+            -f /scripts/create-app-role.sql
+        envFrom:
+        - secretRef:
+            name: electoral-api-secret
+        volumeMounts:
+        - name: app-role-script
+          mountPath: /scripts
+          readOnly: true
+      # Migra el schema con el DUENO de la base (el unico que puede crearlo) y
+      # termina: el modo migrate-only aplica las migraciones y sale con codigo 0.
+      # El contenedor de la API arranca despues, con el rol de aplicacion.
+      - name: migrate
+        image: brydyan12/control-electoral-backend:latest
+        imagePullPolicy: Always
+        env:
+        - name: APP_MIGRATE_ONLY
+          value: "true"
+        - name: QUARKUS_LIQUIDASE_MIGRATE_AT_START
+          value: "true"
+        # En Quarkus Hibernate valida ANTES que Liquibase cree el schema: contra
+        # una base nueva, `validate` revienta. La migracion va en `none`.
+        - name: QUARKUS_HIBERNATE_GENERATION
+          value: "none"
+        envFrom:
+        - configMapRef:
+            name: electoral-api-config
+        - secretRef:
+            name: electoral-api-secret
       containers:
       - name: electoral-api
         image: brydyan12/control-electoral-backend:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8081
+        # La API entra con el rol de APLICACION y sin las credenciales del
+        # dueno. El `env` explicito pisa al `envFrom` para estos nombres.
+        env:
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: electoral-api-secret
+              key: DB_APP_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: electoral-api-secret
+              key: DB_APP_PASSWORD
+        # Sin credenciales de migracion: el contenedor de la API no migra (lo
+        # hace el initContainer) y, sobre todo, no tiene las del dueno de la
+        # base. Con ellas en el pod, un compromiso de la API seria un
+        # compromiso con el superusuario.
         envFrom:
         - configMapRef:
             name: electoral-api-config
