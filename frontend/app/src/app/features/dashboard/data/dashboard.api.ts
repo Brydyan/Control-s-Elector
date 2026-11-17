@@ -5,7 +5,6 @@ import { environment } from '../../../../environments/environment';
 import {
   DashboardData,
   Novedad,
-  ProgresoCanton,
   ProgresoCantonDto,
   ResumenActas,
   ResultadoCargo,
