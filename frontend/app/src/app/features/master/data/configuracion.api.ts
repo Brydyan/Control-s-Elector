@@ -1,4 +1,4 @@
-import { Injectable, inject, Optional } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
@@ -11,8 +11,7 @@ import {
   CandidatoDto,
   CandidatoRequest,
 } from '../domain/models/configuracion.model';
-import { APP_CONFIG } from '../../../../main';
-import { AppConfig } from '../../../core/config/config.service';
+import { ConfigService } from '../../../core/config/config.service';
 
 /**
  * T-FE-16 Fase A.2: Servicio de API para Configuración Electoral
@@ -24,15 +23,20 @@ import { AppConfig } from '../../../core/config/config.service';
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionApi {
   private readonly http = inject(HttpClient);
-  private readonly config = inject(APP_CONFIG, { optional: true });
+  private readonly configService = inject(ConfigService);
   private baseUrl: string;
 
   constructor() {
-    // En producción: usa apiUrl de config.json (inyectado)
+    // En producción: usa apiUrl de config.json (cargado en APP_INITIALIZER)
     // En desarrollo: usa URL relativa (el proxy redirige)
-    this.baseUrl = this.config?.apiUrl
-      ? `${this.config.apiUrl}/configuracion`
-      : '/api/v1/configuracion';
+    // En tests: usa URL relativa (sin config disponible)
+    try {
+      const apiUrl = this.configService.getApiUrl();
+      this.baseUrl = `${apiUrl}/configuracion`;
+    } catch {
+      // Fallback si ConfigService no está inicializado (dev/tests)
+      this.baseUrl = '/api/v1/configuracion';
+    }
   }
 
   // ============================================================================
