@@ -142,6 +142,20 @@ jobs:
                  -v app_password=electoral_app_pass \
                  -f - < scripts/db/create-app-role.sql
 
+      # El rol de la aplicacion NO puede ser superusuario ni tener BYPASSRLS: con
+      # cualquiera de los dos, Postgres le ignora las politicas de RLS y la suite
+      # de contrato volveria a pasar sin tocar la capa que hay que probar.
+      - name: Assert the application role cannot bypass RLS
+        run: |
+          docker run --rm --network host -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db -t -A \
+              -c "select rolsuper or rolbypassrls from pg_roles where rolname='electoral_app';" \
+            | grep -qx 'f' || {
+              echo "FALLO: el rol electoral_app no puede ser superusuario ni BYPASSRLS";
+              exit 1;
+            }
+
       - name: Boot the native binary twice
         run: |
           # La primera fase migra con el DUENO de la base (el unico que puede

@@ -252,6 +252,20 @@ jobs:
 
       # La migracion corre con el DUENO de la base (el unico que puede crear el
       # schema) y en un contenedor aparte que termina al terminar.
+      # El rol de la aplicacion NO puede ser superusuario ni tener BYPASSRLS: con
+      # cualquiera de los dos, Postgres le ignora las politicas de RLS y esta
+      # suite volveria a pasar sin tocar la capa que hay que probar.
+      - name: Assert the application role cannot bypass RLS
+        run: |
+          docker run --rm --network host -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db -t -A \
+              -c "select rolsuper or rolbypassrls from pg_roles where rolname='electoral_app';" \
+            | grep -qx 'f' || {
+              echo "FALLO: el rol electoral_app no puede ser superusuario ni BYPASSRLS";
+              exit 1;
+            }
+
       - name: Migrate the schema
         run: |
           docker run --rm --network host \
