@@ -19,10 +19,6 @@ import {
   PartidoDto,
   CandidatoDto,
 } from '../../domain/models/configuracion.model';
-import { CargoModalComponent } from './dialogs/cargo-modal/cargo-modal.component';
-import { PartidoModalComponent } from './dialogs/partido-modal/partido-modal.component';
-import { CandidatoModalComponent } from './dialogs/candidato-modal/candidato-modal.component';
-import { ConfirmDialogComponent } from './dialogs/confirm-dialog/confirm-dialog.component';
 
 /**
  * T-FE-16 Fase B.1: MasterConfiguracionPage — Gestión de Configuración Electoral
@@ -54,10 +50,6 @@ import { ConfirmDialogComponent } from './dialogs/confirm-dialog/confirm-dialog.
     KpiCardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
-    CargoModalComponent,
-    PartidoModalComponent,
-    CandidatoModalComponent,
-    ConfirmDialogComponent,
     TableComponent,
     TableCellTemplate,
   ],
