@@ -1,0 +1,412 @@
+<div class="acta-detalle-container">
+  <!-- Top Navigation & Action Bar -->
+  <div class="page-topbar">
+    <app-button
+      variant="ghost"
+      size="sm"
+      (clicked)="volver()"
+      [disabled]="submitting()"
+    >
+      <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      Volver a la bandeja
+    </app-button>
+
+    <div class="topbar-actions" *ngIf="data() && !loading()">
+      <app-button
+        *ngIf="detalle.acta.estado === 'EN_DISPUTA'"
+        variant="secondary"
+        size="sm"
+        (clicked)="abrirModalCorregir()"
+        [disabled]="submitting()"
+      >
+        <i class="pi pi-pencil" aria-hidden="true"></i>
+        Corregir Acta
+      </app-button>
+
+      <app-button
+        *ngIf="detalle.acta.estado === 'ENVIADA' || detalle.acta.estado === 'CORREGIDA'"
+        variant="ghost"
+        size="sm"
+        (clicked)="abrirModalDisputar()"
+        [disabled]="submitting()"
+      >
+        <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+        Disputar
+      </app-button>
+
+      <app-button
+        *ngIf="detalle.acta.estado === 'ENVIADA' || detalle.acta.estado === 'CORREGIDA'"
+        variant="primary"
+        size="sm"
+        (clicked)="abrirModalAprobar()"
+        [disabled]="submitting()"
+      >
+        <i class="pi pi-check-circle" aria-hidden="true"></i>
+        Aprobar Acta
+      </app-button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <app-loading-state
+    *ngIf="loading()"
+    message="Cargando detalles de escrutinio y evidencia..."
+  ></app-loading-state>
+
+  <!-- Error State -->
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Atención"
+    [message]="error() ?? undefined"
+  >
+    <app-button variant="primary" (clicked)="cargarDetalle()">
+      Reintentar
+    </app-button>
+  </app-error-state>
+
+  <!-- Success Notification -->
+  @if (actionSuccessMessage) {
+  <p-message
+    class="success-banner"
+    severity="success"
+    [text]="actionSuccessMessage"
+    [closable]="true"
+    (onClose)="actionSuccessMessage = null"
+  />
+  }
+
+  <!-- Content Section -->
+  <div class="acta-detail-content" *ngIf="data() && !loading()">
+    <!-- Status Banner -->
+    <div
+      class="status-banner"
+      [ngClass]="'status-banner--' + detalle.acta.estado.toLowerCase()"
+    >
+      <div class="banner-info">
+        <span class="banner-title">
+          Acta {{ detalle.acta.estado === 'APROBADA' ? 'Aprobada' :
+          detalle.acta.estado === 'EN_DISPUTA' ? 'En Disputa' :
+          detalle.acta.estado === 'CORREGIDA' ? 'Corregida' : 'Enviada —
+          Pendiente Revisión' }}
+        </span>
+        <span class="banner-sub">
+          ID de control: #{{ detalle.acta.id }} · JRV-{{ detalle.acta.jrvId }}
+        </span>
+      </div>
+      <app-badge [variant]="mapBadgeVariant(detalle.acta.estado)">
+        {{ obtenerEstadoLabel(detalle.acta.estado) }}
+      </app-badge>
+    </div>
+
+    <!-- Reason of Annulment if any -->
+    <div class="disputa-motivo-card" *ngIf="detalle.acta.motivoAnulacion">
+      <div class="motivo-label">Motivo registrado:</div>
+      <div class="motivo-content">{{ detalle.acta.motivoAnulacion }}</div>
+    </div>
+
+    <!-- Two-column grid: Metadata + Evidence -->
+    <div class="two-col-grid">
+      <!-- General Metadata -->
+      <app-card [elevated]="true" headerTitle="Datos de la Mesa">
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-label">JRV:</span>
+            <span class="info-value font-bold"
+              >#{{ detalle.acta.jrvId }} ({{ detalle.jrv?.numero || 'Mesa
+              Oficial' }})</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="info-label">Dignidad:</span>
+            <span class="info-value font-bold"
+              >{{ detalle.cargo?.nombre || 'Cargo #' + detalle.acta.cargoId
+              }}</span
+            >
+          </div>
+          <div class="info-item" *ngIf="detalle.cargo?.nivel">
+            <span class="info-label">Nivel:</span>
+            <span class="info-value">{{ detalle.cargo?.nivel }}</span>
+          </div>
+          <div class="info-item" *ngIf="detalle.jrv?.parroquia">
+            <span class="info-label">Parroquia:</span>
+            <span class="info-value">{{ detalle.jrv?.parroquia }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Fecha Envío:</span>
+            <span class="info-value"
+              >{{ detalle.acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm:ss'
+              }}</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="info-label">Total Sufragantes:</span>
+            <span class="info-value font-bold highlight"
+              >{{ detalle.acta.totalSufragantes }}</span
+            >
+          </div>
+          <div class="info-item">
+            <span class="info-label">Votos Blancos:</span>
+            <span class="info-value">{{ detalle.acta.votosBlancos }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Votos Nulos:</span>
+            <span class="info-value">{{ detalle.acta.votosNulos }}</span>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Physical Evidence Image Card -->
+      <app-card [elevated]="true" headerTitle="Evidencia Fotográfica">
+        <div class="evidence-container">
+          @if (detalle.acta.urlEvidencia) {
+          <div
+            class="evidence-preview-wrapper"
+            (click)="imagenZoomAbierto = true"
+          >
+            <img
+              [src]="detalle.acta.urlEvidencia"
+              alt="Evidencia fotográfica de acta de escrutinio"
+              class="evidence-image"
+            />
+            <div class="zoom-overlay">
+              <i class="pi pi-search" aria-hidden="true"></i>
+              <span>Click para ampliar</span>
+            </div>
+          </div>
+          } @else {
+          <div class="image-placeholder">
+            <i class="pi pi-camera placeholder-icon" aria-hidden="true"></i>
+            <p class="placeholder-text">
+              Evidencia fotográfica de respaldo en proceso de sincronización
+            </p>
+            <span class="placeholder-sub"
+              >Acta #{{ detalle.acta.id }} · Almacenamiento Seguro</span
+            >
+          </div>
+          }
+
+          <!-- T-FE-10 E.4: subida de contingencia cuando no hay foto -->
+          <div class="contingency-upload" *ngIf="!detalle.acta.urlEvidencia">
+            <input
+              #fileInputContingencia
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              (change)="onContingenciaImagenSeleccionada($event)"
+              data-testid="contingencia-input"
+            />
+            <app-button
+              label="Subir foto de contingencia"
+              icon="pi pi-cloud-upload"
+              variant="secondary"
+              [disabled]="uploadingContingencia"
+              (clicked)="fileInputContingencia.click()"
+              data-testid="contingencia-upload"
+            ></app-button>
+            @if (uploadingContingencia) {
+            <p class="upload-status">Subiendo...</p>
+            }
+          </div>
+        </div>
+
+        <!-- T-FE-10 E.4: descarga expediente PDF CNE -->
+        <div class="pdf-actions">
+          <app-button
+            label="Descargar expediente CNE"
+            icon="pi pi-file"
+            variant="secondary"
+            [disabled]="downloadingPdf"
+            (clicked)="descargarExpedientePdf()"
+            data-testid="pdf-download"
+          ></app-button>
+          @if (downloadingPdf) {
+          <p class="download-status">Generando PDF...</p>
+          }
+        </div>
+      </app-card>
+    </div>
+
+    <!-- Votes Table Breakdown -->
+    <app-card [elevated]="true" headerTitle="Escrutinio por Candidato y Cuadre">
+      <div class="votes-table-wrapper">
+        <p-table
+          [value]="detalle.candidatos"
+          styleClass="app-table votes-table"
+        >
+          <ng-template #header>
+            <tr>
+              <th scope="col" class="th-candidato">Candidato / Lista</th>
+              <th scope="col" class="th-partido">Organización</th>
+              <th scope="col" class="th-votos">Votos</th>
+            </tr>
+          </ng-template>
+          <ng-template #body let-c>
+            <tr>
+              <td class="td-candidato font-bold">{{ c.nombre }}</td>
+              <td class="td-partido td-muted">
+                {{ c.partidoSiglas ? c.partidoSiglas + ' - ' : '' }}{{
+                c.partidoNombre || 'Independiente' }}
+              </td>
+              <td class="td-votos font-bold">{{ c.votos }}</td>
+            </tr>
+          </ng-template>
+          <ng-template #footer>
+            <tr class="row-subtotal">
+              <td colspan="2">Votos en Blanco</td>
+              <td class="td-votos font-bold">
+                {{ detalle.acta.votosBlancos }}
+              </td>
+            </tr>
+            <tr class="row-subtotal">
+              <td colspan="2">Votos Nulos</td>
+              <td class="td-votos font-bold">{{ detalle.acta.votosNulos }}</td>
+            </tr>
+            <tr class="row-total">
+              <th scope="row" colspan="2">Total Sufragantes Registrados</th>
+              <td class="td-votos font-bold total-count">
+                {{ detalle.acta.totalSufragantes }}
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+
+      <!-- Checksum Status Badge -->
+      <div
+        class="checksum-banner"
+        [class.checksum-banner--valid]="detalle.checksumValido"
+        [class.checksum-banner--invalid]="!detalle.checksumValido"
+      >
+        <i
+          [class]="
+            detalle.checksumValido ? 'pi pi-check-circle' : 'pi pi-exclamation-circle'
+          "
+          aria-hidden="true"
+        ></i>
+        <div class="checksum-text">
+          <span class="checksum-title">
+            {{ detalle.checksumValido ? 'Balance Electoral Consistente' :
+            'Inconsistencia Aritmética Detectada' }}
+          </span>
+          <span class="checksum-detail">
+            Total en acta: {{ detalle.acta.totalSufragantes }} sufragantes
+          </span>
+        </div>
+      </div>
+    </app-card>
+  </div>
+
+  <!-- Historial de transiciones -->
+  <app-card [elevated]="true" headerTitle="Historial de Transiciones">
+    @if ((data()?.historial ?? []).length > 0) {
+    <ol
+      class="historial-list"
+      aria-label="Línea de tiempo de transiciones del acta"
+    >
+      @for (h of data()?.historial ?? []; track h.timestamp) {
+      <li class="historial-item">
+        <div class="historial-row">
+          <span class="historial-accion">{{ h.accion }}</span>
+          <span class="historial-timestamp"
+            >{{ h.timestamp | date: 'dd/MM/yyyy HH:mm:ss' }}</span
+          >
+        </div>
+        <div class="historial-meta">
+          @if (h.registradoPorNombre; as nombre) {
+          <span>
+            {{ nombre }}@if (h.registradoPorRol) {
+            <span>({{ h.registradoPorRol }})</span>
+            }
+          </span>
+          } @if (h.ipAddress) {
+          <span class="historial-ip">IP: {{ h.ipAddress }}</span>
+          } @if (h.detalle) {
+          <span class="historial-detalle">{{ h.detalle }}</span>
+          }
+        </div>
+      </li>
+      }
+    </ol>
+    } @else {
+    <p class="historial-empty">
+      Sin transiciones registradas todavía para este acta.
+    </p>
+    }
+  </app-card>
+
+  <!-- Datos faltantes o inconsistencias -->
+  <app-card [elevated]="true" headerTitle="Datos faltantes o inconsistencias">
+    <ul
+      class="faltantes-list"
+      aria-label="Lista de chequeos de integridad del acta"
+    >
+      @for (check of chequeos(); track check.texto) {
+      <li class="faltante-item" [class.faltante-ok]="check.ok">
+        <i
+          [class]="check.ok ? 'pi pi-check' : 'pi pi-exclamation-triangle'"
+          class="faltante-icono"
+          aria-hidden="true"
+        ></i>
+        <span class="faltante-texto">{{ check.texto }}</span>
+      </li>
+      }
+    </ul>
+  </app-card>
+
+  <!-- Fullscreen Image Zoom Modal -->
+  <p-dialog
+    [(visible)]="imagenZoomAbierto"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [dismissableMask]="true"
+    [style]="{ width: '90vw' }"
+    [contentStyle]="{ padding: '0' }"
+    header="Evidencia fotográfica"
+    (onHide)="imagenZoomAbierto = false"
+  >
+    <img
+      [src]="data()?.acta?.urlEvidencia"
+      alt="Acta de escrutinio ampliada"
+      class="full-evidence-img"
+    />
+  </p-dialog>
+
+  <!-- ==================== MODALES DE ACCIONES ==================== -->
+
+  <!-- Modal Aprobar -->
+  <app-modal-aprobar
+    [visible]="modalAprobarVisible()"
+    [isSubmitting]="submitting()"
+    (visibleChange)="modalAprobarVisible.set($event)"
+    (confirm)="onAprobarConfirm()"
+  ></app-modal-aprobar>
+
+  <!-- Modal Disputar -->
+  <app-modal-disputar
+    [visible]="modalDisputarVisible()"
+    [isSubmitting]="submitting()"
+    (visibleChange)="modalDisputarVisible.set($event)"
+    (confirm)="onDisputarConfirm($event)"
+  ></app-modal-disputar>
+
+  <!-- Modal Corregir -->
+  <app-modal-corregir
+    #modalCorregir
+    [visible]="modalCorregirVisible()"
+    [isSubmitting]="submitting()"
+    [candidatos]="data()?.candidatos || []"
+    [jrvId]="data()?.acta?.jrvId || 0"
+    [cargoId]="data()?.acta?.cargoId || 0"
+    (visibleChange)="modalCorregirVisible.set($event)"
+    (confirm)="onCorregirConfirm($event)"
+  ></app-modal-corregir>
+
+  <!-- Modal Anular -->
+  <app-modal-anular
+    [visible]="modalAnularVisible()"
+    [isSubmitting]="submitting()"
+    (visibleChange)="modalAnularVisible.set($event)"
+    (confirm)="onAnularConfirm($event)"
+  ></app-modal-anular>
+</div>

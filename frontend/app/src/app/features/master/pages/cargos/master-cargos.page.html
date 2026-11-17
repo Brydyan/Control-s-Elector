@@ -1,0 +1,121 @@
+<div class="catalog-page">
+  <header class="page-header">
+    <div>
+      <h1>Cargos Electorales</h1>
+      <span>{{ cargosFiltrados().length }} cargos configurados</span>
+    </div>
+    <app-button (clicked)="abrirCrear()">Crear cargo</app-button>
+  </header>
+
+  <div class="filters">
+    <input
+      type="text"
+      [ngModel]="terminoBusqueda()"
+      (ngModelChange)="terminoBusqueda.set($event)"
+      placeholder="Buscar por nombre o nivel"
+      aria-label="Buscar cargos"
+      pInputText
+    />
+    <p-select
+      [options]="nivelFilterOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="nivelSeleccionado()"
+      (ngModelChange)="nivelSeleccionado.set($event)"
+      aria-label="Filtrar por nivel"
+    />
+    @if (tieneFiltrosActivos()) {
+    <app-button variant="ghost" size="sm" (clicked)="limpiarFiltros()">
+      Limpiar filtros
+    </app-button>
+    }
+  </div>
+
+  <app-skeleton
+    name="master-cargos"
+    [loading]="loading()"
+    animate="shimmer"
+    [transition]="true"
+    [loadingBoundary]="true"
+  >
+    <div class="skeleton-list">
+      @for (row of [1, 2, 3, 4]; track row) {
+      <p-skeleton height="2.5rem" />
+      }
+    </div>
+  </app-skeleton>
+
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Error al cargar cargos"
+    [message]="error() ?? undefined"
+  >
+    <app-button variant="primary" (clicked)="cargarCargos()"
+      >Reintentar</app-button
+    >
+  </app-error-state>
+
+  @if (!loading() && !error()) {
+  <app-table
+    [data]="cargosFiltrados()"
+    [columns]="tableColumns"
+    [actions]="obtenerAccionesCargo.bind(this)"
+    emptyTitle="No se encontraron cargos"
+    emptyDescription="No hay cargos electorales registrados con los filtros seleccionados."
+    emptyIcon="pi pi-briefcase"
+    mobileTitleColumn="nombre"
+  >
+    <ng-template appTableCell="nombre" let-cargo>
+      <strong>{{ cargo.nombre }}</strong>
+    </ng-template>
+    <ng-template appTableCell="nivel" let-cargo>
+      <span class="badge">{{ cargo.nivel }}</span>
+    </ng-template>
+  </app-table>
+  }
+</div>
+
+<p-dialog
+  [(visible)]="modalAbierto"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '32rem' }"
+  [header]="modoEdicion ? 'Editar cargo' : 'Crear cargo'"
+  (onHide)="cerrarModal()"
+>
+  <label class="field">
+    <span>Nombre</span>
+    <input
+      type="text"
+      [(ngModel)]="nombre"
+      placeholder="Ej. Alcalde de Guayaquil"
+      pInputText
+    />
+  </label>
+  <label class="field">
+    <span>Nivel Geográfico</span>
+    <p-select [options]="niveles" [(ngModel)]="nivel" fluid />
+  </label>
+  <label class="field">
+    <span>Número de Puestos</span>
+    <input type="number" [(ngModel)]="puestos" min="1" pInputText />
+  </label>
+
+  @if (modalError()) {
+  <p-message severity="error" [text]="modalError() ?? ''" />
+  }
+
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      [disabled]="submitting()"
+      (clicked)="cerrarModal()"
+    >
+      Cancelar
+    </app-button>
+    <app-button [disabled]="submitting()" (clicked)="guardar()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </ng-template>
+</p-dialog>

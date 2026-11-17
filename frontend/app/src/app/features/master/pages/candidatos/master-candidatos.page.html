@@ -1,0 +1,159 @@
+<div class="catalog-page">
+  <header class="page-header">
+    <div>
+      <h1>Padrón de Candidatos</h1>
+      <span>{{ candidatosFiltrados().length }} candidatos postulados</span>
+    </div>
+    <app-button (clicked)="abrirCrear()">Registrar candidato</app-button>
+  </header>
+
+  <div class="filters">
+    <input
+      type="text"
+      [ngModel]="terminoBusqueda()"
+      (ngModelChange)="terminoBusqueda.set($event)"
+      placeholder="Buscar por nombre de candidato"
+      aria-label="Buscar candidatos"
+      pInputText
+    />
+    <p-select
+      [options]="cargoFilterOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="cargoFiltroId()"
+      (ngModelChange)="cargoFiltroId.set($event)"
+      aria-label="Filtrar por cargo"
+    />
+    <p-select
+      [options]="partidoFilterOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="partidoFiltroId()"
+      (ngModelChange)="partidoFiltroId.set($event)"
+      aria-label="Filtrar por partido"
+    />
+    @if (tieneFiltrosActivos()) {
+    <app-button variant="ghost" size="sm" (clicked)="limpiarFiltros()">
+      Limpiar filtros
+    </app-button>
+    }
+  </div>
+
+  <app-skeleton
+    name="master-candidatos"
+    [loading]="loading()"
+    animate="shimmer"
+    [transition]="true"
+    [loadingBoundary]="true"
+  >
+    <div class="skeleton-list">
+      @for (row of [1, 2, 3, 4]; track row) {
+      <p-skeleton height="2.5rem" />
+      }
+    </div>
+  </app-skeleton>
+
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Error al cargar candidatos"
+    [message]="error() ?? undefined"
+  >
+    <app-button variant="primary" (clicked)="cargarDatos()"
+      >Reintentar</app-button
+    >
+  </app-error-state>
+
+  @if (!loading() && !error()) {
+  <app-table
+    [data]="candidatosFiltrados()"
+    [columns]="tableColumns"
+    [actions]="obtenerAccionesCandidato.bind(this)"
+    emptyTitle="No se encontraron candidatos"
+    emptyDescription="No hay candidatos registrados con los filtros seleccionados."
+    emptyIcon="pi pi-users"
+    mobileTitleColumn="nombre"
+  >
+    <ng-template appTableCell="orden" let-candidato>
+      <span class="badge">#{{ candidato.orden }}</span>
+    </ng-template>
+    <ng-template appTableCell="nombre" let-candidato>
+      <strong>{{ candidato.nombre }}</strong>
+    </ng-template>
+    <ng-template appTableCell="cargoId" let-candidato>
+      {{ obtenerNombreCargo(candidato.cargoId) }}
+    </ng-template>
+    <ng-template appTableCell="partidoId" let-candidato>
+      {{ obtenerNombrePartido(candidato.partidoId) }}
+    </ng-template>
+  </app-table>
+  }
+</div>
+
+<p-dialog
+  [(visible)]="modalAbierto"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '32rem' }"
+  [header]="modoEdicion ? 'Editar candidato' : 'Registrar candidato'"
+  (onHide)="cerrarModal()"
+>
+  <label class="field">
+    <span>Nombre Completo</span>
+    <input
+      type="text"
+      [(ngModel)]="nombre"
+      placeholder="Ej. Luisa González"
+      pInputText
+    />
+  </label>
+  <label class="field">
+    <span>Dignidad / Cargo</span>
+    <p-select
+      [options]="cargoOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="cargoId"
+      placeholder="Seleccione un cargo"
+      fluid
+    />
+  </label>
+  <label class="field">
+    <span>Partido / Movimiento Político</span>
+    <p-select
+      [options]="partidoOptions()"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="partidoId"
+      placeholder="Seleccione un partido"
+      fluid
+    />
+  </label>
+  <label class="field">
+    <span>Orden en Papeleta</span>
+    <input
+      type="number"
+      [(ngModel)]="orden"
+      min="1"
+      placeholder="Ej. 1"
+      pInputText
+    />
+  </label>
+
+  @if (modalError()) {
+  <p-message severity="error" [text]="modalError() ?? ''" />
+  }
+
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      [disabled]="submitting()"
+      (clicked)="cerrarModal()"
+    >
+      Cancelar
+    </app-button>
+    <app-button [disabled]="submitting()" (clicked)="guardar()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+  </ng-template>
+</p-dialog>

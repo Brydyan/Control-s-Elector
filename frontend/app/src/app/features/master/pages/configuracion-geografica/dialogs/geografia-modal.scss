@@ -1,0 +1,108 @@
+/* Estilo compartido por los cuatro modales de la configuracion geografica.
+   Cada componente lo importa con styleUrls: el encapsulamiento de Angular
+   aplica sus estilos al template de ese componente. */
+
+.geografia-form {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  label {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+  }
+}
+
+.form-input {
+  padding: 0.75rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  background: var(--color-surface-card);
+  transition: border 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-brand-primary);
+    border-width: 2px;
+  }
+
+  &:invalid {
+    border-color: var(--color-status-danger);
+  }
+}
+
+.form-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.error {
+  font-size: 0.85rem;
+  color: var(--color-status-danger);
+}
+
+.error-banner {
+  padding: 1rem;
+  background: var(--color-status-danger-bg);
+  border: 1px solid var(--color-status-danger-border);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--color-status-danger);
+  font-size: 0.9rem;
+}
+
+.form-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+
+  button {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-sm, 6px);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+
+    &.btn-cancel {
+      background: var(--color-surface-raised);
+      color: var(--color-text-primary);
+
+      &:hover {
+        background: var(--color-border-subtle);
+      }
+    }
+
+    &.btn-save {
+      background: var(--color-brand-primary);
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: var(--color-brand-primary-strong);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}

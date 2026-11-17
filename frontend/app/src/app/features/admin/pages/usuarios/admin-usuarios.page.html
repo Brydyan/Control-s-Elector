@@ -1,0 +1,456 @@
+<div class="admin-page">
+  <header class="page-header">
+    <div>
+      <h1>Gestión de Usuarios</h1>
+      <span>{{ totalElements() }} usuarios</span>
+    </div>
+    @if (esMaster()) {
+    <app-button (clicked)="abrirCrear()">Crear usuario</app-button>
+    }
+  </header>
+
+  <div class="filters">
+    <input
+      type="text"
+      [(ngModel)]="terminoBusqueda"
+      (ngModelChange)="page = 0; cargarUsuarios()"
+      placeholder="Buscar por nombre, email o ID"
+      aria-label="Buscar usuarios"
+      pInputText
+    />
+    <p-select
+      [options]="rolFilterOptions"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="rolSeleccionado"
+      (ngModelChange)="page = 0; cargarUsuarios()"
+      aria-label="Filtrar por rol"
+    />
+    <p-select
+      [options]="estadoOptions"
+      optionLabel="label"
+      optionValue="value"
+      [(ngModel)]="habilitadoSeleccionado"
+      (ngModelChange)="page = 0; cargarUsuarios()"
+      aria-label="Filtrar por estado"
+    />
+    @if (tieneFiltrosActivos()) {
+    <app-button variant="ghost" size="sm" (clicked)="limpiarFiltros()">
+      Limpiar todos los filtros
+    </app-button>
+    }
+  </div>
+
+  @if (esMaster() && haySeleccion()) {
+  <div
+    class="bulk-bar"
+    role="region"
+    aria-label="Acciones sobre las cuentas seleccionadas"
+  >
+    <span class="bulk-count"
+      >{{ cantidadSeleccionada() }} {{ cantidadSeleccionada() === 1 ? 'cuenta
+      seleccionada' : 'cuentas seleccionadas' }}</span
+    >
+    <app-button
+      icon="pi pi-send"
+      [loading]="enviandoInvitaciones()"
+      [disabled]="enviandoInvitaciones()"
+      (clicked)="enviarInvitaciones()"
+    >
+      {{ enviandoInvitaciones() ? 'Enviando…' : 'Enviar invitación' }}
+    </app-button>
+    <app-button
+      variant="ghost"
+      size="sm"
+      [disabled]="enviandoInvitaciones()"
+      (clicked)="limpiarSeleccion()"
+    >
+      Limpiar selección
+    </app-button>
+  </div>
+  } @if (resultadoInvitacion(); as resultado) {
+  <div
+    class="bulk-status"
+    [class.is-error]="resultado.tipo === 'error'"
+    [attr.role]="resultado.tipo === 'error' ? 'alert' : 'status'"
+    aria-live="polite"
+  >
+    <strong>{{ resultado.titulo }}</strong>
+    @if (resultado.detalle) {
+    <span>{{ resultado.detalle }}</span>
+    } @if (resultado.fallidos.length) {
+    <ul>
+      @for (fallido of resultado.fallidos; track fallido) {
+      <li>{{ fallido }}</li>
+      }
+    </ul>
+    }
+  </div>
+  }
+
+  <app-skeleton
+    name="admin-usuarios"
+    [loading]="loading()"
+    animate="shimmer"
+    [transition]="true"
+    [loadingBoundary]="true"
+  >
+    <div class="skeleton-list">
+      @for (row of [1, 2, 3, 4, 5]; track row) {
+      <p-skeleton height="2.5rem" />
+      }
+    </div>
+  </app-skeleton>
+
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Error al cargar usuarios"
+    [message]="error() ?? undefined"
+    ><app-button variant="primary" (clicked)="cargarUsuarios()"
+      >Reintentar</app-button
+    ></app-error-state
+  >
+  <app-empty-state
+    *ngIf="!loading() && !error() && !usuarios().length"
+    icon="people"
+    title="No se encontraron usuarios"
+    description="No hay usuarios que coincidan con los filtros."
+  ></app-empty-state>
+
+  @if (!loading() && !error() && usuarios().length) {
+  <div class="table-wrap desktop-only">
+    <p-table
+      [value]="usuarios()"
+      [rowHover]="true"
+      styleClass="app-table admin-table"
+    >
+      <ng-template #header>
+        <tr>
+          <th class="select-col">
+            <input
+              type="checkbox"
+              [checked]="todosInvitablesSeleccionados()"
+              [disabled]="!invitablesDeLaPagina().length"
+              aria-label="Seleccionar todas las cuentas pendientes de esta página"
+              title="Seleccionar todas las cuentas pendientes de esta página"
+              (change)="alternarTodosInvitables()"
+            />
+          </th>
+          <th>Usuario</th>
+          <th>Rol</th>
+          <th>Habilitado</th>
+          <th>Estado</th>
+          <th>Creado</th>
+          <th>Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-usuario>
+        <tr>
+          <td class="select-col">
+            <input
+              type="checkbox"
+              [attr.data-usuario]="usuario.publicId"
+              [checked]="estaSeleccionado(usuario.publicId)"
+              [disabled]="!esInvitable(usuario)"
+              [attr.title]="
+                esInvitable(usuario)
+                  ? 'Seleccionar ' + usuario.email
+                  : 'La cuenta ya está activa: no se puede invitar'
+              "
+              [attr.aria-label]="
+                esInvitable(usuario)
+                  ? 'Seleccionar ' + usuario.email
+                  : 'Cuenta ya activa: no se puede invitar'
+              "
+              (change)="alternarSeleccion(usuario)"
+            />
+          </td>
+          <td>
+            <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong
+            ><small>{{ usuario.email }} · {{ usuario.publicId }}</small>
+          </td>
+          <td>{{ usuario.rolNombre }}</td>
+          <td>{{ usuario.habilitado ? 'Habilitado' : 'Deshabilitado' }}</td>
+          <td>
+            <span
+              class="state-badge"
+              [class.state-invited]="estadoInvitacion(usuario) === 'INVITED'"
+              [class.state-expired]="estadoInvitacion(usuario) === 'EXPIRED'"
+              [class.state-active]="estadoInvitacion(usuario) === 'ACTIVE'"
+              [class.state-disabled]="estadoInvitacion(usuario) === 'DISABLED'"
+              [class.state-created]="estadoInvitacion(usuario) === 'CREATED'"
+              [attr.data-estado]="estadoInvitacion(usuario)"
+              >{{ etiquetaEstado(usuario) }}</span
+            >
+            @if (expiraPronto(usuario)) {
+            <small class="state-warning" data-testid="aviso-expiracion"
+              >expira en menos de 2 horas</small
+            >
+            }
+          </td>
+          <td>{{ usuario.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</td>
+          <td class="actions">
+            <p-menu
+              #menu
+              [model]="obtenerAccionesUsuario(usuario)"
+              [popup]="true"
+              appendTo="body"
+            />
+            <app-button
+              variant="ghost"
+              size="sm"
+              icon="pi pi-ellipsis-v"
+              [rounded]="true"
+              ariaLabel="Acciones de usuario"
+              (clicked)="menu.toggle($event)"
+            />
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <div class="cards mobile-only">
+    @for (usuario of usuarios(); track usuario.publicId) {
+    <article>
+      <div class="card-head">
+        <input
+          type="checkbox"
+          [attr.data-usuario]="usuario.publicId"
+          [checked]="estaSeleccionado(usuario.publicId)"
+          [disabled]="!esInvitable(usuario)"
+          [attr.title]="
+            esInvitable(usuario)
+              ? 'Seleccionar ' + usuario.email
+              : 'La cuenta ya está activa: no se puede invitar'
+          "
+          [attr.aria-label]="
+            esInvitable(usuario)
+              ? 'Seleccionar ' + usuario.email
+              : 'Cuenta ya activa: no se puede invitar'
+          "
+          (change)="alternarSeleccion(usuario)"
+        />
+        <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong>
+      </div>
+      <span>{{ usuario.email }}</span
+      ><span
+        >{{ usuario.rolNombre }} · {{ usuario.habilitado ? 'Habilitado' :
+        'Deshabilitado' }}</span
+      >
+      <span
+        class="state-badge"
+        [class.state-invited]="estadoInvitacion(usuario) === 'INVITED'"
+        [class.state-expired]="estadoInvitacion(usuario) === 'EXPIRED'"
+        [class.state-active]="estadoInvitacion(usuario) === 'ACTIVE'"
+        [class.state-disabled]="estadoInvitacion(usuario) === 'DISABLED'"
+        [class.state-created]="estadoInvitacion(usuario) === 'CREATED'"
+        [attr.data-estado]="estadoInvitacion(usuario)"
+        >{{ etiquetaEstado(usuario) }}</span
+      >
+      @if (expiraPronto(usuario)) {
+      <small class="state-warning">expira en menos de 2 horas</small>
+      }
+      <div class="actions">
+        <p-menu
+          #menuCard
+          [model]="obtenerAccionesUsuario(usuario)"
+          [popup]="true"
+          appendTo="body"
+        />
+        <app-button
+          variant="ghost"
+          size="sm"
+          icon="pi pi-ellipsis-v"
+          [rounded]="true"
+          ariaLabel="Acciones de usuario"
+          (clicked)="menuCard.toggle($event)"
+        />
+      </div>
+    </article>
+    }
+  </div>
+
+  <app-paginator
+    [page]="page"
+    [size]="size"
+    [totalElements]="totalElements()"
+    (pageChange)="onPageChange($event)"
+    (sizeChange)="onSizeChange($event)"
+  ></app-paginator>
+  }
+</div>
+
+<p-dialog
+  [(visible)]="modalAbierto"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '32rem' }"
+  [header]="modoEdicion ? 'Editar usuario' : 'Crear usuario'"
+  (onHide)="cerrarModal()"
+>
+  <label class="field">
+    <span>Nombre</span>
+    <input type="text" [(ngModel)]="nombre" pInputText />
+  </label>
+  <label class="field">
+    <span>Apellido</span>
+    <input type="text" [(ngModel)]="apellido" pInputText />
+  </label>
+  <label class="field">
+    <span>Rol</span>
+    <p-select [options]="roles" [(ngModel)]="rol" fluid />
+  </label>
+
+  @if (!modoEdicion) {
+  <label class="field">
+    <span>Email personal</span>
+    <input
+      type="email"
+      [(ngModel)]="emailPersonal"
+      pInputText
+      placeholder="persona@ejemplo.com"
+      data-testid="email-personal"
+    />
+    <small class="field-hint">
+      Correo donde la persona recibirá la invitación con su link de activación.
+      Su usuario del sistema se genera solo a partir de su nombre, apellido y
+      rol.
+    </small>
+    @if (emailPersonal.trim().length > 0 && !emailValido()) {
+    <small class="field-error" data-testid="email-personal-error">
+      El email debe ser válido.
+    </small>
+    }
+  </label>
+
+  <div class="toggle-field">
+    <label class="toggle-label">
+      <input
+        type="checkbox"
+        data-testid="toggle-enviar-invitacion"
+        [checked]="enviarInvitacionPorEmail()"
+        (change)="cambiarEnviarInvitacionPorEmail($event)"
+      />
+      <span>Enviar Invitación por Email</span>
+    </label>
+    <small class="field-hint">
+      Si desactivas, solo se crea el usuario sin email: podrás enviarle la
+      invitación más tarde desde la tabla de usuarios.
+    </small>
+  </div>
+  } @if (error()) {
+  <p-message severity="error" [text]="error() ?? ''" />
+  } @if (invitacionEnviada(); as invitacion) {
+  <div class="password-alert" role="status" data-testid="invitacion-enviada">
+    <strong>{{ invitacion.mensaje || mensajeDeInvitacion(invitacion) }}</strong
+    ><code>{{ invitacion.username }}</code
+    ><span
+      >{{ invitacion.status === 'CREATED' ? 'La cuenta quedó creada pero sin
+      activar: hasta que active la cuenta no puede entrar al sistema. Podés
+      mandarle la invitación desde la tabla.' : 'La persona entra al sistema con
+      ese usuario y elige su contraseña con el link del email.' }}</span
+    >
+  </div>
+  } @if (passwordTemporal) {
+  <div class="password-alert">
+    <strong>Contraseña temporal</strong><code>{{ passwordTemporal }}</code
+    ><span>Copiala ahora: solo se muestra una vez.</span>
+  </div>
+  }
+
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      [disabled]="submitting()"
+      (clicked)="cerrarModal()"
+    >
+      Cancelar
+    </app-button>
+    <app-button [disabled]="submitting()" (clicked)="guardar()">
+      {{ submitting() ? 'Guardando…' : 'Guardar' }}
+    </app-button>
+    @if (!modoEdicion) {
+    <app-button
+      variant="secondary"
+      [disabled]="!puedeInvitar()"
+      [loading]="invitaando()"
+      (clicked)="invitar()"
+      data-testid="btn-invitar"
+    >
+      {{ invitaando() ? 'Enviando…' : 'Enviar invitación' }}
+    </app-button>
+    }
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [(visible)]="modalDetalles"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '28rem' }"
+  header="Detalle de usuario"
+  (onHide)="cerrarDetalles()"
+>
+  @if (usuarioSeleccionado) {
+  <dl class="detail-list">
+    <dt>Nombre</dt>
+    <dd>{{ usuarioSeleccionado.nombre }} {{ usuarioSeleccionado.apellido }}</dd>
+    <dt>Email</dt>
+    <dd>{{ usuarioSeleccionado.email }}</dd>
+    <dt>Rol</dt>
+    <dd>{{ usuarioSeleccionado.rolNombre }}</dd>
+    <dt>Estado</dt>
+    <dd>
+      {{ usuarioSeleccionado.habilitado ? 'Habilitado' : 'Deshabilitado' }}
+    </dd>
+    <dt>Creado</dt>
+    <dd>{{ usuarioSeleccionado.creadoEn | date: 'dd/MM/yyyy HH:mm' }}</dd>
+  </dl>
+  }
+  <ng-template #footer>
+    <app-button (clicked)="cerrarDetalles()">Cerrar</app-button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [visible]="!!usuarioAReenviar()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '28rem' }"
+  header="Reenviar invitación"
+  (visibleChange)="onVisibleReenvioChange($event)"
+>
+  @if (usuarioAReenviar(); as usuario) {
+  <div class="aviso-reenvio" data-testid="reenvio-confirmacion">
+    <p>
+      ¿Reenviar invitación a <strong>{{ usuario.email }}</strong>? Se genera un
+      link nuevo y el anterior deja de servir.
+    </p>
+    <small class="field-hint">
+      La invitación se envía a su correo personal y expira en 24 horas. La
+      cuenta sigue inactiva hasta que la persona elija su contraseña con el
+      enlace.
+    </small>
+  </div>
+  }
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      [disabled]="reenviando()"
+      (clicked)="cerrarReenvio()"
+    >
+      Cancelar
+    </app-button>
+    <app-button
+      [loading]="reenviando()"
+      (clicked)="confirmarReenvio()"
+      data-testid="btn-confirmar-reenvio"
+    >
+      {{ reenviando() ? 'Reenviando…' : 'Reenviar por email' }}
+    </app-button>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,34 @@
+/*
+ * Tailwind CSS v4 entry point.
+ *
+ * Mirrors the setup of the Sakai template: Tailwind utilities for layout on
+ * top of PrimeNG components, and the PrimeUI plugin so the component
+ * variables are reachable as utilities (`text-muted-color`, `bg-surface-0`).
+ *
+ * This file is listed last in `angular.json` `styles` so its utilities win
+ * over the legacy global stylesheet, matching Sakai's ordering.
+ */
+
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-primeui';
+
+/*
+ * The dark scheme is driven by the `app-dark` class on the document element
+ * (see `ThemeService` and `DARK_MODE_CLASS`), not by the OS media query.
+ */
+@custom-variant dark (&:where([class*='app-dark'], [class*='app-dark'] *));
+
+/*
+ * Tailwind v4 changed the default border colour to `currentcolor`. Restore
+ * the v3 behaviour for the elements that rely on it.
+ */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}

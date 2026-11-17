@@ -1,0 +1,189 @@
+<div class="app-table">
+  @if (loading) {
+    <div class="app-table__skeleton" role="status" aria-live="polite">
+      <span class="app-table__sr-only">Cargando...</span>
+      <table class="app-table__skeleton-table">
+        <thead>
+          <tr>
+            @for (column of columns; track column.key) {
+              <th [style.width]="column.width">
+                <p-skeleton width="70%" height="1rem" />
+              </th>
+            }
+            @if (hasActions) {
+              <th class="app-table__actions-cell">
+                <p-skeleton shape="circle" size="1.5rem" />
+              </th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of skeletonRows; track row) {
+            <tr>
+              @for (column of columns; track column.key) {
+                <td>
+                  <p-skeleton width="80%" height="1rem" />
+                </td>
+              }
+              @if (hasActions) {
+                <td class="app-table__actions-cell">
+                  <p-skeleton shape="circle" size="1.5rem" />
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  } @else if (!hasRows) {
+    <app-empty-state
+      [icon]="emptyIcon"
+      [title]="emptyTitle"
+      [description]="emptyDescription"
+    >
+      <ng-content select="[empty-state]"></ng-content>
+    </app-empty-state>
+  } @else {
+    <div class="app-table__desktop desktop-only">
+      <p-table
+        [value]="sortedData"
+        [rowHover]="rowHover"
+        styleClass="app-table"
+      >
+        <ng-template #header>
+          <tr>
+            @for (column of columns; track column.key) {
+              <th
+                [class]="headerClasses(column)"
+                [style.width]="column.width"
+                [style.text-align]="alignStyle(column)"
+                [attr.aria-sort]="ariaSort(column)"
+                [attr.tabindex]="column.sortable ? 0 : null"
+                (click)="onSort(column)"
+                (keydown.enter)="onSort(column)"
+                (keydown.space)="onSort(column)"
+              >
+                <span class="app-table__header-label">{{ column.header }}</span>
+                @if (column.sortable) {
+                  <i [class]="sortIconClasses(column)" aria-hidden="true"></i>
+                }
+              </th>
+            }
+            @if (hasActions) {
+              <th
+                class="app-table__header-cell app-table__actions-cell"
+                [attr.aria-label]="actionsHeader"
+              >
+                {{ actionsHeader }}
+              </th>
+            }
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-row let-rowIndex="rowIndex">
+          <tr>
+            @for (column of columns; track column.key) {
+              <td
+                [class]="cellClasses(column)"
+                [style.width]="column.width"
+                [style.text-align]="alignStyle(column)"
+              >
+                @if (templateFor(column.key); as template) {
+                  <ng-container
+                    [ngTemplateOutlet]="template"
+                    [ngTemplateOutletContext]="
+                      cellContext(row, column, rowIndex)
+                    "
+                  />
+                } @else {
+                  {{ displayValue(row, column) }}
+                }
+              </td>
+            }
+            @if (hasActions) {
+              <td class="app-table__cell app-table__actions-cell">
+                <p-menu
+                  #menu
+                  [model]="actionsFor(row)"
+                  [popup]="true"
+                  appendTo="body"
+                />
+                <app-button
+                  variant="ghost"
+                  size="sm"
+                  icon="pi pi-ellipsis-v"
+                  [rounded]="true"
+                  [ariaLabel]="actionsLabel"
+                  (clicked)="menu.toggle($event)"
+                />
+              </td>
+            }
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <div class="app-table__mobile mobile-only">
+      @for (
+        row of sortedData;
+        track trackRow($index, row);
+        let index = $index
+      ) {
+        <article class="app-table__card">
+          <header class="app-table__card-header">
+            @if (titleColumn; as title) {
+              <strong class="app-table__card-title">
+                @if (templateFor(title.key); as titleTemplate) {
+                  <ng-container
+                    [ngTemplateOutlet]="titleTemplate"
+                    [ngTemplateOutletContext]="cellContext(row, title, index)"
+                  />
+                } @else {
+                  {{ displayValue(row, title) }}
+                }
+              </strong>
+            }
+            @if (hasActions) {
+              <p-menu
+                #menu
+                [model]="actionsFor(row)"
+                [popup]="true"
+                appendTo="body"
+              />
+              <app-button
+                variant="ghost"
+                size="sm"
+                icon="pi pi-ellipsis-v"
+                [rounded]="true"
+                [ariaLabel]="actionsLabel"
+                (clicked)="menu.toggle($event)"
+              />
+            }
+          </header>
+
+          @if (mobileBodyColumns.length) {
+            <dl class="app-table__card-body">
+              @for (column of mobileBodyColumns; track column.key) {
+                <div class="app-table__card-row">
+                  <dt class="app-table__card-label">{{ column.header }}</dt>
+                  <dd class="app-table__card-value">
+                    @if (templateFor(column.key); as template) {
+                      <ng-container
+                        [ngTemplateOutlet]="template"
+                        [ngTemplateOutletContext]="
+                          cellContext(row, column, index)
+                        "
+                      />
+                    } @else {
+                      {{ displayValue(row, column) }}
+                    }
+                  </dd>
+                </div>
+              }
+            </dl>
+          }
+        </article>
+      }
+    </div>
+  }
+</div>

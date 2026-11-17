@@ -1,0 +1,207 @@
+.cancel-deletion-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    var(--color-brand-primary) 0%,
+    var(--color-status-corrected) 100%
+  );
+  padding: 1rem;
+}
+
+.spinner-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  background: var(--color-surface-default);
+  padding: 3rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px var(--color-shade-10);
+  max-width: 400px;
+  width: 100%;
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--color-border-subtle);
+    border-top: 4px solid var(--color-brand-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  p {
+    font-size: 1rem;
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+.result-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  background: var(--color-surface-default);
+  padding: 3rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px var(--color-shade-10);
+  max-width: 500px;
+  width: 100%;
+
+  h2 {
+    margin: 0;
+    font-size: 1.75rem;
+    text-align: center;
+    margin-top: 1rem;
+  }
+
+  button {
+    width: 100%;
+    max-width: 300px;
+    margin-top: 1rem;
+  }
+
+  .action-info {
+    background-color: var(--color-surface-raised);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-size: 0.875rem;
+    width: 100%;
+
+    p {
+      margin: 0.5rem 0;
+      &:first-child {
+        margin-top: 0;
+      }
+      &:last-child {
+        margin-bottom: 0;
+      }
+    }
+  }
+
+  // Estado exitoso
+  &.success {
+    .success-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      background-color: var(--color-status-success-bg);
+      border-radius: 50%;
+
+      i {
+        font-size: 2.5rem;
+        color: var(--color-status-success);
+      }
+    }
+
+    h2 {
+      color: var(--color-status-success);
+    }
+
+    :deep .success-message {
+      width: 100%;
+      .p-message {
+        width: 100%;
+      }
+    }
+  }
+
+  // Estado expirado
+  &.expired {
+    .expired-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      background-color: var(--color-status-warning-bg);
+      border-radius: 50%;
+
+      i {
+        font-size: 2.5rem;
+        color: var(--color-status-warning);
+      }
+    }
+
+    h2 {
+      color: var(--color-status-warning);
+    }
+
+    :deep .warning-message {
+      width: 100%;
+      .p-message {
+        width: 100%;
+      }
+    }
+  }
+
+  // Estado error
+  &.error {
+    .error-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      background-color: var(--color-status-danger-bg);
+      border-radius: 50%;
+
+      i {
+        font-size: 2.5rem;
+        color: var(--color-status-danger);
+      }
+    }
+
+    h2 {
+      color: var(--color-status-danger);
+    }
+
+    :deep .error-message {
+      width: 100%;
+      .p-message {
+        width: 100%;
+      }
+    }
+  }
+}
+
+@media (max-width: 640px) {
+  .spinner-wrapper,
+  .result-container {
+    padding: 2rem 1.5rem;
+    border-radius: 0.5rem;
+  }
+
+  .result-container {
+    .success-icon,
+    .expired-icon,
+    .error-icon {
+      width: 60px;
+      height: 60px;
+
+      i {
+        font-size: 2rem;
+      }
+    }
+
+    h2 {
+      font-size: 1.25rem;
+    }
+  }
+}

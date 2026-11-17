@@ -1,0 +1,88 @@
+<div class="cancel-deletion-container">
+  <!-- Spinner de carga -->
+  <div *ngIf="isLoading()" class="spinner-wrapper">
+    <div class="spinner"></div>
+    <p>Procesando tu solicitud...</p>
+  </div>
+
+  <!-- Resultado exitoso -->
+  <div
+    *ngIf="!isLoading() && status() === 'success'"
+    class="result-container success"
+  >
+    <div class="success-icon">
+      <i class="pi pi-check-circle"></i>
+    </div>
+    <h2>¡Eliminación Cancelada!</h2>
+    <p-message
+      severity="success"
+      [text]="message()"
+      styleClass="success-message"
+    ></p-message>
+    <p class="redirect-info">Redirigiendo a login en 3 segundos...</p>
+    <button
+      pButton
+      type="button"
+      label="Ir a Login Ahora"
+      icon="pi pi-arrow-right"
+      (click)="goToLogin()"
+    ></button>
+  </div>
+
+  <!-- Resultado: link expirado -->
+  <div
+    *ngIf="!isLoading() && status() === 'expired'"
+    class="result-container expired"
+  >
+    <div class="expired-icon">
+      <i class="pi pi-clock"></i>
+    </div>
+    <h2>Link Expirado</h2>
+    <p-message
+      severity="warn"
+      [text]="message()"
+      styleClass="warning-message"
+    ></p-message>
+    <div class="action-info">
+      <p>
+        El plazo máximo para recuperar tu cuenta es de 7 días desde la
+        solicitud.
+      </p>
+      <p>Por favor contacta al administrador si necesitas ayuda.</p>
+    </div>
+    <button
+      pButton
+      type="button"
+      label="Ir a Login"
+      icon="pi pi-arrow-right"
+      (click)="goToLogin()"
+    ></button>
+  </div>
+
+  <!-- Resultado: error genérico -->
+  <div
+    *ngIf="!isLoading() && status() === 'error'"
+    class="result-container error"
+  >
+    <div class="error-icon">
+      <i class="pi pi-exclamation-circle"></i>
+    </div>
+    <h2>Error al Procesar Solicitud</h2>
+    <p-message
+      severity="error"
+      [text]="message()"
+      styleClass="error-message"
+    ></p-message>
+    <div class="action-info">
+      <p>Por favor verifica que el link sea correcto e intenta de nuevo.</p>
+      <p>Si el problema persiste, contacta al administrador.</p>
+    </div>
+    <button
+      pButton
+      type="button"
+      label="Ir a Login"
+      icon="pi pi-arrow-right"
+      (click)="goToLogin()"
+    ></button>
+  </div>
+</div>

@@ -1,0 +1,126 @@
+<!-- Loading state -->
+@if (loading() && !data()) {
+<app-loading-state
+  message="Cargando métricas del proceso..."
+></app-loading-state>
+}
+
+<!-- Error state -->
+@if (error(); as err) {
+<app-error-state
+  [title]="'No se pudo cargar el dashboard'"
+  [message]="err"
+  [showRetry]="true"
+  (retry)="reintentar()"
+  data-testid="dashboard-error"
+></app-error-state>
+}
+
+<!-- Main dashboard content -->
+@if (data()) {
+<section class="progress-banner">
+  <div class="progress-banner-left">
+    <div class="banner-head">
+      <h2>Progreso de Escrutinio</h2>
+      <p>
+        {{ sentActos() }} de {{ totalJrv() }} JRVs han enviado actas registradas
+      </p>
+    </div>
+    <p-progressbar
+      class="progress-bar-banner"
+      [value]="overallPct()"
+      [showValue]="false"
+      color="var(--color-veil-90)"
+    />
+    <div class="banner-cantons">
+      @for (c of progreso(); track c.cantonId) {
+      <span
+        >{{ c.cantonNombre }}: {{ pct(c) }}% ({{ c.jrvsConActa }}/{{ c.totalJrvs
+        }})</span
+      >
+      }
+    </div>
+  </div>
+  <div class="progress-banner-right">
+    <div class="big-pct">{{ overallPct() }}%</div>
+    <div class="big-pct-label">Completado</div>
+  </div>
+</section>
+
+<!-- Stats row -->
+<section class="stats-row">
+  <app-kpi-card
+    label="Enviadas"
+    [value]="resumen().enviadas"
+    hint="Pendientes revisión"
+    tone="brand"
+  ></app-kpi-card>
+  <app-kpi-card
+    label="En Disputa"
+    [value]="resumen().enDisputa"
+    hint="Requieren corrección"
+    tone="warning"
+  ></app-kpi-card>
+  <app-kpi-card
+    label="Corregidas"
+    [value]="resumen().corregidas"
+    hint="Listas para aprobación"
+    tone="corrected"
+  ></app-kpi-card>
+  <app-kpi-card
+    label="Aprobadas"
+    [value]="resumen().aprobadas"
+    hint="Confirmadas"
+    tone="success"
+  ></app-kpi-card>
+</section>
+
+<!-- Bottom grid -->
+<section class="bottom-grid">
+  <!-- Progreso por cantón -->
+  <app-card>
+    <div class="card-title">
+      <i class="pi pi-map" aria-hidden="true"></i>
+      <span>Progreso por Cantón</span>
+    </div>
+    @for (c of progreso(); track c.cantonId) {
+    <div class="canton-row">
+      <div class="canton-row-header">
+        <div>
+          <div class="canton-name">{{ c.cantonNombre }}</div>
+          <div class="canton-meta">
+            {{ c.jrvsConActa }}/{{ c.totalJrvs }} JRVs · ID {{ c.cantonId }}
+          </div>
+        </div>
+        <div class="canton-pct" [class]="'tier-' + tier(c)">{{ pct(c) }}%</div>
+      </div>
+      <p-progressbar
+        [value]="pct(c)"
+        [showValue]="false"
+        [color]="tierColor(c)"
+      />
+    </div>
+    }
+  </app-card>
+
+  <!-- Novedades (actas en disputa) -->
+  <app-card>
+    <div class="card-title">
+      <i class="pi pi-clock" aria-hidden="true"></i>
+      <span>Actas en Disputa</span>
+    </div>
+    @if (novedades().length === 0) {
+    <p class="empty">Sin actas en disputa actualmente.</p>
+    } @for (n of novedades(); track n.actaPublicId) {
+    <div class="acta-row">
+      <div class="acta-info">
+        <div class="acta-jrv">JRV {{ n.jrvNumero }}</div>
+        <div class="acta-cargo">{{ n.cargoNombre }}</div>
+      </div>
+      <app-badge variant="EN_DISPUTA">EN_DISPUTA</app-badge>
+      <span class="acta-time">{{ n.minutosTranscurridos }} min</span>
+    </div>
+    }
+  </app-card>
+</section>
+}

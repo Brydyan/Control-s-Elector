@@ -1,0 +1,283 @@
+<div class="correccion-acta-container" data-testid="correccion-acta">
+  <div class="page-topbar">
+    <app-button
+      variant="ghost"
+      size="sm"
+      (click)="cancelar()"
+      [disabled]="submitting()"
+      data-testid="btn-cancelar"
+    >
+      <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      Cancelar y volver
+    </app-button>
+  </div>
+
+  <header class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Corrección de Acta Disputada</h1>
+      <p class="page-subtitle">Acta ID #{{ actaId }}</p>
+    </div>
+  </header>
+
+  <!-- Estado de carga -->
+  <app-loading-state
+    *ngIf="loading()"
+    message="Cargando datos del acta en disputa..."
+    data-testid="loading-state"
+  ></app-loading-state>
+
+  <!-- Banner de error -->
+  <app-error-state
+    *ngIf="error()"
+    [message]="error()!"
+    (retry)="cargarActa()"
+    data-testid="error-state"
+  ></app-error-state>
+
+  <!-- Warning: Acta no en estado EN_DISPUTA (C5) -->
+  @if (stateWarning(); as warning) {
+  <div class="warning-banner" role="alert" data-testid="state-warning-banner">
+    <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+    <p>{{ warning }}</p>
+  </div>
+  }
+
+  <!-- Región principal (solo si no está cargando ni hay error fatal) -->
+  @if (!loading() && !error()) {
+
+  <!-- Banner naranja de motivo de disputa (D1) -->
+  @if (motivoDisputa(); as motivo) {
+  <div class="dispute-banner" role="alert" data-testid="dispute-banner">
+    <div class="dispute-banner__content">
+      <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+      <div class="dispute-banner__text">
+        <p class="dispute-banner__title">Motivo de la Disputa</p>
+        <p class="dispute-banner__message">{{ motivo }}</p>
+        @if (coordinadorNombre(); as coordinador) {
+        <p class="dispute-banner__coordinator">
+          Reportado por: {{ coordinador }}
+        </p>
+        }
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Visor de imagen de evidencia (B.1) -->
+  @if (urlEvidencia(); as url) {
+  <div class="evidence-section" data-testid="evidence-section">
+    <p class="evidence-section__label">Foto Original del Acta</p>
+    <img
+      [src]="url"
+      alt="Evidencia fotográfica del acta"
+      class="evidence-section__image"
+      data-testid="evidence-image"
+    />
+  </div>
+  }
+
+  <!-- Formulario de corrección (B.2, B.3) -->
+  <app-card class="form-card" data-testid="form-card">
+    <div class="form-content">
+      <!-- Tabla/Lista de votos de candidatos (B.1) -->
+      <div class="candidates-section">
+        <h2 class="section-title">Votos por Candidato</h2>
+        <div class="candidates-list">
+          @for (detalle of detalles(); track detalle.candidatoId) {
+          <div
+            class="candidate-row"
+            [attr.data-testid]="'candidate-' + detalle.candidatoId"
+          >
+            <label
+              [for]="'votos-' + detalle.candidatoId"
+              class="candidate-label"
+            >
+              {{ detalle.candidatoNombre || 'Candidato ' + detalle.candidatoId
+              }} @if (detalle.partidoSiglas) {
+              <span class="party-siglas">({{ detalle.partidoSiglas }})</span>
+              }
+            </label>
+            <input
+              [id]="'votos-' + detalle.candidatoId"
+              type="number"
+              min="0"
+              [max]="MAX_VOTOS_ABSOLUTO"
+              step="1"
+              [(ngModel)]="detalle.votos"
+              (ngModelChange)="actualizarVotoCandidato(detalle.candidatoId, $event)"
+              [disabled]="submitting()"
+              [attr.aria-label]="'Votos de ' + (detalle.candidatoNombre || 'Candidato ' + detalle.candidatoId)"
+              class="input-votos"
+              data-testid="input-votos-candidato"
+            />
+          </div>
+          }
+        </div>
+      </div>
+
+      <!-- Total sufragantes, blancos, nulos (B.1) -->
+      <div class="totals-section">
+        <h2 class="section-title">Totales</h2>
+
+        <div class="total-row">
+          <label for="total-sufragantes" class="total-label">
+            Total Sufragantes
+            <span class="required">*</span>
+          </label>
+          <p id="help-sufragantes" class="text-xs text-gray-600 mt-1">
+            Rango válido: 1 a 500 sufragantes (registra todos los votos
+            incluidos en acta).
+          </p>
+          <input
+            id="total-sufragantes"
+            type="number"
+            min="0"
+            [max]="TOPE_SUFRAGANTES_CNE"
+            step="1"
+            [value]="totalSufragantes()"
+            (input)="actualizarTotalSufragantes($event.target.valueAsNumber)"
+            [disabled]="submitting()"
+            aria-label="Total de sufragantes"
+            aria-describedby="help-sufragantes"
+            class="input-total"
+            data-testid="input-total-sufragantes"
+          />
+        </div>
+
+        <div class="total-row">
+          <label for="votos-blancos" class="total-label">Votos Blancos</label>
+          <input
+            id="votos-blancos"
+            type="number"
+            min="0"
+            [max]="MAX_VOTOS_ABSOLUTO"
+            step="1"
+            [value]="votosBlancos()"
+            (input)="actualizarVotosBlancos($event.target.valueAsNumber)"
+            [disabled]="submitting()"
+            aria-label="Votos blancos"
+            class="input-total"
+            data-testid="input-votos-blancos"
+          />
+        </div>
+
+        <div class="total-row">
+          <label for="votos-nulos" class="total-label">Votos Nulos</label>
+          <input
+            id="votos-nulos"
+            type="number"
+            min="0"
+            [max]="MAX_VOTOS_ABSOLUTO"
+            step="1"
+            [value]="votosNulos()"
+            (input)="actualizarVotosNulos($event.target.valueAsNumber)"
+            [disabled]="submitting()"
+            aria-label="Votos nulos"
+            class="input-total"
+            data-testid="input-votos-nulos"
+          />
+        </div>
+      </div>
+
+      <!-- Tarjeta de checksum dinámico (B.2) -->
+      <div
+        class="checksum-card"
+        [class.checksum-card--invalid]="!checksumValido"
+        [attr.data-testid]="checksumValido ? 'checksum-valid' : 'checksum-invalid'"
+      >
+        <div class="checksum-header">
+          <h3 class="checksum-title">Validación de Suma</h3>
+          <span
+            [class]="checksumValido ? 'checksum-status--valid' : 'checksum-status--invalid'"
+            class="checksum-status"
+          >
+            <i
+              [class]="checksumValido ? 'pi pi-check-circle' : 'pi pi-times-circle'"
+              aria-hidden="true"
+            ></i>
+            {{ checksumValido ? 'Válido' : 'Inválido' }}
+          </span>
+        </div>
+
+        <div class="checksum-details">
+          <p class="checksum-row">
+            <span class="checksum-label">Suma de votos:</span>
+            <span class="checksum-value">{{ sumaVotos }}</span>
+          </p>
+          <p class="checksum-row">
+            <span class="checksum-label">Total sufragantes:</span>
+            <span class="checksum-value">{{ totalSufragantes() }}</span>
+          </p>
+          @if (!checksumValido) {
+          <p class="checksum-row checksum-row--delta">
+            <span class="checksum-label">Diferencia:</span>
+            <span
+              [class]="diferenciaChecksum > 0 ? 'delta-positive' : 'delta-negative'"
+            >
+              {{ diferenciaChecksum > 0 ? '+' : '' }}{{ diferenciaChecksum }}
+            </span>
+          </p>
+          } @if (esCpccs()) {
+          <p class="checksum-row checksum-row--cpccs">
+            <span class="checksum-label">Límite CPCCS:</span>
+            <span class="checksum-value">{{ totalSufragantes() * 3 }}</span>
+          </p>
+          }
+        </div>
+
+        @if (!checksumValido) {
+        <p class="checksum-error" role="alert" aria-live="assertive">
+          @if (esCpccs()) { La suma de votos debe ser ≤ {{ totalSufragantes() *
+          3 }}. } @else { La suma de votos debe ser exactamente {{
+          totalSufragantes() }}. }
+        </p>
+        }
+      </div>
+    </div>
+
+    <!-- Acciones (B.4) -->
+    <div class="form-actions">
+      <div class="form-actions__wrapper">
+        <app-button
+          variant="primary"
+          size="md"
+          (click)="enviarCorreccion()"
+          [disabled]="botonEnvioBloqueado"
+          [loading]="submitting()"
+          data-testid="btn-enviar-correccion"
+          [attr.aria-describedby]="botonEnvioBloqueado ? 'checksum-error-msg' : null"
+        >
+          <i class="pi pi-check" aria-hidden="true"></i>
+          @if (submitting()) { Enviando... } @else { Enviar Corrección }
+        </app-button>
+        @if (botonEnvioBloqueado && !submitting()) {
+        <p
+          id="checksum-error-msg"
+          class="text-red-600 text-sm mt-2"
+          role="alert"
+        >
+          ⚠️ Corrige la suma de votos para poder enviar. Suma actual: {{
+          sumaVotos }}, Sufragantes: {{ totalSufragantes() }}, Diferencia: {{
+          diferenciaChecksum > 0 ? '+' : '' }}{{ diferenciaChecksum }}
+        </p>
+        }
+      </div>
+      <app-button
+        variant="ghost"
+        size="md"
+        (click)="cancelar()"
+        [disabled]="submitting()"
+        data-testid="btn-cancelar-form"
+      >
+        Cancelar
+      </app-button>
+    </div>
+  </app-card>
+
+  @if (success(); as msg) {
+  <div class="success-message" role="status" data-testid="success-message">
+    <i class="pi pi-check-circle" aria-hidden="true"></i>
+    <span>{{ msg }}</span>
+  </div>
+  } }
+</div>

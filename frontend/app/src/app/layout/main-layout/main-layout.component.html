@@ -1,15 +1,26 @@
-<div class="layout">
-  <app-sidebar></app-sidebar>
+<div class="layout-wrapper" [ngClass]="containerClass()">
+  <!-- T8.S14: Skip link for keyboard navigation ----------------------------- -->
+  <a
+    href="#layout-main"
+    class="layout-skip-link"
+    (click)="focusMainContent($event)"
+  >
+    Saltar al contenido principal
+  </a>
 
-  <div class="main">
-    <app-topbar
-      [title]="meta().title"
-      [subtitle]="meta().subtitle"
-      [notifications]="meta().notifications"
-    ></app-topbar>
+  <app-topbar
+    [title]="meta().title"
+    [subtitle]="meta().subtitle"
+    [notifications]="meta().notifications"
+  />
 
-    <main class="content">
-      <router-outlet></router-outlet>
+  <app-sidebar />
+
+  <div class="layout-main-container">
+    <main class="layout-main" id="layout-main" tabindex="-1">
+      <router-outlet />
     </main>
   </div>
+
+  <div class="layout-mask" (click)="layout.closeSidebar()"></div>
 </div>

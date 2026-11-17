@@ -1,0 +1,22 @@
+# k6 Load Test Results
+results/
+*.json
+
+# Node modules
+node_modules/
+package-lock.json
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+*.swo
+
+# Editor
+.vscode/
+.idea/
+*.iml
+
+# OS
+Thumbs.db

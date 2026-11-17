@@ -1,59 +1,119 @@
-import { Component, computed, inject } from '@angular/core';
-import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import {
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
+import {
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+} from '@angular/router';
+import { filter, Subject, takeUntil } from 'rxjs';
 
-import { AuthService } from '../../core/auth/auth.service';
-import { AuthStore } from '../../core/auth/auth.store';
-import { Role } from '../../core/auth/domain/user.model';
+import { AuthService } from '../../features/auth/services/auth.service';
+import { AuthStore } from '../../features/auth/services/auth.store';
+import { MenuService } from '../../core/menu/menu.service';
+import { toPrimeIcon } from '../../shared/ui/icon-map';
+import { LayoutService } from '../layout.service';
+import { NAV_CONFIG, sanitizeNavSections, type UserRole } from '../nav.config';
 
-interface NavItem {
+export interface DynamicNavSection {
   label: string;
+  items: DynamicNavItem[];
+}
+
+export interface DynamicNavItem {
+  label: string;
+  /** PrimeIcons class, e.g. `pi pi-home`. */
   icon: string;
-  route?: string;
-  /** Roles allowed to use this item. Empty = everyone. */
-  roles?: Role[];
-  /** Rendered but not yet implemented — shown disabled. */
+  route: string;
   disabled?: boolean;
-  /** Small tag on the right (e.g. "Solo MASTER"). */
   tag?: string;
 }
 
-interface NavSection {
-  label: string;
-  items: NavItem[];
-}
-
+/**
+ * Navigation sidebar.
+ *
+ * The sections come from the backend menu catalog (`MenuService`), which
+ * already applies the RBAC rules, so the frontend only maps the payload into
+ * the shell. The static fallback is used when the catalog is unreachable.
+ */
 @Component({
   selector: 'app-sidebar',
   standalone: true,
   imports: [RouterLink, RouterLinkActive],
   templateUrl: './sidebar.component.html',
-  styleUrl: './sidebar.component.scss',
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit, OnDestroy {
   private readonly store = inject(AuthStore);
   private readonly auth = inject(AuthService);
+  private readonly menuService = inject(MenuService);
   private readonly router = inject(Router);
+  readonly layout = inject(LayoutService);
 
-  readonly sections: NavSection[] = [
-    {
-      label: 'Dashboard',
-      items: [
-        { label: 'Resumen General', icon: '📊', route: '/dashboard' },
-        { label: 'Resultados por Cargo', icon: '📈', disabled: true },
-        { label: 'Progreso por Cantón', icon: '🗺️', disabled: true },
-        { label: 'Lista de Actas', icon: '📋', disabled: true },
-      ],
-    },
-    {
-      label: 'Sistema',
-      items: [
-        { label: 'Configuración', icon: '⚙️', roles: ['MASTER'], disabled: true, tag: 'Solo MASTER' },
-        { label: 'Usuarios', icon: '👥', roles: ['MASTER'], disabled: true, tag: 'Solo MASTER' },
-      ],
-    },
-  ];
+  private readonly _sections = signal<DynamicNavSection[]>([]);
+  readonly sections = this._sections.asReadonly();
 
   readonly user = this.store.user;
+
+  private readonly destroy$ = new Subject<void>();
+
+  ngOnInit(): void {
+    // Initialize sections from canonical NAV_CONFIG based on current role.
+    // This ensures immediate, offline-first rendering without waiting for HTTP.
+    const role = this.user()?.role as UserRole | undefined;
+    if (role) {
+      this._sections.set(NAV_CONFIG[role]);
+    }
+
+    // Attempt to load from backend and sanitize/deduplicate against NAV_CONFIG.
+    this.cargarMenus();
+
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(() => {
+        // The drawer is mobile-only; navigating closes it.
+        if (!this.layout.isDesktop()) {
+          this.layout.closeSidebar();
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  cargarMenus(): void {
+    const role = this.user()?.role as UserRole | undefined;
+    if (!role) {
+      return;
+    }
+
+    this.menuService.getMyMenus().subscribe({
+      next: (nodes) => {
+        // Sanitize and deduplicate backend response against canonical NAV_CONFIG.
+        const sections = sanitizeNavSections(role, nodes);
+        this._sections.set(sections);
+      },
+      error: (err) => {
+        console.warn(
+          '[sidebar] Error loading menus from backend, keeping canonical NAV_CONFIG',
+          err,
+        );
+        // On error (HTTP 500, timeout, offline), fallback to canonical NAV_CONFIG
+        // which was already set in ngOnInit() → zero flicker, always functional.
+        this._sections.set(NAV_CONFIG[role]);
+      },
+    });
+  }
 
   /** "ana.delgado@cne.gob.ec" -> "Ana Delgado". Falls back to the email. */
   readonly displayName = computed(() => {
@@ -70,7 +130,8 @@ export class SidebarComponent {
   readonly initials = computed(() => {
     const name = this.displayName();
     const parts = name.split(' ').filter(Boolean);
-    const chars = parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2);
+    const chars =
+      parts.length >= 2 ? parts[0][0] + parts[1][0] : name.slice(0, 2);
     return chars.toUpperCase();
   });
 
@@ -79,7 +140,6 @@ export class SidebarComponent {
   logout(): void {
     this.auth.logout().subscribe({
       next: () => this.router.navigateByUrl('/login'),
-      // Even if the server call fails, the local session is already cleared.
       error: () => this.router.navigateByUrl('/login'),
     });
   }

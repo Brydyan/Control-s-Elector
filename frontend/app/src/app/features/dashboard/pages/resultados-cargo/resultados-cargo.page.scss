@@ -1,0 +1,349 @@
+.resultados-cargo-container {
+  padding: 2rem 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.page-header {
+  margin-bottom: 2rem;
+
+  .header-titles {
+    .page-title {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+
+    .page-subtitle {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin: 0.25rem 0 0 0;
+    }
+  }
+}
+
+// ============================================================================
+// Tabs de cargos
+// ============================================================================
+
+.tabs-section {
+  margin-bottom: 2rem;
+
+  .tabs-list {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid var(--color-border-subtle);
+    overflow-x: auto;
+    padding-bottom: 0;
+
+    .tab-button {
+      padding: 1rem 1.5rem;
+      background: none;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+
+      &:hover {
+        color: var(--color-text-primary);
+        border-bottom-color: var(--color-border-medium);
+      }
+
+      &.active {
+        color: var(--primitive-green-800);
+        border-bottom-color: var(--primitive-green-800);
+      }
+
+      &:focus {
+        outline: 2px solid var(--primitive-green-800);
+        outline-offset: 2px;
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Candidato líder
+// ============================================================================
+
+.candidato-lider-card {
+  background: linear-gradient(
+    135deg,
+    var(--primitive-green-50) 0%,
+    var(--primitive-green-50) 100%
+  );
+  border: 2px solid var(--primitive-green-200);
+
+  .lider-content {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+
+    @media (max-width: 640px) {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .lider-foto {
+      flex-shrink: 0;
+
+      .lider-image {
+        width: 150px;
+        height: 150px;
+        border-radius: 12px;
+        object-fit: cover;
+        border: 3px solid var(--color-surface-card);
+        box-shadow: 0 4px 12px var(--color-shade-30);
+      }
+
+      .lider-foto-placeholder {
+        width: 150px;
+        height: 150px;
+        border-radius: 12px;
+        background: var(--primitive-green-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: var(--primitive-green-800);
+        border: 3px solid var(--color-surface-card);
+      }
+    }
+
+    .lider-info {
+      flex: 1;
+
+      .lider-nombre {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--color-text-primary);
+      }
+
+      .lider-partido {
+        font-size: 0.95rem;
+        color: var(--color-text-secondary);
+        margin: 0.5rem 0 0 0;
+      }
+
+      .lider-stats {
+        display: flex;
+        gap: 2rem;
+        margin-top: 1rem;
+
+        @media (max-width: 640px) {
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .stat {
+          display: flex;
+          flex-direction: column;
+
+          .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+          }
+
+          .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            margin-top: 0.25rem;
+          }
+
+          .stat-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            width: fit-content;
+
+            &.status-ganador_provisional {
+              background: var(--primitive-green-50);
+              color: var(--primitive-green-800);
+              border: 1px solid var(--primitive-green-200);
+            }
+
+            &.status-en_conteo {
+              background: var(--primitive-amber-50);
+              color: var(--primitive-amber-800);
+              border: 1px solid var(--primitive-amber-200);
+            }
+
+            &.status-perdedor_provisional {
+              background: var(--primitive-red-50);
+              color: var(--primitive-red-800);
+              border: 1px solid var(--primitive-red-200);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Lista de candidatos
+// ============================================================================
+
+.candidatos-card {
+  .candidatos-header {
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--color-border-subtle);
+    padding-bottom: 1rem;
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--color-text-primary);
+    }
+  }
+
+  .candidatos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+
+    .candidato-row {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--color-border-subtle);
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      @media (max-width: 768px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+
+      .candidato-name {
+        min-width: 200px;
+
+        @media (max-width: 768px) {
+          width: 100%;
+        }
+
+        .nombre {
+          font-size: 0.95rem;
+          font-weight: 600;
+          margin: 0;
+          color: var(--color-text-primary);
+        }
+
+        .partido {
+          font-size: 0.8rem;
+          color: var(--color-text-muted);
+          margin-top: 0.25rem;
+          display: block;
+        }
+      }
+
+      .candidato-barra {
+        flex: 1;
+        min-width: 0;
+
+        @media (max-width: 768px) {
+          width: 100%;
+        }
+
+        .barra-container {
+          height: 24px;
+          background: var(--color-surface-raised);
+          border-radius: 4px;
+          overflow: hidden;
+          margin-bottom: 0.5rem;
+
+          .barra-fill {
+            height: 100%;
+            background: linear-gradient(
+              90deg,
+              var(--primitive-green-800) 0%,
+              var(--primitive-green-200) 100%
+            );
+            transition: width 0.3s ease;
+          }
+        }
+
+        .barra-labels {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.8rem;
+          color: var(--color-text-secondary);
+
+          .votos {
+            font-weight: 600;
+          }
+
+          .porcentaje {
+            font-weight: 500;
+          }
+        }
+      }
+    }
+  }
+}
+
+// ============================================================================
+// Tarjetas de resumen
+// ============================================================================
+
+.resumen-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+
+  .resumen-card {
+    border: 2px solid var(--color-border-subtle);
+    border-radius: 12px;
+
+    .resumen-content {
+      text-align: center;
+      padding: 1.5rem;
+
+      .resumen-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin: 0;
+      }
+
+      .resumen-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--color-text-primary);
+        margin: 0.75rem 0;
+      }
+
+      .resumen-desc {
+        font-size: 0.9rem;
+        color: var(--color-text-muted);
+        margin: 0;
+      }
+    }
+  }
+}

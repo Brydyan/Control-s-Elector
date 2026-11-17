@@ -1,0 +1,599 @@
+// ─────────────────────────────────────────────────────────────
+// DESIGN SYSTEM: TOKENS PRIMITIVOS Y SEMÁNTICOS
+// ─────────────────────────────────────────────────────────────
+
+/*
+ * Dos capas, un solo vocabulario:
+ *
+ * 1. `:root` — el esquema claro: los primitivos y los valores semánticos del
+ *    esquema claro.
+ * 2. `.app-dark` — el esquema oscuro: el MISMO vocabulario semántico con los
+ *    valores remapeados.
+ *
+ * La regla del esquema oscuro es *el tono es invariante, la claridad y la
+ * opacidad de la superficie no*: el azul sigue siendo azul, el verde sigue
+ * siendo verde, pero un paso más claro y sobre una superficie translúcida.
+ *
+ * `.app-dark` es el `darkModeSelector` de PrimeNG, así que los dos esquemas se
+ * activan con el mismo interruptor y nunca se desincronizan.
+ *
+ * Este archivo es la ÚNICA capa que declara colores. Las páginas leen estos
+ * nombres; el puente (`src/theme/primeng-preset.ts`) alimenta con estos mismos
+ * nombres los que PrimeNG publica (`--p-*`), de modo que el shell y las
+ * páginas leen la misma decisión.
+ */
+
+:root {
+  // 1. Escala Tonal de Marca (Navy Institucional)
+  //
+  // La rampa "blue" ya no es el Tailwind blue-600: la marca institucional
+  // pide un navy desaturado que se sostiene sobre大面积 sin gritar. La rampa
+  // completa se reescribió en el rebalance visual (odd/tasks/frontend-visual-
+  // rebalance.md, S1) — los nombres siguen siendo "blue" porque el preset de
+  // PrimeNG pide `primitive.blue` y el vocabulario semántico no cambia.
+  --primitive-blue-50: #e8eef7;
+  --primitive-blue-100: #d6e0ee;
+  --primitive-blue-200: #b1c4dd;
+  --primitive-blue-300: #7c9cc4;
+  --primitive-blue-400: #4d75a8;
+  --primitive-blue-500: #1c4a8e;
+  --primitive-blue-600: #15366b;
+  --primitive-blue-700: #0f2a4d;
+  --primitive-blue-800: #0a213f;
+  --primitive-blue-900: #061730;
+
+  // Navy / Slate profundo para superficies oscuras y textos
+  --primitive-slate-950: #020617;
+  --primitive-slate-900: #0f172a;
+  --primitive-slate-800: #1e293b;
+  --primitive-slate-700: #334155;
+  --primitive-slate-600: #475569;
+  --primitive-slate-500: #64748b;
+  --primitive-slate-400: #94a3b8;
+  --primitive-slate-300: #cbd5e1;
+  --primitive-slate-200: #e2e8f0;
+  --primitive-slate-100: #f1f5f9;
+  --primitive-slate-50: #f8fafc;
+  --primitive-white: #ffffff;
+
+  // Navy del panel de marca de la pantalla de acceso
+  --primitive-navy-800: #132347;
+
+  // Estados Accesibles (WCAG AA > 4.5:1 sobre fondo claro)
+  --primitive-green-50: #ecfdf5;
+  --primitive-green-200: #a7f3d0;
+  --primitive-green-300: #6ee7b7;
+  --primitive-green-800: #065f46;
+
+  --primitive-amber-50: #fffbeb;
+  --primitive-amber-200: #fde68a;
+  --primitive-amber-300: #fcd34d;
+  --primitive-amber-800: #92400e;
+
+  --primitive-red-50: #fef2f2;
+  --primitive-red-200: #fecaca;
+  --primitive-red-300: #fca5a5;
+  --primitive-red-800: #991b1b;
+
+  --primitive-purple-50: #faf5ff;
+  --primitive-purple-300: #d8b4fe;
+  --primitive-purple-400: #c084fc;
+  --primitive-purple-600: #9333ea;
+  --primitive-purple-800: #6b21a8;
+
+  // 2. Tokens Semánticos de Marca
+  --color-brand-primary: var(--primitive-blue-500);
+  --color-brand-primary-strong: var(--primitive-blue-600);
+  --color-brand-primary-active: var(--primitive-blue-700);
+  --color-brand-border: var(--primitive-blue-200);
+
+  // Superficies
+  //
+  // El page ya no es slate-50 puro: es slate-100 con un toque cian del 4%
+  // (hex inline, no primitivo) que sigue hablando del azul de marca sin
+  // coincidir exactamente con él. El delta contra el card sube de 5 a 12
+  // unidades de luminosidad y las tarjetas se despegan sin gritar — ver
+  // S2 de odd/tasks/frontend-visual-rebalance.md.
+  --color-surface-page: #eef2f7;
+  --color-surface-card: var(--primitive-white);
+  --color-surface-default: var(--primitive-white);
+  --color-surface-raised: var(--primitive-slate-100);
+  --color-surface-canvas: var(--primitive-white);
+  --color-surface-sidebar: var(--primitive-slate-900);
+
+  /*
+   * Tipografía & Colores de Texto
+   *
+   * La app se dibuja con IBM Plex Sans y su hermano IBM Plex Mono, las dos
+   * auto-alojadas en `src/assets/fonts` (ver `src/theme/fonts.scss`): Plex
+   * fue dibujada para una corporación — neutra, técnica, institucional, el
+   * registro que pide `DESIGN.md` — y trae un juego de cifras tabulares de
+   * verdad, que es lo que `PRODUCT.md` llama sagrado.
+   *
+   * La pila de reserva es métricamente compatible con la cara real (las
+   * métricas están sobrescritas en la reserva), así el texto no salta cuando
+   * la fuente llega. El preset de PrimeNG declara la misma pila, así el
+   * chrome y el contenido hablan con la misma voz.
+   */
+  --font-family-base:
+    "IBM Plex Sans", "IBM Plex Sans Fallback", Arial, "Helvetica Neue",
+    system-ui, sans-serif;
+  --font-family-mono:
+    "IBM Plex Mono", "IBM Plex Mono Fallback", "Liberation Mono",
+    "DejaVu Sans Mono", ui-monospace, monospace;
+
+  // Texto
+  --color-text-primary: var(--primitive-slate-900);
+  --color-text-secondary: var(--primitive-slate-700);
+  --color-text-muted: var(--primitive-slate-600);
+  --color-text-on-brand: var(--primitive-white);
+
+  /*
+   * El texto de las superficies que dibuja la biblioteca de componentes (la
+   * barra superior, una tabla, un panel). Son los nombres que el puente
+   * alimenta hacia `--p-text-color` y `--p-text-muted-color`, así que el
+   * shell y las páginas leen la misma decisión.
+   */
+  --color-text-on-surface: var(--primitive-slate-700);
+  --color-text-muted-on-surface: var(--primitive-slate-500);
+
+  /*
+   * El borde de las mismas superficies. En claro es el borde tenue de la
+   * rampa; en oscuro la biblioteca de componentes usa el borde sólido de su
+   * propia rampa, y el shell lo hereda.
+   */
+  --color-border-on-surface: var(--primitive-slate-200);
+
+  // Bordes
+  --color-border-subtle: var(--primitive-slate-100);
+  --color-border-medium: var(--primitive-slate-200);
+
+  // Estados de Actas (Fondo, Borde, Texto Accesible)
+  --color-status-success: var(--primitive-green-800);
+  --color-status-success-bg: var(--primitive-green-50);
+  --color-status-success-border: var(--primitive-green-200);
+
+  --color-status-warning: var(--primitive-amber-800);
+  --color-status-warning-bg: var(--primitive-amber-50);
+  --color-status-warning-border: var(--primitive-amber-200);
+
+  --color-status-danger: var(--primitive-red-800);
+  --color-status-danger-strong: #7d1a1a;
+  --color-status-danger-bg: var(--primitive-red-50);
+  --color-status-danger-border: var(--primitive-red-200);
+
+  --color-status-info: var(--primitive-blue-600);
+  --color-status-info-bg: var(--primitive-blue-50);
+  --color-status-info-border: var(--primitive-blue-200);
+
+  /*
+   * El acta corregida no es un estado de alarma: es un estado con color
+   * propio (el morado de la marca electoral) que el tablero del dashboard
+   * muestra como cifra y como filo superior de la card.
+   */
+  --color-status-corrected: var(--primitive-purple-800);
+  --color-status-corrected-strong: var(--primitive-purple-600);
+
+  /*
+   * El estado neutro: el borde de un registro que no está en disputa. No
+   * lleva color propio, así que usa el gris de la rampa.
+   */
+  --color-status-neutral: var(--primitive-slate-500);
+
+  /*
+   * Velos: blanco translúcido sobre una superficie oscura.
+   *
+   * El panel de marca de la pantalla de acceso es una superficie oscura fija
+   * en los dos esquemas; sus velos tienen su propia opacidad y ninguno es un
+   * color nuevo.
+   */
+  --color-veil-08: rgba(255, 255, 255, 0.08);
+  --color-veil-10: rgba(255, 255, 255, 0.1);
+  --color-veil-12: rgba(255, 255, 255, 0.12);
+  --color-veil-18: rgba(255, 255, 255, 0.18);
+  --color-veil-20: rgba(255, 255, 255, 0.2);
+  --color-veil-65: rgba(255, 255, 255, 0.65);
+  --color-veil-70: rgba(255, 255, 255, 0.7);
+  --color-veil-88: rgba(255, 255, 255, 0.88);
+  --color-veil-90: rgba(255, 255, 255, 0.9);
+
+  /*
+   * Sombras: negro translúcido. La una es el hover de un control claro, la
+   * otra la sombra proyectada de un texto sobre fondo oscuro.
+   */
+  --color-shade-05: rgba(0, 0, 0, 0.05);
+  --color-shade-10: rgba(0, 0, 0, 0.1);
+  --color-shade-30: rgba(0, 0, 0, 0.3);
+
+  /*
+   * El velo oscuro sobre una fotografía (el botón de zoom de la evidencia) y
+   * la tinta blanca que va sobre él.
+   */
+  --color-scrim: rgba(15, 23, 42, 0.75);
+  --color-text-on-scrim: var(--primitive-white);
+
+  /*
+   * El fondo de la evidencia fotográfica: la foto se apoya sobre negro puro,
+   * que no es una superficie del producto sino el marco de la imagen.
+   */
+  --color-backdrop-photo: #000;
+
+  /*
+   * El texto del panel de marca de la pantalla de acceso: la superficie es
+   * oscura en los dos esquemas, así que la tinta es blanca en los dos.
+   */
+  --color-text-on-brand-panel: var(--primitive-white);
+
+  // 3. Espaciado Global (escala base 4px)
+  //
+  // La escala es de multiplos de 4px y cubre de 4 a 48 sin huecos: los saltos
+  // (6 -> 8 -> 10 -> 12) son los que usa el resto del sistema, asi que anadir
+  // los intermedios (7 y 9) completa la serie sin mover lo que ya existe.
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  // 4. Tipografía Escalar y Tabular
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 15px;
+  --font-size-lg: 18px;
+  /*
+   * La escala tiene cuatro peldaños y ninguno se ata con otro:
+   *
+   *   display  36px  el `<h1>` de la página
+   *   title    24px  el título de la card (`h2`, `h3`)
+   *   body     14px  el texto
+   *   meta     12px  el metadato
+   */
+  --font-size-title: 24px;
+  --font-size-display: 36px;
+  --font-size-body: var(--font-size-sm);
+  --font-size-meta: var(--font-size-xs);
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+
+  // 5. Bordes, Radios y Sombras
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+  --radius-full: var(--radius-pill);
+
+  --shadow-card:
+    0 2px 6px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-elevated:
+    0 10px 25px -5px rgba(15, 23, 42, 0.1),
+    0 8px 10px -6px rgba(15, 23, 42, 0.06);
+
+  /* La sombra de una superficie que flota sobre la página. */
+  --shadow-overlay: 0 24px 64px -12px rgba(15, 23, 42, 0.45);
+  /* La sombra de una superficie que apenas se desprende del fondo. */
+  --shadow-surface: 0 1px 3px rgb(0 0 0 / 5%);
+
+  /*
+   * 5b. Anillo de foco (ODD 505, C).
+   *
+   * El foco tiene que verse: es la unica forma de que quien navega con teclado
+   * sepa donde esta. Va en token para que el color siga al de la marca y el
+   * grosor sea el mismo en toda la app.
+   */
+  --focus-ring-color: var(--color-brand-primary);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-style: solid;
+
+  /*
+   * 5c. Movimiento (ODD 505, D).
+   *
+   * Duraciones y curvas por separado: una transicion se compone de las dos, y
+   * `transition: all` se lleva por delante cambios que nadie pidio. Los rangos
+   * siguen la pauta de la casa: 100-300ms para lo que responde a la mano, nada
+   * de mas de 500ms.
+   */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Transiciones por propiedad: solo se anima lo que el elemento declara. */
+  --transition-opacity: opacity var(--duration-normal) var(--ease-out);
+  --transition-transform: transform var(--duration-normal) var(--ease-standard);
+  --transition-color: color var(--duration-fast) var(--ease-standard);
+  --transition-bg-color: background-color var(--duration-fast)
+    var(--ease-standard);
+  --transition-border: border-color var(--duration-fast) var(--ease-standard);
+  --transition-shadow: box-shadow var(--duration-normal) var(--ease-standard);
+
+  /*
+   * 6. Tokens de KPI (la tarjeta de indicador)
+   *
+   * La tarjeta de KPI es un objeto del sistema de diseño, no una página: la
+   * usan el dashboard, la tabla de cargos y el reporte del coordinador, y las
+   * tres leían tokens sueltos con el mismo significado y nombres distintos.
+   * Aquí se declara el vocabulario una sola vez, y el componente `app-kpi-card`
+   * deja de decidir colores.
+   *
+   * `surface`, `border`, `label` y `hint` son la estructura de la tarjeta. Los
+   * pares `accent-*` y `figure-*` son los cinco tonos del tablero electoral:
+   * el filo de color que corona la tarjeta y la cifra que lleva dentro.
+   *
+   * El filo y la cifra no son siempre el mismo token: un acta corregida se
+   * anuncia con el morado fuerte en el filo y con el morado de texto en la
+   * cifra, porque la cifra tiene que seguir leyendo como texto y no como un
+   * color de estado.
+   */
+  --color-kpi-surface: var(--color-surface-card);
+  --color-kpi-border: var(--color-border-on-surface);
+  --color-kpi-label: var(--color-text-muted);
+  --color-kpi-hint: var(--color-text-muted-on-surface);
+
+  --color-kpi-accent-brand: var(--color-brand-primary);
+  --color-kpi-accent-success: var(--color-status-success);
+  --color-kpi-accent-warning: var(--color-status-warning);
+  --color-kpi-accent-corrected: var(--color-status-corrected-strong);
+  --color-kpi-accent-neutral: var(--color-status-neutral);
+
+  --color-kpi-figure-brand: var(--color-brand-primary);
+  --color-kpi-figure-success: var(--color-status-success);
+  --color-kpi-figure-warning: var(--color-status-warning);
+  --color-kpi-figure-corrected: var(--color-status-corrected);
+  --color-kpi-figure-neutral: var(--color-text-primary);
+
+  /*
+   * 7. Tokens de tabla
+   *
+   * Las tablas de PrimeNG las estilaba cada página por su cuenta: dos de
+   * ellas ponían la cabecera en mayúscula con un padding y un borde, las
+   * demás la dejaban como la emitted PrimeNG —que no le pone nada, porque las
+   * cabeceras las escribe el template— y el hover sólo lo tenía una.
+   *
+   * Aquí se declara el vocabulario de la tabla una sola vez. La hoja que lo
+   * consume vive en `src/theme/tables.scss` (`.app-table`).
+   *
+   * `header-bg` es la superficie elevada: en claro es un gris un paso más
+   * oscuro que la tarjeta y en oscuro un gris un paso más claro, así que la
+   * banda de la cabecera se despega de los datos en los dos esquemas con el
+   * mismo signo.
+   */
+  --color-table-surface: var(--color-surface-card);
+  --color-table-header-bg: var(--color-surface-raised);
+  --color-table-header-text: var(--color-text-muted-on-surface);
+  --color-table-header-border: var(--color-border-on-surface);
+  --color-table-cell-text: var(--color-text-on-surface);
+  --color-table-row-border: var(--color-border-on-surface);
+  --color-table-row-hover-bg: var(--color-surface-raised);
+  --color-table-caption-text: var(--color-text-muted);
+
+  /*
+   * 8. Tokens de formulario y componentes modales
+   *
+   * Estados de control y validación: error, success, warning, disabled.
+   */
+  --color-form-error: var(--color-status-danger);
+  --color-form-error-bg: var(--color-status-danger-bg);
+  --color-form-error-border: var(--color-status-danger-border);
+
+  --color-form-success: var(--color-status-success);
+  --color-form-success-bg: var(--color-status-success-bg);
+  --color-form-success-border: var(--color-status-success-border);
+
+  --color-form-warning: var(--color-status-warning);
+  --color-form-warning-bg: var(--color-status-warning-bg);
+  --color-form-warning-border: var(--color-status-warning-border);
+
+  --color-form-disabled-bg: var(--color-surface-raised);
+  --color-form-disabled-text: var(--color-text-muted-on-surface);
+
+  --color-form-border: var(--color-border-on-surface);
+}
+
+/*
+ * Esquema oscuro.
+ *
+ * Las superficies son los mismos valores que la rampa oscura de PrimeNG
+ * (`BRAND_DARK_SURFACE` del preset): si la app pintara su propia rampa, la
+ * costura entre el chrome y las páginas se vería.
+ *
+ * El texto nunca es `#fff` puro (vibra sobre oscuro): es blanco roto, con dos
+ * pasos más claros para el secundario y el apagado.
+ */
+.app-dark {
+  /* Superficies — la rampa oscura del preset (`--p-content-background`,
+     `--p-card-background` y `--p-content-hover-background`). */
+  --color-surface-page: var(--primitive-slate-950);
+  --color-surface-card: var(--primitive-slate-900);
+  --color-surface-raised: var(--primitive-slate-800);
+  --color-surface-canvas: var(--primitive-slate-950);
+  --color-surface-default: var(--primitive-slate-900);
+  --color-surface-sidebar: var(--primitive-slate-900);
+
+  /* Texto — fuera de blanco, nunca `#fff`. */
+  --color-text-primary: var(--primitive-slate-100);
+  --color-text-secondary: var(--primitive-slate-300);
+  --color-text-muted: var(--primitive-slate-400);
+  /* La marca en oscuro es un azul claro: el texto sobre ella es tinta, no
+     blanco. */
+  --color-text-on-brand: var(--primitive-slate-950);
+
+  /*
+   * El texto de las superficies de la biblioteca de componentes: en oscuro la
+   * rampa de superficies llega hasta el blanco puro, y el shell lo hereda.
+   */
+  --color-text-on-surface: var(--primitive-white);
+  --color-text-muted-on-surface: var(--primitive-slate-400);
+
+  /* El borde de las mismas superficies: el borde sólido de la rampa. */
+  --color-border-on-surface: var(--primitive-slate-700);
+
+  /* Bordes — mucho más sutiles que en claro. */
+  --color-border-subtle: rgba(148, 163, 184, 0.14);
+  --color-border-medium: rgba(148, 163, 184, 0.24);
+
+  /* Estado — mismo tono, foreground aclarado sobre superficie translúcida. */
+  --color-status-success: var(--primitive-green-300);
+  --color-status-success-bg: rgba(16, 185, 129, 0.14);
+  --color-status-success-border: rgba(16, 185, 129, 0.38);
+
+  --color-status-warning: var(--primitive-amber-300);
+  --color-status-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-status-warning-border: rgba(245, 158, 11, 0.38);
+
+  --color-status-danger: var(--primitive-red-300);
+  --color-status-danger-strong: var(--primitive-red-200);
+  --color-status-danger-bg: rgba(239, 68, 68, 0.14);
+  --color-status-danger-border: rgba(239, 68, 68, 0.4);
+
+  --color-status-info: var(--primitive-blue-300);
+  --color-status-info-bg: rgba(76, 117, 168, 0.18);
+  --color-status-info-border: rgba(177, 196, 221, 0.4);
+
+  /* El acta corregida — mismo tono morado, un paso más claro. */
+  --color-status-corrected: var(--primitive-purple-300);
+  --color-status-corrected-strong: var(--primitive-purple-400);
+
+  /*
+   * El estado neutro no cambia de tono: es el gris de la rampa, el que
+   * separa un registro que no está en disputa de uno que sí.
+   */
+  --color-status-neutral: var(--primitive-slate-500);
+
+  /*
+   * Los velos, las sombras, el scrim y el panel de marca son superficies
+   * oscuras en los dos esquemas: sus valores no cambian.
+   */
+  --color-veil-08: rgba(255, 255, 255, 0.08);
+  --color-veil-10: rgba(255, 255, 255, 0.1);
+  --color-veil-12: rgba(255, 255, 255, 0.12);
+  --color-veil-18: rgba(255, 255, 255, 0.18);
+  --color-veil-20: rgba(255, 255, 255, 0.2);
+  --color-veil-65: rgba(255, 255, 255, 0.65);
+  --color-veil-70: rgba(255, 255, 255, 0.7);
+  --color-veil-88: rgba(255, 255, 255, 0.88);
+  --color-veil-90: rgba(255, 255, 255, 0.9);
+  --color-shade-05: rgba(0, 0, 0, 0.05);
+  --color-shade-10: rgba(0, 0, 0, 0.1);
+  --color-shade-30: rgba(0, 0, 0, 0.3);
+  --color-scrim: rgba(15, 23, 42, 0.75);
+  --color-text-on-scrim: var(--primitive-white);
+  --color-backdrop-photo: #000;
+  --color-text-on-brand-panel: var(--primitive-white);
+
+  /*
+   * Marca — la rampa "blue" ya es navy institucional, así que los pasos
+   * del dark scheme siguen la misma rampa pero con un paso más claro en
+   * cada uno: el navy-500 se vuelve navy-400, el navy-600 se vuelve
+   * navy-500, etc. Mismo vocabulario, mismos nombres, sin inventar hex.
+   */
+  --color-brand-primary: var(--primitive-blue-400);
+  --color-brand-primary-strong: var(--primitive-blue-500);
+  --color-brand-primary-active: var(--primitive-blue-600);
+  --color-brand-border: rgba(122, 154, 196, 0.65);
+
+  /*
+   * KPI y tabla — el mismo vocabulario, los mismos nombres.
+   *
+   * Estas declaran son alias de tokens que el esquema oscuro ya remapeó: el
+   * `--color-status-success` de abajo es el verde claro, no el verde de
+   * texto, y `--color-surface-raised` es el gris claro. El remapeo ocurre una
+   * sola vez, en el token al que apuntan, así que la tarjeta de KPI y la
+   * tabla cambian de esquema sin que ni el componente ni la hoja tengan que
+   * saber que existe un segundo esquema.
+   *
+   * Se declaran igual en los dos esquemas a propósito: el contrato de tokens
+   * (`primeng-theme.spec.ts`) exige que todo token semántico exista en los
+   * dos, y un token que sólo existe en claro es un token que en oscuro
+   * vuelve a su valor de claro sin que nadie lo decida.
+   */
+  --color-kpi-surface: var(--color-surface-card);
+  --color-kpi-border: var(--color-border-on-surface);
+  --color-kpi-label: var(--color-text-muted);
+  --color-kpi-hint: var(--color-text-muted-on-surface);
+
+  --color-kpi-accent-brand: var(--color-brand-primary);
+  --color-kpi-accent-success: var(--color-status-success);
+  --color-kpi-accent-warning: var(--color-status-warning);
+  --color-kpi-accent-corrected: var(--color-status-corrected-strong);
+  --color-kpi-accent-neutral: var(--color-status-neutral);
+
+  --color-kpi-figure-brand: var(--color-brand-primary);
+  --color-kpi-figure-success: var(--color-status-success);
+  --color-kpi-figure-warning: var(--color-status-warning);
+  --color-kpi-figure-corrected: var(--color-status-corrected);
+  --color-kpi-figure-neutral: var(--color-text-primary);
+
+  --color-table-surface: var(--color-surface-card);
+  --color-table-header-bg: var(--color-surface-raised);
+  --color-table-header-text: var(--color-text-muted-on-surface);
+  --color-table-header-border: var(--color-border-on-surface);
+  --color-table-cell-text: var(--color-text-on-surface);
+  --color-table-row-border: var(--color-border-on-surface);
+  --color-table-row-hover-bg: var(--color-surface-raised);
+  --color-table-caption-text: var(--color-text-muted);
+
+  /* Tokens de formulario — heredan los valores del esquema oscuro de estado. */
+  --color-form-error: var(--color-status-danger);
+  --color-form-error-bg: var(--color-status-danger-bg);
+  --color-form-error-border: var(--color-status-danger-border);
+
+  --color-form-success: var(--color-status-success);
+  --color-form-success-bg: var(--color-status-success-bg);
+  --color-form-success-border: var(--color-status-success-border);
+
+  --color-form-warning: var(--color-status-warning);
+  --color-form-warning-bg: var(--color-status-warning-bg);
+  --color-form-warning-border: var(--color-status-warning-border);
+
+  --color-form-disabled-bg: var(--color-surface-raised);
+  --color-form-disabled-text: var(--color-text-muted-on-surface);
+
+  --color-form-border: var(--color-border-on-surface);
+}
+
+/*
+ * Placeholders de input — override accesible al default de PrimeNG.
+ *
+ * PrimeNG los define como
+ *
+ *     ::placeholder { color: color-mix(in oklab, currentcolor 50%, transparent) }
+ *
+ * y no expone ningun token `--p-*-placeholder` para ajustarlo (el bundle
+ * compilado solo trae `--p-text-color`). Medido sobre las superficies reales
+ * de este tema, el 50% de alfa no alcanza el 4.5:1 que WCAG AA exige para
+ * texto normal:
+ *
+ *     esquema claro   #878b94 sobre #ffffff  →  3.41:1   falla
+ *     esquema oscuro  #525d71 sobre #0f172a  →  2.69:1   falla
+ *
+ * El problema no es un token mal elegido sino la opacidad: al 50%, ningun
+ * gris oscuro de la rampa llega a 4.5:1 sobre su superficie.
+ *
+ * Se usa `--color-text-muted`, que es el token que la app ya declara para
+ * "texto de apoyo". Este archivo lo remapea por esquema — slate-600 en claro,
+ * slate-400 en oscuro — y en los dos casos supera el minimo con holgura
+ * (7.58:1 y 6.96:1). Asi el fix es una sola regla, theme-aware por
+ * definicion y sin numeros magicos.
+ *
+ * Va fuera de `:root` y de `.app-dark` a proposito: el selector no cambia,
+ * cambia el valor de la variable segun el esquema activo.
+ */
+::placeholder {
+  color: var(--color-text-muted);
+}

@@ -35,31 +35,47 @@ docker exec electoral-postgres-dev \
 
 ## 👤 Usuario administrador (seed)
 
-Lo crea `DataSeeder` (idempotente) en el primer arranque del backend. Si ya
-existe un usuario con ese email, no hace nada.
+Lo crea la migración `026-admin-inicial.sql` (Liquibase), no una clase de Java.
+Antes lo creaba el `DataSeeder`, que insertaba un admin nuevo en **cada**
+arranque del backend: el email lo generaba `EmailGenerator` devolviendo siempre
+el primero libre, así que la comprobación de "ya existe" nunca encontraba nada.
+En la base local quedaron 17 admins duplicados (`admsismas@` a
+`admsismas16@control.ttcs`), uno por reinicio. Ese seeder ya no existe.
 
-**Email se genera automáticamente** con el formato:
-`{3 letras nombre}{3 letras apellido}{3 letras rol}@control.ttcs`
+| Campo    | Valor                                     | Dónde se define                        |
+| -------- | ----------------------------------------- | -------------------------------------- |
+| Nombre   | `Admin`                                   | el changelog                           |
+| Apellido | `Sistema`                                 | el changelog                           |
+| Email    | `admin@control-elector.local`             | el changelog                           |
+| Password | `admin12345`                              | el changelog (hash BCrypt, costo 12)   |
+| Rol      | `MASTER`                                  | el changelog                           |
 
-| Campo    | Valor                                          | Variable de entorno          |
-| -------- | ---------------------------------------------- | ---------------------------- |
-| Nombre   | `Admin`                                        | `APP_SEED_ADMIN_NOMBRE`      |
-| Apellido | `Sistema`                                      | `APP_SEED_ADMIN_APELLIDO`    |
-| Email    | `admsismas@control.ttcs` (generado)            | (calculado automáticamente)  |
-| Password | `admin12345`                                   | `APP_SEED_ADMIN_PASSWORD`    |
-| Rol      | `MASTER`                                       | (hardcoded en el seeder)     |
+No hay variable de entorno para estos valores: la contraseña está versionada en
+el changelog, y por eso la cuenta es **solo de desarrollo**.
 
-Ejemplo con valores por defecto: Admin Sistema, MASTER → `admsismas@control.ttcs`
+### ⚠️ En staging y producción esta cuenta NO se crea
 
-⚠️ **Cambiar antes de cualquier deploy a prod.** El seeder loggea la
-password en `WARN` — visible para cualquiera con acceso a los logs.
+El changeset lleva el contexto de Liquibase `bootstrap-admin`, que no pide
+producción (`k8s/configmap.yaml` deja `QUARKUS_LIQUIDASE_CONTEXTS: "seed"`).
+Allí la cuenta del admin se **provisiona a mano**, con credenciales propias.
 
-Login rápido:
+Ojo con un detalle que severifyó contra la API de Liquibase 5.0.3: una lista de
+contextos **vacía no excluye nada** (con `Contexts` vacío, `matches()` devuelve
+true para cualquier contexto). Para excluir un changeset hay que pasar una lista
+no vacía que no contenga su contexto.
+
+Para rotar la contraseña en desarrollo:
+
+```sql
+UPDATE usuario SET password_hash = '<hash nuevo>' WHERE email = 'admin@control-elector.local';
+```
+
+Login rápido (stack local):
 
 ```bash
 curl -X POST http://localhost:8081/api/v1/auth/login \
     -H "Content-Type: application/json" \
-    -d '{"email":"admsismas@control.ttcs","password":"admin12345"}'
+    -d '{"email":"admin@control-elector.local","password":"admin12345"}'
 ```
 
 ---
@@ -108,7 +124,7 @@ Con el token del admin (login previo), registrar via:
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8081/api/v1/auth/login \
     -H "Content-Type: application/json" \
-    -d '{"email":"admsismas@control.ttcs","password":"admin12345"}' \
+    -d '{"email":"admin@control-elector.local","password":"admin12345"}' \
     | python3 -c "import sys,json;print(json.load(sys.stdin)['accessToken'])")
 
 curl -X POST http://localhost:8081/api/v1/auth/register \
@@ -120,7 +136,7 @@ curl -X POST http://localhost:8081/api/v1/auth/register \
 **Email generado automáticamente:** `juaperobs@control.ttcs` (Juan + Pérez + OBSERVER)
 
 Roles disponibles y su matriz de permisos:
-`backend/electoral-api/src/main/resources/database/changelog/002-rbac-seed.sql`.
+`backend/electoral-api-quarkus/src/main/resources/database/changelog/002-rbac-seed.sql`.
 
 Endpoints útiles para smoke test con cada rol:
 
@@ -152,16 +168,11 @@ Endpoints útiles para smoke test con cada rol:
 
 ## 📝 Notas operativas
 
-- **Reiniciar el backend**: `pkill -9 -f "spring-boot:run" && cd backend/electoral-api && nohup ./mvnw spring-boot:run > /tmp/boot.log 2>&1 &`
+- **Reiniciar el backend**: `pkill -9 -f "quarkus:dev" && cd backend/electoral-api-quarkus && nohup mvn quarkus:dev > /tmp/boot.log 2>&1 &`
 - **Resetear password del admin**: borrar el row de la tabla `usuario` con su email y reiniciar la app — el seeder la recrea con la password de `.env`.
 - **Recrear schema desde cero** (destructivo): ver opciones en `openspec/` o correr `docker compose down -v && docker compose --profile dev up -d` y dejar que Hibernate + Liquibase repueblen.
-- **Correr migrations Liquibase a mano** (sin levantar el backend):
-
-  ```bash
-  ./mvnw liquibase:changelogSync \
-      -Dliquibase.url="jdbc:postgresql://localhost:5432/electoral_db" \
-      -Dliquibase.username="electoral_user" \
-      -Dliquibase.password="electoral_pass" \
-      -Dliquibase.changeLogFile="src/main/resources/database/db.changelog-master.yaml" \
-      -Dliquibase.driver="org.postgresql.Driver"
-  ```
+- **Correr migrations Liquibase a mano** (sin levantar el backend): ya no hace falta. En Spring
+  era `spring.liquibase.enabled=true` y ademas un goal aparte para sincronizar checksums. En
+  Quarkus las migraciones se aplican **al arrancar el backend**
+  (`quarkus.liquibase.migrate-at-start`, ON por default) y el estado se lee de la tabla
+  `DATABASECHANGELOG` de la base.

@@ -1,0 +1,33 @@
+{
+  "name": "Control's Elector",
+  "short_name": "Control's Elector",
+  "description": "Plataforma de observación y registro de resultados electorales en tiempo real para la Provincia de Santa Elena, Ecuador.",
+  "lang": "es-EC",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "categories": ["government", "productivity"],
+  "icons": [
+    {
+      "src": "assets/icon/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

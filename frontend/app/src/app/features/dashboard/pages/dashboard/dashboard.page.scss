@@ -1,0 +1,250 @@
+:host {
+  display: block;
+}
+
+/* Progress banner -------------------------------------------------------- */
+
+.progress-banner {
+  /*
+   * El banner ya no se pinta con el gradiente del azul de marca: cubre media
+   * pantalla con chroma ≈ 90% y se leía como un anuncio, no como un KPI.
+   * S3 de `odd/tasks/frontend-visual-rebalance.md`: la superficie del banner
+   * es la misma del sidebar (`--color-surface-sidebar`, slate-900) y la
+   * jerarquía del porcentaje la dan el tamaño y el contraste contra el
+   * fondo, no el hue. El stat "Enviadas" sigue siendo el único card del
+   * dashboard con la cifra en `--color-brand-primary`, así que el ojo
+   * encuentra la marca en un solo lugar y no en cada fila.
+   *
+   * El texto usa `--color-text-on-brand-panel` (blanco en los dos esquemas)
+   * y NO `--color-text-on-brand`: este último se aclara a slate-950 en el
+   * esquema oscuro porque estaba pensado para texto sobre el antiguo
+   * gradiente azul, no para texto sobre una superficie slate constante.
+   * El banner es un panel de marca como el del login: misma superficie
+   * oscura en los dos esquemas, misma tinta blanca.
+   */
+  background-color: var(--color-surface-sidebar);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6) var(--space-8);
+  color: var(--color-text-on-brand-panel);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.progress-banner-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-head {
+  h2 {
+    font-size: 22px;
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-1);
+  }
+
+  /*
+   * El caption del banner estaba en 3.89:1 en el esquema claro: la regla
+   * aplicaba `opacity: 0.8` sobre el azul de la marca, y ningún token
+   * deshace una opacidad. La jerarquía visual la da el tamaño (13px contra
+   * los 22px del encabezado), no el apagado: el color viene del token.
+   *
+   * El token es `--color-text-on-brand-panel`, no `--color-text-on-brand`:
+   * el banner es una superficie oscura constante (slate-900 en los dos
+   * esquemas), así que la tinta es blanca en los dos.
+   */
+  p {
+    font-size: 13px;
+    color: var(--color-text-on-brand-panel);
+  }
+}
+
+/*
+ * The banner bar sits on a brand gradient, so its track is a translucent
+ * white instead of the theme's surface.
+ */
+:host ::ng-deep .progress-bar-banner.p-progressbar {
+  margin-top: var(--space-4);
+  height: var(--space-2);
+  background: var(--color-veil-20);
+  border-radius: var(--radius-sm);
+}
+
+:host ::ng-deep .progress-bar-banner .p-progressbar-value {
+  border-radius: var(--radius-sm);
+}
+
+.banner-cantons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  margin-top: var(--space-2);
+  font-size: var(--font-size-meta);
+  /*
+   * Mismo razonamiento que el caption: el banner es slate-900 en los dos
+   * esquemas, así que la tinta es blanca constante (`--color-text-on-brand-
+   * panel`), no `--color-text-on-brand` (que se oscurece en dark).
+   */
+  color: var(--color-text-on-brand-panel);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-banner-right {
+  text-align: right;
+}
+
+.big-pct {
+  font-size: var(--font-size-display);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+.big-pct-label {
+  font-size: 13px;
+  color: var(--color-text-on-brand-panel);
+  margin-top: var(--space-1);
+}
+
+/* Stats row ------------------------------------------------------------- */
+
+/*
+ * The cards of the row are `app-kpi-card`: the label, the figure, the line of
+ * support and the edge of the tone belong to the component, and the colors
+ * come from the tokens of the theme. The page only decides how many cards
+ * fit in a row.
+ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+/* Bottom grid ------------------------------------------------------------ */
+
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-4);
+}
+
+.card-title .pi {
+  color: var(--color-brand-primary);
+}
+
+.empty {
+  color: var(--color-text-muted);
+}
+
+/* Canton progress -------------------------------------------------------- */
+
+.canton-row {
+  margin-bottom: var(--space-4);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.canton-row-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: var(--space-1);
+}
+
+.canton-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.canton-meta {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-meta);
+}
+
+.canton-pct {
+  font-weight: var(--font-weight-bold);
+}
+
+.tier-green {
+  color: var(--color-status-success);
+}
+.tier-blue {
+  color: var(--color-brand-primary);
+}
+.tier-amber {
+  color: var(--color-status-warning);
+}
+
+/* Recent actas ----------------------------------------------------------- */
+
+.acta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-size: 13px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.acta-info {
+  min-width: 0;
+}
+
+.acta-jrv {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.acta-cargo {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.acta-time {
+  font-size: 11px;
+  color: var(--color-text-muted-on-surface);
+  white-space: nowrap;
+}
+
+/* Responsive ------------------------------------------------------------- */
+
+@media (max-width: 1100px) {
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .progress-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .progress-banner-right {
+    text-align: left;
+  }
+  .stats-row {
+    grid-template-columns: 1fr;
+  }
+}

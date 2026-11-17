@@ -2,8 +2,8 @@
 # compose.yaml — Stack de desarrollo local (staging)
 # =============================================================================
 # Solo servicios de infraestructura: PostgreSQL y RustFS (emulación S3).
-# El backend (Spring Boot) y el frontend (Angular) corren nativos en el host:
-#   - Backend: cd backend/electoral-api && mvn spring-boot:run
+# El backend (Quarkus) y el frontend (Angular) corren nativos en el host:
+#   - Backend: cd backend/electoral-api-quarkus && mvn quarkus:dev
 #   - Frontend: cd frontend/app && ng serve
 #
 # Esto es a propósito. Cada cambio Java re-build nativo de GraalVM consume
@@ -13,13 +13,22 @@
 #
 # El binario nativo de GraalVM queda reservado para deploy en Railway
 # (donde el proceso de build corre fuera del desktop y tiene más memoria).
+# El build nativo exige 6-8 GB de RAM, que es justamente lo que el desktop no
+# tiene. Ver `backend/electoral-api-quarkus/Dockerfile.native`.
 #
-# Uso:
-#   docker compose --profile dev up -d   # solo Postgres + RustFS
-#   # en otra terminal: mvn spring-boot:run (backend) / ng serve (frontend)
+# Para correr el backend nativo desde el host (sin Docker), hace falta
+# GraalVM/Mandrel y `mvn package -Dnative`; con la RAM que tiene esta maquina
+# el AOT no entra. Para desarrollo, `mvn quarkus:dev` sobre la JVM.
+#
+# Uso (desarrollo local):
+#   docker compose --profile dev up -d   # Postgres + Backend + RustFS
+#   # en otra terminal: ng serve (frontend)
+#
+# Uso (staging):
+#   docker compose --profile dev up -d   # Auto-deploy backend via deploy.sh + GitHub Actions
 #
 # Variables configurables (ver .env.example): DB_NAME, DB_USER, DB_PASSWORD,
-# DB_PORT, APP_ENV, POSTGRES_MEM_LIMIT, RESTART_POLICY.
+# DB_PORT, APP_ENV, POSTGRES_MEM_LIMIT, RESTART_POLICY, SERVER_PORT.
 # =============================================================================
 
 services:
@@ -70,6 +79,185 @@ services:
           memory: ${POSTGRES_MEM_LIMIT:-512M}
 
   # ---------------------------------------------------------------------------
+  # Electoral API — Backend Quarkus (ejecutable nativo, sin JVM)
+  # ---------------------------------------------------------------------------
+  # La imagen es la NATIVA (Dockerfile.native): no lleva JVM. La de JVM
+  # (Dockerfile) sigue existiendo para el job de CI que corre la suite de
+  # contrato rapido; produccion corre el binario.
+  electoral-api:
+    build:
+      context: ./backend/electoral-api-quarkus
+      dockerfile: Dockerfile.native
+    container_name: electoral-api-${APP_ENV:-dev}
+    profiles: ["dev"]
+    environment:
+      # Database
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-electoral_db}
+      # El backend conecta con el ROL DE APLICACIÓN, no con el dueño de la base.
+      # La diferencia no es de estilo: Postgres ignora las políticas de RLS para
+      # un superusuario, así que con el dueño la capa RLS del proyecto no se
+      # ejecuta y ninguna prueba puede afirmar que filtra.
+      DB_USER: ${DB_APP_USER:-electoral_app}
+      DB_PASSWORD: ${DB_APP_PASSWORD:-electoral_app_pass}
+      # Sin credenciales de migración: este contenedor no migra (lo hace el
+      # servicio `db-migrate`) y, sobre todo, no tiene las del dueño de la base.
+# The API listens on 80 inside the container so that the frontend's
+      # nginx can reach it as `electoral-api:80`, the same shape the k8s
+      # Service exposes (port 80 -> targetPort 8081).
+      #
+      # `SERVER_PORT` lo honra Quarkus via `quarkus.http.port=${SERVER_PORT:8080}`.
+      # Tiene que quedar en 80: `ports` de abajo mapea 8083->80, el healthcheck
+      # consulta localhost:80, y `frontend/app/nginx.conf` proxea a
+      # `electoral-api:80`. Ponerlo en 8080 rompe los tres a la vez.
+      SERVER_PORT: 80
+      # Hibernate corre en `none` a proposito, y no es un descuido.
+      #
+      # En Spring, Liquibase corre ANTES de que Hibernate valida, asi que una
+      # base recien creada levantaba sola. En Quarkus el orden es al reves:
+      # Hibernate valida primero y una base vacia revienta con
+      # `Schema validation: missing table [acta]`.
+      #
+      # Poner `validate` aca significaria que `docker compose up` contra una base
+      # nueva no levanta. El control de drift (si una entidad cambia sin que el
+      # changelog cambie) no se pierde: vive en el job `backend-quarkus` de CI,
+      # que arranca el backend DOS veces — la primera con `none` para que Liquibase
+      # cree el schema, la segunda con `validate` para afirmar que el schema
+      # coincide con las entidades.
+      QUARKUS_HIBERNATE_GENERATION: ${QUARKUS_HIBERNATE_GENERATION:-none}
+      # Liquibase NO aplica las migraciones al arrancar en este servicio: lo hace
+      # el servicio `db-migrate`, que corre con el dueño de la base y termina.
+      # El backend Spring lo hacia siempre (`spring.liquibase.enabled=true`); el
+      # backend Quarkus es el unico dueño del schema, pero la separacion de
+      # credenciales es la que hace que RLS sea real para la aplicacion.
+      QUARKUS_LIQUIDASE_MIGRATE_AT_START: "false"
+      # S3 / RustFS
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
+      AWS_S3_ENDPOINT: http://rustfs:${S3_PORT:-9000}
+      AWS_S3_REGION: us-east-1
+      AWS_S3_BUCKET: electoral-evidences
+      AWS_S3_PATH_STYLE: "true"
+      # JWT
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-dev-only-change-in-prod-32chars-min-jwt-hmac-key}
+      APP_JWT_REFRESH_PEPPER: ${APP_JWT_REFRESH_PEPPER:-dev-only-control-elector-refresh-pepper}
+      # Bootstrap admin
+      # El admin inicial lo siembra la migracion 026-admin-inicial.sql, no una
+      # variable de entorno. Este es el stack LOCAL, asi que pide el contexto
+      # `bootstrap-admin`: la suite de E2E y la de contrato inician sesion con
+      # esa cuenta. En staging/produccion se corre solo `seed` y la cuenta se
+      # provisiona a mano (ver k8s/configmap.yaml).
+      # OJO: una lista de contextos VACIA no excluye nada — con `Contexts` vacio
+      # Liquibase corre todos los changesets. Ver el aviso de seguridad en el
+      # changelog 026-admin-inicial.sql.
+      QUARKUS_LIQUIDASE_CONTEXTS: ${QUARKUS_LIQUIDASE_CONTEXTS:-seed,bootstrap-admin}
+    ports:
+      - "8083:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # El rol con el que conecta la API tiene que existir antes de que arranque.
+      db-app-role:
+        condition: service_completed_successfully
+      # Y el schema tiene que estar migrado: la API arranca sin migrar.
+      db-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    restart: ${RESTART_POLICY:-no}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # ---------------------------------------------------------------------------
+  # Rol de aplicación — el usuario con el que conecta el backend
+  # ---------------------------------------------------------------------------
+  # El rol que crea la imagen de Postgres (POSTGRES_USER) es SUPERUSUARIO, y
+  # Postgres no le aplica RLS a un superusuario. Por eso el backend conecta con
+  # otro rol: `electoral_app`, sin privilegios de superusuario y sin BYPASSRLS.
+  #
+  # Este servicio crea ese rol (idempotente) con la contraseña que llega por
+  # variable de entorno: la contraseña NO está en el repositorio.
+  db-app-role:
+    image: postgres:16
+    container_name: electoral-dbrole-${APP_ENV:-dev}
+    profiles: ["dev"]
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${DB_NAME:-electoral_db}
+      PGUSER: ${DB_USER:-electoral_user}
+      PGPASSWORD: ${DB_PASSWORD:-electoral_pass}
+      APP_ROLE: ${DB_APP_USER:-electoral_app}
+      APP_PASSWORD: ${DB_APP_PASSWORD:-electoral_app_pass}
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        psql -v ON_ERROR_STOP=1 \
+             -v app_role="$${APP_ROLE}" \
+             -v app_password="$${APP_PASSWORD}" \
+             -f /scripts/create-app-role.sql
+    volumes:
+      - ./scripts/db:/scripts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Migración — aplica el changelog y termina
+  # ---------------------------------------------------------------------------
+  # Corre con las credenciales del DUEÑO de la base (el único que puede crear el
+  # schema), aplica las migraciones y sale con código 0. El contenedor de la API
+  # no tiene esas credenciales: corre con el rol de aplicación, con el que las
+  # políticas de RLS sí se aplican.
+  db-migrate:
+    build:
+      context: ./backend/electoral-api-quarkus
+      dockerfile: Dockerfile.native
+    container_name: electoral-migrate-${APP_ENV:-dev}
+    profiles: ["dev"]
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-electoral_db}
+      DB_USER: ${DB_USER:-electoral_user}
+      DB_PASSWORD: ${DB_PASSWORD:-electoral_pass}
+      QUARKUS_LIQUIDASE_MIGRATE_AT_START: "true"
+      # Migra y sale: el proceso termina en cuanto termina la migración.
+      APP_MIGRATE_ONLY: "true"
+      # Hibernate en `none`: en Quarkus Hibernate valida ANTES que Liquibase cree
+      # el schema, así que contra una base nueva `validate` revienta.
+      QUARKUS_HIBERNATE_GENERATION: "none"
+      QUARKUS_LIQUIDASE_CONTEXTS: ${QUARKUS_LIQUIDASE_CONTEXTS:-seed,bootstrap-admin}
+      SERVER_PORT: 80
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-dev-only-change-in-prod-32chars-min-jwt-hmac-key}
+      APP_JWT_REFRESH_PEPPER: ${APP_JWT_REFRESH_PEPPER:-dev-only-control-elector-refresh-pepper}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
+      AWS_S3_ENDPOINT: http://rustfs:${S3_PORT:-9000}
+      AWS_S3_REGION: us-east-1
+      AWS_S3_BUCKET: electoral-evidences
+      AWS_S3_PATH_STYLE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-app-role:
+        condition: service_completed_successfully
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
   # RustFS — Emulación S3 (storage de evidencias)
   # ---------------------------------------------------------------------------
   # NO se levanta por default. Usá `docker compose --profile dev --profile s3 up -d`
@@ -104,6 +292,38 @@ services:
         limits:
           memory: 256M
 
+  # ---------------------------------------------------------------------------
+  # Frontend — Angular + Ionic servido con Nginx y reverse proxy
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend/app
+      dockerfile: Dockerfile
+    container_name: electoral-frontend-${APP_ENV:-dev}
+    profiles: ["dev", "full"]
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      electoral-api:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: ${RESTART_POLICY:-no}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+
 # -----------------------------------------------------------------------------
 # Volúmenes persistentes
 # -----------------------------------------------------------------------------
@@ -112,3 +332,10 @@ volumes:
     name: electoral-postgres-${APP_ENV:-dev}-data
   rustfs_data:
     name: electoral-rustfs-data
+
+# -----------------------------------------------------------------------------
+# Red compartida — permite comunicación entre servicios por nombre
+# -----------------------------------------------------------------------------
+networks:
+  default:
+    name: electoral-${APP_ENV:-dev}-network

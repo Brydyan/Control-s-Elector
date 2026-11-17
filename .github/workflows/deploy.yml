@@ -1,27 +1,78 @@
-name: CD - Despliegue Automático Controls Elector (HDD)
+name: CD - Build & Push Docker Images
 
 on:
   push:
     branches:
       - develop
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'k8s/**'
+      - '.github/workflows/deploy.yml'
 
 jobs:
-  deploy:
-    name: Desplegar en Servidor Local
-    runs-on: [self-hosted, Linux]
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip-cd]')"
 
     steps:
-      - name: Descargar código del repositorio
+      - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          clean: false
 
-      - name: Ejecutar script de despliegue seguro
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend/electoral-api-quarkus
+          file: ./backend/electoral-api-quarkus/Dockerfile.native
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/control-electoral-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/control-electoral-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend/app
+          file: ./frontend/app/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/control-electoral-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/control-electoral-frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to k3s-staging
+    runs-on: [self-hosted, twintailserver]
+    needs: build-and-push
+    if: "!contains(github.event.head_commit.message, '[skip-cd]')"
+
+    steps:
+      - name: Verify SSH Key
         run: |
-          if [ -f "./deploy.sh" ]; then
-            chmod +x ./deploy.sh
-            ./deploy.sh
-          else
-            echo "El script deploy.sh no se encontró en la raíz del proyecto."
+          if [ ! -f ~/.ssh/deploy_key ]; then
+            echo "❌ SSH key not found at ~/.ssh/deploy_key"
             exit 1
           fi
+          echo "✅ SSH key verified"
+
+      - name: Deploy to k3s-staging
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no root@100.119.184.75 << 'EOF'
+          kubectl set image deployment/electoral-api -n control-electoral electoral-api=${{ secrets.DOCKER_USERNAME }}/control-electoral-backend:latest
+          kubectl set image deployment/electoral-frontend -n control-electoral electoral-frontend=${{ secrets.DOCKER_USERNAME }}/control-electoral-frontend:latest
+          kubectl rollout status deployment/electoral-api -n control-electoral --timeout=5m
+          kubectl rollout status deployment/electoral-frontend -n control-electoral --timeout=5m
+          EOF

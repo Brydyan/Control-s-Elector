@@ -1,0 +1,271 @@
+<div class="actas-lista-container">
+  <!-- Top header / searchbar -->
+  <div class="page-topbar">
+    <div class="page-title-area">
+      <h1 class="page-title">Bandeja de Actas</h1>
+      <span class="total-indicator">{{ totalElements() }} total</span>
+    </div>
+
+    <div class="search-and-filters">
+      <p-iconfield class="search-input-wrapper">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por JRV, ID o estado…"
+          [(ngModel)]="terminoBusqueda"
+          (ngModelChange)="onBusquedaChange()"
+          aria-label="Buscar por JRV, ID o estado"
+          pInputText
+        />
+        @if (terminoBusqueda) {
+        <p-inputicon
+          styleClass="pi pi-times"
+          (click)="limpiarBusqueda()"
+          aria-label="Limpiar búsqueda"
+        />
+        }
+      </p-iconfield>
+
+      @if (cargos().length > 0) {
+      <p-select
+        class="cargo-select"
+        [options]="cargoOptions"
+        optionLabel="label"
+        optionValue="value"
+        [ngModel]="cargoSeleccionado"
+        (ngModelChange)="cambiarCargo($event)"
+        aria-label="Filtrar por dignidad"
+      />
+      }
+    </div>
+
+    @if (cantones().length > 0) {
+    <p-select
+      class="canton-select"
+      [options]="cantonOptions"
+      optionLabel="label"
+      optionValue="value"
+      [ngModel]="cantonSeleccionado"
+      (ngModelChange)="cambiarCanton($event)"
+      aria-label="Filtrar por cantón"
+    />
+    } @if (tieneFiltrosActivos()) {
+    <app-button
+      variant="ghost"
+      size="sm"
+      (clicked)="limpiarFiltros()"
+      aria-label="Limpiar todos los filtros"
+    >
+      <i class="pi pi-times" aria-hidden="true"></i>
+      Limpiar filtros
+    </app-button>
+    }
+  </div>
+
+  <!-- Tabs de estado -->
+  <p-tabs
+    class="status-tabs-nav"
+    [value]="estadoSeleccionado"
+    (valueChange)="onEstadoTabChange($event)"
+  >
+    <p-tablist>
+      @for (tab of tabsEstado; track tab.estado) {
+      <p-tab [value]="tab.estado">
+        {{ tab.label }}
+        <span class="tab-badge">{{ conteoTab(tab.estado) }}</span>
+      </p-tab>
+      }
+    </p-tablist>
+  </p-tabs>
+
+  <!-- Loading State -->
+  <!-- Skeleton: tabla desktop + cards mobile, con el mismo breakpoint CSS -->
+  <app-skeleton
+    name="coordinator-actas-lista"
+    [loading]="loading()"
+    animate="shimmer"
+    [transition]="true"
+    [loadingBoundary]="true"
+  >
+    <div>
+      <ng-container *ngIf="loading()">
+        <!-- Desktop: tabla skeleton con 5 filas fantasma -->
+        <div
+          class="actas-skeleton-table desktop-only"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          <div class="actas-skeleton-table__header">
+            <p-skeleton height="2.5rem" />
+          </div>
+          @for (row of [1, 2, 3, 4, 5]; track row) {
+          <div class="actas-skeleton-table__row">
+            <p-skeleton height="2rem" />
+          </div>
+          }
+        </div>
+
+        <!-- Mobile: cards skeleton -->
+        <div
+          class="actas-skeleton-cards mobile-only"
+          aria-busy="true"
+          aria-live="polite"
+        >
+          @for (card of [1, 2, 3]; track card) {
+          <div class="actas-skeleton-card">
+            <p-skeleton height="1.25rem" />
+            <p-skeleton height="0.875rem" />
+            <p-skeleton height="0.875rem" width="60%" />
+          </div>
+          }
+        </div>
+      </ng-container>
+    </div>
+  </app-skeleton>
+
+  <!-- Error State -->
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Error al cargar actas"
+    [message]="error() ?? undefined"
+  >
+    <app-button variant="primary" (clicked)="cargarActas()">
+      Reintentar
+    </app-button>
+  </app-error-state>
+
+  <!-- Empty State -->
+  <app-empty-state
+    *ngIf="!loading() && !error() && actasFiltradas.length === 0"
+    icon="document"
+    title="No se encontraron actas"
+    description="No hay actas registradas que coincidan con los filtros seleccionados."
+  ></app-empty-state>
+
+  <!-- Content List (Mobile Cards + Desktop Table) -->
+  <div
+    class="actas-content"
+    *ngIf="!loading() && !error() && actasFiltradas.length > 0"
+  >
+    <!-- Desktop Table View -->
+    <div class="table-container desktop-only">
+      <p-table
+        [value]="actasFiltradas"
+        [rowHover]="true"
+        styleClass="actas-table"
+      >
+        <ng-template #header>
+          <tr>
+            <th scope="col">ID</th>
+            <th scope="col">JRV</th>
+            <th scope="col">Dignidad</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Sufragantes</th>
+            <th scope="col">Blancos / Nulos</th>
+            <th scope="col">Checksum</th>
+            <th scope="col">Fecha Registro</th>
+            <th scope="col" class="th-actions">Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template #body let-acta>
+          <tr [ngClass]="'row-estado-' + acta.estado.toLowerCase()">
+            <td class="td-id">#{{ acta.id }}</td>
+            <td class="td-jrv font-bold">{{ obtenerNumeroJrv(acta) }}</td>
+            <td>{{ obtenerNombreCargo(acta) }}</td>
+            <td>
+              <app-badge [variant]="mapBadgeVariant(acta.estado)">
+                {{ acta.estado }}
+              </app-badge>
+            </td>
+            <td class="td-numeric">{{ acta.totalSufragantes }}</td>
+            <td class="td-muted td-numeric">
+              {{ acta.votosBlancos }} / {{ acta.votosNulos }}
+            </td>
+            <td class="td-muted">
+              @if (checksumTexto(acta); as checksum) { {{ checksum }} @if
+              (checksumValido(acta) === true) {
+              <i class="pi pi-check" aria-label="Checksum válido"></i>
+              } @else if (checksumValido(acta) === false) {
+              <i
+                class="pi pi-exclamation-triangle"
+                aria-label="Checksum inválido"
+              ></i>
+              } } @else { — }
+            </td>
+            <td class="td-muted">
+              {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
+            </td>
+            <td class="td-actions">
+              <p-menu
+                #menu
+                [model]="obtenerAccionesActa(acta)"
+                [popup]="true"
+                appendTo="body"
+              />
+              <app-button
+                variant="ghost"
+                size="sm"
+                icon="pi pi-ellipsis-v"
+                [rounded]="true"
+                aria-label="Acciones de acta"
+                (clicked)="menu.toggle($event)"
+              />
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="cards-list mobile-only">
+      @for (acta of actasFiltradas; track acta.id) {
+      <div
+        class="acta-card"
+        [ngClass]="'card-estado-' + acta.estado.toLowerCase()"
+        (click)="verDetalle(acta.id)"
+      >
+        <div class="card-header">
+          <div class="header-left">
+            <span class="jrv-number">{{ obtenerNumeroJrv(acta) }}</span>
+            <span class="acta-id">#{{ acta.id }}</span>
+          </div>
+          <app-badge [variant]="mapBadgeVariant(acta.estado)">
+            {{ acta.estado }}
+          </app-badge>
+        </div>
+
+        <div class="card-body">
+          <div class="cargo-name">{{ obtenerNombreCargo(acta) }}</div>
+          <div class="card-meta">
+            <span
+              >Sufragantes: <strong>{{ acta.totalSufragantes }}</strong></span
+            >
+            <span>Blancos: {{ acta.votosBlancos }}</span>
+            <span>Nulos: {{ acta.votosNulos }}</span>
+            @if (checksumTexto(acta); as checksum) {
+            <span>Checksum: {{ checksum }}</span>
+            }
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <span class="fecha-text">
+            {{ acta.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
+          </span>
+          <span class="review-link"> Revisar acta → </span>
+        </div>
+      </div>
+      }
+    </div>
+
+    <!-- Server-side paginator -->
+    <app-paginator
+      [page]="page"
+      [size]="size"
+      [totalElements]="totalElements()"
+      (pageChange)="onPageChange($event)"
+      (sizeChange)="onSizeChange($event)"
+    ></app-paginator>
+  </div>
+</div>

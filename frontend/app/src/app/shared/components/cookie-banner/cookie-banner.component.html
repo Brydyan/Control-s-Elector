@@ -1,0 +1,134 @@
+<!-- Cookie Banner - shown on first visit -->
+@if (showBanner && !showPreferencesModal) {
+  <div class="cookie-banner">
+    <div class="cookie-banner__content">
+      <div class="cookie-banner__text">
+        <h3 class="cookie-banner__title">Privacidad y Cookies</h3>
+        <p class="cookie-banner__message">
+          Usamos cookies para mejorar tu experiencia y analizar nuestro
+          servicio. Puedes aceptar todas o personalizar tus preferencias.
+        </p>
+      </div>
+      <div class="cookie-banner__actions">
+        <button
+          class="cookie-banner__btn cookie-banner__btn--secondary"
+          (click)="rejectAll()"
+        >
+          Rechazar Todo
+        </button>
+        <button
+          class="cookie-banner__btn cookie-banner__btn--secondary"
+          (click)="customize()"
+        >
+          Personalizar
+        </button>
+        <button
+          class="cookie-banner__btn cookie-banner__btn--primary"
+          (click)="acceptAll()"
+        >
+          Aceptar Todo
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Preferences Modal -->
+@if (showPreferencesModal) {
+  <div class="modal-overlay" (click)="closePreferencesModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2 class="modal__title">Administrar Cookies</h2>
+        <button
+          class="modal__close"
+          (click)="closePreferencesModal()"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div class="modal__content">
+        <div class="preferences-list">
+          <!-- Essential (Always required) -->
+          <div class="preference-item">
+            <label class="preference-item__label">
+              <input
+                type="checkbox"
+                disabled
+                checked="true"
+                class="preference-item__checkbox"
+              />
+              <span class="preference-item__title"
+                >Esenciales (Requeridas)</span
+              >
+            </label>
+            <p class="preference-item__description">
+              Necesarias para que el sitio funcione correctamente.
+            </p>
+          </div>
+
+          <!-- Analytics -->
+          <div class="preference-item">
+            <label class="preference-item__label">
+              <input
+                type="checkbox"
+                [(ngModel)]="preferences.analytics"
+                class="preference-item__checkbox"
+              />
+              <span class="preference-item__title">Analítica</span>
+            </label>
+            <p class="preference-item__description">
+              Google Analytics, Sentry para monitoreo de errores.
+            </p>
+          </div>
+
+          <!-- Marketing -->
+          <div class="preference-item">
+            <label class="preference-item__label">
+              <input
+                type="checkbox"
+                [(ngModel)]="preferences.marketing"
+                class="preference-item__checkbox"
+              />
+              <span class="preference-item__title">Marketing</span>
+            </label>
+            <p class="preference-item__description">
+              Píxeles de seguimiento para publicidad personalizada.
+            </p>
+          </div>
+
+          <!-- Preferences -->
+          <div class="preference-item">
+            <label class="preference-item__label">
+              <input
+                type="checkbox"
+                [(ngModel)]="preferences.preferences"
+                class="preference-item__checkbox"
+              />
+              <span class="preference-item__title">Preferencias</span>
+            </label>
+            <p class="preference-item__description">
+              Recordar tus configuraciones y preferencias.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button
+          class="modal__btn modal__btn--secondary"
+          (click)="closePreferencesModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="modal__btn modal__btn--primary"
+          (click)="savePreferences()"
+        >
+          Guardar Preferencias
+        </button>
+      </div>
+    </div>
+  </div>
+}

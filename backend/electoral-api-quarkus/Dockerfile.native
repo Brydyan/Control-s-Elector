@@ -1,0 +1,118 @@
+# Contexto de build: el modulo `backend/electoral-api-quarkus/`.
+#
+#   docker build -f backend/electoral-api-quarkus/Dockerfile.native \
+#     -t electoral-api backend/electoral-api-quarkus
+#
+# A diferencia de `Dockerfile`, este produce el EJECUTABLE NATIVO: la imagen de
+# runtime no tiene JVM. Es el build que entrega el arranque en milisegundos, y el
+# que exige 6-8 GB de RAM para `native-image` (por eso el job corre en CI, no en
+# una maquina de desarrollo normal).
+#
+# El modulo entra a OpenPDF por la extension `quarkus-openpdf` (ver pom.xml): su
+# `FopGlyphProcessorSubstitution` es lo que destraba el analisis de la imagen.
+# Con el artifact suelto, `FopGlyphProcessor` referencia clases de `org.apache.fop`
+# que no estan en el classpath y Graal aborta. Refs #114.
+
+# ─── Build (Mandrel) ───────────────────────────────────────────────────────
+# El builder tiene que ser Mandrel 25: `checkGraalVMVersion` aborta el build con
+# `Out of date version of GraalVM or Mandrel detected: 23.1.12.1. Quarkus
+# currently supports 25.0.0`. Notese el prefijo `ubi9-` del repo, que NO es el
+# mismo que el `ubi-quarkus-mandrel-builder-image` de siempre. Este builder es
+# JDK 25 (LTS), igual que el resto del pipeline nativo.
+FROM quay.io/quarkus/ubi9-quarkus-mandrel-builder-image:jdk-25 AS build
+
+WORKDIR /home/quarkus/proj
+
+# `native-image-xmx` acota el heap del AOT. La guia de Quarkus reporta 6-8 GB de
+# RSS para una app con Hibernate ORM; el runner estandar de GitHub tiene 16 GB y
+# los 6-8 GB de RSS dejaban poco margen. Cuesta tiempo de build, que es el
+# tradeoff que documenta la issue #114.
+ARG MAVEN_OPTS="-Dquarkus.native.native-image-xmx=5g"
+ENV MAVEN_OPTS=${MAVEN_OPTS}
+
+# El builder de Mandrel trae `native-image` pero NO trae Maven, y el repo no
+# tiene un wrapper global: invocar `mvn` acá moría con
+# `/bin/sh: mvn: command not found`. Se usa el Maven Wrapper del modulo, que
+# baja la version pineada en .mvn/wrapper/maven-wrapper.properties (3.9.16, la
+# misma linea 3.9.x que usa la imagen JVM de maven:3.9-eclipse-temurin-25).
+#
+# El cache va a `/home/quarkus/.m2` y no a `/root/.m2`: el build corre como el
+# usuario `quarkus` (uid 1001), y verificado que no puede escribir en /root, de
+# modo que el mount anterior no solo no cacheaba, ademas era inusable.
+#
+# El `uid`/`gid` del mount no son opcionales. BuildKit crea el directorio de
+# cache como root, y sin esto el wrapper no puede crear `~/.m2/wrapper` para
+# bajar Maven y el build muere con
+# `java.nio.file.AccessDeniedException: /home/quarkus/.m2/wrapper`.
+COPY --chown=quarkus:quarkus --chmod=0755 mvnw ./
+COPY --chown=quarkus:quarkus .mvn ./.mvn
+
+# Primero el pom y el wrapper, para que la capa de dependencias se cachee sola.
+COPY --chown=quarkus:quarkus pom.xml ./
+RUN --mount=type=cache,target=/home/quarkus/.m2,uid=1001,gid=1001,sharing=locked \
+    ./mvnw -B -ntp dependency:go-offline -DskipTests
+
+COPY --chown=quarkus:quarkus src ./src
+
+# `sources-only=false`: el builder por defecto mete los fuentes de las
+# dependencias en la imagen, que no es lo que queremos.
+RUN --mount=type=cache,target=/home/quarkus/.m2,uid=1001,gid=1001,sharing=locked \
+    ./mvnw -B -ntp package -Dnative -DskipTests \
+        -Dquarkus.native.sources-only=false \
+        -Dquarkus.native.container-build=false
+
+# ─── Runtime (sin JVM) ────────────────────────────────────────────────────
+# La imagen base tiene que cumplir TRES condiciones. Las tres están medidas
+# ejecutando la imagen, no asumidas:
+#
+#   1. shell Y curl. El HEALTHCHECK de abajo es `curl -sf`; sin shell no se
+#      puede ni expresar el probe ni depurar el contenedor.
+#   2. sin JDK. Esta es una imagen nativa, no JVM.
+#   3. UBI 9 (glibc 2.34). El builder de arriba es
+#      `ubi9-quarkus-mandrel-builder-image:jdk-25`, también basado en UBI 9 con
+#      glibc 2.34: el ejecutable que produce NO corre sobre UBI 8.
+#
+# Por qué NO las imágenes oficiales "mínimas" de Quarkus. Medido sobre las
+# imágenes reales:
+#
+#   quay.io/quarkus/ubi9-quarkus-micro-image:2.0 -> trae shell y bash, pero NO
+#       trae curl. El HEALTHCHECK fallaría en cada chequeo y el container nunca
+#       llegaría a healthy, así que cualquier `depends_on: service_healthy`
+#       quedaría esperando para siempre.
+#   la imagen distroless de Quarkus -> sin shell y sin curl, por lo que el
+#       HEALTHCHECK ni siquiera se puede escribir.
+#
+# `registry.access.redhat.com/ubi9/ubi-minimal:9.7` sí trae shell, bash y curl,
+# sin JDK, sobre glibc 2.34. Es la base que usa el `Dockerfile.native` oficial
+# del quickstart de Quarkus, así que el ejecutable nativo tiene el mismo
+# entorno glibc que el builder.
+FROM registry.access.redhat.com/ubi9/ubi-minimal:9.7
+
+ENV LANGUAGE='en_US:en'
+
+# El destino va con nombre de archivo explicito, no como directorio. Con
+# `COPY ... /deployments/` el glob preserva el basename y el binario queda
+# como `electoral-api-quarkus-0.0.1-SNAPSHOT-runner`, mientras el ENTRYPOINT
+# busca `/deployments/quarkus-run`: el container moria al arrancar con
+# `stat /deployments/quarkus-run: no such file or directory`. Verificado que
+# `COPY .../target/*-runner /deployments/quarkus-run` si lo renombra.
+COPY --from=build --chown=185:0 /home/quarkus/proj/target/*-runner /deployments/quarkus-run
+
+# No se copia `target/docker/`: ese directorio solo lo produce Quarkus cuando
+# `quarkus.container-image-build=true`, que este modulo no activa porque arma
+# la imagen con este Dockerfile y no con la que genera Quarkus. Ademas contiene
+# los Dockerfiles generados, no overrides de properties: no aporta nada de
+# runtime. El COPY canonico de Quarkus tampoco lo tiene.
+
+EXPOSE 8080
+USER 185
+
+ENV QUARKUS_HTTP_HOST=0.0.0.0
+
+# El health del backend se sirve en /actuator/health del puerto principal
+# (shared/web/HealthAliasResource), igual que en la imagen JVM: el contrato no
+# cambia entre las dos imagenes.
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=5 \
+  CMD curl -sf http://localhost:8080/actuator/health || exit 1
+
+ENTRYPOINT [ "/deployments/quarkus-run" ]

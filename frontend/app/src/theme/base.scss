@@ -1,0 +1,164 @@
+// ─────────────────────────────────────────────────────────────
+// BASE GLOBAL
+// ─────────────────────────────────────────────────────────────
+
+/*
+ * El lienzo de la página.
+ *
+ * Sin esta regla el fondo lo pone el navegador: su canvas por defecto, que en
+ * el esquema oscuro es `#121212` — un color que no pertenece a la rampa del
+ * sistema de diseño. El shell (topbar y barra lateral) pinta `#0f172a` y el
+ * lienzo `#121212`: la costura entre el chrome y las páginas se ve.
+ *
+ * El lienzo se toma del token, así que los dos esquemas pintan su lienzo con
+ * su propia rampa y el shell y las páginas nunca se separan.
+ */
+body {
+  background-color: var(--color-surface-canvas);
+}
+
+/*
+ * El card global.
+ *
+ * S2 de `odd/tasks/frontend-visual-rebalance.md`: la página y la card vivían
+ * en slate-50 y blanco, dos tonos separados por 5 unidades de luminosidad.
+ * El borde de la card es la pieza que separa superficie de tarjeta: slate-50
+ * contra blanco es invisible, slate-100 contra blanco con un trazo de 1px
+ * slate-200 sí lo es.
+ *
+ * El `!important` está localizado a esta regla y existe por una razón
+ * concreta: `variables.scss` carga `base.scss` antes de que el styled engine
+ * de PrimeNG emita los tokens de `.p-card`, así que la regla que llega
+ * primero pierde la batalla de cascada. Subirla al final de `layout.scss`
+ * (cargado al final por `angular.json`) obligaría a mover reglas globales
+ * a un archivo del shell; declarar `components.card` en el preset exige
+ * inspeccionar el contrato de Aura — que vive en `node_modules` y puede
+ * cambiar con cada bump. El `!important` localizado es la decisión más
+ * chica y la más determinista: cuando se retire, la card sigue leyendo el
+ * mismo token que el resto del chrome.
+ *
+ * El selector apunta a `.p-card` y NO a `.app-card`: el componente `app-card`
+ * sólo es el wrapper que las páginas usan; la superficie que se despega es
+ * la del `p-card` interno. Los stat cards del dashboard definen
+ * `border-top: 3px solid transparent` (luego coloreado por estado) justo
+ * encima — propiedad por propiedad, ese overridea el `border-top` y deja
+ * los otros tres lados en 1px slate-200, que es lo que queremos para que el
+ * "filo de color" siga siendo un filo, no una caja cerrada.
+ */
+.p-card {
+  border: 1px solid var(--color-border-on-surface) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+/*
+ * El piso de toque de los controles primarios.
+ *
+ * S3 de `odd/tasks/frontend-responsive-shell.md`, palanca 1: 85 elementos
+ * interactivos miden menos de 44×44 px, el mínimo de WCAG 2.2 SC 2.5.8
+ * (Target Size — Minimum, AA). En el conteo un dedo que falla es un voto mal
+ * cargado, así que el piso se aplica una sola vez y aquí, no página por
+ * página: el botón de PrimeNG, el icono de la topbar y los chevrons del
+ * paginador son el mismo contrato en todas las rutas autenticadas.
+ *
+ * `44px` es el número que fija la norma, no una decisión del sistema de
+ * diseño: por eso se escribe literal en la única regla que lo necesita y no
+ * se declara un token nuevo — el bridge de tokens del rebalance #149 está
+ * congelado en esta fase.
+ *
+ * El `!important` está localizado y repite el precedente de `.p-card` de este
+ * mismo archivo, por las mismas dos razones: `variables.scss` carga
+ * `base.scss` antes de que el styled engine de PrimeNG emita sus reglas, y
+ * `layout.scss` — que `angular.json` carga al final — fija `width`/`height`
+ * en los iconos de la topbar. Sin él la regla que llega primero pierde la
+ * batalla de cascada y el piso no llega a aplicarse.
+ *
+ * El precio del piso es que `small` y el tamaño por defecto comparten altura:
+ * la jerarquía visual de los botones la sostienen el color y el peso, no los
+ * 2rem de diferencia que tenían antes.
+ */
+.p-button,
+.layout-topbar-action,
+.p-paginator-first,
+.p-paginator-prev,
+.p-paginator-next,
+.p-paginator-last {
+  min-height: 44px !important;
+}
+
+/*
+ * Los iconos solos son cuadrados: su ancho entra en el mismo contrato que su
+ * alto. `min-width` gana sobre el `width` fijo del shell sin necesitar tocar
+ * `layout.scss`, que es de otra unidad de trabajo.
+ */
+.layout-topbar-action,
+.p-paginator-first,
+.p-paginator-prev,
+.p-paginator-next,
+.p-paginator-last {
+  min-width: 44px !important;
+}
+
+/*
+ * El badge de estado (`app-badge` → `p-tag`) es una etiqueta y no un control:
+ * no tiene rol, no entra al orden de tabulación y no tiene manejador, así que
+ * WCAG 2.5.8 no lo mide. Lo que sí importa es que el chip que dice en qué
+ * estado está el acta sea legible y localizable con el dedo en el teléfono —
+ * el viewport donde esta fase mide el contrato— sin estirar la tabla de
+ * escritorio, donde el chip compacto es parte del ritmo de la fila. De ahí
+ * que el piso entre sólo bajo 768px.
+ */
+@media (max-width: 767px) {
+  app-badge .p-tag {
+    /* `p-tag` ya centra su contenido: sólo hace falta el piso. */
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/*
+ * Las transiciones (ODD 505, D).
+ *
+ * <p>Se anima solo lo que el elemento declara: un `transition: all` se lleva por
+ * delante cambios que nadie pidió —el color de un estado, un ancho— y hace que
+ * la interfaz parezca más lenta de lo que es. Las duraciones salen de los tokens
+ * (100-300ms) y `prefers-reduced-motion` las apaga (ver `animations.scss`).
+ */
+.p-button,
+app-button {
+  transition:
+    var(--transition-bg-color), var(--transition-border),
+    var(--transition-shadow), var(--transition-transform);
+}
+
+.p-button:not(:disabled):hover,
+app-button:hover {
+  transform: translateY(-1px);
+}
+
+.p-card,
+app-card {
+  transition: var(--transition-shadow);
+}
+
+.p-card:hover,
+app-card:hover {
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Modales: la máscara entra y el diálogo sube. */
+.p-dialog-mask {
+  animation: fadeIn var(--duration-normal) var(--ease-out);
+}
+
+.p-dialog {
+  animation: slideUp var(--duration-normal) var(--ease-out);
+}
+
+/* Inputs: cambian color, no geometría. */
+.p-inputtext,
+.p-select,
+.p-datepicker {
+  transition:
+    var(--transition-color), var(--transition-bg-color),
+    var(--transition-border);
+}

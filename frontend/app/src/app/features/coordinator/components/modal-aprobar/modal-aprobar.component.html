@@ -1,0 +1,35 @@
+<p-dialog
+  [visible]="visible"
+  (visibleChange)="onVisibleChange($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [closable]="true"
+  [style]="{ width: '26rem' }"
+  header="Confirmar aprobación"
+>
+  <p class="dialog-message">
+    ¿Está seguro de que desea aprobar esta acta? Esta acción no se puede
+    deshacer.
+  </p>
+
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      (clicked)="onVisibleChange(false)"
+      [disabled]="isSubmitting"
+      data-testid="aprobar-cancel"
+    >
+      Cancelar
+    </app-button>
+    <app-button
+      variant="primary"
+      (clicked)="confirmarAprobar()"
+      [loading]="isSubmitting"
+      [disabled]="isSubmitting"
+      data-testid="aprobar-confirm"
+    >
+      Aprobar
+    </app-button>
+  </ng-template>
+</p-dialog>

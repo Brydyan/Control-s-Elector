@@ -1,0 +1,65 @@
+.pagina {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.encabezado h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.intro {
+  margin: 0 0 1.5rem;
+  color: var(--color-text-muted-on-surface);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.campo label {
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.campo input,
+.campo textarea {
+  width: 100%;
+  /* Objetivo tactil de 44px: el campo tiene que ser golpeable con el dedo. */
+  min-height: 2.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 1rem;
+}
+
+.error {
+  margin: 0.25rem 0 0;
+  color: var(--color-status-danger);
+  font-size: 0.875rem;
+}
+
+.acciones {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.exito {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.nota {
+  margin: 0;
+  color: var(--color-text-muted-on-surface);
+  font-size: 0.875rem;
+}
+
+.pie {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-medium);
+}

@@ -1,0 +1,180 @@
+.delete-account-section {
+  .delete-button-container {
+    border: 1px solid var(--color-status-danger);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    background-color: var(--color-status-danger-bg);
+
+    .delete-section-title {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-status-danger);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .delete-section-description {
+      margin: 0 0 1rem 0;
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+
+    button {
+      width: 100%;
+    }
+  }
+}
+
+// Estilos del modal
+:deep .delete-account-modal {
+  .p-dialog-content {
+    padding: 0 !important;
+  }
+}
+
+.modal-content {
+  display: flex;
+  flex-direction: column;
+
+  &.dark {
+    background-color: var(--color-surface-default);
+    color: var(--color-text-primary);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--color-border-subtle);
+
+    h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: var(--color-status-danger);
+    }
+
+    button {
+      color: var(--color-text-secondary);
+      &:hover {
+        color: var(--color-text-primary);
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    flex: 1;
+    overflow-y: auto;
+
+    .warning-box {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      background-color: var(--color-status-danger-bg);
+      border: 1px solid var(--color-status-danger-border);
+      border-radius: 0.5rem;
+
+      i {
+        color: var(--color-status-danger);
+        font-size: 1.5rem;
+        flex-shrink: 0;
+      }
+
+      strong {
+        color: var(--color-status-danger);
+      }
+
+      p {
+        margin: 0.5rem 0 0 0;
+        font-size: 0.875rem;
+        color: var(--color-text-secondary);
+        line-height: 1.5;
+      }
+    }
+
+    .action-message {
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+
+      p {
+        margin: 0.5rem 0;
+        &:first-child {
+          margin-top: 0;
+        }
+      }
+
+      strong {
+        color: var(--color-text-primary);
+      }
+    }
+
+    .form-section {
+      .form-label {
+        display: block;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: var(--color-text-primary);
+      }
+
+      .password-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        .password-input {
+          flex: 1;
+          padding: 0.5rem 0.75rem;
+          background-color: var(--color-surface-raised);
+          border: 1px solid var(--color-border-medium);
+          border-radius: 0.375rem;
+          color: var(--color-text-primary);
+          font-size: 0.875rem;
+
+          &::placeholder {
+            color: var(--color-text-secondary);
+          }
+
+          &:focus {
+            outline: none;
+            border-color: var(--color-brand-primary);
+            box-shadow: 0 0 0 3px var(--color-status-info-bg);
+          }
+        }
+
+        .password-toggle {
+          color: var(--color-text-secondary);
+          &:hover {
+            color: var(--color-text-primary);
+          }
+        }
+      }
+    }
+
+    .error-message {
+      margin-top: 1rem;
+      :deep {
+        .p-message {
+          width: 100%;
+        }
+      }
+    }
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding: 1.5rem;
+    border-top: 1px solid var(--color-border-subtle);
+
+    button {
+      min-width: 140px;
+    }
+  }
+}

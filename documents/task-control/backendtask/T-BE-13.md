@@ -1,8 +1,25 @@
 # T-BE-13 — Dashboard Endpoints (ADMIN + MASTER + COORDINATOR)
 
+**Estado:** ❌ **NO IMPLEMENTADO** — Falta DashboardController. Lógica de queries puede reutilizarse del doc.
+
 **Dificultad:** Intermedio
 **Tiempo estimado:** 2-3 horas
 **Depende de:** T-BE-12
+
+---
+
+## ⚠️ Nota de alineación con código actual
+
+**Ya existe:**
+- ActaRepository, ActaDetalleRepository con métodos `findAll()`, `countByEstado()`
+- Frontend DashboardPage con placeholder data (necesita HTTP calls)
+
+**Falta:**
+- `DashboardController` con endpoints `/api/v1/dashboard/resumen`, `/resultados`, `/progreso`, `/novedades`
+- DTOs de respuesta (ResumenActasDto, ResultadoCargoDto, ProgresoCantonDto, NovedadDto)
+- Queries JPQL para agregaciones (GROUP BY, SUM)
+
+**Nota adicional:** Endpoint `/novedades` (para ADMIN) debe listar actas en EN_DISPUTA + evidencias con observaciones marcadas (T-BE-16). Ver sección Paso 4 del doc.
 
 ---
 

@@ -1,0 +1,43 @@
+// ─────────────────────────────────────────────────────────────
+// ANILLO DE FOCO
+// ─────────────────────────────────────────────────────────────
+
+/*
+ * El foco tiene que verse (WCAG 2.4.7 Focus Visible): es la unica forma de
+ * que quien navega con teclado sepa donde esta. La regla alcanza a todo lo que
+ * se puede enfocar y el anillo se arma con tokens, asi que el color sigue a la
+ * marca y el grosor es el mismo en toda la app.
+ *
+ * El `!important` esta localizado y repite el precedente de `base.scss` (que lo
+ * usa en la card y en el piso de toque) por la misma razon concreta: el styled
+ * engine de PrimeNG emite sus reglas en runtime, despues de la hoja global, y
+ * su anillo de foco (`.p-inputtext:enabled:focus`, 3px) gana por cascada a
+ * cualquier regla global sin `!important`. Sin esto el anillo del sistema no
+ * llega a verse y el focus ring que promete el ODD #505 (C) no existe.
+ *
+ * El precio es que un componente no puede cambiar el anillo por su cuenta: es
+ * el contrato del sistema, y el que quiera otro grosor lo cambia en el token.
+ */
+:focus-visible {
+  outline: var(--focus-ring-width) var(--focus-ring-style)
+    var(--focus-ring-color) !important;
+  outline-offset: var(--focus-ring-offset) !important;
+}
+
+.p-button:focus-visible,
+.p-inputtext:focus-visible,
+.p-select:focus-visible,
+.p-multiselect:focus-visible,
+.p-datepicker:focus-visible,
+.p-inputnumber:focus-visible,
+.p-textarea:focus-visible,
+.p-checkbox:focus-visible,
+.p-radiobutton:focus-visible,
+.p-tooltip:focus-visible {
+  outline: var(--focus-ring-width) var(--focus-ring-style)
+    var(--focus-ring-color) !important;
+  outline-offset: var(--focus-ring-offset) !important;
+  /* La sombra de foco de la libreria se va: dos anillos superpuestos no son un
+     anillo, son dos. */
+  box-shadow: none !important;
+}

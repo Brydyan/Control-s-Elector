@@ -1,0 +1,164 @@
+// ─────────────────────────────────────────────────────────────
+// EL ESTÁNDAR DE TABLA (.app-table)
+// ─────────────────────────────────────────────────────────────
+
+/*
+ * `p-table` es una sola superficie con cuatro piezas —la cabecera, las filas,
+ * las celdas y el paginador— y cada página que la usaba las estilaba por su
+ * cuenta.
+ *
+ * Peor todavía: PrimeNG 21 no le pone ninguna clase a las `<th>` que escribe
+ * el template `#header`, así que su regla de cabecera (`.p-datatable-header-
+ * cell`) no alcanza a ninguna tabla de esta app. Las cabeceras que estaban
+ * estiladas a mano (las actas) tenían padding, fondo y borde; las que no
+ * (los catálogos del master y las tablas del admin) se leían como texto suelto
+ * pegado a las celdas.
+ *
+ * Esta hoja es la única dueña de esas cuatro piezas. Se aplica con
+ * `styleClass="app-table"` sobre el `p-table`: PrimeNG pone la clase en el
+ * elemento raíz de la tabla, así que las reglas de aquí alcanzan sus
+ * internos.
+ *
+ * La especificidad es la que gana, y por eso no hace falta `!important`:
+ *
+ *     PrimeNG    .p-datatable-thead > tr > th            (0,1,2)
+ *     Esta hoja  .app-table .p-datatable-thead > tr > th (0,2,2)
+ *
+ * Una clase más. El `!important` localizado que sí hace falta en
+ * `base.scss` —donde la regla global tiene la misma especificidad que la de
+ * PrimeNG— aquí no hace falta, y la cascada se queda legible.
+ *
+ * El padding es el de la escala del espacio del tema (`--space-3` vertical,
+ * `--space-4` horizontal) y no el de `p-datatable-sm`: el compactado de
+ * PrimeNG deja la celda en 6px y el control de acción de la fila mide 44px
+ * por el piso de toque, así que la fila seguiría midiendo lo mismo con el
+ * padding holgado. La densidad la decide el tema, no la biblioteca.
+ */
+.app-table {
+  /*
+   * La cabecera: el rótulo de la columna. Va en mayúscula y con el color
+   * apagado, para que el rótulo no compita con el dato que rotula.
+   *
+   * El `text-align` no es un detalle: PrimeNG alinea sus celdas al inicio
+   * (`.p-datatable-tbody > tr > td`), pero su regla de cabecera vive en
+   * `.p-datatable-header-cell` y ninguna tabla de esta app usa esa clase —
+   *las `<th>` las escribe el template—, así que el rótulo caía en el
+   * centrado por defecto del navegador, sobre una columna de datos alineada
+   * al inicio. El rótulo se alinea con su columna.
+   */
+  .p-datatable-thead > tr > th,
+  thead > tr > th {
+    background-color: var(--color-table-header-bg);
+    color: var(--color-table-header-text);
+    border-bottom: 1px solid var(--color-table-header-border);
+    font-size: var(--font-size-meta);
+    font-weight: var(--font-weight-semibold);
+    letter-spacing: 0.05em;
+    text-align: start;
+    text-transform: uppercase;
+    padding: var(--space-3) var(--space-4);
+    white-space: nowrap;
+  }
+
+  /*
+   * La fila: la superficie de los datos. PrimeNG la pinta con el fondo de
+   * contenido, que el puente alimenta de `--color-surface-card`; aquí se
+   * dice lo mismo con el token de tabla, para que la fila tenga un solo
+   * dueño.
+   */
+  .p-datatable-tbody > tr,
+  tbody > tr {
+    background-color: var(--color-table-surface);
+    color: var(--color-table-cell-text);
+  }
+
+  /*
+   * La celda. El borde inferior lo dibuja PrimeNG, pero con el color del
+   * tema de la biblioteca —que en oscuro es el gris de su propia rampa—:
+   * aquí se vuelve a declarar con el borde de la app, que es el mismo trazo
+   * que separa una tarjeta de la página.
+   */
+  .p-datatable-tbody > tr > td,
+  tbody > tr > td {
+    border-bottom: 1px solid var(--color-table-row-border);
+    color: var(--color-table-cell-text);
+    font-size: var(--font-size-body);
+    padding: var(--space-3) var(--space-4);
+    vertical-align: middle;
+  }
+
+  /*
+   * El hover: la fila bajo el puntero. Es un velo suave —la superficie
+   * elevada, un paso por encima de la tarjeta— y no un color de estado: la
+   * fila señalada tiene que seguir leyéndose como una fila.
+   */
+  .p-datatable-hoverable
+    .p-datatable-tbody
+    > tr:not(.p-datatable-row-selected):hover,
+  tbody > tr:hover {
+    background-color: var(--color-table-row-hover-bg);
+  }
+
+  /*
+   * El pie de la tabla: las filas de total y de subtotal que la tabla
+   * declara en su template `#footer`.
+   */
+  .p-datatable-tfoot > tr > td,
+  .p-datatable-tfoot > tr > th,
+  tfoot > tr > td,
+  tfoot > tr > th {
+    border-color: var(--color-table-row-border);
+    font-size: var(--font-size-body);
+    padding: var(--space-3) var(--space-4);
+    text-align: start;
+  }
+
+  /*
+   * El pie: el paginador de la tabla. PrimeNG lo centra; una tabla de
+   * datos lleva sus controles a la derecha, donde el pulgar ya está, y la
+   * banda del paginador es el pie de la tabla: misma superficie, misma
+   * línea de borde, sin esquinas propias.
+   */
+  .p-paginator {
+    background-color: var(--color-table-surface);
+    border-radius: 0;
+    border-top: 1px solid var(--color-table-row-border);
+    gap: var(--space-2);
+    justify-content: flex-end;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  /* El subtítulo de la tabla, cuando la tabla lo declara. */
+  caption {
+    color: var(--color-table-caption-text);
+    font-size: var(--font-size-meta);
+    padding: var(--space-2) var(--space-4);
+    text-align: start;
+  }
+}
+
+/*
+ * El paginador de la app es el pie de la tabla.
+ *
+ * `app-paginator` vive fuera del `p-table` —es un hermano del contenedor de
+ * la tabla, porque la paginación es del servidor y la tabla no la
+ * controla—, así que la regla de `.app-table` no lo alcanza. Se estandariza
+ * aquí, con los mismos tokens, para que la tabla y su paginador se lean
+ * como una sola superficie: el reporte de página a la izquierda, los
+ * controles a la derecha.
+ */
+app-paginator {
+  display: block;
+  margin-top: var(--space-4);
+
+  .p-paginator {
+    background-color: var(--color-table-surface);
+    border: 1px solid var(--color-table-row-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .p-paginator-content {
+    justify-content: flex-end;
+  }
+}

@@ -1,0 +1,109 @@
+<div class="config-geografica">
+  <header class="page-header">
+    <div>
+      <h1>Configuración Geográfica Electoral</h1>
+      <span
+        >Provincias, cantones, parroquias y juntas de recepción de votos</span
+      >
+    </div>
+    <app-button (clicked)="crearProvincia()">Crear provincia</app-button>
+  </header>
+
+  <div class="toolbar">
+    <app-button
+      variant="ghost"
+      size="sm"
+      ariaLabel="Expandir todos los nodos"
+      (clicked)="expandirTodo()"
+    >
+      Expandir todo
+    </app-button>
+    <app-button
+      variant="ghost"
+      size="sm"
+      ariaLabel="Colapsar todos los nodos"
+      (clicked)="colapsarTodo()"
+    >
+      Colapsar todo
+    </app-button>
+  </div>
+
+  <app-loading-state
+    *ngIf="loading()"
+    message="Cargando la geografía electoral..."
+  />
+
+  <app-error-state
+    *ngIf="error() && !loading()"
+    title="Error al cargar la geografía"
+    [message]="error() ?? undefined"
+    (retry)="cargarArbol()"
+  />
+
+  <app-empty-state
+    *ngIf="!loading() && !error() && nodos().length === 0"
+    title="No hay geografía configurada"
+    description="Crea la primera provincia para empezar a armar el árbol electoral."
+    icon="pi pi-map"
+  />
+
+  <div
+    class="tree-wrapper"
+    *ngIf="!loading() && !error() && nodos().length > 0"
+    data-testid="arbol-geografia"
+  >
+    <p-tree
+      [value]="nodos()"
+      [contextMenu]="menuContextual"
+      contextMenuSelectionMode="separate"
+      [contextMenuSelection]="nodoContexto()"
+      (contextMenuSelectionChange)="nodoContexto.set($event)"
+      (onNodeExpand)="onNodeExpand($event)"
+      (onNodeCollapse)="onNodeCollapse($event)"
+    >
+      <!-- PrimeNG 21 busca la plantilla de nodo por tipo: sin `type` en el nodo, la
+           plantilla que se usa es la "default". -->
+      <ng-template pTemplate="default" let-node>
+        <div
+          class="nodo"
+          [attr.data-nivel]="node.data.nivel"
+          [attr.data-testid]="'nodo-' + node.data.nivel"
+        >
+          <span class="nodo__nombre">{{ node.label }}</span>
+          <span class="nodo__meta">{{ node.data.meta }}</span>
+          <span class="nodo__acciones" (click)="$event.stopPropagation()">
+            <app-button
+              *ngIf="node.data.nivel === 'PROVINCIA'"
+              variant="ghost"
+              size="sm"
+              [attr.data-testid]="'crear-canton-' + node.data.id"
+              (clicked)="crearCanton(node.data)"
+            >
+              + Cantón
+            </app-button>
+            <app-button
+              *ngIf="node.data.nivel === 'CANTON'"
+              variant="ghost"
+              size="sm"
+              [attr.data-testid]="'crear-parroquia-' + node.data.id"
+              (clicked)="crearParroquia(node.data)"
+            >
+              + Parroquia
+            </app-button>
+            <app-button
+              *ngIf="node.data.nivel === 'PARROQUIA'"
+              variant="ghost"
+              size="sm"
+              [attr.data-testid]="'crear-jrv-' + node.data.id"
+              (clicked)="crearJrv(node.data)"
+            >
+              + JRV
+            </app-button>
+          </span>
+        </div>
+      </ng-template>
+    </p-tree>
+
+    <p-contextmenu #menuContextual [model]="menuItems()" />
+  </div>
+</div>

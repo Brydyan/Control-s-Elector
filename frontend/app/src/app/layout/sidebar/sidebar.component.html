@@ -1,51 +1,19 @@
-<aside class="sidebar">
-  <div class="sidebar-brand">
-    <div class="sidebar-brand-row">
-      <div class="sidebar-logo">🗳️</div>
-      <div>
-        <div class="sidebar-brand-name">Control Electoral</div>
-        <div class="sidebar-brand-sub">Santa Elena 2027</div>
-      </div>
-    </div>
-  </div>
-
-  <nav class="sidebar-nav">
-    @for (section of sections; track section.label) {
-      <div class="nav-section-label">{{ section.label }}</div>
-
-      @for (item of section.items; track item.label) {
-        @if (item.disabled || !item.route) {
-          <div class="nav-item disabled">
-            <span class="nav-icon">{{ item.icon }}</span>
-            <span class="nav-label">{{ item.label }}</span>
-            @if (item.tag) {
-              <span class="nav-tag">{{ item.tag }}</span>
-            }
-          </div>
-        } @else {
-          <a
-            class="nav-item"
-            [routerLink]="item.route"
-            routerLinkActive="active"
-          >
-            <span class="nav-icon">{{ item.icon }}</span>
-            <span class="nav-label">{{ item.label }}</span>
-          </a>
-        }
+<aside class="layout-sidebar">
+  <nav aria-label="Navegación principal">
+    @for (section of sections(); track section.label) {
+      <div class="layout-nav-section">{{ section.label }}</div>
+      @for (item of section.items; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [class.disabled]="item.disabled"
+          [attr.aria-disabled]="item.disabled ? 'true' : null"
+        >
+          <i [class]="item.icon" aria-hidden="true"></i>
+          <span>{{ item.label }}</span>
+        </a>
       }
     }
   </nav>
-
-  <div class="sidebar-footer">
-    <div class="user-card">
-      <div class="user-avatar">{{ initials() }}</div>
-      <div class="user-info">
-        <div class="user-name">{{ displayName() }}</div>
-        <div class="user-rol">{{ roleLabel() }}</div>
-      </div>
-      <button class="user-exit" type="button" (click)="logout()" aria-label="Cerrar sesión">
-        ↩
-      </button>
-    </div>
-  </div>
 </aside>

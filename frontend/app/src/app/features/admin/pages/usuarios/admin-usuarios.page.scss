@@ -1,0 +1,418 @@
+.admin-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  color: var(--color-text-on-surface);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+    color: var(--color-text-on-surface);
+  }
+
+  span {
+    color: var(--color-text-muted-on-surface);
+  }
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+
+  p-inputtext {
+    min-width: 260px;
+  }
+}
+
+.table-wrap {
+  overflow: auto;
+  background: var(--color-surface-card);
+  border: 1px solid var(--color-border-on-surface);
+  border-radius: 12px;
+  box-shadow: var(--shadow-surface);
+}
+
+/*
+ * The table is rendered by PrimeNG, so its internals are reached through the
+ * encapsulation boundary.
+ */
+:host ::ng-deep .admin-table {
+  small {
+    display: block;
+    color: var(--color-text-muted-on-surface);
+    margin-top: 4px;
+  }
+
+  .actions {
+    white-space: nowrap;
+  }
+}
+
+.cards {
+  gap: 12px;
+
+  article {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    border: 1px solid var(--color-border-on-surface);
+    border-radius: 10px;
+    padding: 16px;
+
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+
+      strong {
+        font-weight: 700;
+      }
+    }
+
+    /*
+     * S3 — palanca 2: la fila de acciones de la card móvil es la zona más
+     * apretada del admin. Los botones ya miden 44px de alto desde
+     * `theme/base.scss`; sin flex los tres `ghost` se alinean en línea con el
+     * hueco del marcado entre ellos, se enciman al partir y quedan targets
+     * ambiguos. El `gap` de 8px es el espaciado que la propia norma acepta
+     * para separar objetivos vecinos sin ambigüedad.
+     */
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+  }
+}
+
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Bulk invitation bar ---------------------------------------------------- */
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-status-info-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-status-info-bg);
+}
+
+.bulk-count {
+  font-weight: 600;
+  color: var(--color-text-on-surface);
+}
+
+/*
+ * The outcome of the last send stays on screen instead of disappearing in a
+ * toast: the operator has to see which accounts failed to be invited.
+ */
+.bulk-status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-status-success-border);
+  border-radius: var(--radius-md);
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
+
+  strong {
+    font-weight: 700;
+  }
+
+  ul {
+    margin: var(--space-1) 0 0;
+    padding-left: var(--space-5);
+  }
+}
+
+.bulk-status.is-error {
+  border-color: var(--color-status-danger-border);
+  background: var(--color-status-danger-bg);
+  color: var(--color-status-danger);
+}
+
+/* Selection column and account state ------------------------------------- */
+
+.select-col {
+  width: 44px;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-brand-primary);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.state-badge {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.state-pending {
+  background: var(--color-status-warning-bg);
+  color: var(--color-status-warning);
+}
+
+.state-active {
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
+}
+
+/*
+ * Estado de la invitacion (ODD #504, C). Cada estado tiene su color: verde
+ * la invitacion vigente, amarillo la vencida, azul la cuenta todavia sin
+ * correo y rojo la deshabilitada.
+ */
+.state-invited {
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
+}
+
+.state-expired {
+  background: var(--color-status-warning-bg);
+  color: var(--color-status-warning);
+}
+
+.state-created {
+  background: var(--color-status-info-bg);
+  color: var(--color-status-info);
+}
+
+.state-disabled {
+  background: var(--color-status-danger-bg);
+  color: var(--color-status-danger);
+}
+
+/* Aviso de invitacion por caducar (ODD #504, B.3). */
+.state-warning {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--color-status-warning);
+}
+
+/* Dialog ---------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+
+  span {
+    font-weight: 600;
+    color: var(--color-text-on-surface);
+  }
+}
+
+/* Ayuda del campo: que va a pasar con ese dato (T-AUTH-INV-02). */
+.field-hint {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--color-text-muted-on-surface);
+}
+
+.field-error {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--color-status-danger);
+}
+
+/*
+ * Toggle "Enviar Invitacion por Email" (ODD #504, A).
+ *
+ * <p>La etiqueta es el target del checkbox: el cursor y el texto van juntos,
+ * para que no haya un cuadrado suelto al que apuntar.
+ */
+.toggle-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: 600;
+  color: var(--color-text-on-surface);
+  cursor: pointer;
+}
+
+/* Aviso del modal de reenvio (ODD #504, D.2). */
+.aviso-reenvio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-status-warning-border);
+  border-radius: var(--radius-md);
+  background: var(--color-status-warning-bg);
+  color: var(--color-text-on-surface);
+
+  p {
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+.password-alert {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--color-status-success-bg);
+  color: var(--color-status-success);
+  border-radius: 8px;
+
+  code {
+    font-size: 18px;
+    font-weight: 700;
+  }
+}
+
+.detail-list {
+  margin: 0;
+
+  dt {
+    font-weight: 700;
+    margin-top: 10px;
+    color: var(--color-text-on-surface);
+  }
+
+  dd {
+    margin: 3px 0;
+    color: var(--color-text-muted-on-surface);
+  }
+}
+
+/* ── C.4: Icon Button Styles ────────────────────────────────────────────── */
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-size: 18px;
+
+  &:hover {
+    background: var(--color-surface-raised);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn-view {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-brand-primary);
+  }
+}
+
+.btn-edit {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-brand-primary);
+  }
+}
+
+.btn-invitar {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-status-info-bg);
+    color: var(--color-status-info);
+  }
+}
+
+.btn-delete {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-status-danger-bg);
+    color: var(--color-status-danger);
+  }
+}
+
+.btn-restore {
+  color: var(--color-text-on-surface);
+
+  &:hover {
+    background: var(--color-status-success-bg);
+    color: var(--color-status-success);
+  }
+}
+
+.icons-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mobile-only {
+  display: flex;
+  flex-direction: column;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-only {
+    display: none;
+  }
+  .desktop-only {
+    display: block;
+  }
+}

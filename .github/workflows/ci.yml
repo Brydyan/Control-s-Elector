@@ -2,58 +2,638 @@ name: CI
 
 on:
   pull_request:
+    # `main` y `develop` son las ramas de integracion. Los demas prefijos estan
+    # porque el stack de PRs es apilado: un PR cuya base es otra rama de feature
+    # (por ejemplo #152 sobre `feat/backend-quarkus-cutover`) no dispara CI si la
+    # lista no lo cubre, y se queda sin checks en silencio.
+    #
+    # SIN filtro de paths a proposito: este workflow produce los checks
+    # requeridos por el ruleset de `develop`. Un workflow que no arranca por un
+    # filtro deja esos checks en "Pending" para siempre y bloquea el PR. El
+    # filtro de paths va en el job `changes`, no aqui. Ver ese job.
+    branches:
+      - main
+      - develop
+      - 'feat/**'
+      - 'fix/**'
+      - 'refactor/**'
+      - 'test/**'
+      - 'chore/**'
+      - 'build/**'
+      - 'upgrade/**'
+      - 'docs/**'
+  push:
     branches: [main, develop]
+    # En `push` si se puede filtrar en el trigger: aqui no hay checks
+    # requeridos que reportar, asi que un push que solo toca documentacion
+    # puede no arrancar el workflow. La granularidad fina la pone igual el
+    # job `changes`, que separa backend de frontend.
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/ci.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  backend:
+  # ===========================================================================
+  # DETECTOR DE CAMBIOS
+  # ===========================================================================
+  # Este workflow produce los 6 checks que el ruleset de `develop` exige:
+  # Backend Format, Backend Tests & Coverage, Frontend ESLint,
+  # Frontend Format Check, Frontend Production Build y Frontend Unit Tests.
+  #
+  # Por eso el trigger de `pull_request` NO lleva filtro de paths. Un
+  # workflow que no arranca por un filtro deja sus checks en "Pending" para
+  # siempre y el PR queda bloqueado esperando un reporte que nunca llega.
+  # Un job saltado por un `if:`, en cambio, reporta "Success", que es lo que
+  # el branch protection acepta. El filtro va aqui y no en el trigger.
+  #
+  # La decision es fail-safe. Si este job falla, sus salidas quedan vacias,
+  # la comparacion `!= 'false'` da true y TODOS los jobs corren. Es
+  # preferible pagar el CI completo a mergear sin verificar.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # El diff se calcula contra la base, asi que hace falta el historial.
+          fetch-depth: 0
+
+      - name: Compute changed paths
+        id: filter
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            # Tres puntos: diff entre el merge-base y la cabeza del PR. Es lo
+            # que cambia el PR, no lo que el PR actualizo de la base mientras
+            # tanto.
+            range="$PR_BASE_SHA...HEAD"
+          else
+            before="$PUSH_BEFORE_SHA"
+            # Primer push de la rama: `before` viene en ceros.
+            if [ "$before" = "0000000000000000000000000000000000000000" ]; then
+              before="$(git rev-parse HEAD^)"
+            fi
+            range="$before..HEAD"
+          fi
+
+          changed="$(git diff --name-only "$range")"
+          echo "Rutas cambiadas:"
+          echo "$changed"
+
+          # Los workflows de CI entran en ambos filtros: cambiar como se
+          # verifica el codigo tiene que re-verificar las dos mitades.
+          backend=false
+          frontend=false
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            case "$file" in
+              backend/*|.github/workflows/ci.yml|.github/workflows/ci-native.yml)
+                backend=true ;;
+            esac
+            case "$file" in
+              frontend/*|.github/workflows/ci.yml|.github/workflows/ci-native.yml)
+                frontend=true ;;
+            esac
+          done <<< "$changed"
+
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+          echo "Detectado -> backend=$backend frontend=$frontend"
+
+  # ===========================================================================
+  # BACKEND JOBS
+  # ===========================================================================
+  backend-format:
+    name: Backend Format
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Fetch formatting baseline
+        run: git fetch origin develop:refs/remotes/origin/develop || true
+
+      - name: Check Java formatting
+        working-directory: backend/electoral-api-quarkus
+        run: mvn -B spotless:check
+
+  # El backend es UNO solo. Antes estos dos jobs eran `backend-format` (Spring)
+  # y `backend-test` (Spring), y `backend-quarkus-test` corria los tests del
+  # modulo Quarkus. Con el corte, `backend-quarkus-test` es el unico que
+  # verifica y formatea el backend: no hay segundo modulo que testear.
+
+  # ===========================================================================
+  # BACKEND CONTRACT TESTS
+  # ===========================================================================
+  # Suite de regresion por contrato (backend/contract-tests). El artefacto es
+  # agnosticodel framework: habla solo HTTP, asi que el mismo test que validaba
+  # la paridad entre Spring y Quarkus sigue siendo valido — lo que cambio fue
+  # contra quien corre. Cuando quede una sola implementacion, esta suite es el
+  # gate de contrato del backend.
+  backend-contract:
+    name: Backend Contract Tests
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:16
         env:
+          POSTGRES_DB: electoral_db
           POSTGRES_USER: electoral_user
           POSTGRES_PASSWORD: electoral_pass
-          POSTGRES_DB: electoral_db
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          POSTGRES_INITDB_ARGS: >-
+            --encoding=UTF8
+            --locale-provider=icu
+            --icu-locale=es-EC
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U electoral_user -d electoral_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rustfs:
+        image: rustfs/rustfs:latest
+        env:
+          RUSTFS_ACCESS_KEY: rustfsadmin
+          RUSTFS_SECRET_KEY: rustfsadmin123
+          RUSTFS_ADDRESS: "0.0.0.0:9000"
+          RUSTFS_CONSOLE_ENABLE: "true"
+          RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+          RUSTFS_VOLUMES: /data
+        ports:
+          - 9000:9000
+          - 9001:9001
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/health"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
-      - uses: actions/checkout@v3
-      
+      - uses: actions/checkout@v4
+
       - name: Set up Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: maven
-      
-      - name: Build Backend (skip tests for now)
-        working-directory: backend/electoral-api
-        run: ./mvnw clean package -DskipTests
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/electoral_db
-          SPRING_DATASOURCE_USERNAME: electoral_user
-          SPRING_DATASOURCE_PASSWORD: electoral_pass
 
-  # frontend: (enable when frontend is ready)
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: '20'
-  #
-  #     - name: Install Dependencies
-  #       working-directory: frontend/app
-  #       run: npm install
-  #
-  #     - name: Build Frontend
-  #       working-directory: frontend/app
-  #       run: npm run build
+      # El backend no crea el bucket: lo crea el compose en dev y aca lo
+      # creamos nosotros. Sin el bucket el S3HealthIndicator queda DOWN y
+      # /actuator/health devuelve 503.
+      - name: Create the evidence bucket
+        run: |
+          docker run --rm --network host \
+            -e AWS_ACCESS_KEY_ID=rustfsadmin \
+            -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+            -e AWS_DEFAULT_REGION=us-east-1 \
+            amazon/aws-cli \
+            --endpoint-url http://localhost:9000 \
+            s3api create-bucket --bucket electoral-evidences
+
+      - name: Build the backend image
+        run: docker build -t electoral-api:contract backend/electoral-api-quarkus
+
+      # El rol con el que conecta la APLICACION. Sin esto, el backend entra como
+      # `electoral_user`, que es superusuario, y Postgres ignora las politicas de
+      # RLS: la suite de contrato pasaria sin que ninguna prueba tocara la capa
+      # que el guardrail del proyecto declara obligatoria.
+      #
+      # La contrasena del rol es de la base efimera de CI: no es un secreto de
+      # produccion y no sale del runner.
+      - name: Create the application role
+        run: |
+          docker run --rm --network host -i \
+            -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db \
+                 -v ON_ERROR_STOP=1 \
+                 -v app_role=electoral_app \
+                 -v app_password=electoral_app_pass \
+                 -f - < scripts/db/create-app-role.sql
+
+      # La migracion corre con el DUENO de la base (el unico que puede crear el
+      # schema) y en un contenedor aparte que termina al terminar.
+      # El rol de la aplicacion NO puede ser superusuario ni tener BYPASSRLS: con
+      # cualquiera de los dos, Postgres le ignora las politicas de RLS y esta
+      # suite volveria a pasar sin tocar la capa que hay que probar.
+      - name: Assert the application role cannot bypass RLS
+        run: |
+          docker run --rm --network host -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db -t -A \
+              -c "select rolsuper or rolbypassrls from pg_roles where rolname='electoral_app';" \
+            | grep -qx 'f' || {
+              echo "FALLO: el rol electoral_app no puede ser superusuario ni BYPASSRLS";
+              exit 1;
+            }
+
+      - name: Migrate the schema
+        run: |
+          docker run --rm --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=electoral_db \
+            -e DB_USER=electoral_user \
+            -e DB_PASSWORD=electoral_pass \
+            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true \
+            -e APP_MIGRATE_ONLY=true \
+            -e QUARKUS_HIBERNATE_GENERATION=none \
+            -e QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin \
+            -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+            -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+            electoral-api:contract
+
+      # --network host para que el contenedor alcance los services de GitHub
+      # Actions por los puertos publicados en el host (5432 y 9000). Asi no
+      # hay que adivinar el nombre de la red de los services.
+      #
+      # El backend entra con el rol de APLICACION: el schema ya esta migrado y
+      # el contenedor no lleva las credenciales del dueno.
+      - name: Run the backend
+        run: |
+          docker run -d --name electoral-api --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=electoral_db \
+            -e DB_USER=electoral_app \
+            -e DB_PASSWORD=electoral_app_pass \
+            -e QUARKUS_LIQUIBASE_USERNAME=electoral_user \
+            -e QUARKUS_LIQUIBASE_PASSWORD=electoral_pass \
+            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false \
+            -e SERVER_PORT=8080 \
+            -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+            -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+            -e QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin \
+            -e AWS_ACCESS_KEY_ID=rustfsadmin \
+            -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+            -e AWS_S3_ENDPOINT=http://localhost:9000 \
+            -e AWS_S3_REGION=us-east-1 \
+            -e AWS_S3_BUCKET=electoral-evidences \
+            -e AWS_S3_PATH_STYLE=true \
+            electoral-api:contract
+
+      - name: Wait for the backend to be healthy
+        run: |
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+              echo "Backend saludable"
+              curl -s http://localhost:8080/actuator/health
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "El backend no llego a estar saludable"
+          docker logs electoral-api
+          exit 1
+
+      - name: Run the contract suite
+        working-directory: backend/contract-tests
+        run: mvn -B verify -Dcontract.baseUrl=http://localhost:8080
+
+      - name: Backend logs on failure
+        if: failure()
+        run: docker logs electoral-api
+
+  # ===========================================================================
+  # BACKEND QUARKUS
+  # ===========================================================================
+  # El unico backend. Este job afirma dos cosas que la suite de contrato no
+  # puede ver: que la imagen levanta contra una base VACIA (arrancando dos
+  # veces, porque en Quarkus Hibernate valida antes de que Liquibase cree el
+  # schema) y que el health responde en /actuator/health del puerto principal.
+  backend-quarkus:
+    name: Backend Quarkus
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: electoral_db
+          POSTGRES_USER: electoral_user
+          POSTGRES_PASSWORD: electoral_pass
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U electoral_user -d electoral_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      # El contexto de build es el modulo: el changelog de Liquibase vive en su
+      # src/main/resources/database, asi que la imagen no depende de un hermano.
+      - name: Build the Quarkus image
+        run: docker build -t electoral-api-quarkus backend/electoral-api-quarkus
+
+      # El backend arranca DOS veces a proposito.
+      #
+      # 1. Contra la base VACIA del service, con la migracion activada y la validacion de
+      #    Hibernate apagada. Liquibase crea el schema, pero corre DESPUES de la validacion de
+      #    Hibernate: contra una base vacia el arranque con `validate` (el default) revienta
+      #    con "Schema validation: missing table [acta]". En Spring el orden era al reves, por
+      #    eso nunca hizo falta y por eso esta fase no es obvia.
+      # 2. Contra el schema ya creado, con los defaults: el backend tiene que levantar Y
+      #    validar que el schema coincide con las entidades. Si alguien cambia una entidad sin
+      #    cambiar el changelog, esta fase lo detecta en el CI y no en produccion.
+      #
+      # Esta fase 2 es el control de drift del backend: en compose el arranque corre con
+      # `none` para que una base nueva levante, asi que el `validate` vive acá.
+      # El rol con el que conecta la APLICACION. Sin esto, el backend entra como
+      # superusuario y Postgres ignora las politicas de RLS.
+      - name: Create the application role
+        run: |
+          docker run --rm --network host -i \
+            -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db \
+                 -v ON_ERROR_STOP=1 \
+                 -v app_role=electoral_app \
+                 -v app_password=electoral_app_pass \
+                 -f - < scripts/db/create-app-role.sql
+
+      - name: Run the Quarkus backend
+        run: |
+          # El primer arranque migra con el DUENO de la base (el unico que puede
+          # crear el schema); el segundo valida el schema contra las entidades
+          # con el ROL DE APLICACION, que es como corre en produccion.
+          boot_quarkus() {
+            docker run -d --name electoral-api-quarkus --network host \
+              -e DB_HOST=localhost \
+              -e DB_PORT=5432 \
+              -e DB_NAME=electoral_db \
+              -e DB_USER="$DB_USER" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
+              -e SERVER_PORT=8080 \
+              -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+              -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+              "$@" \
+              electoral-api-quarkus
+          }
+
+          wait_healthy() {
+            for i in $(seq 1 90); do
+              if curl -sf http://localhost:8080/actuator/health > /dev/null; then
+                return 0
+              fi
+              sleep 2
+            done
+            echo "El backend Quarkus no llego a estar saludable"
+            docker logs electoral-api-quarkus
+            return 1
+          }
+
+          DB_USER=electoral_user DB_PASSWORD=electoral_pass \
+            boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true -e QUARKUS_HIBERNATE_GENERATION=none
+          wait_healthy || exit 1
+          echo "Primer arranque: el backend creo el schema y quedo saludable"
+
+          docker rm -f electoral-api-quarkus
+          DB_USER=electoral_app DB_PASSWORD=electoral_app_pass \
+            boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false
+          wait_healthy || exit 1
+          echo "Segundo arranque: el backend valido el schema y quedo saludable"
+          curl -s http://localhost:8080/actuator/health
+          echo
+
+      - name: Quarkus logs on failure
+        if: failure()
+        run: docker logs electoral-api-quarkus
+
+  # ===========================================================================
+  # BACKEND QUARKUS TESTS
+  # ===========================================================================
+  # Los tests del modulo Quarkus (backend/electoral-api-quarkus). Son los que
+  # la suite de contrato NO puede sustituir: la suite de regresion por contrato
+  # habla solo HTTP, asi que no puede afirmar la politica RLS de Postgres ni el
+  # formato del UUID. RlsIsolationIT corre contra un Postgres real de
+  # Testcontainers, que levanta y baja solo — el job no necesita ningun
+  # service de Postgres.
+  backend-quarkus-test:
+    name: Backend Tests & Coverage
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.backend != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Spotless corre con `ratchetFrom origin/develop`: compara contra esa
+          # referencia para solo exigir formato en lo que cambio. El checkout por
+          # defecto es depth 1 y deja el repo sin esa referencia, con lo cual el
+          # build muere con "No such reference 'origin/develop'" — que no es un
+          # problema de formato sino de que el baseline no esta.
+          fetch-depth: 0
+
+      - name: Fetch formatting baseline
+        run: git fetch origin develop:refs/remotes/origin/develop || true
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: maven
+
+      # Se usa `./mvnw` y no el Maven del runner: el wrapper pinea la misma
+      # version (3.9.16) que usa el build nativo dentro de
+      # `Dockerfile.native`, asi que los tests y la imagen nativa se compilan
+      # con el mismo Maven. Si divergen, un test verde puede no reproducir el
+      # fallo del AOT.
+      # `verify` corre los tests (el surefire de este modulo incluye los *IT)
+      # y ademas arma la app, asi que el job tambien cubre el packaging.
+      - name: Run the Quarkus backend tests
+        working-directory: backend/electoral-api-quarkus
+        run: ./mvnw -B clean verify
+
+      # El plugin de JaCoCo ya corre DENTRO de `clean verify`: la ejecucion
+      # `report` genera target/site/jacoco/ y la `check` aplica el piso de
+      # no-regresion (0.08). Si la cobertura baja de ese piso, el paso anterior
+      # ya deja el build en rojo — este paso no decide nada.
+      #
+      # Este paso solo publica el reporte como artifact del workflow, para poder
+      # abrirlo desde la pestana de CI sin depender de un servicio externo.
+      # No se sube a Codecov: eso exige un token y una cuenta de Codecov que el
+      # proyecto todavia no tiene; con un token ausente el job se rompe por una
+      # razon que no es del codigo.
+      - name: Upload the JaCoCo coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage-report
+          path: |
+            backend/electoral-api-quarkus/target/site/jacoco/
+            backend/electoral-api-quarkus/target/jacoco.exec
+          if-no-files-found: error
+
+  # ===========================================================================
+  # FRONTEND JOBS
+  # ===========================================================================
+  # Load testing is in separate workflow: load-test-baseline.yml
+
+  frontend-format:
+    name: Frontend Format Check
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/app/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        working-directory: frontend/app
+        run: pnpm install --frozen-lockfile
+
+      - name: Check code formatting (Prettier)
+        working-directory: frontend/app
+        run: pnpm format:check
+
+  frontend-lint:
+    name: Frontend ESLint
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/app/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        working-directory: frontend/app
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        working-directory: frontend/app
+        run: pnpm lint
+
+  frontend-test:
+    name: Frontend Unit Tests
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/app/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        working-directory: frontend/app
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Unit Tests (Vitest)
+        working-directory: frontend/app
+        run: pnpm test:ci
+
+  frontend-build:
+    name: Frontend Production Build
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.frontend != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.1.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/app/pnpm-lock.yaml'
+
+      - name: Install dependencies
+        working-directory: frontend/app
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Angular Application
+        working-directory: frontend/app
+        run: pnpm build

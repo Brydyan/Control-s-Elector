@@ -1,0 +1,296 @@
+package ec.twintailcs.electoral.contract;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import io.restassured.response.Response;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Contrato del dashboard: resumen, resultados, progreso y novedades.
+ *
+ * <p>El dashboard es la vista de solo lectura del ADMIN. El guard de clase es
+ * {@code hasAnyRole('ADMIN','MASTER','COORDINATOR')}: OBSERVER no entra, y ADMIN nunca escribe
+ * (el controller solo expone {@code @GetMapping}).
+ *
+ * <p>Contrato fijado:
+ *
+ * <ul>
+ *   <li>{@code GET /api/v1/dashboard/resumen} → 200 con el conteo por estado de acta.
+ *   <li>{@code GET /api/v1/dashboard/resultados} → 200 con los resultados por cargo.
+ *   <li>{@code GET /api/v1/dashboard/progreso} → 200 con el avance por cantón.
+ *   <li>{@code GET /api/v1/dashboard/novedades} → 200 con las novedades recientes.
+ *   <li>Sin token → 401. Con OBSERVER → 403.
+ * </ul>
+ */
+class DashboardContractIT extends ContractTestSupport {
+
+  /** Prefijo del módulo de dashboard. */
+  private static final String DASHBOARD = "/api/v1/dashboard";
+
+  @Test
+  @DisplayName("GET /dashboard/resumen devuelve el conteo de actas por estado")
+  void resumenDevuelveElConteoPorEstado() {
+    Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/resumen");
+
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+    assertThat(r.jsonPath().getLong("enviadas")).isNotNegative();
+    assertThat(r.jsonPath().getLong("enDisputa")).isNotNegative();
+    assertThat(r.jsonPath().getLong("corregidas")).isNotNegative();
+    assertThat(r.jsonPath().getLong("aprobadas")).isNotNegative();
+
+    long total = r.jsonPath().getLong("totalActivas");
+    long suma =
+        r.jsonPath().getLong("enviadas")
+            + r.jsonPath().getLong("enDisputa")
+            + r.jsonPath().getLong("corregidas")
+            + r.jsonPath().getLong("aprobadas");
+    assertThat(total)
+        .as("totalActivas tiene que ser la suma de los cuatro estados activos")
+        .isEqualTo(suma);
+  }
+
+  @Test
+  @DisplayName("GET /dashboard/resultados devuelve los resultados agrupados por cargo")
+  void resultadosDevuelvenLosResultadosPorCargo() {
+    Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/resultados");
+
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+    List<Map<String, Object>> cargos = r.jsonPath().getList("$");
+    assertThat(cargos).as("body: %s", r.asString()).isNotNull();
+    assertThat(cargos)
+        .allSatisfy(
+            cargo -> {
+              assertThat(cargo.get("cargoId")).as("cargoId: %s", cargo).isNotNull();
+              assertThat((String) cargo.get("cargoNombre")).as("cargoNombre: %s", cargo).isNotBlank();
+              assertThat(cargo.get("candidatos")).as("candidatos: %s", cargo).isNotNull();
+            });
+  }
+
+  @Test
+  @DisplayName("GET /dashboard/progreso devuelve el avance por cantón con su porcentaje")
+  void progresoDevuelveElAvancePorCanton() {
+    Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/progreso");
+
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+    List<Map<String, Object>> cantones = r.jsonPath().getList("$");
+    assertThat(cantones).as("body: %s", r.asString()).isNotEmpty();
+    assertThat(cantones)
+        .allSatisfy(
+            canton -> {
+              assertThat(canton.get("cantonId")).as("cantonId: %s", canton).isNotNull();
+              assertThat((String) canton.get("cantonNombre")).as("cantonNombre: %s", canton).isNotBlank();
+              assertThat(((Number) canton.get("totalJrvs")).longValue())
+                  .as("totalJrvs: %s", canton)
+                  .isNotNegative();
+              assertThat(((Number) canton.get("jrvsConActa")).longValue())
+                  .as("jrvsConActa: %s", canton)
+                  .isNotNegative();
+              double porcentaje = ((Number) canton.get("porcentaje")).doubleValue();
+              assertThat(porcentaje).as("porcentaje: %s", canton).isBetween(0.0, 100.0);
+              assertThat(((Number) canton.get("jrvsConActa")).longValue())
+                  .as("no puede haber mas JRVs con acta que JRVs totales: %s", canton)
+                  .isLessThanOrEqualTo(((Number) canton.get("totalJrvs")).longValue());
+            });
+  }
+
+  @Test
+  @DisplayName("GET /dashboard/progreso devuelve el desglose por parroquia y cuadra con el cantón")
+  void progresoDevuelveElDesglosePorParroquia() {
+    Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/progreso");
+
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+    List<Map<String, Object>> cantones = r.jsonPath().getList("$");
+    assertThat(cantones).as("body: %s", r.asString()).isNotEmpty();
+
+    int parroquiasTotales = 0;
+    long jrvsTotales = 0;
+    long jrvsConActaTotales = 0;
+    for (Map<String, Object> canton : cantones) {
+      // La clave debe EXISTIR: antes el backend no la mandaba y el frontend caia en un
+      // `?? []` que dejaba el panel "Desglose de Parroquias" vacio sin fallar. Que la clave
+      // falte es un fallo de contrato, no un caso valido.
+      assertThat(canton).as("el canton tiene que traer la clave 'parroquias': %s", canton)
+          .containsKey("parroquias");
+      assertThat(canton.get("parroquias")).as("parroquias de %s", canton).isNotNull();
+
+      List<Map<String, Object>> parroquias = (List<Map<String, Object>>) canton.get("parroquias");
+      parroquiasTotales += parroquias.size();
+
+      long totalJrvs = ((Number) canton.get("totalJrvs")).longValue();
+      long jrvsConActa = ((Number) canton.get("jrvsConActa")).longValue();
+      jrvsTotales += totalJrvs;
+      jrvsConActaTotales += jrvsConActa;
+
+      long sumaJrvsTotal = 0;
+      long sumaJrvsEscrutadas = 0;
+      for (Map<String, Object> parroquia : parroquias) {
+        assertThat(parroquia).as("la parroquia tiene que traer sus campos: %s", parroquia)
+            .containsKeys("parroquiaId", "parroquiaNombre", "jrvsEscrutadas", "jrvsTotal", "avance");
+        assertThat((String) parroquia.get("parroquiaNombre")).isNotBlank();
+
+        long total = ((Number) parroquia.get("jrvsTotal")).longValue();
+        long escrutadas = ((Number) parroquia.get("jrvsEscrutadas")).longValue();
+        double avance = ((Number) parroquia.get("avance")).doubleValue();
+
+        assertThat(total).as("no puede haber mas JRVs con acta que JRVs totales: %s", parroquia)
+            .isNotNegative();
+        assertThat(escrutadas).as("no puede haber mas JRVs con acta que JRVs totales: %s", parroquia)
+            .isLessThanOrEqualTo(total);
+        assertThat(avance).as("avance: %s", parroquia).isBetween(0.0, 100.0);
+
+        // Una parroquia sin JRV tiene que reportar 0 y 0%: "no hay JRV" no puede
+        // reportarse como division por cero ni como NaN.
+        if (total == 0) {
+          assertThat(escrutadas)
+              .as("una parroquia sin JRV no puede tener JRVs con acta: %s", parroquia)
+              .isZero();
+          assertThat(avance).as("una parroquia sin JRV tiene que reportar 0%%: %s", parroquia).isZero();
+        }
+
+        sumaJrvsTotal += total;
+        sumaJrvsEscrutadas += escrutadas;
+      }
+
+      // Conciliacion: el desglose tiene que sumar EXACTAMENTE lo que dice el canton. Es la
+      // unica forma de que un cambio de semantica entre los dos niveles se note.
+      assertThat(sumaJrvsTotal)
+          .as("la suma de las parroquias tiene que ser el total de JRVs del canton: %s", canton)
+          .isEqualTo(totalJrvs);
+      assertThat(sumaJrvsEscrutadas)
+          .as("la suma de las parroquias tiene que ser el total de JRVs con acta: %s", canton)
+          .isEqualTo(jrvsConActa);
+    }
+
+    // El desglose no puede venir vacio: el seed tiene parroquias con JRVs asignados, asi que
+    // un array vacio en todas partes significa que el backend dejo de enviar el desglose.
+    assertThat(parroquiasTotales)
+        .as("el desglose por parroquia tiene que traer filas: %s", r.asString())
+        .isGreaterThan(0);
+
+    // Los conteos tienen que ser > 0. OJO con lo que esto prueba y lo que no:
+    // en dev y en CI el backend conecta como electoral_user, que es SUPERUSUARIO, y
+    // Postgres no aplica RLS a un superusuario (tampoco con FORCE). Asi's que esto
+    // NO demuestra que el contexto de RLS este activo: si falta, los conteos dan
+    // igual de > 0. Lo que si atrapa es un backend que devuelve ceros. La
+    // evidencia real de que RLS filtra es RlsIsolationIT, que crea su propio rol
+    // sin privilegios.
+    assertThat(jrvsTotales).as("tiene que haber JRVs en la base: %s", r.asString()).isGreaterThan(0);
+    assertThat(jrvsConActaTotales)
+        .as("tiene que haber JRVs con acta visibles: %s", r.asString())
+        .isGreaterThan(0);
+  }
+
+  /**
+   * Una parroquia sin JRV tiene que aparecer en el desglose con 0 JRVs y 0% de avance.
+   *
+   * <p>El seed NO produce ese caso: sus 4 parroquias tienen JRVs asignados. Sin esta prueba la
+   * rama "sin JRV" queda sin ejercitar, y una mutacion que dejara el filtro de ANULADA en el
+   * WHERE (que convierte el LEFT JOIN en INNER) pasaria el contrato sin que nadie lo notara.
+   *
+   * <p>La parroquia se cuelga de un canton que ya existe para no alterar los totales del canton
+   * y no romper la conciliacion del desglose.
+   */
+  @Test
+  @DisplayName("GET /dashboard/progreso incluye la parroquia sin JRV con 0 JRVs y 0% de avance")
+  void progresoIncluyeLaParroquiaSinJrvs() {
+    long parroquiaId = crearParroquiaSinJrvs();
+
+    try {
+      Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/progreso");
+      assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+
+      Map<String, Object> encontrada = null;
+      for (Map<String, Object> canton : r.jsonPath().getList("$", Map.class)) {
+        for (Map<String, Object> parroquia :
+            (List<Map<String, Object>>) canton.get("parroquias")) {
+          if (((Number) parroquia.get("parroquiaId")).longValue() == parroquiaId) {
+            encontrada = parroquia;
+          }
+        }
+      }
+
+      assertThat(encontrada)
+          .as("la parroquia sin JRV tiene que aparecer en el desglose: %s", r.asString())
+          .isNotNull();
+      assertThat(((Number) encontrada.get("jrvsTotal")).longValue())
+          .as("la parroquia sin JRV no tiene JRVs: %s", encontrada)
+          .isZero();
+      assertThat(((Number) encontrada.get("jrvsEscrutadas")).longValue())
+          .as("la parroquia sin JRV no tiene JRVs con acta: %s", encontrada)
+          .isZero();
+      assertThat(((Number) encontrada.get("avance")).doubleValue())
+          .as("la parroquia sin JRV tiene que reportar 0%% de avance: %s", encontrada)
+          .isZero();
+    } finally {
+      // La parroquia es de este test: se borra para no dejar filas huerfanas en la base.
+      as(masterToken()).delete("/api/v1/master/parroquias/" + parroquiaId);
+    }
+  }
+
+  /**
+   * Crea una parroquia sin JRVs colgada de un canton real y devuelve su id.
+   *
+   * <p>Se cuelga de un canton que ya existe (no crea cantones nuevos) para que los totales del
+   * canton no cambien y la conciliacion del desglose siga valiendo.
+   */
+  private long crearParroquiaSinJrvs() {
+    List<Map<String, Object>> cantones =
+        listar(as(masterToken()).get("/api/v1/configuracion/cantones"));
+    assertThat(cantones).as("el seed tiene que traer cantones").isNotEmpty();
+    long cantonId = ((Number) cantones.get(0).get("id")).longValue();
+
+    Response creada =
+        as(masterToken())
+            .body(
+                json(
+                    Map.of(
+                        "nombre", unique("Parroquia sin JRV"),
+                        "esUrbana", true,
+                        "cantonId", cantonId)))
+            .post("/api/v1/master/parroquias");
+
+    assertThat(creada.statusCode()).as("body: %s", creada.asString()).isEqualTo(201);
+    return creada.jsonPath().getLong("id");
+  }
+
+  @Test
+  @DisplayName("GET /dashboard/novedades devuelve las novedades recientes")
+  void novedadesDevuelveLasNovedadesRecientes() {
+    Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/novedades");
+
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+    List<Map<String, Object>> novedades = r.jsonPath().getList("$");
+    assertThat(novedades).as("body: %s", r.asString()).isNotNull();
+    assertThat(novedades)
+        .allSatisfy(
+            novedad -> {
+              assertThat(novedad.get("observerNombre")).as("observerNombre: %s", novedad).isNotNull();
+              assertThat(((Number) novedad.get("minutosTranscurridos")).longValue())
+                  .as("minutosTranscurridos: %s", novedad)
+                  .isNotNegative();
+            });
+  }
+
+  @Test
+  @DisplayName("sin token, el dashboard devuelve 401")
+  void dashboardSinTokenDevuelve401() {
+    assertErrorShape(anon().get(DASHBOARD + "/resumen"), 401);
+    assertErrorShape(anon().get(DASHBOARD + "/resultados"), 401);
+    assertErrorShape(anon().get(DASHBOARD + "/progreso"), 401);
+    assertErrorShape(anon().get(DASHBOARD + "/novedades"), 401);
+  }
+
+  @Test
+  @DisplayName("un OBSERVER no entra al dashboard: 403")
+  void observerNoEntraAlDashboard() {
+    String token = tokenFor("OBSERVER");
+
+    assertErrorShape(as(token).get(DASHBOARD + "/resumen"), 403);
+    assertErrorShape(as(token).get(DASHBOARD + "/resultados"), 403);
+    assertErrorShape(as(token).get(DASHBOARD + "/progreso"), 403);
+    assertErrorShape(as(token).get(DASHBOARD + "/novedades"), 403);
+  }
+}

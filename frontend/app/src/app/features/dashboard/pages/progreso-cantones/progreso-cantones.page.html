@@ -1,0 +1,141 @@
+<div class="progreso-cantones-container" data-testid="progreso-cantones">
+  <header class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Progreso de Escrutinio</h1>
+      <p class="page-subtitle">Avance Territorial · Cantones y Parroquias</p>
+    </div>
+  </header>
+
+  <!-- Estado de carga -->
+  <app-loading-state
+    *ngIf="loading()"
+    message="Cargando datos de progreso..."
+    data-testid="loading-state"
+  ></app-loading-state>
+
+  <!-- Banner de error -->
+  <app-error-state
+    *ngIf="error()"
+    [message]="error()!"
+    (retry)="cargarProgreso()"
+    data-testid="error-state"
+  ></app-error-state>
+
+  <!-- Región principal -->
+  @if (!loading() && !error()) {
+
+  <!-- Tarjetas cantonales -->
+  <div class="cantones-grid" data-testid="cantones-section">
+    @for (canton of cantonesData(); track canton.cantonId; let idx = $index) {
+    <app-card
+      class="canton-card"
+      [class.active]="cantonSeleccionado() === idx"
+      (click)="cambiarCanton(idx)"
+      [attr.data-testid]="'canton-card-' + canton.cantonId"
+    >
+      <div class="canton-content">
+        <h2 class="canton-nombre">{{ canton.cantonNombre }}</h2>
+
+        <div
+          class="barra-progreso"
+          [class]="getColorClase(canton.porcentaje)"
+          role="progressbar"
+          [attr.aria-valuenow]="canton.porcentaje"
+          [attr.aria-valuemin]="0"
+          [attr.aria-valuemax]="100"
+          [attr.aria-label]="'Progreso ' + canton.cantonNombre + ': ' + canton.porcentaje + '%'"
+        >
+          <div
+            class="barra-fill"
+            [style.width.%]="canton.porcentaje"
+            data-testid="barra-fill"
+          ></div>
+        </div>
+
+        <div class="canton-stats">
+          <div class="stat">
+            <span class="stat-value">{{ canton.jrvsConActa }}</span>
+            <span class="stat-label">JRVs Escrutadas</span>
+          </div>
+          <span class="divider">/</span>
+          <div class="stat">
+            <span class="stat-value">{{ canton.totalJrvs }}</span>
+            <span class="stat-label">JRVs Total</span>
+          </div>
+          <div class="stat stat-porcentaje">
+            <span class="stat-value"
+              >{{ canton.porcentaje | number: '1.1-1' }}%</span
+            >
+          </div>
+        </div>
+      </div>
+    </app-card>
+    }
+  </div>
+
+  <!-- Desglose de parroquias del cantón seleccionado -->
+  @if (cantonActual; as canton) {
+  <app-card class="parroquias-card" data-testid="parroquias-section">
+    <div class="parroquias-header">
+      <h2 class="section-title">
+        Desglose de Parroquias — {{ canton.cantonNombre }}
+      </h2>
+    </div>
+
+    <app-empty-state
+      *ngIf="parroquiasOrdenadas.length === 0"
+      title="Sin parroquias para mostrar"
+      description="El cantón seleccionado no tiene parroquias registradas."
+      data-testid="parroquias-empty-state"
+    ></app-empty-state>
+
+    <div
+      class="parroquias-table-wrapper"
+      *ngIf="parroquiasOrdenadas.length > 0"
+    >
+      <table class="parroquias-table" role="grid">
+        <thead>
+          <tr>
+            <th scope="col" class="col-nombre">Parroquia</th>
+            <th scope="col" class="col-escrutadas">JRVs Escrutadas</th>
+            <th scope="col" class="col-total">JRVs Total</th>
+            <th scope="col" class="col-avance">Avance</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (parroquia of parroquiasOrdenadas; track parroquia.parroquiaId) {
+          <tr [attr.data-testid]="'parroquia-row-' + parroquia.parroquiaId">
+            <td class="col-nombre">{{ parroquia.parroquiaNombre }}</td>
+            <td class="col-escrutadas">{{ parroquia.jrvsEscrutadas }}</td>
+            <td class="col-total">{{ parroquia.jrvsTotal }}</td>
+            <td class="col-avance">
+              <div
+                class="avance-cell"
+                [class]="getColorClase(parroquia.avance)"
+              >
+                <div
+                  class="mini-barra"
+                  role="progressbar"
+                  [attr.aria-valuenow]="parroquia.avance"
+                  [attr.aria-valuemin]="0"
+                  [attr.aria-valuemax]="100"
+                  [attr.aria-label]="parroquia.parroquiaNombre + ': ' + parroquia.avance + '%'"
+                >
+                  <div
+                    class="mini-barra-fill"
+                    [style.width.%]="parroquia.avance"
+                  ></div>
+                </div>
+                <span class="avance-texto"
+                  >{{ parroquia.avance | number: '1.1-1' }}%</span
+                >
+              </div>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </app-card>
+  } }
+</div>

@@ -1,4 +1,4 @@
-# Control Electoral — Provincia de Santa Elena 🇪🇨
+# Control's Elector — Provincia de Santa Elena 🇪🇨
 
 Sistema de misión crítica para el control, registro y validación de actas electorales en tiempo real, diseñado para las **Elecciones Seccionales 2027-2031** de la Provincia de Santa Elena (Cantones: Santa Elena, La Libertad, Salinas).
 
@@ -25,7 +25,7 @@ Una sola aplicación con control de acceso basado en roles (RBAC). Las vistas se
 
 ```
               ┌──────────────────────────────────────────────────┐
-              │     App Angular + Ionic — control.twintailcs.xyz │
+              │     App Angular+PrimeNG — control.twintailcs.xyz │
               │        Route Guards RBAC por rol JWT             │
               │  /observer  /coordinator  /master  /dashboard    │
               └──────────────────────┬───────────────────────────┘
@@ -33,7 +33,7 @@ Una sola aplicación con control de acceso basado en roles (RBAC). Las vistas se
                                      ▼
               ┌──────────────────────────────────────────────────┐
               │     API Backend — api.twintailcs.xyz             │
-              │   Spring Boot · Spring Security · AuditLog       │
+              │   Quarkus · SmallRye JWT · Panache               │
               └──────────┬──────────────────────────┬────────────┘
                          │                          │
           (Persistencia) ▼                          ▼ (Evidencias)
@@ -107,16 +107,19 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 
 ### Frontend
 
-- **Angular 17+** + **Ionic Framework** (TypeScript)
+- **Angular 21** + **PrimeNG 21** + **Tailwind CSS 4** (TypeScript)
 - RBAC por Route Guards según rol del JWT
 - Compresión nativa WebP en cliente (Canvas API)
 - Estrategia Offline-First: IndexedDB + Private Storage
 
 ### Backend
 
-- **Java 21** / **Spring Boot 4** (Web, Security, Data JPA)
-- **GraalVM Native Image** — startup ~50ms, RAM ~64MB
-- RBAC con Spring Security + JWT stateless
+- **Java 25** / **Quarkus 3.40** (RESTEasy Reactive, Hibernate ORM, SmallRye)
+- **GraalVM Native Image** — el build nativo cierra y es el artefacto que publica
+  el CD (`Dockerfile.native`). El pipeline lo construye y lo verifica en cada PR
+  que toca el módulo Quarkus (`.github/workflows/ci-native.yml`).
+- RBAC por permisos atómicos sobre JWT stateless: el claim `perms` se proyecta a
+  authorities y cada método exige su permiso con una llamada explícita
 - Locking pesimista `SELECT FOR UPDATE` por `jrv_id + cargo_id`
 - AuditLogService con registro completo de operaciones
 
@@ -140,10 +143,10 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 
 | Subdominio | Servicio | Proveedor |
 | ------------ | --------- | ----------- |
-| `api.twintailcs.xyz` | API REST Spring Boot | Railway Pro |
-| `control.twintailcs.xyz` | App Angular+Ionic (todos los roles) | Vercel |
+| `api.twintailcs.xyz` | API REST Quarkus | Railway Pro |
+| `control.twintailcs.xyz` | App Angular+PrimeNG (todos los roles) | Vercel |
 
-CI/CD automático desde rama `main` de GitHub hacia Railway.
+CI/CD automático desde la rama `develop` de GitHub hacia Railway.
 
 ---
 

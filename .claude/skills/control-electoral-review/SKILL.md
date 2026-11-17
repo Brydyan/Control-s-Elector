@@ -1,8 +1,8 @@
 ---
 name: control-electoral-review
 description: >
-  Revisión de código arquitectónica y de seguridad para Control Electoral (backend Java 21/Spring Boot
-  en backend/electoral-api, package ec.twintailcs.electoral; frontend Angular 17+/Ionic en frontend/app/src/app).
+  Revisión de código arquitectónica y de seguridad para Control Electoral (backend Java 21/Quarkus
+  en backend/electoral-api-quarkus, package ec.twintailcs.electoral; frontend Angular 17+/Ionic en frontend/app/src/app).
   Verifica RBAC (MASTER/COORDINATOR/ADMIN/OBSERVER), locking pesimista jrv_id+cargo_id, invariante de suma
   de votos, máquina de estados de acta, JWT en memoria, AuditLog, y pipeline WebP.
   Trigger: "revisa este código", "review this PR", "check RBAC", "audita el backend/frontend", revisión de
@@ -15,7 +15,7 @@ metadata:
 
 ## Cuándo usar
 
-- Al revisar un PR o diff que toca `backend/electoral-api/**` o `frontend/app/src/app/**`.
+- Al revisar un PR o diff que toca `backend/electoral-api-quarkus/**` o `frontend/app/src/app/**`.
 - Al pedir auditoría de seguridad, RBAC, o cumplimiento de las reglas de `CLAUDE.md`.
 - NO usar para nitpicks de docstrings o conteo de tests — eso no bloquea.
 
@@ -43,14 +43,14 @@ que no prueban nada (`assertTrue(true)` equivalentes) o que faltan casos crític
 | MASTER | Todo. Único que revoca sesiones y anula actas APROBADA. |
 | COORDINATOR | Disputas/correcciones/aprobaciones en todas las JRVs. |
 | ADMIN | Solo lectura — dashboard. Nunca escribe. |
-| OBSERVER | Registra/corrige actas solo en sus JRVs asignadas (`observer_jrv_asignacion`). |
+| OBSERVER | Registra actas con libre selección de JRV. Corrige actas registradas por él (registrada_por_id). |
 
 Cualquier endpoint mutante sin guard de rol exacto a esta tabla es hallazgo crítico.
 `ADMIN` en cualquier guard de escritura es hallazgo crítico.
 Guards de Angular son solo UX — si la autorización real no está en el backend (`@PreAuthorize` o
 equivalente), es hallazgo crítico, no da igual que el frontend "lo oculte".
 
-## 1. Entidades JPA — `backend/electoral-api/.../domain/**`
+## 1. Entidades JPA — `backend/electoral-api-quarkus/.../domain/**`
 
 - **Modelo anémico**: entidades con solo getters/setters y sin comportamiento cuando la lógica de
   negocio (ej. validar suma de votos) claramente pertenece a la entidad o value object.
@@ -111,8 +111,10 @@ equivalente), es hallazgo crítico, no da igual que el frontend "lo oculte".
   (`@NotNull`, `@Min`, etc.). Sin esto, dato inválido llega a la capa de negocio o BD.
 - **Endpoint público sin Swagger/OpenAPI** (`@Operation`, `@ApiResponse`) — falta documentación de
   contrato.
-- **Upload de imagen de acta sin validar MIME type / tamaño / formato WebP** — usar `Multer`-equivalente
-  Spring (`MultipartFile` + validación manual) con `fileFilter`+`limits` equivalente.
+- **Upload de imagen de acta sin validar MIME type / tamaño / formato WebP** — el equivalente en
+  Quarkus es `@RestForm("file") FileUpload` (`org.jboss.resteasy.reactive.multipart.FileUpload`) con
+  la validación en `ArchivoEvidencia`; los límites de tamaño van en
+  `quarkus.http.limits.*`, no en el controlador.
 
 ## 6. DTOs
 
@@ -166,7 +168,7 @@ equivalente), es hallazgo crítico, no da igual que el frontend "lo oculte".
 - Falta cobertura de casos críticos explícitos (T-BE-15):
   - Locking pesimista con dos requests simultáneos a la misma JRV+cargo.
   - Validación de suma de votos incorrecta → debe fallar 400.
-  - RLS/scoping — OBSERVER no debe ver actas de JRV no asignada.
+  - Aislamiento de actas — OBSERVER solo accede a actas propias registradas por él (registrada_por_id).
   - Flujo completo de máquina de estados: BORRADOR→ENVIADA→EN_DISPUTA→CORREGIDA→APROBADA.
 - Tests de repositorio/integración que mockean la BD en vez de usar Testcontainers con Postgres real
   para código sensible a locking/concurrencia — mock pasa, prod con carrera real falla.

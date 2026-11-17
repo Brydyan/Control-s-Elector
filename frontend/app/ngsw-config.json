@@ -1,0 +1,60 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "navigationRequestStrategy": "freshness",
+  "assetGroups": [
+    {
+      "name": "app-shell",
+      "installMode": "prefetch",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/index.html",
+          "/manifest.webmanifest",
+          "/*.css",
+          "/*.js"
+        ]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "prefetch",
+      "resources": {
+        "files": [
+          "/assets/**",
+          "/*.(svg|png|jpg|jpeg|webp|ico|woff2)"
+        ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "observer-api",
+      "urls": ["/api/v1/observer/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxAge": "1h",
+        "maxSize": 100
+      }
+    },
+    {
+      "name": "coordinator-api",
+      "urls": ["/api/v1/coordinator/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxAge": "30m",
+        "maxSize": 50
+      }
+    },
+    {
+      "name": "configuracion-api",
+      "urls": ["/api/v1/configuracion/**"],
+      "cacheConfig": {
+        "strategy": "performance",
+        "maxAge": "24h",
+        "maxSize": 100
+      }
+    }
+  ]
+}
