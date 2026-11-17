@@ -3,7 +3,10 @@ package ec.twintailcs.electoral.contract;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.restassured.response.Response;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -90,6 +93,7 @@ class GeografiaParroquiaJrvContractIT extends ContractTestSupport {
     assertThat(creada.statusCode()).as("body: %s", creada.asString()).isEqualTo(201);
 
     long id = creada.jsonPath().getLong("id");
+    JRVS_CREADOS.add(id);
     assertThat(creada.jsonPath().getString("numero")).isEqualTo(numero);
     assertThat(creada.jsonPath().getString("recinto")).isEqualTo("Recinto de contrato");
     assertThat(creada.jsonPath().getInt("totalElectores")).isEqualTo(250);
@@ -128,6 +132,7 @@ class GeografiaParroquiaJrvContractIT extends ContractTestSupport {
                         "parroquiaId", parroquia)))
             .post(JRVS);
     assertThat(jrv.statusCode()).as("body: %s", jrv.asString()).isEqualTo(201);
+    JRVS_CREADOS.add(jrv.jsonPath().getLong("id"));
 
     Response r = as(masterToken()).delete(PARROQUIAS + "/" + parroquia);
 
@@ -254,6 +259,30 @@ class GeografiaParroquiaJrvContractIT extends ContractTestSupport {
     assertErrorShape(anon().delete(JRVS + "/1"), 401);
   }
 
+  /**
+   * Parroquias y JRVs que creo los tests de esta clase.
+   *
+   * <p>Se borran al terminar: la geografía es data de produccion en la base de desarrollo y
+   * dejar parroquias sueltas ensucia el arbol que ven el frontend y los demas tests.
+   */
+  private static final List<Long> PARROQUIAS_CREADAS = new ArrayList<>();
+
+  /** JRVs creados por esta clase, para poder borrar la parroquia que los contiene. */
+  private static final List<Long> JRVS_CREADOS = new ArrayList<>();
+
+  /** Borra lo que los tests crearon. */
+  @AfterEach
+  void limpiarGeografiaCreada() {
+    for (Long jrv : JRVS_CREADOS) {
+      as(masterToken()).delete(JRVS + "/" + jrv);
+    }
+    JRVS_CREADOS.clear();
+    for (Long parroquia : PARROQUIAS_CREADAS) {
+      as(masterToken()).delete(PARROQUIAS + "/" + parroquia);
+    }
+    PARROQUIAS_CREADAS.clear();
+  }
+
   /** Crea una parroquia propia del test y devuelve su id. */
   private long crearParroquia() {
     Response r =
@@ -262,7 +291,9 @@ class GeografiaParroquiaJrvContractIT extends ContractTestSupport {
                 json(Map.of("nombre", unique("Parroquia"), "esUrbana", true, "cantonId", cantonId())))
             .post(PARROQUIAS);
     assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(201);
-    return r.jsonPath().getLong("id");
+    long id = r.jsonPath().getLong("id");
+    PARROQUIAS_CREADAS.add(id);
+    return id;
   }
 
   /** Id interno de una JRV del seed, buscada por su numero en el arbol geografico. */

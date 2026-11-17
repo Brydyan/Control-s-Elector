@@ -26,6 +26,7 @@ class GeografiaContractIT extends ContractTestSupport {
 
   @Test
   @DisplayName("GET /master/geografia devuelve el arbol con los cuatro niveles")
+  @SuppressWarnings("unchecked")
   void getGeografiaDevuelveElArbol() {
     Response r = as(masterToken()).get(GEOGRAFIA);
 
@@ -41,19 +42,40 @@ class GeografiaContractIT extends ContractTestSupport {
     List<Map<String, Object>> cantones = (List<Map<String, Object>>) provincia.get("cantones");
     assertThat(cantones).as("la provincia tiene que traer cantones: %s", provincia).isNotEmpty();
 
-    Map<String, Object> canton = cantones.get(0);
-    assertThat(canton).containsKeys("id", "nombre", "codigo", "parroquias");
-    assertThat((String) canton.get("nombre")).isNotBlank();
+    // Un canton sin parroquias es legal (se acaba de crear y todavia no tiene ninguna), asi que
+    // el test NO puede asumir que el primero de la lista las tiene: busca el primero que las
+    // tenga y, en todos los casos, exige que la CLAVE exista.
+    Map<String, Object> canton = null;
+    for (Map<String, Object> candidato : cantones) {
+      assertThat(candidato).containsKeys("id", "nombre", "codigo", "parroquias");
+      assertThat((String) candidato.get("nombre")).isNotBlank();
+      List<Map<String, Object>> parroquiasCandidato =
+          (List<Map<String, Object>>) candidato.get("parroquias");
+      assertThat(parroquiasCandidato).as("parroquias de %s", candidato).isNotNull();
+      if (parroquiasCandidato != null && !parroquiasCandidato.isEmpty()) {
+        canton = candidato;
+        break;
+      }
+    }
+    assertThat(canton).as("algun canton de la provincia tiene parroquias: %s", provincia).isNotNull();
 
     List<Map<String, Object>> parroquias = (List<Map<String, Object>>) canton.get("parroquias");
-    assertThat(parroquias).as("el canton tiene que traer parroquias: %s", canton).isNotEmpty();
 
-    Map<String, Object> parroquia = parroquias.get(0);
-    assertThat(parroquia).containsKeys("id", "nombre", "esUrbana", "jrvs");
-    assertThat(parroquia.get("esUrbana")).isInstanceOf(Boolean.class);
+    // Igual que arriba: una parroquia sin JRVs es valida; el test busca la primera que tenga.
+    Map<String, Object> parroquia = null;
+    for (Map<String, Object> candidata : parroquias) {
+      assertThat(candidata).containsKeys("id", "nombre", "esUrbana", "jrvs");
+      assertThat(candidata.get("esUrbana")).isInstanceOf(Boolean.class);
+      List<Map<String, Object>> jrvsCandidata = (List<Map<String, Object>>) candidata.get("jrvs");
+      assertThat(jrvsCandidata).as("jrvs de %s", candidata).isNotNull();
+      if (jrvsCandidata != null && !jrvsCandidata.isEmpty()) {
+        parroquia = candidata;
+        break;
+      }
+    }
+    assertThat(parroquia).as("alguna parroquia tiene JRVs: %s", parroquias).isNotNull();
 
     List<Map<String, Object>> jrvs = (List<Map<String, Object>>) parroquia.get("jrvs");
-    assertThat(jrvs).as("la parroquia tiene que traer JRVs: %s", parroquia).isNotEmpty();
 
     Map<String, Object> jrv = jrvs.get(0);
     assertThat(jrv).containsKeys("id", "numero", "recinto", "totalElectores");

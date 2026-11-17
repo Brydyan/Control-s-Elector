@@ -98,11 +98,32 @@ class MenusContractIT extends ContractTestSupport {
   }
 
   @Test
+  @DisplayName("solo MASTER ve el menu de Configuración Geográfica")
+  void soloMasterVeElMenuDeGeografia() {
+    // El menú cuelga del permiso `configuracion:write`, que solo MASTER tiene: ADMIN puede
+    // leer la geografía pero no administrarla.
+    assertThat(codigosDe(menusDe(masterToken()))).contains("admin.geografia");
+
+    for (String rol : new String[] {"ADMIN", "COORDINATOR", "OBSERVER"}) {
+      assertThat(codigosDe(menusDe(tokenFor(rol))))
+          .as("el menu de geografia no puede estar para %s", rol)
+          .doesNotContain("admin.geografia");
+    }
+  }
+
+  @Test
   @DisplayName("GET /menus/me sin token devuelve 401")
   void menusMeSinTokenDevuelve401() {
     Response r = anon().get(MENUS + "/me");
 
     assertErrorShape(r, 401);
+  }
+
+  /** Árbol de menús del usuario con el token dado. */
+  private List<Map<String, Object>> menusDe(String token) {
+    Response r = as(token).get(MENUS + "/me");
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+    return r.jsonPath().<Map<String, Object>>getList("menus");
   }
 
   /** Códigos de todos los nodos del árbol, en profundidad. */
