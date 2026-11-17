@@ -163,6 +163,9 @@ services:
       # El rol con el que conecta la API tiene que existir antes de que arranque.
       db-app-role:
         condition: service_completed_successfully
+      # Y el schema tiene que estar migrado: la API arranca sin migrar.
+      db-migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/actuator/health"]
       interval: 10s
@@ -213,6 +216,48 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Migración — aplica el changelog y termina
+  # ---------------------------------------------------------------------------
+  # Corre con las credenciales del DUEÑO de la base (el único que puede crear el
+  # schema), aplica las migraciones y sale con código 0. El contenedor de la API
+  # no tiene esas credenciales: corre con el rol de aplicación, con el que las
+  # políticas de RLS sí se aplican.
+  db-migrate:
+    build:
+      context: ./backend/electoral-api-quarkus
+      dockerfile: Dockerfile.native
+    container_name: electoral-migrate-${APP_ENV:-dev}
+    profiles: ["dev"]
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-electoral_db}
+      DB_USER: ${DB_USER:-electoral_user}
+      DB_PASSWORD: ${DB_PASSWORD:-electoral_pass}
+      QUARKUS_LIQUIDASE_MIGRATE_AT_START: "true"
+      # Migra y sale: el proceso termina en cuanto termina la migración.
+      APP_MIGRATE_ONLY: "true"
+      # Hibernate en `none`: en Quarkus Hibernate valida ANTES que Liquibase cree
+      # el schema, así que contra una base nueva `validate` revienta.
+      QUARKUS_HIBERNATE_GENERATION: "none"
+      QUARKUS_LIQUIDASE_CONTEXTS: ${QUARKUS_LIQUIDASE_CONTEXTS:-seed,bootstrap-admin}
+      SERVER_PORT: 80
+      APP_JWT_SECRET: ${APP_JWT_SECRET:-dev-only-change-in-prod-32chars-min-jwt-hmac-key}
+      APP_JWT_REFRESH_PEPPER: ${APP_JWT_REFRESH_PEPPER:-dev-only-control-elector-refresh-pepper}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
+      AWS_S3_ENDPOINT: http://rustfs:${S3_PORT:-9000}
+      AWS_S3_REGION: us-east-1
+      AWS_S3_BUCKET: electoral-evidences
+      AWS_S3_PATH_STYLE: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-app-role:
+        condition: service_completed_successfully
     restart: "no"
 
   # ---------------------------------------------------------------------------
