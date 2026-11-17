@@ -4,6 +4,7 @@ import { Subject, takeUntil } from 'rxjs';
 
 import {
   CardComponent,
+  EmptyStateComponent,
   ErrorStateComponent,
   LoadingStateComponent,
 } from '../../../../shared/ui';
@@ -36,6 +37,7 @@ import {
     CardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
+    EmptyStateComponent,
   ],
   templateUrl: './progreso-cantones.page.html',
   styleUrls: ['./progreso-cantones.page.scss'],
