@@ -72,3 +72,7 @@ databaseChangeLog:
   # K6 load test users: 14 OBSERVERs, 5 COORDINATORs, 1 ADMIN
   # Contexto seed: solo en dev local, no en tests o producción
   - include: { file: database/changelog/034-k6-load-test-users.sql }
+  # Configuración geográfica jerárquica (SDD 2026-11-16-config-geografica): permiso
+  # `configuracion:read` para MASTER y ADMIN, y el submenú de MASTER para la pantalla
+  # de geografía. Solo crea permisos y menús: no toca la estructura de las tablas.
+  - include: { file: database/changelog/035-config-geografica.sql }
