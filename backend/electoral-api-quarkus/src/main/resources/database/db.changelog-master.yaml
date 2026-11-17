@@ -76,3 +76,9 @@ databaseChangeLog:
   # `configuracion:read` para MASTER y ADMIN, y el submenú de MASTER para la pantalla
   # de geografía. Solo crea permisos y menús: no toca la estructura de las tablas.
   - include: { file: database/changelog/035-config-geografica.sql }
+  # Rol de aplicación (ODD rls-app-role): permisos del rol `electoral_app` y
+  # funciones de RLS como SECURITY DEFINER. Va al final porque concede
+  # permisos sobre TODAS las tablas: si corre antes que un changeset que crea
+  # tablas, esas tablas nuevas no quedan cubiertas (por eso el mismo changeset
+  # instala además ALTER DEFAULT PRIVILEGES).
+  - include: { file: database/changelog/036-app-role-grants.sql }
