@@ -29,11 +29,21 @@ class GeografiaServiceIT {
 
     assertThat(arbol.provincias()).isNotEmpty();
 
-    // El seed deja 1 provincia (Santa Elena, codigo 24) con 2 cantones.
-    GeografiaTreeDto.ProvinciaNode provincia = arbol.provincias().get(0);
-    assertThat(provincia.nombre()).isEqualTo("Santa Elena");
+    // El seed deja 1 provincia (Santa Elena, codigo 24) con 2 cantones. Se busca por nombre y
+    // no por posicion: otros tests del modulo comparten la base y pueden dejar provincias de
+    // su cuenta, y el orden del arbol es alfabetico.
+    GeografiaTreeDto.ProvinciaNode provincia =
+        arbol.provincias().stream()
+            .filter(p -> "Santa Elena".equals(p.nombre()))
+            .findFirst()
+            .orElseThrow(
+                () -> new AssertionError("no hay provincia Santa Elena: " + arbol.provincias()));
     assertThat(provincia.codigo()).isEqualTo("24");
-    assertThat(provincia.cantones()).hasSize(2);
+    // El seed deja 2 cantones en esa provincia; el test no puede exigir el numero exacto
+    // porque otros tests del modulo comparten la base y pueden dejar cantones de su cuenta.
+    assertThat(provincia.cantones())
+        .extracting(GeografiaTreeDto.CantonNode::nombre)
+        .contains("Santa Elena", "La Libertad");
 
     // El orden es alfabetico por nombre: "La Libertad" va antes que "Santa Elena".
     // El test busca por nombre y no por posicion, para que el orden no sea el sujeto del test.
@@ -44,7 +54,9 @@ class GeografiaServiceIT {
             .orElseThrow(
                 () -> new AssertionError("no hay canton Santa Elena: " + provincia.cantones()));
     assertThat(canton.codigo()).isEqualTo("2401");
-    assertThat(canton.parroquias()).hasSize(2);
+    assertThat(canton.parroquias())
+        .extracting(GeografiaTreeDto.ParroquiaNode::nombre)
+        .contains("Santa Elena", "Ballenita");
 
     // Santa Elena (urbana) con 2 JRVs; Ballenita (rural) con 1.
     GeografiaTreeDto.ParroquiaNode parroquia =
@@ -54,7 +66,7 @@ class GeografiaServiceIT {
             .orElseThrow(
                 () -> new AssertionError("no hay parroquia Santa Elena: " + canton.parroquias()));
     assertThat(parroquia.esUrbana()).isTrue();
-    assertThat(parroquia.jrvs()).hasSize(2);
+    assertThat(parroquia.jrvs()).hasSizeGreaterThanOrEqualTo(2);
 
     GeografiaTreeDto.JrvNode jrv = parroquia.jrvs().get(0);
     assertThat(jrv.numero()).isNotBlank();

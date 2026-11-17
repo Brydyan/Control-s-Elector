@@ -32,9 +32,21 @@ class GeografiaCantonIT {
   @Inject GeografiaService service;
   @Inject EntityManager em;
 
+  /**
+   * Provincia propia de cada test.
+   *
+   * <p>Los tests de este modulo comparten el contenedor de Postgres, asi que usar la provincia del
+   * seed contaminaria el arbol que afirma el otro test (el numero de cantones). Cada test crea la
+   * suya y trabaja sobre ella.
+   */
   private Long provinciaId() {
-    Provincia provincia = Provincia.find("nombre", "Santa Elena").firstResult();
-    return provincia == null ? null : provincia.getId();
+    return QuarkusTransaction.requiringNew()
+        .call(
+            () -> {
+              Provincia provincia = new Provincia("Provincia de prueba " + UUID.randomUUID(), null);
+              provincia.persist();
+              return provincia.getId();
+            });
   }
 
   private Long masterId() {
