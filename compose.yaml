@@ -95,9 +95,17 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-electoral_db}
-      DB_USER: ${DB_USER:-electoral_user}
-      DB_PASSWORD: ${DB_PASSWORD:-electoral_pass}
-      # Server
+      # El backend conecta con el ROL DE APLICACIÓN, no con el dueño de la base.
+      # La diferencia no es de estilo: Postgres ignora las políticas de RLS para
+      # un superusuario, así que con el dueño la capa RLS del proyecto no se
+      # ejecuta y ninguna prueba puede afirmar que filtra.
+      DB_USER: ${DB_APP_USER:-electoral_app}
+      DB_PASSWORD: ${DB_APP_PASSWORD:-electoral_app_pass}
+      # La migración corre con el DUEÑO (el único que puede crear el schema).
+      # Lo hace un servicio aparte (db-migrate) con estas credenciales; el
+      # contenedor de la API no las tiene.
+      QUARKUS_LIQUIBASE_USERNAME: ${DB_USER:-electoral_user}
+      QUARKUS_LIQUIBASE_PASSWORD: ${DB_PASSWORD:-electoral_pass}
 # The API listens on 80 inside the container so that the frontend's
       # nginx can reach it as `electoral-api:80`, the same shape the k8s
       # Service exposes (port 80 -> targetPort 8081).
@@ -121,10 +129,12 @@ services:
       # cree el schema, la segunda con `validate` para afirmar que el schema
       # coincide con las entidades.
       QUARKUS_HIBERNATE_GENERATION: ${QUARKUS_HIBERNATE_GENERATION:-none}
-      # Liquibase aplica las migraciones al arrancar. El backend Spring lo hacia
-      # siempre (`spring.liquibase.enabled=true`); cuando era OFF era porque el
-      # backend Spring migraba por su cuenta. Ahora es el unico dueño del schema.
-      QUARKUS_LIQUIDASE_MIGRATE_AT_START: ${QUARKUS_LIQUIDASE_MIGRATE_AT_START:-true}
+      # Liquibase NO aplica las migraciones al arrancar en este servicio: lo hace
+      # el servicio `db-migrate`, que corre con el dueño de la base y termina.
+      # El backend Spring lo hacia siempre (`spring.liquibase.enabled=true`); el
+      # backend Quarkus es el unico dueño del schema, pero la separacion de
+      # credenciales es la que hace que RLS sea real para la aplicacion.
+      QUARKUS_LIQUIDASE_MIGRATE_AT_START: "false"
       # S3 / RustFS
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
@@ -150,6 +160,9 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      # El rol con el que conecta la API tiene que existir antes de que arranque.
+      db-app-role:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/actuator/health"]
       interval: 10s
@@ -166,6 +179,41 @@ services:
       resources:
         limits:
           memory: 1G
+
+  # ---------------------------------------------------------------------------
+  # Rol de aplicación — el usuario con el que conecta el backend
+  # ---------------------------------------------------------------------------
+  # El rol que crea la imagen de Postgres (POSTGRES_USER) es SUPERUSUARIO, y
+  # Postgres no le aplica RLS a un superusuario. Por eso el backend conecta con
+  # otro rol: `electoral_app`, sin privilegios de superusuario y sin BYPASSRLS.
+  #
+  # Este servicio crea ese rol (idempotente) con la contraseña que llega por
+  # variable de entorno: la contraseña NO está en el repositorio.
+  db-app-role:
+    image: postgres:16
+    container_name: electoral-dbrole-${APP_ENV:-dev}
+    profiles: ["dev"]
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${DB_NAME:-electoral_db}
+      PGUSER: ${DB_USER:-electoral_user}
+      PGPASSWORD: ${DB_PASSWORD:-electoral_pass}
+      APP_ROLE: ${DB_APP_USER:-electoral_app}
+      APP_PASSWORD: ${DB_APP_PASSWORD:-electoral_app_pass}
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        psql -v ON_ERROR_STOP=1 \
+             -v app_role="$${APP_ROLE}" \
+             -v app_password="$${APP_PASSWORD}" \
+             -f /scripts/create-app-role.sql
+    volumes:
+      - ./scripts/db:/scripts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
 
   # ---------------------------------------------------------------------------
   # RustFS — Emulación S3 (storage de evidencias)
