@@ -3,20 +3,25 @@ package ec.twintailcs.electoral.geografia.application;
 import ec.twintailcs.electoral.geografia.application.usecase.ActualizarCantonUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.ActualizarJrvUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.ActualizarParroquiaUseCase;
+import ec.twintailcs.electoral.geografia.application.usecase.ActualizarProvinciaUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.CrearCantonUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.CrearJrvUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.CrearParroquiaUseCase;
+import ec.twintailcs.electoral.geografia.application.usecase.CrearProvinciaUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.EliminarCantonUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.EliminarJrvUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.EliminarParroquiaUseCase;
+import ec.twintailcs.electoral.geografia.application.usecase.EliminarProvinciaUseCase;
 import ec.twintailcs.electoral.geografia.application.usecase.ListarGeografiaUseCase;
 import ec.twintailcs.electoral.geografia.domain.Canton;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
+import ec.twintailcs.electoral.geografia.domain.Provincia;
 import ec.twintailcs.electoral.geografia.web.dto.CantonRequest;
 import ec.twintailcs.electoral.geografia.web.dto.GeografiaTreeDto;
 import ec.twintailcs.electoral.geografia.web.dto.JrvRequest;
 import ec.twintailcs.electoral.geografia.web.dto.ParroquiaRequest;
+import ec.twintailcs.electoral.geografia.web.dto.ProvinciaRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -30,6 +35,9 @@ import jakarta.inject.Inject;
 public class GeografiaService {
 
   @Inject ListarGeografiaUseCase listarGeografia;
+  @Inject CrearProvinciaUseCase crearProvincia;
+  @Inject ActualizarProvinciaUseCase actualizarProvincia;
+  @Inject EliminarProvinciaUseCase eliminarProvincia;
   @Inject CrearCantonUseCase crearCanton;
   @Inject ActualizarCantonUseCase actualizarCanton;
   @Inject EliminarCantonUseCase eliminarCanton;
@@ -43,6 +51,22 @@ public class GeografiaService {
   /** Arbol geografico completo. */
   public GeografiaTreeDto listarArbol() {
     return listarGeografia.execute();
+  }
+
+  /** Alta de provincia. */
+  public Provincia crearProvincia(ProvinciaRequest dto, Long masterId, String ipAddress) {
+    return crearProvincia.execute(dto, masterId, ipAddress);
+  }
+
+  /** Edicion de provincia. */
+  public Provincia actualizarProvincia(
+      Long id, ProvinciaRequest dto, Long masterId, String ipAddress) {
+    return actualizarProvincia.execute(id, dto, masterId, ipAddress);
+  }
+
+  /** Baja de provincia. */
+  public void eliminarProvincia(Long id, Long masterId, String ipAddress) {
+    eliminarProvincia.execute(id, masterId, ipAddress);
   }
 
   /** Alta de canton. */
