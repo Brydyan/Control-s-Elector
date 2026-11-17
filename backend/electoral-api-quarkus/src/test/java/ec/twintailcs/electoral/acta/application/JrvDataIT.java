@@ -127,9 +127,10 @@ class JrvDataIT {
   @DisplayName("un observer registra un acta sobre una JRV del seed, sin violaciones de FK")
   void unObserverRegistraUnActaSobreUnaJrvDelSeed() {
     Long observer = observerId();
-    // El seed ya tiene actas activas para (JRV-SE-001, Alcalde/sa) y (JRV-SE-002,
-    // Alcalde/sa): el par libre es el de Complutense Urbano.
-    Long jrv = jrvId("JRV-SE-001");
+    // Se usa una JRV de la geografia importada (JRV-GY-001) y no una del seed original:
+    // la base de pruebas la comparten varios IT, y dejar un acta en JRV-SE-001 le cambia
+    // el conteo a otro test (el que afirma cuantas actas bloquean el borrado de esa JRV).
+    Long jrv = jrvId("JRV-GY-001");
     Long cargo = cargoId("Concejal Urbano");
     List<Map<String, Object>> candidatos = candidatosDe(cargo);
     assertThat(candidatos).as("el seed tiene candidatos para el cargo").isNotEmpty();
@@ -166,7 +167,7 @@ class JrvDataIT {
   @DisplayName("el dashboard refleja el acta por JRV, dentro de su canton y parroquia")
   void elDashboardReflejaElActaPorJrv() {
     Long observer = observerId();
-    Long jrv = jrvId("JRV-SE-002");
+    Long jrv = jrvId("JRV-GY-002");
     Long cargo = cargoId("Concejal Urbano");
     List<Map<String, Object>> candidatos = candidatosDe(cargo);
     assertThat(candidatos).as("el seed tiene candidatos para el cargo").isNotEmpty();
@@ -192,15 +193,15 @@ class JrvDataIT {
       Arc.container().requestContext().terminate();
     }
 
-    // La JRV pertenece a la parroquia Santa Elena, del cantón Santa Elena: el desglose tiene
-    // que contarla como JRV con acta.
+    // La JRV pertenece a la parroquia Carapungo, del cantón Guayaquil: el desglose tiene que
+    // contarla como JRV con acta.
     ProgresoCantonDto canton =
         progreso.stream()
-            .filter(c -> "Santa Elena".equals(c.cantonNombre()))
+            .filter(c -> "Guayaquil".equals(c.cantonNombre()))
             .findFirst()
-            .orElseThrow(() -> new AssertionError("el canton Santa Elena no aparece: " + progreso));
+            .orElseThrow(() -> new AssertionError("el canton Guayaquil no aparece: " + progreso));
 
-    assertThat(canton.totalJrvs()).as("JRVs totales del canton").isGreaterThanOrEqualTo(2);
+    assertThat(canton.totalJrvs()).as("JRVs totales del canton").isGreaterThanOrEqualTo(3);
     assertThat(canton.jrvsConActa()).as("JRVs con acta").isGreaterThanOrEqualTo(1);
     assertThat(canton.porcentaje()).as("porcentaje de avance").isBetween(0.0, 100.0);
 
