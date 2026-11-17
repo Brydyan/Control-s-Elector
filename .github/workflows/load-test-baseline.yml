@@ -89,19 +89,50 @@ jobs:
       - name: Build the backend image
         run: docker build -t electoral-api:load-test backend/electoral-api-quarkus
 
+      # El rol con el que conecta la APLICACION. La prueba de carga tiene que
+      # medir el backend como corre en produccion: con el superusuario, Postgres
+      # ignora las politicas de RLS y el camino que se mide no es el de verdad.
+      - name: Create the application role
+        run: |
+          docker run --rm --network host -i \
+            -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db \
+                 -v ON_ERROR_STOP=1 \
+                 -v app_role=electoral_app \
+                 -v app_password=electoral_app_pass \
+                 -f - < scripts/db/create-app-role.sql
+
+      # La migracion va en un contenedor aparte, con el dueno de la base.
+      - name: Migrate the schema
+        run: |
+          docker run --rm --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=electoral_db \
+            -e DB_USER=electoral_user \
+            -e DB_PASSWORD=electoral_pass \
+            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true \
+            -e APP_MIGRATE_ONLY=true \
+            -e QUARKUS_HIBERNATE_GENERATION=none \
+            -e QUARKUS_LIQUIDASE_CONTEXTS=seed \
+            electoral-api:load-test
+
       - name: Start the backend
         run: |
           docker run -d --name electoral-api --network host \
             -e DB_HOST=localhost \
             -e DB_PORT=5432 \
             -e DB_NAME=electoral_db \
-            -e DB_USER=electoral_user \
-            -e DB_PASSWORD=electoral_pass \
+            -e DB_USER=electoral_app \
+            -e DB_PASSWORD=electoral_app_pass \
+            -e QUARKUS_LIQUIBASE_USERNAME=electoral_user \
+            -e QUARKUS_LIQUIBASE_PASSWORD=electoral_pass \
             -e SERVER_PORT=8080 \
             -e APP_JWT_SECRET=ci-only-load-test-secret-at-least-32-chars \
             -e APP_JWT_REFRESH_PEPPER=ci-only-load-test-pepper \
             -e QUARKUS_LIQUIDASE_CONTEXTS=seed \
-            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true \
+            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false \
             -e QUARKUS_HIBERNATE_GENERATION=none \
             -e AWS_ACCESS_KEY_ID=rustfsadmin \
             -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
