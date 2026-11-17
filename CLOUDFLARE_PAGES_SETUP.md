@@ -1,4 +1,4 @@
-# Cloudflare Pages — Configuración de Variables de Entorno
+# Cloudflare Pages — Configuración de Variab les de Entorno
 
 ## Cómo funciona
 
@@ -67,7 +67,7 @@ cd frontend/app
 npm run build
 ng serve
 ```
-Automaticamente usa `/api/v1` del proxy local.
+Automáticamente usa `/api/v1` del proxy local.
 
 ### Prod (URL absoluta)
 ```bash
@@ -84,7 +84,7 @@ ng serve --configuration production --serve-path=/
 - `src/assets/config.json`: Nueva. Contiene `apiUrl` y `sentryDsn`
 - `src/app/core/config/config.service.ts`: Carga config.json en runtime
 - `src/main.ts`: APP_INITIALIZER carga ConfigService antes de bootstrap
-- `src/app/features/master/data/configuracion.api.ts`: Usa APP_CONFIG
+- `src/app/features/master/data/configuracion.api.ts`: Usa ConfigService
 - **Fallback**: Si config.json falla, usa URL default
 - **Sin rebuild**: Cambiar la URL es editar un archivo JSON, no recompilar
 
