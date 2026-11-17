@@ -26,24 +26,45 @@ export class ConfigService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Carga configuración desde assets/config.json
-   * Se invoca en APP_INITIALIZER antes de que Angular inicie
+   * Carga configuración con prioridad:
+   * 1. Cloudflare Pages ENV var (NG_APP_API_URL, NG_APP_SENTRY_DSN)
+   * 2. assets/config.json (dynamic, sin rebuild)
+   * 3. Hardcoded fallback
    */
   async load(): Promise<void> {
     try {
-      this.config = await firstValueFrom(
+      const configJson = await firstValueFrom(
         this.http.get<AppConfig>('/assets/config.json'),
       );
+
+      // Priority: ENV vars > config.json > hardcoded
+      this.config = {
+        apiUrl:
+          (import.meta.env['NG_APP_API_URL'] as string | undefined) ||
+          configJson.apiUrl ||
+          'https://api.brydyan.me/api/v1',
+        sentryDsn:
+          (import.meta.env['NG_APP_SENTRY_DSN'] as string | undefined) ||
+          configJson.sentryDsn ||
+          '',
+      };
+
+      // Expone config a window para que environment.prod.ts pueda acceder
+      (window as any).__config = this.config;
     } catch (error) {
-      // Fallback: usar valores por defecto si falla la carga
+      // Fallback: ENV vars > hardcoded
       console.warn(
-        '[Config] Failed to load config.json, using defaults',
+        '[Config] Failed to load config.json, using ENV vars or defaults',
         error,
       );
       this.config = {
-        apiUrl: 'https://api.brydyan.me/api/v1',
-        sentryDsn: '',
+        apiUrl:
+          (import.meta.env['NG_APP_API_URL'] as string | undefined) ||
+          'https://api.brydyan.me/api/v1',
+        sentryDsn:
+          (import.meta.env['NG_APP_SENTRY_DSN'] as string | undefined) || '',
       };
+      (window as any).__config = this.config;
     }
   }
 
