@@ -373,11 +373,15 @@ class ObserverActasContractIT extends ContractTestSupport {
         .isEqualTo(sumaDeVotos(candidatos.size()));
 
     // Aislamiento: un observer que no registró el acta no puede verla.
+    //
+    // Con RLS real la fila no le es visible: la app responde "no encontrada" y no
+    // confirma que el acta exista. Antes (con el rol de superusuario, que ignora
+    // RLS) la app veia la fila y respondia 403 con "Solo puedes consultar tus
+    // propias actas".
     Response ajeno = as(otroToken).get(OBSERVER + "/actas/" + actaId);
 
-    assertErrorShape(ajeno, 403);
-    assertThat(ajeno.jsonPath().getString("message"))
-        .isEqualTo("Solo puedes consultar tus propias actas");
+    assertErrorShape(ajeno, 400);
+    assertThat(ajeno.jsonPath().getString("message")).contains("no encontrada");
   }
 
   // -----------------------------------------------------------------------------------------------

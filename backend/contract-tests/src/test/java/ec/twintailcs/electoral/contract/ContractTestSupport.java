@@ -234,10 +234,20 @@ public abstract class ContractTestSupport {
    * distinto y {@link #liberarActasCreadas()} los devuelve al final.
    */
   protected static Map<String, Object> comboLibre(String token) {
-    for (Map<String, Object> jrv : listar(as(token).get(OBSERVER + "/jrvs"))) {
+    // La enumeración va con el MASTER, no con el observer que va a registrar.
+    //
+    // La libertad de un par (JRV, cargo) la decide el índice único GLOBAL de
+    // actas activas (`uk_acta_activa`: un par con estado <> 'ANULADA'). Con RLS
+    // real, un observer solo ve SUS actas: si la enumeración fuera con su
+    // token, el helper creería libre un par que otro observer ya tomó, y el
+    // INSERT rebotaría contra el índice con un 409 que el test leería como un
+    // fallo del endpoint. El MASTER ve el estado global, que es el que decide.
+    String tokenGlobal = masterToken();
+
+    for (Map<String, Object> jrv : listar(as(tokenGlobal).get(OBSERVER + "/jrvs"))) {
       long jrvId = ((Number) jrv.get("id")).longValue();
       for (Map<String, Object> cargo :
-          listar(as(token).get(OBSERVER + "/jrv/" + jrvId + "/cargos"))) {
+          listar(as(tokenGlobal).get(OBSERVER + "/jrv/" + jrvId + "/cargos"))) {
         if (Boolean.TRUE.equals(cargo.get("registrado"))) {
           continue;
         }

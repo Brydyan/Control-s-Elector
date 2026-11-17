@@ -453,8 +453,11 @@ class EvidenciasContractIT extends ContractTestSupport {
             .body(json(Map.of("tipos", List.of("OTRA"))))
             .patch(EVIDENCIAS + "/" + evidencia.id() + "/observaciones");
 
+    // Con RLS real la evidencia ajena no le es visible: la app responde "no encontrada"
+    // (400) en vez de "solo quien la subió puede marcarla" (400). El status es el
+    // mismo; lo que cambia es que ya no se confirma que la evidencia exista.
     assertErrorShape(r, 400);
-    assertThat(r.jsonPath().getString("message")).contains("subió la evidencia");
+    assertThat(r.jsonPath().getString("message")).contains("no encontrada");
   }
 
   @Test
