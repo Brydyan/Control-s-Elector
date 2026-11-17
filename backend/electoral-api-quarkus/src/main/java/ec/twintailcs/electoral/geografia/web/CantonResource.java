@@ -30,7 +30,13 @@ public class CantonResource {
         .createQuery("select c from Canton c order by c.nombre asc", Canton.class)
         .getResultList()
         .stream()
-        .map(canton -> new CantonResponse(canton.getId(), canton.getNombre(), canton.getCodigo()))
+        .map(
+            canton ->
+                new CantonResponse(
+                    canton.getId(),
+                    canton.getNombre(),
+                    canton.getCodigo(),
+                    canton.getProvinciaId()))
         .toList();
   }
 }
