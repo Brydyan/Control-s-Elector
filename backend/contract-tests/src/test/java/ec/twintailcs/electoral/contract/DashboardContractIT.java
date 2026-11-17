@@ -183,6 +183,79 @@ class DashboardContractIT extends ContractTestSupport {
         .isGreaterThan(0);
   }
 
+  /**
+   * Una parroquia sin JRV tiene que aparecer en el desglose con 0 JRVs y 0% de avance.
+   *
+   * <p>El seed NO produce ese caso: sus 4 parroquias tienen JRVs asignados. Sin esta prueba la
+   * rama "sin JRV" queda sin ejercitar, y una mutacion que dejara el filtro de ANULADA en el
+   * WHERE (que convierte el LEFT JOIN en INNER) pasaria el contrato sin que nadie lo notara.
+   *
+   * <p>La parroquia se cuelga de un canton que ya existe para no alterar los totales del canton
+   * y no romper la conciliacion del desglose.
+   */
+  @Test
+  @DisplayName("GET /dashboard/progreso incluye la parroquia sin JRV con 0 JRVs y 0% de avance")
+  void progresoIncluyeLaParroquiaSinJrvs() {
+    long parroquiaId = crearParroquiaSinJrvs();
+
+    try {
+      Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/progreso");
+      assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+
+      Map<String, Object> encontrada = null;
+      for (Map<String, Object> canton : r.jsonPath().getList("$", Map.class)) {
+        for (Map<String, Object> parroquia :
+            (List<Map<String, Object>>) canton.get("parroquias")) {
+          if (((Number) parroquia.get("parroquiaId")).longValue() == parroquiaId) {
+            encontrada = parroquia;
+          }
+        }
+      }
+
+      assertThat(encontrada)
+          .as("la parroquia sin JRV tiene que aparecer en el desglose: %s", r.asString())
+          .isNotNull();
+      assertThat(((Number) encontrada.get("jrvsTotal")).longValue())
+          .as("la parroquia sin JRV no tiene JRVs: %s", encontrada)
+          .isZero();
+      assertThat(((Number) encontrada.get("jrvsEscrutadas")).longValue())
+          .as("la parroquia sin JRV no tiene JRVs con acta: %s", encontrada)
+          .isZero();
+      assertThat(((Number) encontrada.get("avance")).doubleValue())
+          .as("la parroquia sin JRV tiene que reportar 0%% de avance: %s", encontrada)
+          .isZero();
+    } finally {
+      // La parroquia es de este test: se borra para no dejar filas huerfanas en la base.
+      as(masterToken()).delete("/api/v1/master/parroquias/" + parroquiaId);
+    }
+  }
+
+  /**
+   * Crea una parroquia sin JRVs colgada de un canton real y devuelve su id.
+   *
+   * <p>Se cuelga de un canton que ya existe (no crea cantones nuevos) para que los totales del
+   * canton no cambien y la conciliacion del desglose siga valiendo.
+   */
+  private long crearParroquiaSinJrvs() {
+    List<Map<String, Object>> cantones =
+        listar(as(masterToken()).get("/api/v1/configuracion/cantones"));
+    assertThat(cantones).as("el seed tiene que traer cantones").isNotEmpty();
+    long cantonId = ((Number) cantones.get(0).get("id")).longValue();
+
+    Response creada =
+        as(masterToken())
+            .body(
+                json(
+                    Map.of(
+                        "nombre", unique("Parroquia sin JRV"),
+                        "esUrbana", true,
+                        "cantonId", cantonId)))
+            .post("/api/v1/master/parroquias");
+
+    assertThat(creada.statusCode()).as("body: %s", creada.asString()).isEqualTo(201);
+    return creada.jsonPath().getLong("id");
+  }
+
   @Test
   @DisplayName("GET /dashboard/novedades devuelve las novedades recientes")
   void novedadesDevuelveLasNovedadesRecientes() {
