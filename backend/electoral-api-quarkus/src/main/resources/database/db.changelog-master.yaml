@@ -82,3 +82,12 @@ databaseChangeLog:
   # tablas, esas tablas nuevas no quedan cubiertas (por eso el mismo changeset
   # instala además ALTER DEFAULT PRIVILEGES).
   - include: { file: database/changelog/036-app-role-grants.sql }
+  # Política de INSERT para `notificacion` (ODD rls-app-role): la tabla tenía RLS
+  # sin política de inserción, algo que solo se nota cuando el rol de la
+  # aplicación NO es superusuario. Va aparte porque 036 ya está aplicado en
+  # bases migradas: editarlo cambiaría su checksum.
+  - include: { file: database/changelog/037-notificacion-insert-policy.sql }
+  # Políticas de UPDATE y DELETE para `evidencia` (ODD rls-app-role): la tabla
+  # tenía RLS sin políticas para esos dos comandos, que con RLS real significa
+  # DENEGADOS (no "sin restricción").
+  - include: { file: database/changelog/038-evidencia-update-delete.sql }
