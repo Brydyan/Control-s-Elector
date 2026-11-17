@@ -1,7 +1,8 @@
 --liquibase formatted sql
 
--- changeset electoral:034-01-k6-load-test-users context:seed
+-- changeset electoral:034-01-k6-load-test-users context:load-test
 -- Usuarios para K6 load testing: 14 OBSERVERs, 5 COORDINATORs, 1 ADMIN
+-- SOLO se ejecuta con: --liquibase.contexts=load-test
 -- Contraseña: SecurePass123!
 -- Hash: $2a$10$YYOWuXStWZZW/VIhIcssBecX9cArOZanL5a.5OVlJQ6ESLs0B0UYG
 

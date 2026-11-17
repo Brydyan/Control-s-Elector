@@ -87,40 +87,55 @@ public class DashboardService {
   // ---------------------------------------------------------------------
 
   /**
-   * Resultados por candidato, agrupados por cargo, con actas ANULADAS excluidas en la query.
+   * Resultados por candidato, agrupados por cargo, con actas ANULADAS excluidas. Devuelve TODOS los
+   * cargos incluso sin votos registrados (LEFT JOIN desde cargo).
    *
-   * <p>La query ya ordena por cargo ascendente y votos descendente; el service mantiene el
-   * agrupamiento y reordena los candidatos por votos desc (defensa en profundidad).
+   * <p>Dos queries: primero todos los cargos, luego todos los candidatos con votos. El resultado
+   * mapea candidatos a cargos; cargos sin candidatos quedan con lista vacía.
    */
   @Transactional
   public List<ResultadoCargoDto> resultados() {
     activarContexto();
 
+    // Q1: Todos los cargos ordenados por ID
+    List<Object[]> cargos =
+        entityManager
+            .createNativeQuery(
+                "select c.id, c.nombre from cargo c order by c.id asc", Object[].class)
+            .getResultList();
+
+    // Q2: Candidatos con votos (LEFT JOIN desde candidato hacia actas)
     List<Object[]> filas =
         entityManager
             .createNativeQuery(
-                "select c.id, c.nombre, cand.id, cand.nombre, p.nombre, sum(ad.votos) "
-                    + "from acta_detalle ad "
-                    + "join acta a on a.id = ad.acta_id "
-                    + "join candidato cand on cand.id = ad.candidato_id "
-                    + "join cargo c on c.id = cand.cargo_id "
-                    + "join partido p on p.id = cand.partido_id "
-                    + "where a.estado <> 'ANULADA' "
+                "select c.id, c.nombre, cand.id, cand.nombre, p.nombre, coalesce(sum(ad.votos), 0) "
+                    + "from cargo c "
+                    + "left join candidato cand on cand.cargo_id = c.id "
+                    + "left join partido p on p.id = cand.partido_id "
+                    + "left join acta_detalle ad on ad.candidato_id = cand.id "
+                    + "left join acta a on a.id = ad.acta_id and a.estado <> 'ANULADA' "
+                    + "where cand.id is not null "
                     + "group by c.id, c.nombre, cand.id, cand.nombre, p.nombre "
-                    + "order by c.nombre asc, sum(ad.votos) desc",
+                    + "order by c.id asc, coalesce(sum(ad.votos), 0) desc",
                 Object[].class)
             .getResultList();
 
+    // Agrupar candidatos por cargo
     Map<Long, List<Object[]>> porCargo = new LinkedHashMap<>();
     for (Object[] fila : filas) {
       long cargoId = ((Number) fila[0]).longValue();
       porCargo.computeIfAbsent(cargoId, k -> new ArrayList<>()).add(fila);
     }
 
-    List<ResultadoCargoDto> out = new ArrayList<>(porCargo.size());
-    for (Map.Entry<Long, List<Object[]>> entry : porCargo.entrySet()) {
-      List<Object[]> delCargo = entry.getValue();
+    // Construir DTOs: todos los cargos + sus candidatos (o lista vacía si no hay)
+    List<ResultadoCargoDto> out = new ArrayList<>(cargos.size());
+    for (Object[] cargofila : cargos) {
+      long cargoId = ((Number) cargofila[0]).longValue();
+      String cargoNombre = (String) cargofila[1];
+
+      List<Object[]> delCargo = porCargo.getOrDefault(cargoId, new ArrayList<>());
       List<ResultadoCandidatoDto> candidatos = new ArrayList<>(delCargo.size());
+
       for (Object[] fila : delCargo) {
         candidatos.add(
             new ResultadoCandidatoDto(
@@ -130,7 +145,7 @@ public class DashboardService {
                 ((Number) fila[5]).longValue()));
       }
       candidatos.sort(Comparator.comparingLong(ResultadoCandidatoDto::votos).reversed());
-      out.add(new ResultadoCargoDto(entry.getKey(), (String) delCargo.get(0)[1], candidatos));
+      out.add(new ResultadoCargoDto(cargoId, cargoNombre, candidatos));
     }
     return out;
   }
