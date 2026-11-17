@@ -23,7 +23,24 @@ data:
   # El backend es el unico dueno del schema: sin esto nadie aplica las
   # migraciones de Liquibase. En Spring lo hacia `spring.liquibase.enabled=true`
   # de forma implicita.
-  QUARKUS_LIQUIDASE_MIGRATE_AT_START: "true"
+  #
+  # OFF en la API: la migracion corre en un initContainer del mismo Deployment,
+  # con las credenciales del dueno de la base y en modo migrate-only (migra y
+  # sale). Asi el contenedor de la API no tiene las credenciales del dueno y no
+  # puede saltarse RLS ni por accidente.
+  QUARKUS_LIQUIDASE_MIGRATE_AT_START: "false"
+  # Contextos de Liquibase. `seed` carga los datos de referencia que el producto
+  # necesita en produccion (cargos, partidos, candidatos, JRVs, geografia).
+  #
+  # `bootstrap-admin` NO esta aqui a proposito: ese admin de arranque lleva una
+  # contrasena conocida y versionada en el repo, asi que es un artefacto de
+  # desarrollo. En produccion la cuenta se provisiona a mano con credenciales
+  # propias.
+  #
+  # OJO: una lista de contextos VACIA no excluye nada — con `Contexts` vacio,
+  # Liquibase corre todos los changesets. Por eso el valor es explicito y no
+  # se deja en default.
+  QUARKUS_LIQUIDASE_CONTEXTS: "seed"
   # Orígenes cross-origin que el backend acepta. Lista separada por comas, SIN comodin:
   # con `access-control-allow-credentials=true` el "*" es inválido por spec (el ACAO no
   # puede ser "*" con modo de credenciales "include") y abriría la API a cualquier

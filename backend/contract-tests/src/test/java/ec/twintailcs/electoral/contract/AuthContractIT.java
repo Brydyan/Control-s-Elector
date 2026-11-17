@@ -60,7 +60,7 @@ class AuthContractIT extends ContractTestSupport {
   void loginConCredencialesInvalidasDevuelve401() {
     Response r =
         anon()
-            .body(json(Map.of("email", "admsismas@control.ttcs", "password", "no-es-la-clave")))
+            .body(json(Map.of("email", "admin@control-elector.local", "password", "no-es-la-clave")))
             .post("/api/v1/auth/login");
 
     assertErrorShape(r, 401);

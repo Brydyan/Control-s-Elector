@@ -45,4 +45,20 @@ public class Canton extends PanacheEntityBase {
   public String getCodigo() {
     return codigo;
   }
+
+  public Long getProvinciaId() {
+    return provinciaId;
+  }
+
+  public void setNombre(String nombre) {
+    this.nombre = nombre;
+  }
+
+  public void setCodigo(String codigo) {
+    this.codigo = codigo;
+  }
+
+  public void setProvinciaId(Long provinciaId) {
+    this.provinciaId = provinciaId;
+  }
 }

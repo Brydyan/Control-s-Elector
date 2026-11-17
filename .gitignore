@@ -138,9 +138,17 @@ target/jacoco/
 
 # ─── Load Testing (K6) ────────────────────────────────────────────────────────
 k6-results/
+k6-output/
+frontend/app/tests/load/results/
+k6-v*/
 *.html.report
 results.json
 metrics.json
+summary.json
+*.csv.report
+.k6/
+k6-screenshots/
+**/*.json.report
 
 # ─── Tools & Scripts ──────────────────────────────────────────────────────────
 # Local tool outputs, cache
@@ -149,6 +157,9 @@ metrics.json
 .tool-outputs/
 extracted-tokens/
 smtp-captured-emails/
+.cache/
+*.tmp.json
+*.temp
 
 # ─── Misceláneos ──────────────────────────────────────────────────────────────
 *.tmp
@@ -157,6 +168,13 @@ smtp-captured-emails/
 *.bak
 .codegraph/
 .DS_Store.local
+
+# ─── Test & Fixture Data (Large Files) ─────────────────────────────────────────
+# Test-generated temp data (not reference fixtures)
+test-data/
+*.fixture
+k6-temp-data/
+/tmp/
 
 # ─── Configuración Local & Personal ───────────────────────────────────────────
 CLAUDE.md
@@ -173,6 +191,10 @@ local-config/
 .credentials
 credentials.json
 auth.json
+
+# Playwright E2E: estado generado por el global setup (sondeo del backend,
+# version de terminos). Es de la maquina, no del repo.
+frontend/app/e2e/.generated/
 
 # ─── Runtime & Cache ──────────────────────────────────────────────────────────
 # Local Pi runtime state

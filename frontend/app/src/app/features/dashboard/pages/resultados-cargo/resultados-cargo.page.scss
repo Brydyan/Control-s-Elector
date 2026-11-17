@@ -2,6 +2,9 @@
   padding: 2rem 1rem;
   max-width: 1200px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
 }
 
 .page-header {
@@ -72,7 +75,6 @@
 // ============================================================================
 
 .candidato-lider-card {
-  margin-bottom: 2rem;
   background: linear-gradient(
     135deg,
     var(--primitive-green-50) 0%,
@@ -198,8 +200,6 @@
 // ============================================================================
 
 .candidatos-card {
-  margin-bottom: 2rem;
-
   .candidatos-header {
     margin-bottom: 1.5rem;
     border-bottom: 2px solid var(--color-border-subtle);

@@ -82,7 +82,11 @@ SELECT 'JRV-AYA-001', 'Escuela Ayangue', 156, p.id
 FROM parroquia p WHERE p.nombre = 'Ayangue'
   AND NOT EXISTS (SELECT 1 FROM jrv WHERE numero = 'JRV-AYA-001');
 
--- === Cargos: 3 dignidades ===
+-- === Cargos: 4 dignidades ===
+INSERT INTO cargo (nombre, nivel, puestos)
+SELECT 'Prefecto', 'PROVINCIA', 1
+WHERE NOT EXISTS (SELECT 1 FROM cargo WHERE nombre = 'Prefecto');
+
 INSERT INTO cargo (nombre, nivel, puestos)
 SELECT 'Alcalde/sa', 'CANTON', 1
 WHERE NOT EXISTS (SELECT 1 FROM cargo WHERE nombre = 'Alcalde/sa');

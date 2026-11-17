@@ -7,6 +7,7 @@ import ec.twintailcs.electoral.acta.domain.ActaEstadoInvalidoException;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
 import ec.twintailcs.electoral.acta.domain.ActaRepository;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
+import ec.twintailcs.electoral.evidencia.domain.RlsContexto;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -18,6 +19,7 @@ public class MarcarEnDisputaActaUseCase {
   @Inject ActaRepository repository;
   @Inject ActaNotificacionService notificacion;
   @Inject ActaAuditService audit;
+  @Inject RlsContexto rls;
 
   /**
    * Marca el acta en disputa.
@@ -40,6 +42,10 @@ public class MarcarEnDisputaActaUseCase {
     }
 
     acta.setEstado(EstadoActa.EN_DISPUTA);
+
+    // El aviso va a una tabla con RLS: sin el contexto de la sesion, la politica
+    // de insercion no puede evaluarse y la escritura se deniega.
+    rls.activar(coordinatorId);
 
     notificacion.notificar(
         acta.getRegistradaPorId(),

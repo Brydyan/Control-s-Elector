@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -16,8 +17,23 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "audit_log")
 public class AuditLog extends PanacheEntityBase {
 
+  /**
+   * Id por SECUENCIA y no por IDENTITY, a proposito.
+   *
+   * <p>Con IDENTITY, Hibernate escribe {@code insert ... returning id}. El {@code RETURNING} lo
+   * evalua la politica de LECTURA de la tabla, y la de {@code audit_log} solo deja ver las filas a
+   * quien tiene rol COORDINATOR/MASTER/ADMIN: el auditoria de un login fallido (que no tiene actor)
+   * se filtraba y la escritura moria con "new row violates row-level security policy".
+   *
+   * <p>Con la secuencia, el id lo pide la base antes del INSERT y la escritura no depende de la
+   * politica de lectura: poder escribir en la auditoria no implica poder leerla.
+   */
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "audit_log_id_seq")
+  @SequenceGenerator(
+      name = "audit_log_id_seq",
+      sequenceName = "audit_log_id_seq",
+      allocationSize = 1)
   Long id;
 
   @Column(name = "entidad", nullable = false, length = 64)

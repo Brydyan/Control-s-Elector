@@ -149,6 +149,46 @@ class ErroresContractIT extends ContractTestSupport {
   }
 
   @Test
+  @DisplayName("el spec OpenAPI declara la forma del desglose por parroquia del dashboard")
+  void elSpecOpenApiDeclaraLaFormaDelDesglosePorParroquia() {
+    // El frontend del dashboard lee `parroquias` de la respuesta de /dashboard/progreso, pero
+    // el backend no lo mandaba: el panel salia vacio sin fallar. El spec OpenAPI es la unica
+    // fuente de verdad de la forma del contrato, asi que la forma se asserta AHI, no solo la
+    // ruta. Sin esta asercion, el mismo hueco vuelve en silencio.
+    Response r = anon().accept("application/json").get(OPENAPI);
+
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+
+    Map<String, Object> schemas = r.jsonPath().getMap("components.schemas");
+    assertThat(schemas).as("el spec tiene que declarar los schemas: %s", r.asString()).isNotEmpty();
+
+    // El schema del canton tiene que exponer el desglose.
+    Map<String, Object> canton = (Map<String, Object>) schemas.get("ProgresoCantonDto");
+    assertThat(canton).as("el spec tiene que declarar ProgresoCantonDto: %s", r.asString()).isNotNull();
+    Map<String, Object> cantonProps = (Map<String, Object>) canton.get("properties");
+    assertThat(cantonProps)
+        .as("ProgresoCantonDto tiene que declarar la propiedad 'parroquias': %s", canton)
+        .containsKey("parroquias");
+
+    Map<String, Object> parroquias = (Map<String, Object>) cantonProps.get("parroquias");
+    assertThat(parroquias).as("'parroquias' tiene que ser un array: %s", parroquias)
+        .containsEntry("type", "array");
+    Map<String, Object> items = (Map<String, Object>) parroquias.get("items");
+    assertThat(items)
+        .as("los items de 'parroquias' tienen que ser ParroquiaProgresoDto: %s", items)
+        .containsEntry("$ref", "#/components/schemas/ParroquiaProgresoDto");
+
+    // Y el schema de la parroquia tiene que traer los cinco campos que el frontend lee.
+    Map<String, Object> parroquia = (Map<String, Object>) schemas.get("ParroquiaProgresoDto");
+    assertThat(parroquia)
+        .as("el spec tiene que declarar ParroquiaProgresoDto: %s", r.asString())
+        .isNotNull();
+    assertThat((Map<String, Object>) parroquia.get("properties"))
+        .as("ParroquiaProgresoDto tiene que declarar sus cinco campos: %s", parroquia)
+        .containsKeys("parroquiaId", "parroquiaNombre", "jrvsEscrutadas", "jrvsTotal", "avance");
+  }
+
+  @Test
   @DisplayName("el spec OpenAPI es publico: se sirve sin token")
   void elSpecOpenApiEsPublico() {
     Response r = anon().accept("application/json").get(OPENAPI);

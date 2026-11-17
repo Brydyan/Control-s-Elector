@@ -310,6 +310,21 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'master/configuracion-geografica',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/master/pages/configuracion-geografica/configuracion-geografica.page').then(
+            (m) => m.ConfiguracionGeograficaPage,
+          ),
+        data: {
+          roles: ['MASTER'],
+          title: 'Configuración Geográfica',
+          description:
+            'Administra provincias, cantones, parroquias y juntas de recepción de votos.',
+          icon: 'map-outline',
+        },
+      },
+      {
         path: 'master/cargos',
         redirectTo: 'master/configuracion',
         pathMatch: 'full',

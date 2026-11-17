@@ -12,8 +12,8 @@ import java.time.Instant;
  * autenticado: máximo 1000 requests/minuto - Por endpoint específico: reglas personalizadas (login:
  * 5/5min, export: 1/24h, etc)
  *
- * <p>Usa Bucket4j para token bucket algorithm y Redis para contadores distribuidos. La clave sigue
- * el patrón: rate_limit:{type}:{identifier}:{endpoint}
+ * <p>Implementa una ventana fija con contadores en Redis. La clave sigue el patrón:
+ * rate_limit:{type}:{identifier}:{endpoint}
  *
  * <p>Devuelve un objeto con: - allowed: true si el request puede proceder, false si fue rechazado -
  * remaining: cuántos tokens quedan en el bucket - retryAfter: segundos hasta poder reintentar (0 si
@@ -77,9 +77,9 @@ public class RateLimitingService {
   /**
    * Verifica un límite genérico contra Redis.
    *
-   * <p>Implementa token bucket algorithm: 1. Obtiene el bucket actual (count + expiry) 2. Si el
-   * bucket expiró, lo reinicializa 3. Si hay tokens, los decrementa y devuelve allowed=true 4. Si
-   * no hay tokens, devuelve allowed=false y el tiempo de espera
+   * <p>Implementa una ventana fija: 1. Obtiene el contador actual (count + expiry) 2. Si la ventana
+   * expiró, lo reinicializa 3. Suma uno al contador y devuelve allowed=true 4. Si el contador pasó
+   * el límite, devuelve allowed=false y el tiempo de espera
    *
    * @param key clave Redis
    * @param limit máximo de tokens

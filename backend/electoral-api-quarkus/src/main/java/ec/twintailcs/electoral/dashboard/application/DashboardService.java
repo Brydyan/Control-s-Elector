@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.dashboard.application;
 
 import ec.twintailcs.electoral.dashboard.web.dto.NovedadDto;
+import ec.twintailcs.electoral.dashboard.web.dto.ParroquiaProgresoDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ProgresoCantonDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ResultadoCandidatoDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ResultadoCargoDto;
@@ -86,40 +87,55 @@ public class DashboardService {
   // ---------------------------------------------------------------------
 
   /**
-   * Resultados por candidato, agrupados por cargo, con actas ANULADAS excluidas en la query.
+   * Resultados por candidato, agrupados por cargo, con actas ANULADAS excluidas. Devuelve TODOS los
+   * cargos incluso sin votos registrados (LEFT JOIN desde cargo).
    *
-   * <p>La query ya ordena por cargo ascendente y votos descendente; el service mantiene el
-   * agrupamiento y reordena los candidatos por votos desc (defensa en profundidad).
+   * <p>Dos queries: primero todos los cargos, luego todos los candidatos con votos. El resultado
+   * mapea candidatos a cargos; cargos sin candidatos quedan con lista vacía.
    */
   @Transactional
   public List<ResultadoCargoDto> resultados() {
     activarContexto();
 
+    // Q1: Todos los cargos ordenados por ID
+    List<Object[]> cargos =
+        entityManager
+            .createNativeQuery(
+                "select c.id, c.nombre from cargo c order by c.id asc", Object[].class)
+            .getResultList();
+
+    // Q2: Candidatos con votos (LEFT JOIN desde candidato hacia actas)
     List<Object[]> filas =
         entityManager
             .createNativeQuery(
-                "select c.id, c.nombre, cand.id, cand.nombre, p.nombre, sum(ad.votos) "
-                    + "from acta_detalle ad "
-                    + "join acta a on a.id = ad.acta_id "
-                    + "join candidato cand on cand.id = ad.candidato_id "
-                    + "join cargo c on c.id = cand.cargo_id "
-                    + "join partido p on p.id = cand.partido_id "
-                    + "where a.estado <> 'ANULADA' "
+                "select c.id, c.nombre, cand.id, cand.nombre, p.nombre, coalesce(sum(ad.votos), 0) "
+                    + "from cargo c "
+                    + "left join candidato cand on cand.cargo_id = c.id "
+                    + "left join partido p on p.id = cand.partido_id "
+                    + "left join acta_detalle ad on ad.candidato_id = cand.id "
+                    + "left join acta a on a.id = ad.acta_id and a.estado <> 'ANULADA' "
+                    + "where cand.id is not null "
                     + "group by c.id, c.nombre, cand.id, cand.nombre, p.nombre "
-                    + "order by c.nombre asc, sum(ad.votos) desc",
+                    + "order by c.id asc, coalesce(sum(ad.votos), 0) desc",
                 Object[].class)
             .getResultList();
 
+    // Agrupar candidatos por cargo
     Map<Long, List<Object[]>> porCargo = new LinkedHashMap<>();
     for (Object[] fila : filas) {
       long cargoId = ((Number) fila[0]).longValue();
       porCargo.computeIfAbsent(cargoId, k -> new ArrayList<>()).add(fila);
     }
 
-    List<ResultadoCargoDto> out = new ArrayList<>(porCargo.size());
-    for (Map.Entry<Long, List<Object[]>> entry : porCargo.entrySet()) {
-      List<Object[]> delCargo = entry.getValue();
+    // Construir DTOs: todos los cargos + sus candidatos (o lista vacía si no hay)
+    List<ResultadoCargoDto> out = new ArrayList<>(cargos.size());
+    for (Object[] cargofila : cargos) {
+      long cargoId = ((Number) cargofila[0]).longValue();
+      String cargoNombre = (String) cargofila[1];
+
+      List<Object[]> delCargo = porCargo.getOrDefault(cargoId, new ArrayList<>());
       List<ResultadoCandidatoDto> candidatos = new ArrayList<>(delCargo.size());
+
       for (Object[] fila : delCargo) {
         candidatos.add(
             new ResultadoCandidatoDto(
@@ -129,7 +145,7 @@ public class DashboardService {
                 ((Number) fila[5]).longValue()));
       }
       candidatos.sort(Comparator.comparingLong(ResultadoCandidatoDto::votos).reversed());
-      out.add(new ResultadoCargoDto(entry.getKey(), (String) delCargo.get(0)[1], candidatos));
+      out.add(new ResultadoCargoDto(cargoId, cargoNombre, candidatos));
     }
     return out;
   }
@@ -145,6 +161,17 @@ public class DashboardService {
    * Si {@code totalJrvs == 0} devuelve {@code 0.0}: sin division por cero ni {@code NaN}.
    *
    * <p>Una JRV con actas de tres cargos cuenta una sola vez ({@code COUNT(DISTINCT)}).
+   *
+   * <p>Cada canton lleva anidado su desglose por parroquia, que es lo que consume el panel
+   * "Desglose de Parroquias" del frontend. El desglose usa la MISMA semantica que el canton (JRVs
+   * con acta no anulada, no solo APROBADAS) y por eso los dos niveles cuadran: la suma de {@code
+   * jrvsTotal} de las parroquias de un canton es su {@code totalJrvs}, y la suma de {@code
+   * jrvsEscrutadas} es su {@code jrvsConActa}. Esa conciliacion la asserta el contrato ({@code
+   * DashboardContractIT}).
+   *
+   * <p>El desglose se calcula con {@code LEFT JOIN} desde {@code parroquia}: una parroquia sin JRV
+   * asignados aparece con 0 JRV y 0% de avance. "No hay JRV" es un dato distinto de "no hay
+   * avance", y ocultar esa fila haria que el panel mintiera sobre la cobertura territorial.
    */
   @Transactional
   public List<ProgresoCantonDto> progreso() {
@@ -179,6 +206,38 @@ public class DashboardService {
       jrvsConActaPorCanton.put(((Number) fila[0]).longValue(), ((Number) fila[1]).longValue());
     }
 
+    // Desglose territorial. El filtro de ANULADA va en el ON del LEFT JOIN, no en el WHERE: en
+    // el WHERE convertiria el LEFT JOIN en INNER y las parroquias sin JRV con acta desaparecerian
+    // del desglose, que es justo lo que el panel tiene que mostrar.
+    List<Object[]> _desgloseFilas =
+        entityManager
+            .createNativeQuery(
+                "select pa.id, pa.nombre, pa.canton_id, "
+                    + "count(distinct j.id), count(distinct a.jrv_id) "
+                    + "from parroquia pa "
+                    + "left join jrv j on j.parroquia_id = pa.id "
+                    + "left join acta a on a.jrv_id = j.id and a.estado <> 'ANULADA' "
+                    + "group by pa.id, pa.nombre, pa.canton_id "
+                    + "order by pa.nombre asc",
+                Object[].class)
+            .getResultList();
+    Map<Long, List<ParroquiaProgresoDto>> parroquiasPorCanton = new HashMap<>();
+    for (Object[] fila : _desgloseFilas) {
+      long parroquiaId = ((Number) fila[0]).longValue();
+      String parroquiaNombre = (String) fila[1];
+      long cantonId = ((Number) fila[2]).longValue();
+      // El orden de las columnas de la query es: id, nombre, canton_id, JRVs totales
+      // (count(distinct j.id)), JRVs con acta (count(distinct a.jrv_id)).
+      long jrvsTotal = ((Number) fila[3]).longValue();
+      long jrvsEscrutadas = ((Number) fila[4]).longValue();
+      double avance = jrvsTotal == 0 ? 0.0 : (jrvsEscrutadas * 100.0) / jrvsTotal;
+      parroquiasPorCanton
+          .computeIfAbsent(cantonId, k -> new ArrayList<>())
+          .add(
+              new ParroquiaProgresoDto(
+                  parroquiaId, parroquiaNombre, jrvsEscrutadas, jrvsTotal, avance));
+    }
+
     List<Canton> cantones = Canton.listAll();
     List<ProgresoCantonDto> out = new ArrayList<>(cantones.size());
     for (Canton canton : cantones) {
@@ -187,7 +246,12 @@ public class DashboardService {
       double porcentaje = totalJrvs == 0 ? 0.0 : (jrvsConActa * 100.0) / totalJrvs;
       out.add(
           new ProgresoCantonDto(
-              canton.getId(), canton.getNombre(), totalJrvs, jrvsConActa, porcentaje));
+              canton.getId(),
+              canton.getNombre(),
+              totalJrvs,
+              jrvsConActa,
+              porcentaje,
+              List.copyOf(parroquiasPorCanton.getOrDefault(canton.getId(), List.of()))));
     }
     out.sort(
         Comparator.comparing(

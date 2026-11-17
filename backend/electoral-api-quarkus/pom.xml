@@ -151,27 +151,35 @@
 			<artifactId>quarkus-mailer</artifactId>
 		</dependency>
 
-		<!-- Sentry: Error tracking y crash reporting con PII scrubbing -->
+		<!-- Sentry: Error tracking y crash reporting con PII scrubbing.
+
+		     Se declara el SDK suelto y no `io.quarkus:quarkus-sentry` porque esa
+		     extension NO esta en el BOM de la plataforma 3.40.1: el
+		     quarkus-bom-3.40.1.pom lista 2337 artefactos y ninguno es de Sentry.
+
+		     `io.sentry:sentry-logback` se elimino en la auditoria de dependencias
+		     (T1 de /odd/tasks/quarkus-deps-jdk25.md): Quarkus no usa Logback como
+		     backend de logging —usa JBoss Logging—, asi que el appender de Logback
+		     no tendria donde engancharse. La dependencia tampoco arrastra Logback
+		     (solo declara el SDK), de modo que era peso muerto en el classpath y
+		     en la imagen nativa. El scrubbing de PII se hace en codigo, en
+		     monitoring/application/SentryService. -->
 		<dependency>
 			<groupId>io.sentry</groupId>
 			<artifactId>sentry</artifactId>
 			<version>7.12.1</version>
 		</dependency>
-		<dependency>
-			<groupId>io.sentry</groupId>
-			<artifactId>sentry-logback</artifactId>
-			<version>7.12.1</version>
-		</dependency>
 
-		<!-- Rate Limiting: Bucket4j para distribuido con Redis -->
+		<!-- Rate Limiting: contadores distribuidos con Redis.
+
+		     `com.github.vladimir-bukhtoyarov:bucket4j-core` se elimino en la misma
+		     auditoria de dependencias (T1): el servicio implementa la ventana fija a
+		     mano sobre `RedisDataSource` y no importaba ni una clase de Bucket4j.
+		     El javadoc de RateLimitingService decia que usaba Bucket4j; la
+		     dependencia era peso muerto. -->
 		<dependency>
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-redis-client</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.github.vladimir-bukhtoyarov</groupId>
-			<artifactId>bucket4j-core</artifactId>
-			<version>7.6.0</version>
 		</dependency>
 
 		<!-- Test -->

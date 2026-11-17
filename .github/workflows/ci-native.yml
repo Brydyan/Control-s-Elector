@@ -129,16 +129,46 @@ jobs:
       # Hibernate valida antes de que Liquibase cree el schema, asi que contra
       # una base VACIA el arranque con `validate` (el default) revienta con
       # "Schema validation: missing table [acta]".
+      # El rol con el que conecta la APLICACION. Sin esto, el binario entra como
+      # superusuario y Postgres ignora las politicas de RLS.
+      - name: Create the application role
+        run: |
+          docker run --rm --network host -i \
+            -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db \
+                 -v ON_ERROR_STOP=1 \
+                 -v app_role=electoral_app \
+                 -v app_password=electoral_app_pass \
+                 -f - < scripts/db/create-app-role.sql
+
+      # El rol de la aplicacion NO puede ser superusuario ni tener BYPASSRLS: con
+      # cualquiera de los dos, Postgres le ignora las politicas de RLS y la suite
+      # de contrato volveria a pasar sin tocar la capa que hay que probar.
+      - name: Assert the application role cannot bypass RLS
+        run: |
+          docker run --rm --network host -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db -t -A \
+              -c "select rolsuper or rolbypassrls from pg_roles where rolname='electoral_app';" \
+            | grep -qx 'f' || {
+              echo "FALLO: el rol electoral_app no puede ser superusuario ni BYPASSRLS";
+              exit 1;
+            }
+
       - name: Boot the native binary twice
         run: |
+          # La primera fase migra con el DUENO de la base (el unico que puede
+          # crear el schema); la segunda valida el schema contra las entidades
+          # con el ROL DE APLICACION, que es como corre en produccion.
           boot_native() {
             docker run -d --name electoral-api-native --network host \
               -e DB_HOST=localhost -e DB_PORT=5432 -e DB_NAME=electoral_db \
-              -e DB_USER=electoral_user -e DB_PASSWORD=electoral_pass \
+              -e DB_USER="$DB_USER" -e DB_PASSWORD="$DB_PASSWORD" \
               -e SERVER_PORT=8080 \
               -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
               -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
-              -e APP_SEED_ADMIN_PASSWORD=admin12345 \
+              -e QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin \
               -e AWS_ACCESS_KEY_ID=rustfsadmin \
               -e AWS_SECRET_ACCESS_KEY=rustfsadmin123123 \
               -e AWS_S3_ENDPOINT=http://localhost:9000 \
@@ -152,7 +182,8 @@ jobs:
           # asi que mide el cold start real (proceso + init + Liquibase).
           echo "Arrancando el binario nativo contra la base vacia..."
           START=$(date +%s%N)
-          boot_native -e QUARKUS_HIBERNATE_GENERATION=none
+          DB_USER=electoral_user DB_PASSWORD=electoral_pass \
+            boot_native -e QUARKUS_HIBERNATE_GENERATION=none
           for i in $(seq 1 120); do
             curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1 && break
             sleep 1
@@ -170,7 +201,8 @@ jobs:
           # validar que el schema coincide con las entidades.
           echo "Arrancando de nuevo con los defaults (validate)..."
           START=$(date +%s%N)
-          boot_native
+          DB_USER=electoral_app DB_PASSWORD=electoral_app_pass \
+            boot_native -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false
           for i in $(seq 1 60); do
             curl -sf http://localhost:8080/actuator/health >/dev/null 2>&1 && break
             sleep 1

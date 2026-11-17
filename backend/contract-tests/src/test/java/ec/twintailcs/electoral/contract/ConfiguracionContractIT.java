@@ -100,7 +100,13 @@ class ConfiguracionContractIT extends ContractTestSupport {
   @DisplayName("GET /configuracion/candidatos filtra por cargoId")
   void listarCandidatosFiltraPorCargo() {
     String token = tokenFor("OBSERVER");
-    long cargoId = ((Number) listar(as(token).get(CARGOS)).get(0).get("id")).longValue();
+
+    // El cargo de la prueba sale de un candidato que YA existe, no del primer cargo de la
+    // lista: el seed tiene cargos sin candidatos (Prefecto, de nivel PROVINCIA) y pedir el
+    // primero hacia que el test fallara por como esta ordenado el seed, no por el filtro.
+    List<Map<String, Object>> todos = listar(as(token).get(CANDIDATOS));
+    assertThat(todos).as("el seed tiene candidatos: %s", todos).isNotEmpty();
+    long cargoId = ((Number) todos.get(0).get("cargoId")).longValue();
 
     Response r = as(token).get(CANDIDATOS + "?cargoId=" + cargoId);
 

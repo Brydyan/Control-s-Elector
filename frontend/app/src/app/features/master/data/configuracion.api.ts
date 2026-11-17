@@ -11,6 +11,7 @@ import {
   CandidatoDto,
   CandidatoRequest,
 } from '../domain/models/configuracion.model';
+import { ConfigService } from '../../../core/config/config.service';
 
 /**
  * T-FE-16 Fase A.2: Servicio de API para Configuración Electoral
@@ -22,7 +23,21 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1/configuracion';
+  private readonly configService = inject(ConfigService);
+  private baseUrl: string;
+
+  constructor() {
+    // En producción: usa apiUrl de config.json (cargado en APP_INITIALIZER)
+    // En desarrollo: usa URL relativa (el proxy redirige)
+    // En tests: usa URL relativa (sin config disponible)
+    try {
+      const apiUrl = this.configService.getApiUrl();
+      this.baseUrl = `${apiUrl}/configuracion`;
+    } catch {
+      // Fallback si ConfigService no está inicializado (dev/tests)
+      this.baseUrl = '/api/v1/configuracion';
+    }
+  }
 
   // ============================================================================
   // CACHÉ PRIVADO (shareReplay(1) previene duplicación de HTTP)

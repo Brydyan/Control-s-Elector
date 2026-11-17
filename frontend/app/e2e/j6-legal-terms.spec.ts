@@ -15,6 +15,8 @@ import {
 /**
  * J6 — Aceptación de términos (T-LEGAL-01)
  *
+ * @smoke
+ *
  * Cubre el recorrido completo de la aceptación:
  *
  *   1. Login de un usuario que NO ha aceptado → aparece el modal.
@@ -30,7 +32,7 @@ import {
  *   GET  /api/v1/menus/me              → menú del rol
  *   GET  /api/v1/observer/jrvs         → JRVs del observador
  */
-test.describe('J6 — Aceptación de términos (T-LEGAL-01)', () => {
+test.describe('J6 — Aceptación de términos (T-LEGAL-01) @smoke', () => {
   const EMAIL = OBSERVER_USER.email;
   const PASSWORD = OBSERVER_USER.password;
 

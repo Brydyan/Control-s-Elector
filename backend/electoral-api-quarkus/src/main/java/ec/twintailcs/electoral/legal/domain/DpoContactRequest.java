@@ -6,6 +6,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import java.time.Instant;
 
@@ -29,8 +30,24 @@ public class DpoContactRequest extends PanacheEntityBase {
   public static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
   public static final String STATUS_RESOLVED = "RESOLVED";
 
+  /**
+   * Id por SECUENCIA y no por IDENTITY, a proposito.
+   *
+   * <p>El formulario es publico: no hay sesion ni actor, asi que no hay contexto de RLS que
+   * activar. Con IDENTITY, Hibernate escribe {@code insert ... returning id} y el {@code RETURNING}
+   * lo evalua la politica de LECTURA de la tabla, que deja ver las filas solo a COORDINATOR/MASTER/
+   * ADMIN: la fila recien insertada se filtraba y la escritura moria con "new row violates
+   * row-level security policy".
+   *
+   * <p>Con la secuencia, el id lo pide la base antes del INSERT y la escritura no depende de la
+   * politica de lectura.
+   */
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "dpo_contact_requests_id_seq")
+  @SequenceGenerator(
+      name = "dpo_contact_requests_id_seq",
+      sequenceName = "dpo_contact_requests_id_seq",
+      allocationSize = 1)
   Long id;
 
   @Column(name = "name", nullable = false, length = 255)

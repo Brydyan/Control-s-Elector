@@ -232,21 +232,77 @@ jobs:
       - name: Build the backend image
         run: docker build -t electoral-api:contract backend/electoral-api-quarkus
 
+      # El rol con el que conecta la APLICACION. Sin esto, el backend entra como
+      # `electoral_user`, que es superusuario, y Postgres ignora las politicas de
+      # RLS: la suite de contrato pasaria sin que ninguna prueba tocara la capa
+      # que el guardrail del proyecto declara obligatoria.
+      #
+      # La contrasena del rol es de la base efimera de CI: no es un secreto de
+      # produccion y no sale del runner.
+      - name: Create the application role
+        run: |
+          docker run --rm --network host -i \
+            -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db \
+                 -v ON_ERROR_STOP=1 \
+                 -v app_role=electoral_app \
+                 -v app_password=electoral_app_pass \
+                 -f - < scripts/db/create-app-role.sql
+
+      # La migracion corre con el DUENO de la base (el unico que puede crear el
+      # schema) y en un contenedor aparte que termina al terminar.
+      # El rol de la aplicacion NO puede ser superusuario ni tener BYPASSRLS: con
+      # cualquiera de los dos, Postgres le ignora las politicas de RLS y esta
+      # suite volveria a pasar sin tocar la capa que hay que probar.
+      - name: Assert the application role cannot bypass RLS
+        run: |
+          docker run --rm --network host -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db -t -A \
+              -c "select rolsuper or rolbypassrls from pg_roles where rolname='electoral_app';" \
+            | grep -qx 'f' || {
+              echo "FALLO: el rol electoral_app no puede ser superusuario ni BYPASSRLS";
+              exit 1;
+            }
+
+      - name: Migrate the schema
+        run: |
+          docker run --rm --network host \
+            -e DB_HOST=localhost \
+            -e DB_PORT=5432 \
+            -e DB_NAME=electoral_db \
+            -e DB_USER=electoral_user \
+            -e DB_PASSWORD=electoral_pass \
+            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true \
+            -e APP_MIGRATE_ONLY=true \
+            -e QUARKUS_HIBERNATE_GENERATION=none \
+            -e QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin \
+            -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
+            -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
+            electoral-api:contract
+
       # --network host para que el contenedor alcance los services de GitHub
       # Actions por los puertos publicados en el host (5432 y 9000). Asi no
       # hay que adivinar el nombre de la red de los services.
+      #
+      # El backend entra con el rol de APLICACION: el schema ya esta migrado y
+      # el contenedor no lleva las credenciales del dueno.
       - name: Run the backend
         run: |
           docker run -d --name electoral-api --network host \
             -e DB_HOST=localhost \
             -e DB_PORT=5432 \
             -e DB_NAME=electoral_db \
-            -e DB_USER=electoral_user \
-            -e DB_PASSWORD=electoral_pass \
+            -e DB_USER=electoral_app \
+            -e DB_PASSWORD=electoral_app_pass \
+            -e QUARKUS_LIQUIBASE_USERNAME=electoral_user \
+            -e QUARKUS_LIQUIBASE_PASSWORD=electoral_pass \
+            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false \
             -e SERVER_PORT=8080 \
             -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
             -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
-            -e APP_SEED_ADMIN_PASSWORD=admin12345 \
+            -e QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin \
             -e AWS_ACCESS_KEY_ID=rustfsadmin \
             -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
             -e AWS_S3_ENDPOINT=http://localhost:9000 \
@@ -340,15 +396,31 @@ jobs:
       #
       # Esta fase 2 es el control de drift del backend: en compose el arranque corre con
       # `none` para que una base nueva levante, asi que el `validate` vive acá.
+      # El rol con el que conecta la APLICACION. Sin esto, el backend entra como
+      # superusuario y Postgres ignora las politicas de RLS.
+      - name: Create the application role
+        run: |
+          docker run --rm --network host -i \
+            -e PGPASSWORD=electoral_pass \
+            postgres:16 \
+            psql -h localhost -U electoral_user -d electoral_db \
+                 -v ON_ERROR_STOP=1 \
+                 -v app_role=electoral_app \
+                 -v app_password=electoral_app_pass \
+                 -f - < scripts/db/create-app-role.sql
+
       - name: Run the Quarkus backend
         run: |
+          # El primer arranque migra con el DUENO de la base (el unico que puede
+          # crear el schema); el segundo valida el schema contra las entidades
+          # con el ROL DE APLICACION, que es como corre en produccion.
           boot_quarkus() {
             docker run -d --name electoral-api-quarkus --network host \
               -e DB_HOST=localhost \
               -e DB_PORT=5432 \
               -e DB_NAME=electoral_db \
-              -e DB_USER=electoral_user \
-              -e DB_PASSWORD=electoral_pass \
+              -e DB_USER="$DB_USER" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
               -e SERVER_PORT=8080 \
               -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
               -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
@@ -368,12 +440,14 @@ jobs:
             return 1
           }
 
-          boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true -e QUARKUS_HIBERNATE_GENERATION=none
+          DB_USER=electoral_user DB_PASSWORD=electoral_pass \
+            boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true -e QUARKUS_HIBERNATE_GENERATION=none
           wait_healthy || exit 1
           echo "Primer arranque: el backend creo el schema y quedo saludable"
 
           docker rm -f electoral-api-quarkus
-          boot_quarkus
+          DB_USER=electoral_app DB_PASSWORD=electoral_app_pass \
+            boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false
           wait_healthy || exit 1
           echo "Segundo arranque: el backend valido el schema y quedo saludable"
           curl -s http://localhost:8080/actuator/health

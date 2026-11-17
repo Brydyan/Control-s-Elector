@@ -1,46 +1,58 @@
-import { test, expect, Page } from '@playwright/test';
-import { ActasListaPage, ActaDetallePage } from '../fixtures/pages';
+import { expect } from '@playwright/test';
+import { test } from '../fixtures/auth.fixture';
+import { loginReal } from '../fixtures/auth.fixture';
+import { ActaDetallePage } from '../fixtures/pages';
+import {
+  anular,
+  aprobar,
+  registrarActa,
+  tokenDe,
+} from '../fixtures/actas-real';
 
 /**
  * T-FE-10 J2: Approve Flow
  *
  * User journey:
- * 1. Navigate to actas list
- * 2. Click acta in ENVIADA state
- * 3. Open Aprobar modal
- * 4. Confirm approval
- * 5. Verify toast message
- * 6. Verify estado changed to APROBADA
+ * 1. Navigate to an acta in ENVIADA state
+ * 2. Open Aprobar modal
+ * 3. Confirm approval
+ * 4. Verify toast message
+ * 5. Verify estado changed to APROBADA
+ *
+ * El acta se registra por HTTP (eso ya lo cubre J1 por UI): lo que se prueba
+ * aca es la pantalla de aprobacion del coordinator contra la API real.
  */
 
 test.describe('J2: Approve Acta Flow', () => {
-  let page: Page;
-  let lista: ActasListaPage;
-  let detalle: ActaDetallePage;
 
-  test.beforeEach(async ({ browser }) => {
-    page = await browser.newPage();
-    lista = new ActasListaPage(page);
-    detalle = new ActaDetallePage(page);
-    await lista.goto();
+  // El inbox y el detalle se prueban sobre la tabla de escritorio. En movil la
+  // tabla compartida se reemplaza por tarjetas, asi que estos journeys (que
+  // assertan sobre filas, menus y paginador de la tabla) no aplican.
+  test.skip(
+    ({ viewport }) => !!viewport && viewport.width < 768,
+    'Journey de escritorio: en movil la tabla se reemplaza por tarjetas.',
+  );
+  const OBSERVER = { email: 'observervera@example.local', password: 'admin12345' };
+
+  let actaId = 0;
+  let tokenObserver = '';
+
+  test.beforeEach(async ({ request }) => {
+    tokenObserver = await tokenDe(request, OBSERVER.email, OBSERVER.password);
+    actaId = await registrarActa(request, tokenObserver);
   });
 
-  test.afterEach(async () => {
-    await page.close();
+  test.afterEach(async ({ request }) => {
+    if (actaId) {
+      await anular(request, actaId);
+    }
   });
 
-  test('should approve an acta in ENVIADA state', async () => {
-    // Filter to ENVIADA
-    await lista.clickEstadoTab('Enviadas');
-    await page.waitForTimeout(500);
+  test('should approve an acta in ENVIADA state', async ({ page }) => {
+    await loginReal(page, 'COORDINATOR');
 
-    // Get first acta ID (in real test, from mocked API response)
-    // For now, click first row
-    await lista.clickActaRow(0);
-
-    // Verify detail page loaded
-    const title = page.locator('h1');
-    await expect(title).toBeVisible();
+    const detalle = new ActaDetallePage(page);
+    await detalle.goto(actaId);
 
     // Click Aprobar button
     await detalle.clickAprobar();
@@ -54,11 +66,13 @@ test.describe('J2: Approve Acta Flow', () => {
     // Verify modal closed
     await detalle.verifyModalClosed();
 
-    // Verify toast (success message)
-    await lista.verifyToastMessage('Acta aprobada');
+    // Verify the success banner (the page shows the result inline)
+    await expect(page.locator('.success-banner')).toContainText(
+      'APROBADA',
+      { timeout: 10_000 },
+    );
 
     // Verify status changed to APROBADA
-    const status = await detalle.getActaStatus();
-    expect(status).toContain('APROBADA');
+    await expect(page.locator('app-badge').first()).toContainText('Aprobada');
   });
 });

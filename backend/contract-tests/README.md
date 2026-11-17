@@ -44,10 +44,16 @@ Credenciales del usuario MASTER seedeado (necesario para registrar a los demás 
 
 | Fuente | Default |
 |---|---|
-| `-Dcontract.master.email` / `CONTRACT_MASTER_EMAIL` | `admsismas@control.ttcs` |
+| `-Dcontract.master.email` / `CONTRACT_MASTER_EMAIL` | `admin@control-elector.local` |
 | `-Dcontract.master.password` / `CONTRACT_MASTER_PASSWORD` | `admin12345` |
 
-El email del MASTER sale del `DataSeeder`: 3 letras del nombre + 3 del apellido + 3 del rol, normalizado. Con los defaults (`Admin` / `Sistema` / `MASTER`) → `admsismas@control.ttcs`.
+El MASTER lo crea la migración `026-admin-inicial.sql`, que lo siembra en el
+contexto de Liquibase `bootstrap-admin`. El backend contra el que corre esta
+suite tiene que arrancar pidiendo ese contexto
+(`QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin`); si no, la cuenta no existe
+y el login devuelve 401. Antes lo creaba el `DataSeeder`, que generaba el email
+por concatenacion (`admsismas@control.ttcs`); ese seeder se borro porque
+insertaba un admin nuevo en cada arranque.
 
 ## Estructura
 

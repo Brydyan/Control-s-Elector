@@ -1,7 +1,7 @@
 # Informe — Cobertura E2E y simulación del sistema
 
 **Proyecto:** Control-s-Elector (backend Quarkus `ec.twintailcs.electoral` + frontend Angular/Ionic)
-**Fecha:** 13-nov-2026
+**Fecha:** 13-nov-2026 · **Re-verificado:** 13-nov-2026 16:55 (ver §9)
 **Rama:** `brydyan/sc-510/t-fe-06-observer-mis-actas-sdd`
 **Herramientas:** CodeGraph CLI (índice local `556 archivos / 7 988 nodos / 16 910 aristas`), lectura de recursos, ejecución real de las suites.
 
@@ -15,12 +15,12 @@ navegador) está construida sobre un contrato de API que el backend no tiene.
 
 | Veredicto | Detalle |
 |---|---|
-| 🔴 **Gate de CI roto** | La suite de contrato (job `backend-contract`, el único gate de API del proyecto) falla hoy: **122 tests, 73 errores**. Regresión introducida por el commit `803bb7c` de hoy. |
-| 🔴 **E2E de navegador no pasa** | Playwright: **66 tests → 55 fallos, 11 pasos**. Ningún spec despacha los dos overlays de consentimiento (cookies + términos) que bloquean el render. |
+| 🟢 **Gate de contrato arreglado** | Commit `803bb7c` + `6f3ffdd` + `6a081f1` + `527f429` + `b0c5aa7` → **122 tests, 0 errores**. Verificado contra backend vivo. §9 |
+| 🔴 **E2E de navegador no pasa** | Playwright: **66 tests → 59 fallos, 7 pasos** (con backend real en pie). Ningún spec despacha los dos overlays de consentimiento. |
 | 🔴 **Invariante violado** | El perfil exige *«nada de mocks en la ruta de registro de acta»*. La ruta crítica de registro está **100 % mockeada** en Playwright: nunca toca el backend. |
 | 🟡 **Mocks con contrato falso** | Los mocks codifican un envelope de paginación, un DTO y un vocabulario de estados que **el backend no emite**. Los tests verdes validan el mock, no el sistema. |
 | 🟡 **E2E fuera de CI** | `ci.yml` corre format, lint, unit y build. **No hay job de Playwright.** El E2E puede estar rojo semanas sin que nadie lo note. |
-| 🟢 **Backend en verde** | El módulo Quarkus pasa **133/133 tests**, spotless limpio y piso de JaCoCo cumplido. El backend no está roto: lo que está roto es el contrato y el E2E. |
+| 🟢 **Backend en verde** | El módulo Quarkus pasa **133/133 tests**, spotless limpio y piso de JaCoCo cumplido. El backend no está roto: lo que está roto es el E2E. |
 | 🟢 **Cobertura real disponible** | La suite de contrato cubre máquina de estados, RBAC 4×5, integridad electoral bajo concurrencia y forma de errores. k6 cubre carga contra API real. Ambas existen y son el andamiaje correcto. |
 
 **La conclusión operativa:** el sistema **sí se puede simular hoy** — con la suite de contrato
@@ -574,3 +574,200 @@ Rutas declaradas en `app.routes.ts` frente a las visitadas por los E2E:
 | `/admin/sesiones` | ❌ | — |
 | `/master/configuracion` · `/master/cargos` · `/master/partidos` · `/master/candidatos` | ❌ | — |
 | `/modules/evidencias` · `/modules/evidencias-subir` | ❌ | — |
+
+---
+
+## 9. Re-verificación tras las correcciones (13-nov 16:55)
+
+Se re-ejecutó todo contra backend real reconstruido (Postgres 16 + RustFS + imagen del repo,
+88 changesets Liquibase) y dev server real en `:4200`.
+
+### 9.1 Commits revisados
+
+| Commit | Qué cambió |
+|---|---|
+| `6f3ffdd` | `listar()` acepta array directo **o** Map root |
+| `6a081f1` | mensajes de error explícitos en el helper |
+| `527f429` | clave correcta `data` (no `content`) para `PagedResponse` + fixes en `CoordinatorActasContractIT` y `ObserverActasContractIT` |
+| `b0c5aa7` | `correccionesPendientes` usa el helper `listar()` |
+| `d40a259` | reubicación de `docs/` → `documents/test/` |
+
+### 9.2 Estado por hallazgo
+
+| # | Hallazgo | Estado | Evidencia |
+|---|---|---|---|
+| **H1** | helper `listar()` incompatible con el backend | 🟢 **ARREGLADO** | `Tests run: 122, Failures: 0, Errors: 0` · BUILD SUCCESS (57 s) |
+| **H2** | invariantes del acta perdidas (locking, aislamiento, checksum) | 🔴 abierto | `grep` en `src/test` → 0 resultados; los IT solo existen en README/`openspec` |
+| **H3** | "Mis Actas" desconectado de la API real | 🔴 abierto | `mis-actas.api.ts` sigue esperando `{content,…}` + `numeroActa/jrvNombre/fechaTransmision`; la API emite `{data,meta}` + `numeroJrv/nombreCargo/fechaRegistro` |
+| **H4** | ruta `observer/mis-actas/:id/detalles` inexistente | 🔴 abierto | sigue sin estar en `app.routes.ts` |
+| **H5** | ruta crítica de registro 100 % mockeada | 🔴 abierto | `e2e/support/api-mocks.ts` sin cambios (10-nov) |
+| **H6** | 55/66 fallos por overlays de cookies + términos | 🔴 abierto, **empeorado** | ahora **59/66 fallos** (ver §9.3) |
+| **H7** | `journeys/*` sin login; `AuthFixture` stub | 🔴 abierto | `e2e/fixtures/pages.ts` sin cambios |
+| **H8** | dos configs Playwright | 🔴 abierto | ambos archivos sin cambios |
+| **H9** | E2E fuera de CI | 🔴 abierto | `ci.yml` sin job de Playwright |
+| **H10** | mocks apuntan a endpoints inexistentes | 🔴 abierto | `api-mocks.ts` sin cambios |
+| **H11** | vocabulario de estados falso en mocks | 🔴 abierto | `TRANSMITIDO`/`REVISION` siguen en `STUB_ACTAS_MIS_ACTAS` |
+| **H12** | documentación de contrato desalineada | 🔴 abierto | `contract-tests/README.md` sin cambios (email del MASTER, invariantes) |
+
+### 9.3 El E2E de navegador empeoró con el backend real en pie
+
+| Corrida | Backend | Resultado |
+|---|---|---|
+| 1 (14:25) | **apagado** | 55 fallos / 11 pasos (12,0 min) |
+| 2 (16:40) | **encendido** | **59 fallos / 7 pasos** (14,8 min) |
+
+Los 7 que pasan son `j6-legal-terms` (3, el único spec que despacha el modal), `j8` toast (1),
+`j5` lista vacía (1) y dos de `observer-mis-actas` que no dependen de la tabla.
+
+**Conclusión de la re-verificación:** la suite **no es hermética**. Su resultado depende de que
+haya o no un backend escuchando. Con backend real, los endpoints no mockeados responden de verdad y
+el modal de términos se vuelve bloqueante. Esto es una razón más para no meterla en CI tal cual:
+no es determinista.
+
+Además confirma H6: **todos** los fallos siguen apuntando a `cookie-banner` / `Términos de Uso`
+— ninguno tiene otra causa raíz.
+
+---
+
+## 10. Diseño propuesto: E2E en CI partido en shards por criticidad
+
+### 10.1 Corrección al diagnóstico
+
+La premisa «no está en CI porque demora» no es la causa raíz en este repo. Los hechos medidos:
+
+- La suite **no es hermética**: 55/11 sin backend, 59/7 con backend. Un resultado que depende de
+  si hay un proceso escuchando no puede ser un check requerido.
+- La suite **no es informacional**: 100 % mockeada en la ruta crítica (H5). Un S1 verde hoy probaría
+  que los mocks funcionan, no que el sistema funciona.
+- La suite **está roja**: 59/66.
+
+El tiempo es un problema real **después** de que la suite valga algo. Partirla en 4 resuelve el
+problema de costo, no el de valor. El orden correcto es: **primero volverla real y determinista
+(local), después partirla, después meterla a CI.**
+
+### 10.2 Ejes de partición
+
+No partir por cantidad de tests (`--shard=N/M` reparte por conteo, no por criticidad).
+Partir por **tag**, de modo que cada shard sea un conjuntoHomogéneo de riesgo:
+
+| Shard | Tag | Contenido | Bloquea PR | Presupuesto |
+|---|---|---|:--:|---|
+| **S1 — Guardián** | `@guardian` | Registro de acta contra API real; checksum en servidor; idempotencia 409; no-doble-envío tras corte de red | **Sí** | ≤ 4 min |
+| **S2 — Ciclo de vida** | `@ciclo` | Disputa → corrección → aprobación → anulación; historial auditado; `acta:anular` exclusivo del MASTER | **Sí** | ≤ 4 min |
+| **S3 — Permisos y aislamiento** | `@permisos` | Matriz RBAC en navegador; RLS entre observers; 401/403; aislamiento por `registradaPorId` | **Sí** | ≤ 3 min |
+| **S4 — Rebanada** | `@rebanada` | Dashboard, reportes, invitaciones, legal, design system, responsive/a11y | No (nightly) | ≤ 4 min |
+
+Criterio de corte: **un fallo en S1–S3 significa defecto electoral; un fallo en S4 significa defecto
+de producto**. Eso es lo que define si un check bloquea el merge.
+
+```ts
+// frontend/app/playwright.config.ts
+export default defineConfig({
+  testDir: './e2e',
+  retries: 0,                                   // ver §10.5
+  timeout: 45_000,
+  projects: [
+    { name: 'S1-guardian',  grep: /@guardian/  },
+    { name: 'S2-ciclo',     grep: /@ciclo/     },
+    { name: 'S3-permisos', grep: /@permisos/  },
+    { name: 'S4-rebanada',  grep: /@rebanada/  },
+  ],
+});
+```
+
+```ts
+// e2e/e2e-01-registro.spec.ts
+test('transmite el acta con la suma de votos cuadrada @guardian', async ({ page }) => { … });
+```
+
+```yaml
+# .github/workflows/e2e.yml
+strategy:
+  fail-fast: false        # un shard rojo no debe cancelar los otros
+  matrix:
+    shard: [S1-guardian, S2-ciclo, S3-permisos]
+```
+
+### 10.3 El verdadero costo no son los tests: es el stack
+
+Un E2E de navegador contra API real necesita Postgres + RustFS + imagen del backend + build del
+frontend + navegador. **Setup ≈ 4–6 min por job**, y con 3 shards en paralelo se paga 3 veces.
+
+Tres mitigaciones, en orden de impacto:
+
+1. **Reutilizar el `Dockerfile` de frontend que ya existe.** `frontend/app/Dockerfile` compila
+   Angular → nginx, y `nginx.conf` ya hace `proxy_pass http://electoral-api:80/api/`.
+   Es decir: **CI no necesita `ng serve` en absoluto** — puede correr el frontend *production-like*
+   detrás del mismo nginx que usan los usuarios. Más rápido **y** más fiel: es la forma natural de
+   cerrar H3 y H5, porque el navegador habla con la misma ruta `/api` que producción.
+2. **Pre-construir las imágenes en GHCR.** Backend y frontend se construyen una vez y se empujan;
+   cada job hace `docker pull` (~60–90 s) en vez de `docker build` (~4 min).
+3. **Base de datos por shard.** La suite de contrato reserva pares (JRV, cargo) con `comboLibre()`.
+   Si el contrato y el E2E corren contra la misma base en paralelo, se pisan el índice único
+   `uk_acta_activa` y aparecen 409 falsos → *flaky* aleatorio. Cada shard necesita su propia base
+   (o su propio `compose.ci.yaml` con volumen propio).
+
+### 10.4 Qué queda required y qué no
+
+El ruleset de `develop` ya exige 6 checks. Agregar 4 más required hace que **todo** PR espere más y
+que un flake cosmético bloquee el merge.
+
+| Grupo | Checks | ¿Required? | Wall clock |
+|---|---|:--:|---|
+| Backend | Format, Tests & Coverage, Contract Tests (ya verde) | Sí (ya) | ~3 min |
+| Frontend | ESLint, Format, Unit, Build | Sí (ya) | ~4 min |
+| **E2E S1 + S2 + S3** | 3 checks nuevos | **Sí** | ~6–8 min (paralelo) |
+| **E2E S4** | 1 check | **No** → `schedule` (nightly) + `workflow_dispatch` + push a `main` | fuera del camino crítico |
+| Load test | k6 baseline | No (ya) | nightly |
+
+Se **recomienda 3 required, no 4**: S1–S3 protegen los invariantes declarados del proyecto
+(integridad electoral, RBAC, RLS). S4 protege UX y puede esperar al nightly.
+
+### 10.5 Decisiones de robustez (importantes)
+
+- **`retries: 0` en S1 y S2.** Un reintento de Playwright repite el registro del acta: el test de
+  idempotencia, al reintentarse, ejecuta un segundo envío real. Con `retries: 2` (el default en
+  CI) un flake se convierte en un acta duplicada en la base de prueba y, peor, enmascara el
+  defecto que se quería detectar. Los *flakes* se gestionan con cuarentena explícita, no con
+  reintentos silenciosos.
+- **`timeout-minutes` por job** (p. ej. 15) + `maxFailures: 1`: un shard que se cuelga debe
+  fallar rápido, no agotar los minutos del runner.
+- **`timeout: 45_000` por test** y `expect.timeout: 10_000` (ya está en el config raíz).
+- **`fail-fast: false`** en la matrix: que S4 caiga no debe cancelar S1.
+- **Artefactos siempre**: `trace: 'on-first-retry'`, `video`, `screenshot` — y subirlos aunque el
+  job pase, porque el siguiente que investigue va a necesitar el contexto.
+
+### 10.6 Lo que la suite de contrato ya cubre (y por qué el E2E no debe duplicarlo)
+
+La suite de contrato (122 tests, 57 s, **verde**) ya afirma en HTTP puro: la máquina de estados
+completa, la matriz rol × endpoint, el 409 por par duplicado, la carrera 201/409 real, el descuadre
+de votos → 400 y el shape de errores.
+
+**El valor propio del E2E de navegador es la dimensión navegador**, que ningún otro nivel cubre:
+render, enrutado, guards de rol en el cliente, interceptores de auth, IndexedDB y cola offline,
+compresión de imagen a `.webp`, foco y accesibilidad.
+
+De ahí se sigue el reparto: **S1–S3 deben probar lo que solo el navegador puede probar** (que el
+guard de rol deja ver el botón, que la cola offline reenvía sin duplicar, que la foto comprimida
+sube al object storage), y **no re-afirmar en el navegador lo que el contrato ya afirma**.
+
+### 10.7 Orden de ejecución recomendado
+
+| Paso | Acción | Esfuerzo |
+|---|---|---|
+| 1 | Fixture base: aceptar cookies + términos + login real contra la API (H6) | 1–2 h |
+| 2 | Un solo config Playwright + borrar `e2e/playwright.config.ts` (H8) | 30 min |
+| 3 | Reescribir `MisActasService` y la página contra el contrato real (H3) | 1 h |
+| 4 | Crear la ruta de detalle o corregir la navegación (H4) | 30 min |
+| 5 | Specs S1 reales: registro + idempotencia + checksum contra API real (H5) | 3–4 h |
+| 6 | Script local `pnpm test:e2e:real` que levanta el stack completo | 1–2 h |
+| 7 | **Recién entonces**: taggear por criticidad, 4 shards, workflow con matrix | 2 h |
+| 8 | Imágenes en GHCR + `compose.ci.yaml` con base por shard | 2 h |
+| 9 | Declarar S1–S3 required en el ruleset de `develop` | 30 min |
+
+Los pasos 1–6 no tocan CI y dejan el E2E **verde y determinista en local**. Ese es el punto de
+control: si el E2E es verde local contra el stack real, el shard entra a CI sin riesgo. Si no, el
+CI se convierte en el lugar donde se descubre que el E2E está rojo, y eso es peor que no
+tenerlo.
+
+

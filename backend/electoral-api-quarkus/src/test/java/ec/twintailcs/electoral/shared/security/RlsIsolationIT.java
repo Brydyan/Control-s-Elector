@@ -283,6 +283,48 @@ class RlsIsolationIT {
   // ---------------------------------------------------------------------
 
   @Test
+  @DisplayName(
+      "sin contexto no se ve NADA y con contexto se ve: el contraste que prueba que RLS corre")
+  void elContrasteSinYConContextoPruebaQueRlsCorre() throws Exception {
+    // Este es el contraste que faltaba mientras la aplicacion connectaba como superusuario:
+    // con el superusuario las dos consultas dan lo MISMO (todo), asi que quitar el
+    // `set_config` de la sesion no cambia ni un numero y ninguna prueba lo nota.
+    //
+    // Con un rol que no puede saltarse RLS, la misma consulta da 0 sin contexto (no hay
+    // sesion que diga quien pregunta) y N con el contexto de un MASTER. Si alguien
+    // degrada el rol a superusuario, las dos dan N y este test falla.
+    insertActaEnviada(obsAId, jrvId, cargoId);
+    insertActaEnviada(obsBId, jrvId, cargoBId);
+
+    int sinContexto = countVisibleSinContexto("acta");
+    int conContextoDeMaster = countVisible("acta", masterId, "MASTER");
+
+    assertThat(sinContexto).as("sin contexto de RLS no se ve ninguna acta").isZero();
+    assertThat(conContextoDeMaster)
+        .as("con el contexto de un MASTER se ven todas las actas")
+        .isEqualTo(2);
+  }
+
+  @Test
+  @DisplayName("el rol con el que corre la aplicacion no puede saltarse RLS")
+  void elRolDeLaAplicacionNoPuedeSaltarseRls() throws Exception {
+    // El rol que usa la aplicacion tiene que ser NOSUPERUSER y NOBYPASSRLS. Un
+    // superusuario (o un rol con BYPASSRLS) ignora las politicas aunque la tabla
+    // tenga FORCE ROW LEVEL SECURITY: FORCE ata al dueno de la tabla, no al
+    // superusuario.
+    try (var stmt = adminConn.createStatement();
+        ResultSet rs =
+            stmt.executeQuery(
+                "SELECT rolsuper, rolbypassrls FROM pg_roles WHERE rolname = '"
+                    + RLS_USER_NAME
+                    + "'")) {
+      assertThat(rs.next()).as("el rol de prueba tiene que existir").isTrue();
+      assertThat(rs.getBoolean("rolsuper")).as("el rol no puede ser superusuario").isFalse();
+      assertThat(rs.getBoolean("rolbypassrls")).as("el rol no puede tener BYPASSRLS").isFalse();
+    }
+  }
+
+  @Test
   @DisplayName("un OBSERVER solo ve las actas que registro: RLS lo aisla del resto")
   void elObserverSoloVeLasActasQueRegistro() throws Exception {
     // Importa porque es la garantia de aislamiento de la mesa: un observer no puede

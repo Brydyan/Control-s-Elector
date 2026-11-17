@@ -39,9 +39,10 @@ databaseChangeLog:
   - include: { file: database/changelog/025-00-usuario-public-id-default.sql }
   - include: { file: database/changelog/025-data-seed.sql }
   # El admin inicial va al final: necesita `rol` con nombre MASTER, que crea el
-  # seed de RBAC. Lleva `context: seed` explicito para poder excluirlo con
-  # QUARKUS_LIQUIDASE_CONTEXTS vacio en staging/produccion. Ver el aviso de
-  # seguridad en el archivo.
+  # seed de RBAC. Lleva `context: bootstrap-admin` explicito —propio, no el del
+  # seed de referencia— para que produccion pueda correr los datos de
+  # referencia sin crear esta cuenta, que tiene una contrasena conocida y
+  # versionada. Ver el aviso de seguridad en el archivo.
   - include: { file: database/changelog/026-admin-inicial.sql }
   # Repara el hash de las cuentas de referencia del 025, que se creo con un
   # placeholder de 61 caracteres en vez de un BCrypt de 60 y por lo tanto no
@@ -68,3 +69,30 @@ databaseChangeLog:
   # Invitaciones con 24 horas de vigencia (ODD #504 B): actualiza el default
   # y la data existente. Va aquí porque modifica user_invitations (creada en 029).
   - include: { file: database/changelog/033-user-invitation-24h-expiry.sql }
+  # K6 load test users: 14 OBSERVERs, 5 COORDINATORs, 1 ADMIN
+  # Contexto seed: solo en dev local, no en tests o producción
+  - include: { file: database/changelog/034-k6-load-test-users.sql }
+  # Configuración geográfica jerárquica (SDD 2026-11-16-config-geografica): permiso
+  # `configuracion:read` para MASTER y ADMIN, y el submenú de MASTER para la pantalla
+  # de geografía. Solo crea permisos y menús: no toca la estructura de las tablas.
+  - include: { file: database/changelog/035-config-geografica.sql }
+  # Rol de aplicación (ODD rls-app-role): permisos del rol `electoral_app` y
+  # funciones de RLS como SECURITY DEFINER. Va al final porque concede
+  # permisos sobre TODAS las tablas: si corre antes que un changeset que crea
+  # tablas, esas tablas nuevas no quedan cubiertas (por eso el mismo changeset
+  # instala además ALTER DEFAULT PRIVILEGES).
+  - include: { file: database/changelog/036-app-role-grants.sql }
+  # Política de INSERT para `notificacion` (ODD rls-app-role): la tabla tenía RLS
+  # sin política de inserción, algo que solo se nota cuando el rol de la
+  # aplicación NO es superusuario. Va aparte porque 036 ya está aplicado en
+  # bases migradas: editarlo cambiaría su checksum.
+  - include: { file: database/changelog/037-notificacion-insert-policy.sql }
+  # Políticas de UPDATE y DELETE para `evidencia` (ODD rls-app-role): la tabla
+  # tenía RLS sin políticas para esos dos comandos, que con RLS real significa
+  # DENEGADOS (no "sin restricción").
+  - include: { file: database/changelog/038-evidencia-update-delete.sql }
+  # Geografia pre-electoral de produccion: JRVs con su jerarquia completa
+  # (provincia -> canton -> parroquia -> JRV). Es la MUESTRA de como se importa
+  # la geografia real del CNE antes de una eleccion: los datos de verdad van en
+  # su propio changeset, generado con el procedimiento de documents/OPERATIONS.md.
+  - include: { file: database/changelog/039-data-jrvs-produccion.sql }

@@ -121,4 +121,46 @@ describe('ProgresoCantonesPage (rendering)', () => {
     expect(barras[0].getAttribute('aria-valuenow')).toBe('100');
     expect(barras[0].getAttribute('aria-label')).toContain('Santa Elena');
   });
+
+  it('should paint each parroquia row with the tier color of its avance', () => {
+    // La mini-barra de parroquia era verde FIJO: un canton recien iniciado (69%) se
+    // pintaba igual que uno al 100%. El color tiene que venir del avance, con el
+    // mismo criterio que las tarjetas cantonales (S3).
+    const celdas = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '.parroquias-table tbody .col-avance .avance-cell',
+      ) as NodeListOf<HTMLElement>,
+    );
+
+    expect(celdas.length).toBe(2);
+    // Santa Elena 100% -> verde
+    expect(celdas[0].classList).toContain('fill-green');
+    // La Libertad 69.2% -> azul (50-80)
+    expect(celdas[1].classList).toContain('fill-blue');
+  });
+
+  it('should show an empty state when the canton has no parroquias', () => {
+    // Con el desglose vacio, el panel tiene que decir que no hay parroquias y no
+    // dejar una tabla muda: "sin datos" y "el backend no manda el desglose" se
+    // ven distinto. El caso es un canton SIN parroquias, no una lista sin
+    // cantones (en ese caso el bloque entero no se renderiza).
+    fixture.componentInstance.cantonesData.set([
+      {
+        cantonId: 2,
+        cantonNombre: 'Sin parroquias',
+        totalJrvs: 0,
+        jrvsConActa: 0,
+        porcentaje: 0,
+        parroquias: [],
+      },
+    ]);
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector(
+        '[data-testid="parroquias-empty-state"]',
+      ),
+    ).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.parroquias-table')).toBeNull();
+  });
 });

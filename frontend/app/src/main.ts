@@ -5,7 +5,12 @@ import {
   PreloadAllModules,
 } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { inject, APP_INITIALIZER, LOCALE_ID } from '@angular/core';
+import {
+  inject,
+  APP_INITIALIZER,
+  LOCALE_ID,
+  InjectionToken,
+} from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { provideServiceWorker } from '@angular/service-worker';
@@ -18,8 +23,16 @@ import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/core/interceptors/auth.interceptor';
 import { SyncService } from './app/core/offline/sync.service';
 import { CookieConsentService } from './app/core/services/cookie-consent.service';
+import { ConfigService } from './app/core/config/config.service';
 import { primengTheme } from './theme/primeng-theme';
 import { environment } from './environments/environment';
+import { AppConfig } from './app/core/config/config.service';
+
+/**
+ * Token para inyectar la configuración cargada en runtime desde assets/config.json
+ * Permite que servicios usen la URL de API sin conocer ConfigService
+ */
+export const APP_CONFIG = new InjectionToken<AppConfig>('app.config');
 
 /**
  * The app speaks Spanish: the dates, the numbers and the month names. The
@@ -78,6 +91,17 @@ bootstrapApplication(AppComponent, {
       enabled: environment.production,
       registrationStrategy: 'registerWhenStable:30000',
     }),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (configService: ConfigService) => () => configService.load(),
+      deps: [ConfigService],
+      multi: true,
+    },
+    {
+      provide: APP_CONFIG,
+      useFactory: (configService: ConfigService) => configService.getConfig(),
+      deps: [ConfigService],
+    },
     {
       provide: APP_INITIALIZER,
       useFactory: () => {

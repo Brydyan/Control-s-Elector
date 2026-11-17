@@ -1,4 +1,4 @@
-import { Page } from 'playwright';
+import { Page } from '@playwright/test';
 
 /**
  * Base URL de la API tal como la ve la app (coincide con environment.apiUrl).
