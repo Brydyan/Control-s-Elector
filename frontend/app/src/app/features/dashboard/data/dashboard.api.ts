@@ -38,8 +38,14 @@ export class DashboardApi {
     return this.http.get<ResultadoCargo[]>(`${this.baseUrl}/resultados`);
   }
 
-  getProgreso(): Observable<ProgresoCanton[]> {
-    return this.http.get<ProgresoCanton[]>(`${this.baseUrl}/progreso`);
+  /**
+   * Progreso por canton con el desglose por parroquia.
+   *
+   * <p>El backend devuelve las parroquias anidadas en cada canton (`ProgresoCantonDto`), asi que
+   * el tipo de la respuesta es el DTO completo y no la base `ProgresoCanton`.
+   */
+  getProgreso(): Observable<ProgresoCantonDto[]> {
+    return this.http.get<ProgresoCantonDto[]>(`${this.baseUrl}/progreso`);
   }
 
   getNovedades(): Observable<Novedad[]> {
@@ -121,19 +127,15 @@ export class DashboardApi {
   /**
    * T-FE-15 A.2: Obtener progreso por cantón con desglose de parroquias.
    * Cachea en memoria via shareReplay(1).
-   * Consume el endpoint canónico `/progreso` asegurando compatibilidad con ProgresoCantonDto.
+   * Consume el endpoint canónico `/progreso`, que ya devuelve el desglose anidado.
+   *
+   * <p>Antes esta capa fabricaba un `parroquias ?? []` porque el backend no mandaba el
+   * desglose: eso convertia un contrato roto en un panel vacio y silencioso. Ahora el dato
+   * llega del backend y la ausencia se ve como estado vacío en la UI, no como una tabla muda.
    */
   getProgresoDetalles(): Observable<ProgresoCantonDto[]> {
     if (!this.progresoDetalles$) {
-      this.progresoDetalles$ = this.getProgreso().pipe(
-        map((cantones) =>
-          cantones.map((c) => ({
-            ...c,
-            parroquias: (c as ProgresoCantonDto).parroquias ?? [],
-          })),
-        ),
-        shareReplay(1),
-      );
+      this.progresoDetalles$ = this.getProgreso().pipe(shareReplay(1));
     }
     return this.progresoDetalles$;
   }

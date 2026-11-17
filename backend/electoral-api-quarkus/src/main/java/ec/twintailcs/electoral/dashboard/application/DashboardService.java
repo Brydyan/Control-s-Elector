@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.dashboard.application;
 
 import ec.twintailcs.electoral.dashboard.web.dto.NovedadDto;
+import ec.twintailcs.electoral.dashboard.web.dto.ParroquiaProgresoDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ProgresoCantonDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ResultadoCandidatoDto;
 import ec.twintailcs.electoral.dashboard.web.dto.ResultadoCargoDto;
@@ -145,6 +146,17 @@ public class DashboardService {
    * Si {@code totalJrvs == 0} devuelve {@code 0.0}: sin division por cero ni {@code NaN}.
    *
    * <p>Una JRV con actas de tres cargos cuenta una sola vez ({@code COUNT(DISTINCT)}).
+   *
+   * <p>Cada canton lleva anidado su desglose por parroquia, que es lo que consume el panel
+   * "Desglose de Parroquias" del frontend. El desglose usa la MISMA semantica que el canton (JRVs
+   * con acta no anulada, no solo APROBADAS) y por eso los dos niveles cuadran: la suma de {@code
+   * jrvsTotal} de las parroquias de un canton es su {@code totalJrvs}, y la suma de {@code
+   * jrvsEscrutadas} es su {@code jrvsConActa}. Esa conciliacion la asserta el contrato ({@code
+   * DashboardContractIT}).
+   *
+   * <p>El desglose se calcula con {@code LEFT JOIN} desde {@code parroquia}: una parroquia sin JRV
+   * asignados aparece con 0 JRV y 0% de avance. "No hay JRV" es un dato distinto de "no hay
+   * avance", y ocultar esa fila haria que el panel mintiera sobre la cobertura territorial.
    */
   @Transactional
   public List<ProgresoCantonDto> progreso() {
@@ -179,6 +191,38 @@ public class DashboardService {
       jrvsConActaPorCanton.put(((Number) fila[0]).longValue(), ((Number) fila[1]).longValue());
     }
 
+    // Desglose territorial. El filtro de ANULADA va en el ON del LEFT JOIN, no en el WHERE: en
+    // el WHERE convertiria el LEFT JOIN en INNER y las parroquias sin JRV con acta desaparecerian
+    // del desglose, que es justo lo que el panel tiene que mostrar.
+    List<Object[]> _desgloseFilas =
+        entityManager
+            .createNativeQuery(
+                "select pa.id, pa.nombre, pa.canton_id, "
+                    + "count(distinct j.id), count(distinct a.jrv_id) "
+                    + "from parroquia pa "
+                    + "left join jrv j on j.parroquia_id = pa.id "
+                    + "left join acta a on a.jrv_id = j.id and a.estado <> 'ANULADA' "
+                    + "group by pa.id, pa.nombre, pa.canton_id "
+                    + "order by pa.nombre asc",
+                Object[].class)
+            .getResultList();
+    Map<Long, List<ParroquiaProgresoDto>> parroquiasPorCanton = new HashMap<>();
+    for (Object[] fila : _desgloseFilas) {
+      long parroquiaId = ((Number) fila[0]).longValue();
+      String parroquiaNombre = (String) fila[1];
+      long cantonId = ((Number) fila[2]).longValue();
+      // El orden de las columnas de la query es: id, nombre, canton_id, JRVs totales
+      // (count(distinct j.id)), JRVs con acta (count(distinct a.jrv_id)).
+      long jrvsTotal = ((Number) fila[3]).longValue();
+      long jrvsEscrutadas = ((Number) fila[4]).longValue();
+      double avance = jrvsTotal == 0 ? 0.0 : (jrvsEscrutadas * 100.0) / jrvsTotal;
+      parroquiasPorCanton
+          .computeIfAbsent(cantonId, k -> new ArrayList<>())
+          .add(
+              new ParroquiaProgresoDto(
+                  parroquiaId, parroquiaNombre, jrvsEscrutadas, jrvsTotal, avance));
+    }
+
     List<Canton> cantones = Canton.listAll();
     List<ProgresoCantonDto> out = new ArrayList<>(cantones.size());
     for (Canton canton : cantones) {
@@ -187,7 +231,12 @@ public class DashboardService {
       double porcentaje = totalJrvs == 0 ? 0.0 : (jrvsConActa * 100.0) / totalJrvs;
       out.add(
           new ProgresoCantonDto(
-              canton.getId(), canton.getNombre(), totalJrvs, jrvsConActa, porcentaje));
+              canton.getId(),
+              canton.getNombre(),
+              totalJrvs,
+              jrvsConActa,
+              porcentaje,
+              List.copyOf(parroquiasPorCanton.getOrDefault(canton.getId(), List.of()))));
     }
     out.sort(
         Comparator.comparing(

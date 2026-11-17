@@ -97,6 +97,68 @@ class DashboardContractIT extends ContractTestSupport {
   }
 
   @Test
+  @DisplayName("GET /dashboard/progreso devuelve el desglose por parroquia y cuadra con el cantón")
+  void progresoDevuelveElDesglosePorParroquia() {
+    Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/progreso");
+
+    assertThat(r.statusCode()).as("body: %s", r.asString()).isEqualTo(200);
+    List<Map<String, Object>> cantones = r.jsonPath().getList("$");
+    assertThat(cantones).as("body: %s", r.asString()).isNotEmpty();
+
+    int parroquiasTotales = 0;
+    for (Map<String, Object> canton : cantones) {
+      // La clave debe EXISTIR: antes el backend no la mandaba y el frontend caia en un
+      // `?? []` que dejaba el panel "Desglose de Parroquias" vacio sin fallar. Que la clave
+      // falte es un fallo de contrato, no un caso valido.
+      assertThat(canton).as("el canton tiene que traer la clave 'parroquias': %s", canton)
+          .containsKey("parroquias");
+      assertThat(canton.get("parroquias")).as("parroquias de %s", canton).isNotNull();
+
+      List<Map<String, Object>> parroquias = (List<Map<String, Object>>) canton.get("parroquias");
+      parroquiasTotales += parroquias.size();
+
+      long totalJrvs = ((Number) canton.get("totalJrvs")).longValue();
+      long jrvsConActa = ((Number) canton.get("jrvsConActa")).longValue();
+
+      long sumaJrvsTotal = 0;
+      long sumaJrvsEscrutadas = 0;
+      for (Map<String, Object> parroquia : parroquias) {
+        assertThat(parroquia).as("la parroquia tiene que traer sus campos: %s", parroquia)
+            .containsKeys("parroquiaId", "parroquiaNombre", "jrvsEscrutadas", "jrvsTotal", "avance");
+        assertThat((String) parroquia.get("parroquiaNombre")).isNotBlank();
+
+        long total = ((Number) parroquia.get("jrvsTotal")).longValue();
+        long escrutadas = ((Number) parroquia.get("jrvsEscrutadas")).longValue();
+        double avance = ((Number) parroquia.get("avance")).doubleValue();
+
+        assertThat(total).as("no puede haber mas JRVs con acta que JRVs totales: %s", parroquia)
+            .isNotNegative();
+        assertThat(escrutadas).as("no puede haber mas JRVs con acta que JRVs totales: %s", parroquia)
+            .isLessThanOrEqualTo(total);
+        assertThat(avance).as("avance: %s", parroquia).isBetween(0.0, 100.0);
+
+        sumaJrvsTotal += total;
+        sumaJrvsEscrutadas += escrutadas;
+      }
+
+      // Conciliacion: el desglose tiene que sumar EXACTAMENTE lo que dice el canton. Es la
+      // unica forma de que un cambio de semantica entre los dos niveles se note.
+      assertThat(sumaJrvsTotal)
+          .as("la suma de las parroquias tiene que ser el total de JRVs del canton: %s", canton)
+          .isEqualTo(totalJrvs);
+      assertThat(sumaJrvsEscrutadas)
+          .as("la suma de las parroquias tiene que ser el total de JRVs con acta: %s", canton)
+          .isEqualTo(jrvsConActa);
+    }
+
+    // El desglose no puede venir vacio: el seed tiene parroquias con JRVs asignados, asi que
+    // un array vacio en todas partes significa que el backend dejo de enviar el desglose.
+    assertThat(parroquiasTotales)
+        .as("el desglose por parroquia tiene que traer filas: %s", r.asString())
+        .isGreaterThan(0);
+  }
+
+  @Test
   @DisplayName("GET /dashboard/novedades devuelve las novedades recientes")
   void novedadesDevuelveLasNovedadesRecientes() {
     Response r = as(tokenFor("ADMIN")).get(DASHBOARD + "/novedades");

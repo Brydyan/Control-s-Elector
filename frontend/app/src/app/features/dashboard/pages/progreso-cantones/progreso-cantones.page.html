@@ -82,7 +82,17 @@
       </h2>
     </div>
 
-    <div class="parroquias-table-wrapper">
+    <app-empty-state
+      *ngIf="parroquiasOrdenadas.length === 0"
+      title="Sin parroquias para mostrar"
+      description="El cantón seleccionado no tiene parroquias registradas."
+      data-testid="parroquias-empty-state"
+    ></app-empty-state>
+
+    <div
+      class="parroquias-table-wrapper"
+      *ngIf="parroquiasOrdenadas.length > 0"
+    >
       <table class="parroquias-table" role="grid">
         <thead>
           <tr>
@@ -99,7 +109,10 @@
             <td class="col-escrutadas">{{ parroquia.jrvsEscrutadas }}</td>
             <td class="col-total">{{ parroquia.jrvsTotal }}</td>
             <td class="col-avance">
-              <div class="avance-cell">
+              <div
+                class="avance-cell"
+                [class]="getColorClase(parroquia.avance)"
+              >
                 <div
                   class="mini-barra"
                   role="progressbar"
