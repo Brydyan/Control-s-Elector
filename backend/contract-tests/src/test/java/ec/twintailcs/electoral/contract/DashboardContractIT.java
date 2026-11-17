@@ -106,6 +106,8 @@ class DashboardContractIT extends ContractTestSupport {
     assertThat(cantones).as("body: %s", r.asString()).isNotEmpty();
 
     int parroquiasTotales = 0;
+    long jrvsTotales = 0;
+    long jrvsConActaTotales = 0;
     for (Map<String, Object> canton : cantones) {
       // La clave debe EXISTIR: antes el backend no la mandaba y el frontend caia en un
       // `?? []` que dejaba el panel "Desglose de Parroquias" vacio sin fallar. Que la clave
@@ -119,6 +121,8 @@ class DashboardContractIT extends ContractTestSupport {
 
       long totalJrvs = ((Number) canton.get("totalJrvs")).longValue();
       long jrvsConActa = ((Number) canton.get("jrvsConActa")).longValue();
+      jrvsTotales += totalJrvs;
+      jrvsConActaTotales += jrvsConActa;
 
       long sumaJrvsTotal = 0;
       long sumaJrvsEscrutadas = 0;
@@ -136,6 +140,15 @@ class DashboardContractIT extends ContractTestSupport {
         assertThat(escrutadas).as("no puede haber mas JRVs con acta que JRVs totales: %s", parroquia)
             .isLessThanOrEqualTo(total);
         assertThat(avance).as("avance: %s", parroquia).isBetween(0.0, 100.0);
+
+        // Una parroquia sin JRV tiene que reportar 0 y 0%: "no hay JRV" no puede
+        // reportarse como division por cero ni como NaN.
+        if (total == 0) {
+          assertThat(escrutadas)
+              .as("una parroquia sin JRV no puede tener JRVs con acta: %s", parroquia)
+              .isZero();
+          assertThat(avance).as("una parroquia sin JRV tiene que reportar 0%%: %s", parroquia).isZero();
+        }
 
         sumaJrvsTotal += total;
         sumaJrvsEscrutadas += escrutadas;
@@ -155,6 +168,18 @@ class DashboardContractIT extends ContractTestSupport {
     // un array vacio en todas partes significa que el backend dejo de enviar el desglose.
     assertThat(parroquiasTotales)
         .as("el desglose por parroquia tiene que traer filas: %s", r.asString())
+        .isGreaterThan(0);
+
+    // Los conteos tienen que ser > 0. OJO con lo que esto prueba y lo que no:
+    // en dev y en CI el backend conecta como electoral_user, que es SUPERUSUARIO, y
+    // Postgres no aplica RLS a un superusuario (tampoco con FORCE). Asi's que esto
+    // NO demuestra que el contexto de RLS este activo: si falta, los conteos dan
+    // igual de > 0. Lo que si atrapa es un backend que devuelve ceros. La
+    // evidencia real de que RLS filtra es RlsIsolationIT, que crea su propio rol
+    // sin privilegios.
+    assertThat(jrvsTotales).as("tiene que haber JRVs en la base: %s", r.asString()).isGreaterThan(0);
+    assertThat(jrvsConActaTotales)
+        .as("tiene que haber JRVs con acta visibles: %s", r.asString())
         .isGreaterThan(0);
   }
 

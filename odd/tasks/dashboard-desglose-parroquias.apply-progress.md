@@ -111,6 +111,15 @@ trabajo: el trabajo ajeno que estaba sin commitear en el árbol (incluido un cam
 
 ## Hallazgos que quedan abiertos (ajenos a este ODD)
 
+0. ⚠️ **La capa RLS está inerte en dev y en CI.** El backend conecta como `electoral_user`, que en
+   la imagen oficial de Postgres se crea como **superusuario**, y Postgres no aplica RLS a un
+   superusuario (tampoco con `FORCE ROW LEVEL SECURITY`). Medido: `select count(*) from acta` sin
+   contexto RLS devuelve **139** (todo), y con contexto de ADMIN **26**. Mutación comprobada: backend
+   con `activarContexto()` desactivado devuelve **exactamente los mismos números** → el contexto no
+   cambia nada en ese entorno. La evidencia real de que RLS filtra es `RlsIsolationIT`, que crea su
+   propio rol sin privilegios. El service está bien (y en prod, donde el rol no es superusuario, es
+   necesario), pero **el camino real de la app no está probando RLS**. Requiere un rol de aplicación
+   sin privilegios.
 1. **El seed no produce un spread útil**: las 5 JRV del seed tienen actas en los 5 estados, así que
    en dev todas las parroquías salen al 100 %. El E2E sigue siendo verde porque la aserción es
    "las filas coinciden con la API", no "el avance es X".

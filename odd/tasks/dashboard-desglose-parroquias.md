@@ -86,6 +86,17 @@ con acta desaparecerían del desglose). "No hay JRV" es un dato distinto de "no 
 `activarContexto()` como el resto de las consultas del dashboard. El guard del endpoint es
 `ADMIN|MASTER|COORDINATOR`, los mismos roles que la política de `acta` permite ver todo.
 
+> **Cuidado, y es un hallazgo de la verificación**: en dev y en CI el backend conecta como
+> `electoral_user`, que es **superusuario**, y Postgres **no aplica RLS a un superusuario**
+> (tampoco con `FORCE ROW LEVEL SECURITY`). O sea que, en esos entornos, la capa RLS está
+> **inerte**: la consulta ve todas las filas haya contexto o no. Mutación comprobada: backend con
+> `activarContexto()` desactivado → **mismos números** → el contexto no cambia nada ahí.
+>
+> Consecuencia honesta: la evidencia de que RLS filtra es `RlsIsolationIT`, que crea su **propio rol
+> sin privilegios** (esa es la única prueba real de aislamiento). El service está bien (el
+> `activarContexto()` es lo correcto y es lo que hace falta en prod, donde el rol de Supabase no es
+> superusuario), pero **el camino real de la app no está probando RLS**.
+
 **S6 — El contrato lo dice, en los dos sitios.** El body de la respuesta trae `parroquias`
 poblado, y el spec OpenAPI declara `ProgresoCantonDto.properties.parroquias` con items
 `ParroquiaProgresoDto`.
