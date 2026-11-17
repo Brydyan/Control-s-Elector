@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, Optional } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
@@ -11,6 +11,8 @@ import {
   CandidatoDto,
   CandidatoRequest,
 } from '../domain/models/configuracion.model';
+import { APP_CONFIG } from '../../../../main';
+import { AppConfig } from '../../../core/config/config.service';
 
 /**
  * T-FE-16 Fase A.2: Servicio de API para Configuración Electoral
@@ -22,7 +24,16 @@ import {
 @Injectable({ providedIn: 'root' })
 export class ConfiguracionApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1/configuracion';
+  private readonly config = inject(APP_CONFIG, { optional: true });
+  private baseUrl: string;
+
+  constructor() {
+    // En producción: usa apiUrl de config.json (inyectado)
+    // En desarrollo: usa URL relativa (el proxy redirige)
+    this.baseUrl = this.config?.apiUrl
+      ? `${this.config.apiUrl}/configuracion`
+      : '/api/v1/configuracion';
+  }
 
   // ============================================================================
   // CACHÉ PRIVADO (shareReplay(1) previene duplicación de HTTP)
