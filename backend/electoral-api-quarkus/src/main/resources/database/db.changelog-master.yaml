@@ -91,3 +91,8 @@ databaseChangeLog:
   # tenía RLS sin políticas para esos dos comandos, que con RLS real significa
   # DENEGADOS (no "sin restricción").
   - include: { file: database/changelog/038-evidencia-update-delete.sql }
+  # Geografia pre-electoral de produccion: JRVs con su jerarquia completa
+  # (provincia -> canton -> parroquia -> JRV). Es la MUESTRA de como se importa
+  # la geografia real del CNE antes de una eleccion: los datos de verdad van en
+  # su propio changeset, generado con el procedimiento de documents/OPERATIONS.md.
+  - include: { file: database/changelog/039-data-jrvs-produccion.sql }
