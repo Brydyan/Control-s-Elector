@@ -25,10 +25,11 @@ WORKDIR /home/quarkus/proj
 
 # `native-image-xmx` acota el heap del AOT. La guia de Quarkus reporta 6-8 GB de
 # RSS para una app con Hibernate ORM; el runner estandar de GitHub tiene 16 GB.
-# Se aumentó de 5g a 6g porque el análisis paralelo con 37k tipos causaba
-# deadlock (watchdog abort). Se deshabilita AOTSingleCallsiteInline para liberar
-# memoria durante la compilación (perf 1-2% menor, pero imagen sin deadlock).
-ARG MAVEN_OPTS="-Dquarkus.native.native-image-xmx=6g -Dquarkus.native.additional-build-args=-H:-AOTSingleCallsiteInline"
+# Se aumentó a 7g porque el análisis con 37k tipos + compilación de 184k métodos
+# requiere heap suficiente para evitar pauses GC largas (90.8s GC en 13 pauses).
+# Se deshabilita AOTSingleCallsiteInline para liberar memoria durante compilación
+# (perf 1-2% menor, pero compilación sin timeout).
+ARG MAVEN_OPTS="-Dquarkus.native.native-image-xmx=7g -Dquarkus.native.additional-build-args=-H:-AOTSingleCallsiteInline"
 ENV MAVEN_OPTS=${MAVEN_OPTS}
 
 # El builder de Mandrel trae `native-image` pero NO trae Maven, y el repo no
