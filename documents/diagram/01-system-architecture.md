@@ -10,7 +10,7 @@ graph TB
         ADMIN_U[📊 Admin\nNavegador]
     end
 
-    subgraph APP["🟩 App — control.twintailcs.xyz\n(Angular + Ionic / Vercel)"]
+    subgraph APP["🟩 App — control.brydyan.me\n(Angular + Ionic / Vercel)"]
         AUTH_GUARD[Route Guards\nRBAC por rol JWT]
 
         subgraph VIEW_OBS["Vista OBSERVER"]
@@ -36,7 +36,7 @@ graph TB
         AUTH_GUARD --> VIEW_DASH
     end
 
-    subgraph API["🟦 API Backend — api.twintailcs.xyz\n(Spring Boot / Railway)"]
+    subgraph API["🟦 API Backend — api.brydyan.me\n(Spring Boot / Railway)"]
         REST[REST Controllers]
         SECURITY[Spring Security\nRBAC + JWT]
         SERVICE[Business Services\nActaService · AuditLogService\nNotificacionService]
