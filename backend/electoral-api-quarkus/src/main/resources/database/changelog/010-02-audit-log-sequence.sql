@@ -16,4 +16,5 @@
 CREATE SEQUENCE IF NOT EXISTS audit_log_id_seq;
 ALTER TABLE audit_log ALTER COLUMN id SET DEFAULT nextval('audit_log_id_seq');
 ALTER SEQUENCE audit_log_id_seq OWNED BY audit_log.id;
+GRANT USAGE, SELECT ON SEQUENCE audit_log_id_seq TO electoral_app;
 -- rollback DROP SEQUENCE IF EXISTS audit_log_id_seq;
