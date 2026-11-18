@@ -21,14 +21,13 @@ COPY pom.xml ./pom.xml
 # Descargar dependencias con caché montada. BuildKit preserva /root/.m2
 # entre builds, así que la segunda ejecución reutiliza artifacts ya descargados.
 # Esto evita rate limiting y timeouts en Maven central.
-RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw -B -ntp dependency:go-offline -DskipTests
+# TODO en una línea para evitar problemas de continuación con backslash.
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp dependency:go-offline -DskipTests
 
 COPY src ./src
 
 # Build del package con caché (reutiliza las deps descargadas arriba).
-RUN --mount=type=cache,target=/root/.m2 \
-    ./mvnw -B -ntp package -DskipTests
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
