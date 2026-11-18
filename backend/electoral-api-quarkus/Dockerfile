@@ -21,9 +21,9 @@ COPY pom.xml ./pom.xml
 COPY src ./src
 
 # Build. GitHub Actions hereda MAVEN_OPTS, JAVA_OPTS y otras vars que corrompen Maven.
-# Solo desactivar las vars problemáticas; mantener el resto del ambiente intacto.
+# Usar env -i para limpiar completamente el ambiente, preservando solo lo esencial.
 RUN chmod +x ./mvnw && \
-    unset MAVEN_OPTS JAVA_OPTS && \
+    env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME \
     ./mvnw -B -Dmaven.wagon.http.ssl.insecure=true clean package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
