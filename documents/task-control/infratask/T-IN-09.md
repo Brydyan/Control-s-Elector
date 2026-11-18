@@ -34,7 +34,7 @@ Deploy del frontend Angular en **Vercel**: plataforma global de CDN que sirve tu
 3. **Output Directory**: `dist/app/browser`
 4. **Environment Variables**:
    ```
-   VITE_API_URL=https://api.twintailcs.xyz
+   VITE_API_URL=https://api.brydyan.me
    ```
 
 ### Paso 4 — Crear vercel.json
@@ -54,13 +54,13 @@ Sin esto, refresh en ruta Angular devuelve 404.
 ### Paso 5 — Conectar dominio
 
 1. Vercel Dashboard → **Settings** → **Domains**
-2. Agrega: `control.twintailcs.xyz`
+2. Agrega: `control.brydyan.me`
 3. Vercel retorna CNAME; actualiza tu DNS
 
 ### Paso 6 — Verificar
 
 ```bash
-https://control.twintailcs.xyz
+https://control.brydyan.me
 # Debería cargar la app Angular
 ```
 
