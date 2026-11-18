@@ -20,10 +20,11 @@ COPY pom.xml ./pom.xml
 
 COPY src ./src
 
-# Build. GitHub Actions hereda MAVEN_OPTS y otras vars que corrompen Maven.
-# Usar env -i limpia completamente el ambiente; luego pasamos solo PATH y HOME.
+# Build. GitHub Actions hereda MAVEN_OPTS, JAVA_OPTS y otras vars que corrompen Maven.
+# Solo desactivar las vars problemáticas; mantener el resto del ambiente intacto.
 RUN chmod +x ./mvnw && \
-    env -i PATH=$PATH HOME=$HOME ./mvnw -B -Dmaven.wagon.http.ssl.insecure=true clean package -DskipTests
+    unset MAVEN_OPTS JAVA_OPTS && \
+    ./mvnw -B -Dmaven.wagon.http.ssl.insecure=true clean package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
