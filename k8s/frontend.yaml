@@ -64,10 +64,10 @@ spec:
   ingressClassName: traefik
   tls:
   - hosts:
-    - control.twintailcs.xyz
+    - control.brydyan.me
     secretName: electoral-frontend-tls
   rules:
-  - host: control.twintailcs.xyz
+  - host: control.brydyan.me
     http:
       paths:
       - path: /

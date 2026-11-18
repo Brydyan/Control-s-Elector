@@ -87,7 +87,7 @@ jobs:
             s3api create-bucket --bucket electoral-evidences
 
       - name: Build the backend image
-        run: docker build -t electoral-api:load-test backend/electoral-api-quarkus
+        run: docker build --no-cache -t electoral-api:load-test backend/electoral-api-quarkus
 
       # El rol con el que conecta la APLICACION. La prueba de carga tiene que
       # medir el backend como corre en produccion: con el superusuario, Postgres

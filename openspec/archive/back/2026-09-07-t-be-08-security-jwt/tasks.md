@@ -46,7 +46,7 @@ producción con fecha de vencimiento.
 
   ```bash
   curl -i -X OPTIONS http://localhost:8081/api/v1/auth/login \
-    -H "Origin: https://control.twintailcs.xyz" \
+    -H "Origin: https://control.brydyan.me" \
     -H "Access-Control-Request-Method: POST"
   ```
 
@@ -61,7 +61,7 @@ producción con fecha de vencimiento.
 
 - [ ] **B.2** — Comprobar que el login completo funciona cross-origin: que la cookie
   `refresh_token` se **establece** y se **reenvía**. `SameSite=Strict` con dominios distintos
-  (`control.` y `api.` bajo `twintailcs.xyz`) merece una comprobación explícita: son
+  (`control.` y `api.` bajo `brydyan.me`) merece una comprobación explícita: son
   same-site pero cross-origin, y el comportamiento no es obvio.
 
   Si `SameSite=Strict` impide el flujo, es un hallazgo con su reproducción — **no lo cambies
@@ -129,7 +129,7 @@ cd backend/electoral-api
     total = línea base + los tests añadidos (contados)
 
 curl -i -X OPTIONS http://localhost:8081/api/v1/auth/login \
-  -H "Origin: https://control.twintailcs.xyz" \
+  -H "Origin: https://control.brydyan.me" \
   -H "Access-Control-Request-Method: POST"
     → Access-Control-Allow-Origin presente y con el origen exacto
     → Access-Control-Allow-Credentials: true

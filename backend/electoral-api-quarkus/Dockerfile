@@ -10,11 +10,20 @@
 FROM maven:3.9-eclipse-temurin-25 AS builder
 WORKDIR /app
 
+# Copiar Maven Wrapper (igual que el builder nativo).
+# El wrapper garantiza que siempre usamos Maven 3.9.16.
+COPY mvnw ./
+COPY .mvn ./.mvn
+
 # Primero el pom, para que la capa de dependencias se cachee sola.
 COPY pom.xml ./pom.xml
+
 COPY src ./src
 
-RUN mvn -B package -DskipTests
+# Build. GitHub Actions hereda MAVEN_OPTS y otras vars que corrompen Maven.
+# Usar env -i limpia completamente el ambiente; luego pasamos solo PATH y HOME.
+RUN chmod +x ./mvnw && \
+    env -i PATH=$PATH HOME=$HOME ./mvnw -B -Dmaven.wagon.http.ssl.insecure=true clean package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble

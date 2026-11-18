@@ -4,7 +4,7 @@ Capas de seguridad desde la app hasta la base de datos.
 
 ```mermaid
 graph TD
-    subgraph CLIENT["Capa Cliente — control.twintailcs.xyz"]
+    subgraph CLIENT["Capa Cliente — control.brydyan.me"]
         APP[App Angular+Ionic]
         GUARD[Route Guards<br/>RBAC por rol JWT]
         V_OBS[Vista /observer/*]

@@ -230,7 +230,7 @@ jobs:
             s3api create-bucket --bucket electoral-evidences
 
       - name: Build the backend image
-        run: docker build -t electoral-api:contract backend/electoral-api-quarkus
+        run: docker build --no-cache -t electoral-api:contract backend/electoral-api-quarkus
 
       # El rol con el que conecta la APLICACION. Sin esto, el backend entra como
       # `electoral_user`, que es superusuario, y Postgres ignora las politicas de
@@ -381,7 +381,7 @@ jobs:
       # El contexto de build es el modulo: el changelog de Liquibase vive en su
       # src/main/resources/database, asi que la imagen no depende de un hermano.
       - name: Build the Quarkus image
-        run: docker build -t electoral-api-quarkus backend/electoral-api-quarkus
+        run: docker build --no-cache -t electoral-api-quarkus backend/electoral-api-quarkus
 
       # El backend arranca DOS veces a proposito.
       #

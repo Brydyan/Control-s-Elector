@@ -18,7 +18,7 @@
 
 > **Nota sobre "Private PWA / skip LICENSE".** Una versión anterior de este encabezado declaraba
 > que el proyecto era privado y que las fases de licencia se saltaban. **No es el estado de este
-> ODD:** el `LICENSE` (Apache-2.0, titular `Brydyan / twintailcs`) y el
+> ODD:** el `LICENSE` (Apache-2.0, titular `Brydyan / brydyan`) y el
 > `THIRD_PARTY_LICENSES.md` están hechos y commiteados — Task 2 y Task 3 están marcadas `[x]`
 > más abajo. Ver F.11 del apply-progress para el detalle.
 
@@ -39,7 +39,7 @@
 ```properties
 # CORS Configuration (PWA + development)
 quarkus.http.cors=true
-quarkus.http.cors.origins=https://control.twintailcs.xyz,http://localhost:4200,http://localhost:4300
+quarkus.http.cors.origins=https://control.brydyan.xyz,http://localhost:4200,http://localhost:4300
 quarkus.http.cors.methods=GET,POST,PUT,DELETE,OPTIONS,PATCH
 quarkus.http.cors.headers=Content-Type,Authorization,X-Requested-With,Accept,X-Forwarded-For
 quarkus.http.cors.access-control-allow-credentials=true
@@ -107,7 +107,7 @@ curl -i -X OPTIONS http://localhost:8080/api/auth/login \
 >   público queda bajo "all rights reserved" por defecto, que es justo lo contrario de lo que se
 >   quiere: nadie puede reutilizar el código sin permiso.
 >
-> Además, el titular (Apache-2.0, `Brydyan / twintailcs`) lo decidió el humano de forma
+> Además, el titular (Apache-2.0, `Brydyan / brydyan`) lo decidió el humano de forma
 > explícita, después de ver las opciones.
 
 **File:** `LICENSE`
@@ -140,7 +140,7 @@ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
 
 > El bloque de arriba era una **plantilla truncada** con el "Licensor" reescrito (CNE). Modificar
 > el texto de una licencia la deja sin valor legal. Se puso el texto oficial de `apache.org`
-> sin tocar, con el apéndice y `Copyright 2026 Brydyan / twintailcs` (titular decidido por el
+> sin tocar, con el apéndice y `Copyright 2026 Brydyan / brydyan` (titular decidido por el
 > humano). `diff` contra el original: **una sola línea**, la del titular.
 
 **Effort:** 10 min | **Risk:** Very Low

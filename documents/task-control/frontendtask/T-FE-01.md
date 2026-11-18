@@ -470,7 +470,7 @@ export const environment = {
 // src/environments/environment.prod.ts
 export const environment = {
   production: true,
-  apiUrl: 'https://api.twintailcs.xyz/api/v1',
+  apiUrl: 'https://api.brydyan.me/api/v1',
   supabaseUrl: 'https://tuproyecto.supabase.co',
   supabaseAnonKey: 'tu-anon-key'
 };

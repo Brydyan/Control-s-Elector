@@ -153,9 +153,9 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 | **Dev local** | Docker Compose | v2.20+ |
 | **Deploy backend** | Railway | Pro |
 | **Deploy frontend** | Vercel | — |
-| **Dominios** | twintailcs.xyz | — |
-| **Subdominio API** | api.twintailcs.xyz | HTTPS |
-| **Subdominio App** | control.twintailcs.xyz | HTTPS |
+| **Dominios** | brydyan.me | — |
+| **Subdominio API** | api.brydyan.me | HTTPS |
+| **Subdominio App** | control.brydyan.me | HTTPS |
 
 #### Entornos
 
@@ -531,7 +531,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 
 | RNF-SEC-006 | HTTPS en producción |
 |---|---|
-| **Descripción** | Todos los endpoints en prod (`api.twintailcs.xyz`, `control.twintailcs.xyz`) sobre HTTPS. Certificado LetsEncrypt renovación automática. |
+| **Descripción** | Todos los endpoints en prod (`api.brydyan.me`, `control.brydyan.me`) sobre HTTPS. Certificado LetsEncrypt renovación automática. |
 | **Medida** | Railway + Vercel gestionan TLS. Cliente en prod: rechazar `http://`. |
 | **Validación** | Intento HTTP → redirect 301 a HTTPS. |
 
@@ -800,9 +800,9 @@ ANULADA [final, irreversible]
 - Sin puertos públicos. Acceso via Tailscale.
 
 **Producción:**
-- Frontend: `https://control.twintailcs.xyz` (Vercel)
-- Backend API: `https://api.twintailcs.xyz` (Railway)
-- OpenAPI: `https://api.twintailcs.xyz/v3/api-docs`
+- Frontend: `https://control.brydyan.me` (Vercel)
+- Backend API: `https://api.brydyan.me` (Railway)
+- OpenAPI: `https://api.brydyan.me/v3/api-docs`
 
 ### F. Referencias de Seguridad
 
