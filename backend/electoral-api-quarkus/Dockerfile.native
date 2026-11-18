@@ -38,30 +38,25 @@ ENV MAVEN_OPTS=${MAVEN_OPTS}
 # baja la version pineada en .mvn/wrapper/maven-wrapper.properties (3.9.16, la
 # misma linea 3.9.x que usa la imagen JVM de maven:3.9-eclipse-temurin-25).
 #
-# El cache va a `/home/quarkus/.m2` y no a `/root/.m2`: el build corre como el
-# usuario `quarkus` (uid 1001), y verificado que no puede escribir en /root, de
-# modo que el mount anterior no solo no cacheaba, ademas era inusable.
-#
-# El `uid`/`gid` del mount no son opcionales. BuildKit crea el directorio de
-# cache como root, y sin esto el wrapper no puede crear `~/.m2/wrapper` para
-# bajar Maven y el build muere con
-# `java.nio.file.AccessDeniedException: /home/quarkus/.m2/wrapper`.
+# El cache va a `/home/quarkus/.m2`: el build corre como el usuario `quarkus` (uid 1001).
+# El Maven Wrapper preserva artifacts en ~/.m2 dentro de la capa de Docker,
+# que se reutiliza en builds posteriores si el pom.xml no ha cambiado.
+# Esto es más robusto que BuildKit mounts, que pueden interferir con acceso a directorios
+# fuera del mount (como .mvn/ en el working directory).
 COPY --chown=quarkus:quarkus --chmod=0755 mvnw ./
 COPY --chown=quarkus:quarkus .mvn ./.mvn
 
 # Primero el pom y el wrapper, para que la capa de dependencias se cachee sola.
 COPY --chown=quarkus:quarkus pom.xml ./
-RUN --mount=type=cache,target=/home/quarkus/.m2,uid=1001,gid=1001,sharing=locked \
-    ./mvnw -B -ntp dependency:go-offline -DskipTests
+RUN ./mvnw -B -ntp dependency:go-offline -DskipTests
 
 COPY --chown=quarkus:quarkus src ./src
 
 # `sources-only=false`: el builder por defecto mete los fuentes de las
 # dependencias en la imagen, que no es lo que queremos.
-RUN --mount=type=cache,target=/home/quarkus/.m2,uid=1001,gid=1001,sharing=locked \
-    ./mvnw -B -ntp package -Dnative -DskipTests \
-        -Dquarkus.native.sources-only=false \
-        -Dquarkus.native.container-build=false
+RUN ./mvnw -B -ntp package -Dnative -DskipTests \
+    -Dquarkus.native.sources-only=false \
+    -Dquarkus.native.container-build=false
 
 # ─── Runtime (sin JVM) ────────────────────────────────────────────────────
 # La imagen base tiene que cumplir TRES condiciones. Las tres están medidas
