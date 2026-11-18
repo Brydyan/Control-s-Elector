@@ -81,7 +81,6 @@ export class ActivatePage implements OnInit {
   readonly loading = signal(false);
   readonly errorMessage = signal<string | null>(null);
   readonly showPassword = signal(false);
-  readonly countdown = signal(0);
   readonly cuentaActivada = signal<{
     nombre: string;
     email: string;
@@ -269,23 +268,10 @@ export class ActivatePage implements OnInit {
             rolNombre: cuenta.rolNombre,
           });
           this.estado.set('activado');
-          this.contarParaRedirigir();
         },
         error: (err: HttpErrorResponse) =>
           this.errorMessage.set(this.readError(err)),
       });
-  }
-
-  /** Cuenta 5 segundos y muestra el resumen de la cuenta. */
-  private contarParaRedirigir(): void {
-    this.countdown.set(5);
-    const tick = setInterval(() => {
-      this.countdown.update((c) => c - 1);
-      if (this.countdown() <= 0) {
-        clearInterval(tick);
-        this.verResumen();
-      }
-    }, 1000);
   }
 
   /**

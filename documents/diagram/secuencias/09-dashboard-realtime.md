@@ -11,7 +11,7 @@ sequenceDiagram
     participant WS as Supabase Realtime (WebSocket)
     participant PG as PostgreSQL
 
-    ADMIN_U->>DASH: Accede a resultados.twintailcs.xyz
+    ADMIN_U->>DASH: Accede a resultados.brydyan.me
     DASH->>API: POST /api/auth/login → Bearer JWT
     API-->>DASH: JWT {rol: ADMIN}
 

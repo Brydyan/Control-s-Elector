@@ -46,13 +46,13 @@ data:
   # puede ser "*" con modo de credenciales "include") y abriría la API a cualquier
   # página que conozca el dominio.
   #
-  # control.twintailcs.xyz es la SPA de producción; k3s-staging.tailc8cd10.ts.net es
+  # control.brydyan.me es la SPA de producción; k3s-staging.tailc8cd10.ts.net es
   # la de staging (mismo host que sirve el ingress del frontend). La SPA llama a la
   # API por proxy (/api), que es same-origin y no necesita CORS; esta lista importa
   # para el cliente móvil y para quien llame a la API por su hostname
-  # (api.twintailcs.xyz).
+  # (api.brydyan.me).
   #
   # Si esta variable falta, el backend arranca con el default de desarrollo
   # (localhost) y la API no responde cabeceras CORS para estos orígenes: el fallo
   # es visible en el navegador, no silencioso.
-  CORS_ALLOWED_ORIGINS: "https://control.twintailcs.xyz,https://k3s-staging.tailc8cd10.ts.net"
+  CORS_ALLOWED_ORIGINS: "https://control.brydyan.me,https://k3s-staging.tailc8cd10.ts.net"

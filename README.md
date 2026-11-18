@@ -25,14 +25,14 @@ Una sola aplicación con control de acceso basado en roles (RBAC). Las vistas se
 
 ```
               ┌──────────────────────────────────────────────────┐
-              │     App Angular+PrimeNG — control.twintailcs.xyz │
+              │     App Angular+PrimeNG — control.brydyan.me │
               │        Route Guards RBAC por rol JWT             │
               │  /observer  /coordinator  /master  /dashboard    │
               └──────────────────────┬───────────────────────────┘
                                      │ HTTPS + Bearer JWT
                                      ▼
               ┌──────────────────────────────────────────────────┐
-              │     API Backend — api.twintailcs.xyz             │
+              │     API Backend — api.brydyan.me             │
               │   Quarkus · SmallRye JWT · Panache               │
               └──────────┬──────────────────────────┬────────────┘
                          │                          │
@@ -143,8 +143,8 @@ BORRADOR → ENVIADA → EN_DISPUTA → CORREGIDA → APROBADA → ANULADA
 
 | Subdominio | Servicio | Proveedor |
 | ------------ | --------- | ----------- |
-| `api.twintailcs.xyz` | API REST Quarkus | Railway Pro |
-| `control.twintailcs.xyz` | App Angular+PrimeNG (todos los roles) | Vercel |
+| `api.brydyan.me` | API REST Quarkus | Railway Pro |
+| `control.brydyan.me` | App Angular+PrimeNG (todos los roles) | Vercel |
 
 CI/CD automático desde la rama `develop` de GitHub hacia Railway.
 

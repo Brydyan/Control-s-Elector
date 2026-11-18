@@ -172,7 +172,7 @@ Para garantizar que el desarrollo no se desvíe de los requerimientos operativos
 #### Fase 3 · Infraestructura, Realtime y Producción
 1. **`T-IN-06` (Supabase Realtime)**: WebSockets para emisión y captura de eventos de cambio de estado en `acta` (refresco en vivo de tableros).
 2. **`T-IN-11` (GitHub Actions CI/CD)**: Pipeline estricto sin `-DskipTests` ni `continue-on-error`, con despliegue automático en push a `main`.
-3. **`T-IN-07` / `T-IN-09`**: Configuración de producción para `api.twintailcs.xyz` (Railway) y `control.twintailcs.xyz` (Vercel).
+3. **`T-IN-07` / `T-IN-09`**: Configuración de producción para `api.brydyan.me` (Railway) y `control.brydyan.me` (Vercel).
 
 ---
 

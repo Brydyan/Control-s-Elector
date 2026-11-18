@@ -59,13 +59,13 @@ JWT_ISSUER=control-elector
 ### Paso 4 — Conectar dominio custom
 
 1. Railway → **Settings** → **Domains**
-2. Agrega dominio: `api.twintailcs.xyz`
+2. Agrega dominio: `api.brydyan.me`
 3. Railway te da un CNAME; actualiza tu DNS
 
 ### Paso 5 — Verificar deploy
 
 ```bash
-curl https://api.twintailcs.xyz/actuator/health
+curl https://api.brydyan.me/actuator/health
 # Esperado: { "status": "UP" }
 ```
 

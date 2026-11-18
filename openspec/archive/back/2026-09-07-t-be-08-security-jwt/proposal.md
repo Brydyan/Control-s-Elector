@@ -23,7 +23,7 @@ Pero **ninguna de sus garantías tiene tests**: `JwtServiceTest` cubre 3 casos d
 
 **1. CORS está deshabilitado, y en producción el frontend es cross-origin.**
 `SecurityConfig:43` hace `.cors(AbstractHttpConfigurer::disable)`. En producción el frontend
-vive en `control.twintailcs.xyz` y la API en `api.twintailcs.xyz`: **son orígenes distintos**.
+vive en `control.brydyan.me` y la API en `api.brydyan.me`: **son orígenes distintos**.
 Además `auth.repository.ts` usa `withCredentials: true` para la cookie de refresh, lo que
 exige `Access-Control-Allow-Credentials` y un origen explícito (nunca `*`).
 
