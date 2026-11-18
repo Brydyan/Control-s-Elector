@@ -129,10 +129,10 @@ spec:
   ingressClassName: traefik
   tls:
   - hosts:
-    - api.twintailcs.xyz
+    - api.brydyan.me
     secretName: electoral-api-tls
   rules:
-  - host: api.twintailcs.xyz
+  - host: api.brydyan.me
     http:
       paths:
       - path: /
