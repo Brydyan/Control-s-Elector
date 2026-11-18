@@ -10,11 +10,25 @@
 FROM maven:3.9-eclipse-temurin-25 AS builder
 WORKDIR /app
 
+# Copiar Maven Wrapper (igual que el builder nativo).
+# El wrapper garantiza que siempre usamos Maven 3.9.16.
+COPY mvnw ./
+COPY .mvn ./.mvn
+
 # Primero el pom, para que la capa de dependencias se cachee sola.
 COPY pom.xml ./pom.xml
+
+# Descargar dependencias con caché montada. BuildKit preserva /root/.m2
+# entre builds, así que la segunda ejecución reutiliza artifacts ya descargados.
+# Esto evita rate limiting y timeouts en Maven central.
+RUN --mount=type=cache,target=/root/.m2 \
+    ./mvnw -B -ntp dependency:go-offline -DskipTests
+
 COPY src ./src
 
-RUN mvn -B package -DskipTests
+# Build del package con caché (reutiliza las deps descargadas arriba).
+RUN --mount=type=cache,target=/root/.m2 \
+    ./mvnw -B -ntp package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
