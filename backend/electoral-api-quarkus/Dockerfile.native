@@ -29,7 +29,7 @@ WORKDIR /home/quarkus/proj
 # requiere heap suficiente para evitar pauses GC largas (90.8s GC en 13 pauses).
 # Se deshabilita AOTSingleCallsiteInline para liberar memoria durante compilación
 # (perf 1-2% menor, pero compilación sin timeout).
-ARG MAVEN_OPTS="-Dquarkus.native.native-image-xmx=7g -Dquarkus.native.additional-build-args=-H:-AOTSingleCallsiteInline"
+ARG MAVEN_OPTS="-Dquarkus.native.native-image-xmx=7g -Dquarkus.native.additional-build-args=-H:-AOTSingleCallsiteInline,--initialize-at-run-time=org.apache.http.impl.auth.NTLMEngineImpl,--initialize-at-run-time=ec.twintailcs.electoral.auth.application.UsuarioAdminService"
 ENV MAVEN_OPTS=${MAVEN_OPTS}
 
 # El builder de Mandrel trae `native-image` pero NO trae Maven, y el repo no

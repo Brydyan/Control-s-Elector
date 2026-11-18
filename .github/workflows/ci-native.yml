@@ -107,16 +107,15 @@ jobs:
             --endpoint-url http://localhost:9000 \
             s3api create-bucket --bucket electoral-evidences
 
-      # Builder Mandrel. `native-image-xmx=5g` acota el heap del AOT: el runner
-      # estandar tiene 16 GB y los 6-8 GB de RSS reportados por la guia de Quarkus
-      # dejaban poco margen. Cuesta tiempo de build, que es el tradeoff que
-      # documenta la issue #114.
+      # Builder Mandrel. `native-image-xmx=7g` acota el heap del AOT: el runner
+      # estandar tiene 16 GB. 7g con AOTSingleCallsiteInline deshabilitado reduce
+      # GC overhead (90.8s → pauses menores) evitando timeout en [6/8] Compiling methods.
+      # Se deja que el Dockerfile.native defina los args en lugar de sobrescribirlos aqui.
       - name: Build the native image
         run: |
           docker build \
             -f backend/electoral-api-quarkus/Dockerfile.native \
             -t electoral-api-native \
-            --build-arg MAVEN_OPTS="-Dquarkus.native.native-image-xmx=5g" \
             backend/electoral-api-quarkus
 
       - name: Report image sizes
