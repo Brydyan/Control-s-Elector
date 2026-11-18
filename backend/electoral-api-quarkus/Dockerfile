@@ -18,16 +18,19 @@ COPY .mvn ./.mvn
 # Primero el pom, para que la capa de dependencias se cachee sola.
 COPY pom.xml ./pom.xml
 
-# Descargar dependencias con caché montada. BuildKit preserva /root/.m2
+# Descargar dependencias con caché montada. BuildKit preserva ~/.m2
 # entre builds, así que la segunda ejecución reutiliza artifacts ya descargados.
 # Esto evita rate limiting y timeouts en Maven central.
-# TODO en una línea para evitar problemas de continuación con backslash.
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp dependency:go-offline -DskipTests
+# Sintaxis idéntica a Dockerfile.native: incluye sharing=locked para evitar
+# conflictos de permisos y que BuildKit interprete correctamente el mount.
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    ./mvnw -B -ntp dependency:go-offline -DskipTests
 
 COPY src ./src
 
 # Build del package con caché (reutiliza las deps descargadas arriba).
-RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp package -DskipTests
+RUN --mount=type=cache,target=/root/.m2,sharing=locked \
+    ./mvnw -B -ntp package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
