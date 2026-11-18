@@ -18,16 +18,12 @@ COPY .mvn ./.mvn
 # Primero el pom, para que la capa de dependencias se cachee sola.
 COPY pom.xml ./pom.xml
 
-# Descargar dependencias. El Maven Wrapper preserva artifacts en /root/.m2
-# que persisten entre builds si las capas de Docker se cacheán.
-# Esto es más robusto que --mount=type=cache en CI/CD, que tiene problemas
-# de interpretación en GitHub Actions.
-RUN ./mvnw -B -ntp dependency:go-offline -DskipTests
-
 COPY src ./src
 
-# Build del package (reutiliza las deps descargadas arriba si caché de layer funciona).
-RUN ./mvnw -B -ntp package -DskipTests
+# Build. Usar bash con script inline para evitar issues de parsing en CI/CD.
+# MAVEN_OPTS puede estar corrupto en GitHub Actions; limpiar completamente.
+RUN chmod +x ./mvnw && \
+    sh -c 'export MAVEN_OPTS="" && ./mvnw -B -Dmaven.wagon.http.ssl.insecure=true clean package -DskipTests'
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
