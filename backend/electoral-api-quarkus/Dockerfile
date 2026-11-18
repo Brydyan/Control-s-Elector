@@ -20,10 +20,11 @@ COPY pom.xml ./pom.xml
 
 COPY src ./src
 
-# Build. Usar bash con script inline para evitar issues de parsing en CI/CD.
-# MAVEN_OPTS puede estar corrupto en GitHub Actions; limpiar completamente.
+# Build. Usar env -i para aislar completamente el ambiente de GitHub Actions.
+# MAVEN_OPTS puede estar corrupto en CI; forzar limpieza con variables minimas.
 RUN chmod +x ./mvnw && \
-    sh -c 'export MAVEN_OPTS="" && ./mvnw -B -Dmaven.wagon.http.ssl.insecure=true clean package -DskipTests'
+    env -i HOME=/app PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+      ./mvnw -B -Dmaven.wagon.http.ssl.insecure=true clean package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
