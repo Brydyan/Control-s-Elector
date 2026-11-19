@@ -820,7 +820,9 @@ export class AdminUsuariosPage implements OnInit {
     // Limpiar caché antiguo (mantener máximo 50 entradas)
     if (this.accionesCache.size > 50) {
       const firstKey = this.accionesCache.keys().next().value;
-      this.accionesCache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.accionesCache.delete(firstKey);
+      }
     }
 
     return items;
