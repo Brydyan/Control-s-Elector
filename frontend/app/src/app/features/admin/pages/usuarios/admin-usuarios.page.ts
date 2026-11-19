@@ -692,11 +692,11 @@ export class AdminUsuariosPage implements OnInit {
 
   /**
    * Obtiene acciones del usuario con caching para evitar re-cálculos en cada render.
-   * El cache se invalida cuando cambian los estados globales (enviandoInvitaciones, reenviando).
+   * El cache se invalida cuando cambian estados que afectan los items (esMaster, habilitado, invitaciones).
    */
   obtenerAccionesUsuario(usuario: UsuarioResponseDto): MenuItem[] {
-    // Genera una clave única basada en el usuario y los estados que afectan el menú
-    const cacheKey = `${usuario.publicId}-${this.enviandoInvitaciones()}-${this.reenviando()}`;
+    // Genera una clave única basada en TODOS los estados que determinan qué items aparecen
+    const cacheKey = `${usuario.publicId}-${this.esMaster()}-${usuario.habilitado}-${this.puedeReenviarInvitacion(usuario)}-${this.enviandoInvitaciones()}-${this.reenviando()}`;
 
     // Si existe en caché, retorna directamente (evita re-cálculos en renders)
     if (this.accionesCache.has(cacheKey)) {
