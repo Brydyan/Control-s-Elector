@@ -58,7 +58,12 @@ interface Jrv {
       </p>
 
       <div class="table-wrapper">
-        <p-table [value]="jrvs" dataKey="id" responsiveLayout="scroll">
+        <p-table
+          [value]="jrvs"
+          dataKey="id"
+          responsiveLayout="scroll"
+          styleClass="app-table"
+        >
           <ng-template pTemplate="header">
             <tr>
               <th style="width: 3rem">

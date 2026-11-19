@@ -47,6 +47,7 @@
     ></app-empty-state>
 
     <p-table
+      styleClass="app-table"
       *ngIf="!loading() && recintos().length > 0"
       [value]="recintos()"
       [rows]="size"

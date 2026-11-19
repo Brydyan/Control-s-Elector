@@ -4,6 +4,7 @@ import {
   Input,
   Output,
   EventEmitter,
+  OnChanges,
   inject,
   signal,
 } from '@angular/core';
@@ -167,7 +168,7 @@ interface ActaDetalle {
         justify-content: center;
         align-items: center;
         min-height: 300px;
-        background: #f5f5f5;
+        background: var(--color-surface-raised);
         border-radius: 0.5rem;
 
         .acta-foto {
@@ -190,12 +191,12 @@ interface ActaDetalle {
           .label {
             font-weight: 500;
             font-size: 0.875rem;
-            color: #666;
+            color: var(--color-text-muted);
           }
 
           .value {
             font-size: 0.875rem;
-            color: #333;
+            color: var(--color-text-primary);
           }
         }
       }
@@ -205,13 +206,13 @@ interface ActaDetalle {
         h3 {
           margin: 0 0 1rem 0;
           font-size: 1rem;
-          color: #333;
+          color: var(--color-text-primary);
         }
       }
     }
   `,
 })
-export class ActaDetalleModalComponent {
+export class ActaDetalleModalComponent implements OnChanges {
   @Input() abierto = false;
   @Input() acta: ActaSummary | null = null;
   @Input() submitting = signal(false);

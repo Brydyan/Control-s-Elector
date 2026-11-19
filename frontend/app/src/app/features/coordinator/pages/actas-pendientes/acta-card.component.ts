@@ -57,7 +57,7 @@ export interface ActaSummary {
   styles: `
     .acta-card {
       background: white;
-      border: 1px solid #e0e0e0;
+      border: 1px solid var(--color-border-medium);
       border-radius: 0.5rem;
       padding: 1rem;
       display: flex;
@@ -66,24 +66,24 @@ export interface ActaSummary {
       transition: all 0.3s ease;
 
       &:hover {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        border-color: #ccc;
+        box-shadow: var(--shadow-elevated);
+        border-color: var(--color-border-medium);
       }
 
       &.estado-enviada {
-        border-left: 4px solid #ff9800;
+        border-left: 4px solid var(--color-status-warning);
       }
 
       &.estado-aprobada {
-        border-left: 4px solid #4caf50;
+        border-left: 4px solid var(--color-status-success);
       }
 
       &.estado-en_disputa {
-        border-left: 4px solid #f44336;
+        border-left: 4px solid var(--color-status-danger);
       }
 
       &.estado-corregida {
-        border-left: 4px solid #2196f3;
+        border-left: 4px solid var(--color-status-info);
       }
     }
 
@@ -92,7 +92,7 @@ export interface ActaSummary {
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
-      border-bottom: 1px solid #f0f0f0;
+      border-bottom: 1px solid var(--color-border-subtle);
       padding-bottom: 0.75rem;
 
       .estado-badge {
@@ -101,12 +101,12 @@ export interface ActaSummary {
         font-size: 0.75rem;
         font-weight: 600;
         text-transform: uppercase;
-        background-color: #f5f5f5;
+        background-color: var(--color-surface-raised);
       }
 
       .fecha {
         font-size: 0.75rem;
-        color: #999;
+        color: var(--color-text-muted);
       }
     }
 
@@ -124,12 +124,12 @@ export interface ActaSummary {
         .label {
           font-weight: 500;
           font-size: 0.875rem;
-          color: #666;
+          color: var(--color-text-muted);
         }
 
         .value {
           font-size: 0.875rem;
-          color: #333;
+          color: var(--color-text-primary);
           text-align: right;
           flex: 1;
           margin-left: 0.5rem;

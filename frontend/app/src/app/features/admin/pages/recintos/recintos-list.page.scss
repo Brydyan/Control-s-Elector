@@ -10,7 +10,7 @@
     h1 {
       margin: 0;
       font-size: 1.75rem;
-      color: #1a1a1a;
+      color: var(--color-text-primary);
     }
 
     button {
@@ -33,7 +33,7 @@
       label {
         font-weight: 500;
         font-size: 0.875rem;
-        color: #666;
+        color: var(--color-text-muted);
       }
     }
   }
@@ -41,7 +41,7 @@
   .table-wrapper {
     background: white;
     border-radius: 0.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-surface);
 
     .skeleton-wrapper {
       padding: 1rem;
@@ -58,13 +58,13 @@
     font-weight: 500;
 
     &.active {
-      background-color: #d4edda;
-      color: #155724;
+      background-color: var(--color-status-success-bg);
+      color: var(--color-status-success);
     }
 
     &.inactive {
-      background-color: #f8d7da;
-      color: #721c24;
+      background-color: var(--color-status-danger-bg);
+      color: var(--color-status-danger);
     }
   }
 

@@ -76,12 +76,12 @@ import { ButtonComponent } from '../../../../shared/ui';
       label {
         font-weight: 500;
         font-size: 0.875rem;
-        color: #333;
+        color: var(--color-text-primary);
       }
 
       .char-counter {
         font-size: 0.75rem;
-        color: #999;
+        color: var(--color-text-muted);
         text-align: right;
       }
     }
