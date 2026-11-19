@@ -26,14 +26,22 @@ BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'electoral_app') THEN
         -- Otorgar permisos en TODAS las secuencias existentes
         EXECUTE 'GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO electoral_app';
+        RAISE NOTICE 'Permisos en SEQUENCES otorgados a electoral_app';
 
         -- Configurar DEFAULT PRIVILEGES para que secuencias NUEVAS
-        -- creadas por electoral_user (el owner) hereden permisos para electoral_app
+        -- creadas por quien sea dueño hereden permisos para electoral_app
         -- Esto previene el problema en el futuro: nuevas migraciones que creen
         -- secuencias implícitamente (via BIGSERIAL) ya tendrán permisos.
-        EXECUTE 'ALTER DEFAULT PRIVILEGES FOR ROLE electoral_user IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO electoral_app';
-
-        RAISE NOTICE 'Permisos en SEQUENCES otorgados a electoral_app e incluidos en DEFAULT PRIVILEGES';
+        --
+        -- IMPORTANTE: La sintaxis "ALTER DEFAULT PRIVILEGES FOR ROLE X" solo funciona
+        -- si el rol X EXISTE. En entornos como Railway/Neon, el rol owner de la BD
+        -- puede tener un nombre distinto. Por eso solo ejecutamos si existe.
+        IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'electoral_user') THEN
+            EXECUTE 'ALTER DEFAULT PRIVILEGES FOR ROLE electoral_user IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO electoral_app';
+            RAISE NOTICE 'DEFAULT PRIVILEGES configurados para electoral_user';
+        ELSE
+            RAISE NOTICE 'Rol electoral_user no existe. DEFAULT PRIVILEGES no configurados (ambiente puede tener rol owner distinto).';
+        END IF;
     ELSE
         RAISE WARNING 'Rol electoral_app no existe aún. Saltando GRANT en SEQUENCES.';
     END IF;
