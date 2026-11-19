@@ -25,7 +25,10 @@ public class ActaTestFixture {
 
   /** Crea usuarios necesarios para NotificacionServiceTest (1-9) y UseCaseTests (100-105, 500). */
   private void crearUsuarios() {
-    long[] usuarioIds = {1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 100L, 101L, 102L, 103L, 104L, 105L, 500L, 993L, 994L, 995L, 996L, 997L, 998L, 999L};
+    long[] usuarioIds = {
+      1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 100L, 101L, 102L, 103L, 104L, 105L, 500L, 993L, 994L,
+      995L, 996L, 997L, 998L, 999L
+    };
 
     for (long id : usuarioIds) {
       // Verificar si existe
@@ -41,7 +44,8 @@ public class ActaTestFixture {
                     + "VALUES (?1, ?2, ?3, ?4, true, ?5, ?6, ?7)")
             .setParameter(1, id)
             .setParameter(2, "test-user-" + id + "@test.com")
-            .setParameter(3, "$2a$10$dummyhashedpassword1234567890123456789012345678") // BCrypt format
+            .setParameter(
+                3, "$2a$10$dummyhashedpassword1234567890123456789012345678") // BCrypt format
             .setParameter(4, 1L) // Referencia a rol (asume rol_id=1 existe)
             .setParameter(5, "Test")
             .setParameter(6, "User" + id)

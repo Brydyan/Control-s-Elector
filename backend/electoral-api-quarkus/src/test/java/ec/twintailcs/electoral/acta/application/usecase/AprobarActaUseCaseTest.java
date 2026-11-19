@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.acta.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ec.twintailcs.electoral.acta.application.ActaTestFixture;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaEstadoInvalidoException;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
@@ -13,7 +14,6 @@ import jakarta.transaction.Transactional;
 import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ec.twintailcs.electoral.acta.application.ActaTestFixture;
 
 /**
  * Unit tests for AprobarActaUseCase.

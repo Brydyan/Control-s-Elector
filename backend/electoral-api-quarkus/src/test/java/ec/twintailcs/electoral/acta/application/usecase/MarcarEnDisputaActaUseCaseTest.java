@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.acta.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ec.twintailcs.electoral.acta.application.ActaTestFixture;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
@@ -11,7 +12,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ec.twintailcs.electoral.acta.application.ActaTestFixture;
 
 /**
  * Unit tests for MarcarEnDisputaActaUseCase.
