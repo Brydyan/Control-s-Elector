@@ -35,11 +35,11 @@ BEGIN
         -- Esto previene el problema en el futuro: nuevas migraciones que creen
         -- secuencias implícitamente (via BIGSERIAL) ya tendrán permisos.
         --
-        -- IMPORTANTE: Usamos current_user (función de PL/pgSQL) en lugar de hardcodear electoral_user.
+        -- IMPORTANTE: Usamos current_user (constante de PL/pgSQL) en lugar de hardcodear electoral_user.
         -- En desarrollo, current_user es electoral_user. En Railway/Neon puede ser
         -- neon_owner_xyz u otro nombre. Así el changeset funciona en cualquier ambiente
         -- sin necesidad de conocer el nombre exacto del rol owner de la BD.
-        current_role := current_user;
+        SELECT current_user INTO current_role;
         EXECUTE 'ALTER DEFAULT PRIVILEGES FOR ROLE ' || current_role || ' IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO electoral_app';
         RAISE NOTICE 'DEFAULT PRIVILEGES configurados para rol: %', current_role;
     ELSE
