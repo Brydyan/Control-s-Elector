@@ -104,9 +104,9 @@ public class UsuarioAdminService {
    *
    * <p>Con {@code sendInvitation=true} la cuenta nace en estado {@code PENDIENTE_INVITACION} y
    * ademas se manda la invitacion por email: el usuario elige su propia contrasena y la temporal
-   * queda desactivada por el estado de la cuenta. Con {@code sendInvitation=false} el comportamiento
-   * es el de siempre: la cuenta nace activa y el panel devuelve la contrasena temporal para
-   * comunicarla.
+   * queda desactivada por el estado de la cuenta. Con {@code sendInvitation=false} el
+   * comportamiento es el de siempre: la cuenta nace activa y el panel devuelve la contrasena
+   * temporal para comunicarla.
    *
    * <p>En los dos casos se devuelve la contrasena temporal, y en el caso de la invitacion sirve
    * para una cosa concreta: si el usuario la prueba, el login responde 403 con "revisá tu email" en
@@ -118,8 +118,8 @@ public class UsuarioAdminService {
    * anterior (sin invitacion), y el flujo por email se pide a mano. Un default que mandara
    * invitaciones cambiaria el flujo de altas que ya usa el MASTER en cada eleccion.
    *
-   * <p>Acepta {@code sendInvitation} como parametro principal. Si no viene, usa {@code invitar}
-   * por compatibilidad con clientes antiguos.
+   * <p>Acepta {@code sendInvitation} como parametro principal. Si no viene, usa {@code invitar} por
+   * compatibilidad con clientes antiguos.
    */
   @Transactional
   public UsuarioResponseDto crear(CreateUsuarioRequest request) {
