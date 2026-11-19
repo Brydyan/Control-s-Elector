@@ -1,0 +1,19 @@
+{
+  "meta": {
+    "date": "2026-11-19",
+    "batch": "ODDs from current session",
+    "description": "Multiple operational improvements and fixes"
+  },
+  "tickets": [
+    {
+      "name": "ODD — Consolidate Usuario Invitation Modal",
+      "description": "🎯 Merge redundant 'Enviar invitación' button into 'Guardar' action with error retry modal.\n\n## Context\nT-AUTH-INV-02 (User invitations) has a UX redundancy in user creation modal.\n\n## Proposal\n✅ One \"Guardar\" button that:\n1. Creates user (always)\n2. Sends invitation IF checkbox is checked\n3. Shows error modal + retry if email fails\n\n## Scope (A-F)\n- **A**: Remove redundant button\n- **B**: Merge logic into guardar() method\n- **C**: Add retry error modal\n- **D**: Refactor methods\n- **E**: Update visual states\n- **F**: Tests\n\n## Files\n📄 /odd/tasks/consolidate-usuario-invitation-modal.md",
+      "estimate": "3"
+    },
+    {
+      "name": "VERIFY — Deploy fixes: Docker + Liquibase + PostgreSQL",
+      "description": "🔍 Verification of production deployment chain fixes applied 2026-11-19.\n\n## Fixes Applied\n\n### 1. Dockerfile Maven Environment Isolation\n- **Issue**: GitHub Actions inherits MAVEN_OPTS → Maven interprets `/root/.m2` as lifecycle phase\n- **Fix**: `env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME ./mvnw`\n- **Commits**: ca2f68e (Dockerfile), 745cea7 (Dockerfile.native)\n\n### 2. Hibernate Sequence Permissions (Liquibase)\n- **Issue**: electoral_app role lacks USAGE/SELECT on sequences in Neon production\n- **Fix**: Changeset 040 uses `SELECT current_user INTO current_role` for dynamic role names\n- **Commit**: 0e3d601\n\n### 3. CORS Configuration for Railway\n- **Issue**: Frontend @ control.brydyan.me blocked by API @ api.brydyan.me\n- **Fix**: Set `CORS_ALLOWED_ORIGINS=https://control.brydyan.me` in Railway env\n\n## Verification Tasks\n- [ ] Docker images build without \"Unknown lifecycle phase\" error\n- [ ] Liquibase 040 changeset executes successfully\n- [ ] Railway deploy completes without sequence permission errors\n- [ ] E2E login flow works across origins\n- [ ] Both JVM and native builds start cleanly\n\n## Documentation\n📄 Memory: session_2026_11_19_deployment_fixes.md",
+      "estimate": "5"
+    }
+  ]
+}
