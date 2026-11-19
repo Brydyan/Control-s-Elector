@@ -112,6 +112,8 @@ export class AdminUsuariosPage implements OnInit {
   readonly invitaando = signal(false);
   /** A quien se le mando la invitacion, para mostrarlo en la pantalla. */
   readonly invitacionEnviada = signal<UserInvitationResponse | null>(null);
+  /** Cuando falla el envio de invitacion en el modal de crear usuario, usuario se queda aqui para reintentar. */
+  readonly invitacionFallida = signal<UsuarioResponseDto | null>(null);
   /**
    * Toggle "Enviar Invitacion por Email" (ODD #504, A).
    *
@@ -239,12 +241,16 @@ export class AdminUsuariosPage implements OnInit {
       this.error.set('Nombre y apellido son obligatorios.');
       return;
     }
+
     this.submitting.set(true);
     this.error.set(null);
     const payload = {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
       rolNombre: this.rol,
+      sendInvitation: !this.modoEdicion
+        ? this.enviarInvitacionPorEmail()
+        : undefined,
     };
     const request =
       this.modoEdicion && this.usuarioSeleccionado
@@ -255,12 +261,26 @@ export class AdminUsuariosPage implements OnInit {
         : this.service.crearUsuario(payload);
     request.subscribe({
       next: (usuario) => {
-        this.submitting.set(false);
-        if (!this.modoEdicion)
+        if (!this.modoEdicion) {
           this.passwordTemporal =
             (usuario as UsuarioConPasswordTemporal).passwordTemporal ?? null;
-        this.cargarUsuarios();
-        if (this.modoEdicion) this.modalAbierto = false;
+
+          // sendInvitation determina el estado: si es true, el backend ya envio la invitacion
+          // Si es false, la cuenta es ACTIVA con password temporal
+          this.submitting.set(false);
+          this.invitacionEnviada.set({
+            usuarioId: usuario.publicId,
+            username: usuario.email,
+            emailPersonal: this.emailPersonal,
+            status: this.enviarInvitacionPorEmail() ? 'INVITED' : 'CREATED',
+            expiraEn: null as any,
+          });
+          this.cargarUsuarios();
+        } else {
+          this.submitting.set(false);
+          this.cargarUsuarios();
+          this.modalAbierto = false;
+        }
       },
       error: (err) => {
         this.submitting.set(false);
@@ -268,6 +288,7 @@ export class AdminUsuariosPage implements OnInit {
       },
     });
   }
+
   // ── Invitación de una persona (T-AUTH-INV-02) ─────────────────────────────
 
   /**
@@ -322,6 +343,9 @@ export class AdminUsuariosPage implements OnInit {
    *
    * <p>El mensaje de exito dice a que direccion se mando y con que login entra
    * la persona: sin el login, quien recibe el correo no sabria como entrar.
+   *
+   * <p>NOTA: Mantiene compatibilidad con tests existentes. En la nueva UX,
+   * la invitacion se envía como parte de guardar().
    */
   invitar(): void {
     if (!this.puedeInvitar()) {
@@ -358,6 +382,49 @@ export class AdminUsuariosPage implements OnInit {
         error: (err) => {
           this.invitaando.set(false);
           this.error.set(err?.message || 'No se pudo enviar la invitación.');
+        },
+      });
+  }
+
+  /**
+   * Reintenta enviar invitacion a un usuario ya creado (ODD #504, D).
+   *
+   * <p>Se dispara desde el modal de error cuando fallo el email. El usuario
+   * ya existe en la base de datos, solo se reintenta el email.
+   */
+  reintentarInvitacion(): void {
+    const usuario = this.invitacionFallida();
+    if (!usuario) return;
+
+    this.submitting.set(true);
+    this.error.set(null);
+
+    this.service
+      .invitarUsuario({
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        emailPersonal: this.emailPersonal.trim(),
+        rolNombre: usuario.rolNombre as RolUsuario,
+        sendEmail: true,
+      })
+      .subscribe({
+        next: (respuesta) => {
+          this.submitting.set(false);
+          this.invitacionFallida.set(null);
+          this.invitacionEnviada.set(respuesta);
+          // Limpiar formulario
+          this.nombre = '';
+          this.apellido = '';
+          this.emailPersonal = '';
+          this.rol = 'OBSERVER';
+          this.cargarUsuarios();
+        },
+        error: (err) => {
+          this.submitting.set(false);
+          this.error.set(
+            err?.message ||
+              'No se pudo enviar la invitación. Intenta de nuevo.',
+          );
         },
       });
   }
@@ -753,7 +820,9 @@ export class AdminUsuariosPage implements OnInit {
     // Limpiar caché antiguo (mantener máximo 50 entradas)
     if (this.accionesCache.size > 50) {
       const firstKey = this.accionesCache.keys().next().value;
-      this.accionesCache.delete(firstKey);
+      if (firstKey !== undefined) {
+        this.accionesCache.delete(firstKey);
+      }
     }
 
     return items;

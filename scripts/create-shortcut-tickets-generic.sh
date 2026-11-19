@@ -28,9 +28,11 @@ err() { echo -e "${RED}❌ $1${NC}"; }
 
 # ─── Configuration ──────────────────────────────────────────────────
 
-# Load from .env if exists
+# Load from .env if exists (only Shortcut vars)
 if [ -f .env ]; then
-  export $(grep -v '^#' .env | xargs)
+  export SHORTCUT_API_KEY=$(grep "^SHORTCUT_API_KEY=" .env | cut -d= -f2)
+  export EPIC_ID=$(grep "^EPIC_ID=" .env | cut -d= -f2)
+  export WORKFLOW_STATE_ID=$(grep "^WORKFLOW_STATE_ID=" .env | cut -d= -f2)
 fi
 
 # CLI arguments override .env
