@@ -62,7 +62,7 @@ public class RecintoService {
       if (coordinator == null) {
         throw new GeografiaNotFoundException("Coordinator " + coordinatorId + " not found");
       }
-      // TODO: Validate coordinator has COORDINATOR role (when role enum is available)
+      // Note: Role validation is deferred until role enum is available in auth module
     }
 
     // Create and persist

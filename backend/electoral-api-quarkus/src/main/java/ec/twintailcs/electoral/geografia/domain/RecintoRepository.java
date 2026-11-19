@@ -14,12 +14,12 @@ import java.util.Optional;
 public class RecintoRepository implements PanacheRepository<Recinto> {
 
   /**
-   * Find Recinto by id.
+   * Find Recinto by id (helper method, not overriding PanacheRepository).
    *
    * @param id the Recinto id
    * @return Optional containing the Recinto if found, empty otherwise
    */
-  public Optional<Recinto> findById(Long id) {
+  public Optional<Recinto> findByIdOptional(Long id) {
     return find("id", id).firstResultOptional();
   }
 

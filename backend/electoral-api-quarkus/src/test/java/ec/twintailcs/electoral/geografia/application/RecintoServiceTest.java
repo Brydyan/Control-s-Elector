@@ -7,7 +7,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.domain.Recinto;
 import ec.twintailcs.electoral.geografia.domain.RecintoRepository;
-import ec.twintailcs.electoral.shared.test.QuarkusTest;
+import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
@@ -31,7 +31,7 @@ class RecintoServiceTest {
 
   @Test
   @Transactional
-  void crearRecintoVaaldido() {
+  void crearRecintoValido() {
     // Setup: get an existing parroquia
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
     assertNotNull(parroquia, "Test requires at least one Parroquia to exist");
@@ -126,5 +126,31 @@ class RecintoServiceTest {
     // Assert: recinto should no longer exist
     assertThrows(
         GeografiaNotFoundException.class, () -> service.obtenerRecinto(recinto.getId()));
+  }
+
+  @Test
+  @Transactional
+  void eliminarRecintoConJrvsAsignadas() {
+    // Setup: recinto + 2 jrvs asignadas
+    Parroquia parroquia = Parroquia.find("order by id").firstResult();
+    Recinto recinto =
+        service.crearRecinto("Test Recinto with JRVs", parroquia.getId(), null, "ACTIVO");
+
+    // Create and assign 2 JRVs to recinto
+    ec.twintailcs.electoral.geografia.domain.Jrv jrv1 =
+        new ec.twintailcs.electoral.geografia.domain.Jrv("1001", "Mesa 1", 500, parroquia.getId());
+    jrv1.setRecintoId(recinto.getId());
+    jrv1.persist();
+
+    ec.twintailcs.electoral.geografia.domain.Jrv jrv2 =
+        new ec.twintailcs.electoral.geografia.domain.Jrv("1002", "Mesa 2", 500, parroquia.getId());
+    jrv2.setRecintoId(recinto.getId());
+    jrv2.persist();
+
+    // Act & Assert: cannot delete recinto with assigned JRVs
+    assertThrows(
+        GeografiaConflictException.class,
+        () -> service.eliminarRecinto(recinto.getId()),
+        "Cannot delete Recinto with assigned JRVs");
   }
 }
