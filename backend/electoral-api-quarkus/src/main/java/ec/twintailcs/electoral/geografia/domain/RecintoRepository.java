@@ -51,7 +51,8 @@ public class RecintoRepository implements PanacheRepository<Recinto> {
    * @return true if exists, false otherwise
    */
   public boolean existsByNombreAndParroquiaId(String nombre, Long parroquiaId) {
-    return find("nombre = ?1 and parroquiaId = ?2", nombre, parroquiaId).firstResultOptional()
+    return find("nombre = ?1 and parroquiaId = ?2", nombre, parroquiaId)
+        .firstResultOptional()
         .isPresent();
   }
 

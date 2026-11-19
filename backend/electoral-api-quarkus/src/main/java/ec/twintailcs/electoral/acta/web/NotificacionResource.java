@@ -8,7 +8,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
-import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -23,12 +22,11 @@ import java.util.stream.Collectors;
 /**
  * REST endpoints for notifications: list pending, mark as read.
  *
- * <p>Notifications inform:
- * - COORDINATOR: when new acta is ENVIADA (pending review)
- * - OBSERVER: when acta is APROBADA or RECHAZADA
+ * <p>Notifications inform: - COORDINATOR: when new acta is ENVIADA (pending review) - OBSERVER:
+ * when acta is APROBADA or RECHAZADA
  *
- * <p>Clients typically poll this endpoint every 10 seconds (D3 MVP).
- * Phase 2 may implement WebSocket for real-time notifications.
+ * <p>Clients typically poll this endpoint every 10 seconds (D3 MVP). Phase 2 may implement
+ * WebSocket for real-time notifications.
  */
 @Path("/api/v1/notifications")
 @Produces(MediaType.APPLICATION_JSON)
@@ -57,9 +55,7 @@ public class NotificacionResource {
     // Get pending notifications
     List<Object[]> rawNotifications = notificacionService.obtenerPendientes(usuarioId, limit);
     List<NotificacionDto> notificaciones =
-        rawNotifications.stream()
-            .map(this::mapToNotificacionDto)
-            .collect(Collectors.toList());
+        rawNotifications.stream().map(this::mapToNotificacionDto).collect(Collectors.toList());
 
     // Get unread count
     long pendientes = notificacionService.contarPendientes(usuarioId);

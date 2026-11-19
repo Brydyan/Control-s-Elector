@@ -16,12 +16,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit tests for AprobarActaUseCase.
  *
- * <p>Tests approval workflow and notification creation:
- * - Aprobar acta ENVIADA → APROBADA
- * - Aprobar acta CORREGIDA → APROBADA
- * - Validar que solo ENVIADA/CORREGIDA pueden aprobarse
- * - Validar que se guarda aprobada_por y fecha_aprobacion
- * - Validar que se crea notificación para el observer
+ * <p>Tests approval workflow and notification creation: - Aprobar acta ENVIADA → APROBADA - Aprobar
+ * acta CORREGIDA → APROBADA - Validar que solo ENVIADA/CORREGIDA pueden aprobarse - Validar que se
+ * guarda aprobada_por y fecha_aprobacion - Validar que se crea notificación para el observer
  */
 @QuarkusTest
 class AprobarActaUseCaseTest {

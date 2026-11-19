@@ -12,16 +12,12 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Service for Recinto CRUD operations.
  *
- * <p>Validates:
- * - Parroquia exists
- * - Coordinator exists and has COORDINATOR role
- * - Nombre + Parroquia are unique
- * - Cannot delete Recinto with assigned JRVs
+ * <p>Validates: - Parroquia exists - Coordinator exists and has COORDINATOR role - Nombre +
+ * Parroquia are unique - Cannot delete Recinto with assigned JRVs
  */
 @ApplicationScoped
 public class RecintoService {
@@ -42,8 +38,7 @@ public class RecintoService {
    * @throws GeografiaConflictException if nombre+parroquia already exists or Coordinator invalid
    */
   @Transactional
-  public Recinto crearRecinto(
-      String nombre, Long parroquiaId, Long coordinatorId, String estado) {
+  public Recinto crearRecinto(String nombre, Long parroquiaId, Long coordinatorId, String estado) {
     // Validate Parroquia exists
     Parroquia parroquia = Parroquia.findById(parroquiaId);
     if (parroquia == null) {
@@ -84,13 +79,11 @@ public class RecintoService {
    *     invalid
    */
   @Transactional
-  public Recinto actualizarRecinto(
-      Long id, String nombre, Long coordinatorId, String estado) {
+  public Recinto actualizarRecinto(Long id, String nombre, Long coordinatorId, String estado) {
     Recinto recinto =
         repository
             .findByIdOptional(id)
-            .orElseThrow(
-                () -> new GeografiaNotFoundException("Recinto " + id + " not found"));
+            .orElseThrow(() -> new GeografiaNotFoundException("Recinto " + id + " not found"));
 
     // Validate new nombre if provided (must be unique per Parroquia)
     if (nombre != null && !nombre.equals(recinto.getNombre())) {
@@ -133,8 +126,7 @@ public class RecintoService {
   public Recinto obtenerRecinto(Long id) {
     return repository
         .findByIdOptional(id)
-        .orElseThrow(
-            () -> new GeografiaNotFoundException("Recinto " + id + " not found"));
+        .orElseThrow(() -> new GeografiaNotFoundException("Recinto " + id + " not found"));
   }
 
   /**
@@ -148,7 +140,8 @@ public class RecintoService {
   public PagedResponse<Recinto> listarRecintos(int page, int size) {
     long total = repository.count();
     List<Recinto> data =
-        repository.findAll(io.quarkus.panache.common.Sort.by("id"))
+        repository
+            .findAll(io.quarkus.panache.common.Sort.by("id"))
             .page(io.quarkus.panache.common.Page.of(page, size))
             .list();
     return PagedResponse.of(data, page, size, total);
@@ -166,8 +159,7 @@ public class RecintoService {
     Recinto recinto =
         repository
             .findByIdOptional(id)
-            .orElseThrow(
-                () -> new GeografiaNotFoundException("Recinto " + id + " not found"));
+            .orElseThrow(() -> new GeografiaNotFoundException("Recinto " + id + " not found"));
 
     // Check if Recinto has JRVs assigned
     long jrvCount = repository.countJrvsInRecinto(id);

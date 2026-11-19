@@ -14,12 +14,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit tests for MarcarEnDisputaActaUseCase.
  *
- * <p>Tests rejection/dispute workflow and reason storage:
- * - Marcar acta ENVIADA → EN_DISPUTA
- * - Marcar acta CORREGIDA → EN_DISPUTA
- * - Validar que motivo es obligatorio
- * - Validar que se guarda motivo_rechazo
- * - Validar que se crea notificación para el observer
+ * <p>Tests rejection/dispute workflow and reason storage: - Marcar acta ENVIADA → EN_DISPUTA -
+ * Marcar acta CORREGIDA → EN_DISPUTA - Validar que motivo es obligatorio - Validar que se guarda
+ * motivo_rechazo - Validar que se crea notificación para el observer
  */
 @QuarkusTest
 class MarcarEnDisputaActaUseCaseTest {
@@ -52,7 +49,8 @@ class MarcarEnDisputaActaUseCaseTest {
 
     // Act & Assert
     assertThrows(
-        ActaInvalidaException.class, () -> useCase.execute(acta.getId(), coordinatorId, null, "192.168.1.2"));
+        ActaInvalidaException.class,
+        () -> useCase.execute(acta.getId(), coordinatorId, null, "192.168.1.2"));
   }
 
   @Test
