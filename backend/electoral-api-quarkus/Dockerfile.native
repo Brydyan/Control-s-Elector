@@ -48,13 +48,17 @@ COPY --chown=quarkus:quarkus .mvn ./.mvn
 
 # Primero el pom y el wrapper, para que la capa de dependencias se cachee sola.
 COPY --chown=quarkus:quarkus pom.xml ./
-RUN MAVEN_OPTS="${MAVEN_OPTS}" ./mvnw -B -ntp dependency:go-offline -DskipTests
+# GitHub Actions hereda MAVEN_OPTS y otras vars que corrompen Maven (mismo problema que en Dockerfile).
+# Usar env -i para limpiar completamente el ambiente, preservando solo lo esencial.
+RUN env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \
+    ./mvnw -B -ntp dependency:go-offline -DskipTests
 
 COPY --chown=quarkus:quarkus src ./src
 
 # `sources-only=false`: el builder por defecto mete los fuentes de las
 # dependencias en la imagen, que no es lo que queremos.
-RUN MAVEN_OPTS="${MAVEN_OPTS}" ./mvnw -B -ntp package -Dnative -DskipTests \
+RUN env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \
+    ./mvnw -B -ntp package -Dnative -DskipTests \
     -Dquarkus.native.sources-only=false \
     -Dquarkus.native.container-build=false
 
