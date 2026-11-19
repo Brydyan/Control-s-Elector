@@ -98,3 +98,9 @@ databaseChangeLog:
   # la geografia real del CNE antes de una eleccion: los datos de verdad van en
   # su propio changeset, generado con el procedimiento de documents/OPERATIONS.md.
   - include: { file: database/changelog/039-data-jrvs-produccion.sql }
+  # Permisos explícitos en SEQUENCES para electoral_app (ODD rls-app-role):
+  # El changeset 036 intenta otorgar permisos en secuencias, pero solo se ejecuta
+  # si el rol electoral_app existe en el momento de la migración. En Neon (producción),
+  # electoral_app se creó manualmente DESPUÉS del 036, quedando sin permisos en
+  # SEQUENCES. Este changeset fixa bases ya migradas otorgando permisos explícitos.
+  - include: { file: database/changelog/040-grant-sequences-permissions.sql }
