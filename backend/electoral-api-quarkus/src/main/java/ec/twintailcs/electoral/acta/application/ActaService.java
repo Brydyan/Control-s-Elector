@@ -291,6 +291,38 @@ public class ActaService {
     return repository.historialDeActa(actaId).stream().map(mapper::toHistorialDto).toList();
   }
 
+  /**
+   * Actas pendientes de aprobacion (estado ENVIADA) para el coordinator autenticado.
+   *
+   * <p>RLS: obtiene solo los recintos asignados al coordinator.
+   */
+  @Transactional
+  public PagedResponse<ActaResponseDto> actasPendientesDelCoordinator(int page, int size) {
+    Long coordinatorId = activarContexto();
+
+    ActaPageSpec spec = ActaPageSpec.from(page, size, "fechaRegistro", "desc");
+
+    // Filter: estado=ENVIADA for coordinator's recintos
+    ActaRepository.Filtros filtros =
+        new ActaRepository.Filtros(
+            EstadoActa.ENVIADA,
+            null,
+            null,
+            null,
+            coordinatorId, // Filter by coordinator
+            null,
+            null,
+            null);
+
+    long total = repository.contar(filtros);
+    List<ActaResponseDto> datos =
+        repository.listar(filtros, spec.orden(), (long) spec.size(), spec.offset()).stream()
+            .map(mapper::toDto)
+            .toList();
+
+    return PagedResponse.of(datos, spec.page(), spec.size(), total);
+  }
+
   // ---------------------------------------------------------------------------------------------
   // COORDINATOR — escritura
   // ---------------------------------------------------------------------------------------------
