@@ -11,7 +11,9 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ec.twintailcs.electoral.acta.application.ActaTestFixture;
 
 /**
  * Unit tests for AprobarActaUseCase.
@@ -25,6 +27,12 @@ class AprobarActaUseCaseTest {
 
   @Inject AprobarActaUseCase useCase;
   @Inject EntityManager entityManager;
+
+  @BeforeEach
+  @Transactional
+  void setUpTestData() {
+    new ActaTestFixture(entityManager).setUpTestData();
+  }
 
   @Test
   @Transactional

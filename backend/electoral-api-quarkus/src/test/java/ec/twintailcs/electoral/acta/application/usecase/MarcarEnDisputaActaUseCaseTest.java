@@ -9,7 +9,9 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ec.twintailcs.electoral.acta.application.ActaTestFixture;
 
 /**
  * Unit tests for MarcarEnDisputaActaUseCase.
@@ -23,6 +25,12 @@ class MarcarEnDisputaActaUseCaseTest {
 
   @Inject MarcarEnDisputaActaUseCase useCase;
   @Inject EntityManager entityManager;
+
+  @BeforeEach
+  @Transactional
+  void setUpTestData() {
+    new ActaTestFixture(entityManager).setUpTestData();
+  }
 
   @Test
   @Transactional
