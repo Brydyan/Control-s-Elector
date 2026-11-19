@@ -296,7 +296,7 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
   // ODD #504 (B-F): consolidacion de flujo en guardar()
   // ---------------------------------------------------------------------------
 
-  it('guardar() con invitacion activada crea usuario y luego envia invitacion', () => {
+  it('guardar() con invitacion activada pasa sendInvitation=true al backend', () => {
     const crearUsuario = vi.fn().mockReturnValue(
       of({
         publicId: 'u-new',
@@ -306,16 +306,6 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
         rolNombre: 'OBSERVER',
         habilitado: true,
         creadoEn: '2026-11-08T10:00:00Z',
-      }),
-    );
-
-    invitarUsuario.mockReturnValue(
-      of({
-        usuarioId: 'u-new',
-        username: 'juagarobs@control.ttcs',
-        emailPersonal: 'juan@example.com',
-        status: 'INVITED' as const,
-        expiraEn: '2026-12-08T10:00:00Z',
       }),
     );
 
@@ -329,12 +319,17 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     page.guardar();
 
     expect(crearUsuario).toHaveBeenCalledOnce();
-    expect(invitarUsuario).toHaveBeenCalledOnce();
+    expect(crearUsuario).toHaveBeenCalledWith({
+      nombre: 'Juan',
+      apellido: 'García',
+      rolNombre: 'OBSERVER',
+      sendInvitation: true,
+    });
     expect(page.submitting()).toBe(false);
-    expect(page.invitacionEnviada()?.emailPersonal).toBe('juan@example.com');
+    expect(page.invitacionEnviada()?.status).toBe('INVITED');
   });
 
-  it('guardar() sin invitacion activada crea usuario sin enviar email', () => {
+  it('guardar() sin invitacion activada pasa sendInvitation=false al backend', () => {
     const crearUsuario = vi.fn().mockReturnValue(
       of({
         publicId: 'u-new',
@@ -346,8 +341,6 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
         creadoEn: '2026-11-08T10:00:00Z',
       }),
     );
-
-    invitarUsuario.mockReset();
 
     TestBed.inject(AdminApi).crearUsuario = crearUsuario;
 
@@ -359,27 +352,22 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     page.guardar();
 
     expect(crearUsuario).toHaveBeenCalledOnce();
-    expect(invitarUsuario).not.toHaveBeenCalled();
+    expect(crearUsuario).toHaveBeenCalledWith({
+      nombre: 'Juan',
+      apellido: 'García',
+      rolNombre: 'OBSERVER',
+      sendInvitation: false,
+    });
     expect(page.submitting()).toBe(false);
     expect(page.invitacionEnviada()?.status).toBe('CREATED');
   });
 
-  it('si falla el email en guardar(), muestra modal de reintento con usuario creado', () => {
-    const usuarioCreado = {
-      publicId: 'u-new',
-      email: 'juagarobs@control.ttcs',
-      nombre: 'Juan',
-      apellido: 'García',
-      rolNombre: 'OBSERVER',
-      habilitado: true,
-      creadoEn: '2026-11-08T10:00:00Z',
-    };
-
-    const crearUsuario = vi.fn().mockReturnValue(of(usuarioCreado));
-
-    invitarUsuario.mockReturnValue(
-      throwError(() => new Error('No se pudo enviar el email')),
-    );
+  it('si falla crearUsuario con sendInvitation=true, muestra error', () => {
+    const crearUsuario = vi
+      .fn()
+      .mockReturnValue(
+        throwError(() => new Error('No se pudo enviar el email')),
+      );
 
     TestBed.inject(AdminApi).crearUsuario = crearUsuario;
 
@@ -391,34 +379,20 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     page.guardar();
 
     expect(page.submitting()).toBe(false);
-    expect(page.invitacionFallida()?.publicId).toBe('u-new');
     expect(page.error()).toContain('No se pudo enviar el email');
   });
 
-  it('reintentar invitacion reenvía desde modal de error', () => {
-    const usuarioCreado = {
-      publicId: 'u-new',
-      email: 'juagarobs@control.ttcs',
-      nombre: 'Juan',
-      apellido: 'García',
-      rolNombre: 'OBSERVER' as const,
-      habilitado: true,
-      creadoEn: '2026-11-08T10:00:00Z',
-    };
-
-    const crearUsuario = vi.fn().mockReturnValue(of(usuarioCreado));
-
-    invitarUsuario.mockReturnValueOnce(
-      throwError(() => new Error('No se pudo enviar el email')),
-    );
-
-    invitarUsuario.mockReturnValueOnce(
+  it('guardar con sendInvitation=true y contraseña temporal muestra solo estado', () => {
+    const crearUsuario = vi.fn().mockReturnValue(
       of({
-        usuarioId: 'u-new',
-        username: 'juagarobs@control.ttcs',
-        emailPersonal: 'juan@example.com',
-        status: 'INVITED' as const,
-        expiraEn: '2026-12-08T10:00:00Z',
+        publicId: 'u-new',
+        email: 'juagarobs@control.ttcs',
+        nombre: 'Juan',
+        apellido: 'García',
+        rolNombre: 'OBSERVER',
+        habilitado: true,
+        creadoEn: '2026-11-08T10:00:00Z',
+        passwordTemporal: 'temp-pwd-123',
       }),
     );
 
@@ -429,15 +403,16 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     page.emailPersonal = 'juan@example.com';
     page.enviarInvitacionPorEmail.set(true);
 
-    // Primer intento falla
     page.guardar();
-    expect(page.invitacionFallida()?.publicId).toBe('u-new');
 
-    // Segundo intento (reintento)
-    page.reintentarInvitacion();
+    expect(crearUsuario).toHaveBeenCalledWith({
+      nombre: 'Juan',
+      apellido: 'García',
+      rolNombre: 'OBSERVER',
+      sendInvitation: true,
+    });
+    expect(page.passwordTemporal).toBe('temp-pwd-123');
     expect(page.submitting()).toBe(false);
-    expect(page.invitacionFallida()).toBeNull();
-    expect(page.invitacionEnviada()?.status).toBe('INVITED');
   });
 
   it('cancelar modal de error no afecta usuario ya creado', () => {
@@ -451,11 +426,12 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
       creadoEn: '2026-11-08T10:00:00Z',
     };
 
-    const crearUsuario = vi.fn().mockReturnValue(of(usuarioCreado));
-
-    invitarUsuario.mockReturnValue(
-      throwError(() => new Error('No se pudo enviar el email')),
-    );
+    // La cuenta se crea pero falla el email (simula fallo en backend)
+    const crearUsuario = vi
+      .fn()
+      .mockReturnValue(
+        throwError(() => new Error('No se pudo enviar la invitacion')),
+      );
 
     TestBed.inject(AdminApi).crearUsuario = crearUsuario;
 
@@ -464,15 +440,12 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     page.emailPersonal = 'juan@example.com';
     page.enviarInvitacionPorEmail.set(true);
 
+    // El guardado falla
     page.guardar();
+    expect(page.error()).toContain('No se pudo enviar la invitacion');
 
-    // Usuario en modal de error
-    expect(page.invitacionFallida()?.publicId).toBe('u-new');
-
-    // Cancelar modal
-    page.invitacionFallida.set(null);
-
-    // Usuario sigue existiendo (se recargo), invitacion puede reenviarse luego
-    expect(page.invitacionFallida()).toBeNull();
+    // Usuario puede cerrar el modal
+    page.modalAbierto = false;
+    expect(page.modalAbierto).toBe(false);
   });
 });
