@@ -6,7 +6,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.domain.Recinto;
 import ec.twintailcs.electoral.geografia.domain.RecintoRepository;
-import ec.twintailcs.electoral.shared.domain.PagedResponse;
+import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -88,7 +88,7 @@ public class RecintoService {
       Long id, String nombre, Long coordinatorId, String estado) {
     Recinto recinto =
         repository
-            .findById(id)
+            .findByIdOptional(id)
             .orElseThrow(
                 () -> new GeografiaNotFoundException("Recinto " + id + " not found"));
 
@@ -132,7 +132,7 @@ public class RecintoService {
   @Transactional
   public Recinto obtenerRecinto(Long id) {
     return repository
-        .findById(id)
+        .findByIdOptional(id)
         .orElseThrow(
             () -> new GeografiaNotFoundException("Recinto " + id + " not found"));
   }
@@ -148,7 +148,9 @@ public class RecintoService {
   public PagedResponse<Recinto> listarRecintos(int page, int size) {
     long total = repository.count();
     List<Recinto> data =
-        repository.findAll().page(page, size).list();
+        repository.findAll(io.quarkus.panache.common.Sort.by("id"))
+            .page(io.quarkus.panache.common.Page.of(page, size))
+            .list();
     return PagedResponse.of(data, page, size, total);
   }
 
@@ -163,7 +165,7 @@ public class RecintoService {
   public void eliminarRecinto(Long id) {
     Recinto recinto =
         repository
-            .findById(id)
+            .findByIdOptional(id)
             .orElseThrow(
                 () -> new GeografiaNotFoundException("Recinto " + id + " not found"));
 
@@ -174,7 +176,7 @@ public class RecintoService {
           "Cannot delete Recinto " + id + " with " + jrvCount + " assigned JRVs");
     }
 
-    repository.delete(recinto);
+    repository.deleteById(recinto.getId());
   }
 
   /**
@@ -189,7 +191,7 @@ public class RecintoService {
     // Validate Recinto exists
     Recinto recinto =
         repository
-            .findById(recintoId)
+            .findByIdOptional(recintoId)
             .orElseThrow(
                 () -> new GeografiaNotFoundException("Recinto " + recintoId + " not found"));
 
