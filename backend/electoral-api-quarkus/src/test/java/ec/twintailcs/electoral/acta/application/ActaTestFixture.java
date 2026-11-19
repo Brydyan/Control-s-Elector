@@ -40,8 +40,8 @@ public class ActaTestFixture {
       if (((Number) exists).longValue() == 0) {
         entityManager
             .createNativeQuery(
-                "INSERT INTO usuario (id, email, password_hash, rol_id, habilitado, nombre, apellido, estado_usuario) "
-                    + "VALUES (?1, ?2, ?3, ?4, true, ?5, ?6, ?7)")
+                "INSERT INTO usuario (id, email, password_hash, rol_id, habilitado, nombre, apellido, estado_usuario, creado_en, public_id) "
+                    + "VALUES (?1, ?2, ?3, ?4, true, ?5, ?6, ?7, CURRENT_TIMESTAMP, gen_random_uuid())")
             .setParameter(1, id)
             .setParameter(2, "test-user-" + id + "@test.com")
             .setParameter(
