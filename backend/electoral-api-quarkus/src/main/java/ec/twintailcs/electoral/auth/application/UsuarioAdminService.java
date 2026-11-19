@@ -102,10 +102,11 @@ public class UsuarioAdminService {
   /**
    * Crear usuario con password temporal autogenerado. El email se genera solo.
    *
-   * <p>Con {@code invitar=true} la cuenta nace en estado {@code PENDIENTE_INVITACION} y ademas se
-   * manda la invitacion por email: el usuario elige su propia contrasena y la temporal queda
-   * desactivada por el estado de la cuenta. Con {@code invitar=false} el comportamiento es el de
-   * siempre: la cuenta nace activa y el panel devuelve la contrasena temporal para comunicarla.
+   * <p>Con {@code sendInvitation=true} la cuenta nace en estado {@code PENDIENTE_INVITACION} y
+   * ademas se manda la invitacion por email: el usuario elige su propia contrasena y la temporal
+   * queda desactivada por el estado de la cuenta. Con {@code sendInvitation=false} el comportamiento
+   * es el de siempre: la cuenta nace activa y el panel devuelve la contrasena temporal para
+   * comunicarla.
    *
    * <p>En los dos casos se devuelve la contrasena temporal, y en el caso de la invitacion sirve
    * para una cosa concreta: si el usuario la prueba, el login responde 403 con "revisá tu email" en
@@ -114,11 +115,17 @@ public class UsuarioAdminService {
    * una contrasena que si existe.
    *
    * <p>La distincion entre los dos flujos es explicita a proposito: el default es el comportamiento
-   * anterior, y el flujo por email se pide a mano. Un default que mandara invitaciones cambiaria el
-   * flujo de altas que ya usa el MASTER en cada eleccion.
+   * anterior (sin invitacion), y el flujo por email se pide a mano. Un default que mandara
+   * invitaciones cambiaria el flujo de altas que ya usa el MASTER en cada eleccion.
+   *
+   * <p>Acepta {@code sendInvitation} como parametro principal. Si no viene, usa {@code invitar}
+   * por compatibilidad con clientes antiguos.
    */
   @Transactional
   public UsuarioResponseDto crear(CreateUsuarioRequest request) {
+    // sendInvitation es el parametro nuevo; invitar se mantiene por compatibilidad
+    boolean enviarInvitacion = request.sendInvitation() || request.invitar();
+
     Rol rol = findRole(request.rolNombre());
     String password = temporaryPassword();
     Usuario usuario = new Usuario();
@@ -129,13 +136,13 @@ public class UsuarioAdminService {
     usuario.setPasswordHash(passwordHasher.hash(password));
     usuario.setRol(rol);
     usuario.setHabilitado(true);
-    if (request.invitar()) {
+    if (enviarInvitacion) {
       usuario.setEstadoUsuario(EstadoUsuario.PENDIENTE_INVITACION);
     }
     usuario.validarDatosObligatorios();
     usuario.persist();
 
-    if (request.invitar()) {
+    if (enviarInvitacion) {
       // La invitacion se genera con el mismo camino que el envio en lote: un solo
       // lugar que emite el token, guarda el hash y encola el email.
       invitacionService.enviarInvitaciones(List.of(usuario.getPublicId()));

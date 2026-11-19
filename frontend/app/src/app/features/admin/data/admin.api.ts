@@ -48,6 +48,7 @@ export class AdminApi {
   crearUsuario(
     payload: CreateUsuarioRequest,
   ): Observable<UsuarioConPasswordTemporal> {
+    // Envia sendInvitation; si no viene, el backend usa invitar por compatibilidad
     return this.http
       .post<UsuarioConPasswordTemporal>(`${this.baseUrl}/usuarios`, payload)
       .pipe(catchError((err) => this.handleError(err)));

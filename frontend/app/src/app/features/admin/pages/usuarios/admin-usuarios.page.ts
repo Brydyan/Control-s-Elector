@@ -242,22 +242,15 @@ export class AdminUsuariosPage implements OnInit {
       return;
     }
 
-    // En modo creacion con invitacion, validar email
-    if (
-      !this.modoEdicion &&
-      this.enviarInvitacionPorEmail() &&
-      !this.emailValido()
-    ) {
-      this.error.set('El email debe ser válido para enviar invitación.');
-      return;
-    }
-
     this.submitting.set(true);
     this.error.set(null);
     const payload = {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
       rolNombre: this.rol,
+      sendInvitation: !this.modoEdicion
+        ? this.enviarInvitacionPorEmail()
+        : undefined,
     };
     const request =
       this.modoEdicion && this.usuarioSeleccionado
@@ -272,21 +265,17 @@ export class AdminUsuariosPage implements OnInit {
           this.passwordTemporal =
             (usuario as UsuarioConPasswordTemporal).passwordTemporal ?? null;
 
-          // Si es creacion y checkbox de invitacion esta activado, enviar invitacion
-          if (this.enviarInvitacionPorEmail()) {
-            this.enviarInvitacionDesdeCar(usuario as UsuarioResponseDto);
-          } else {
-            // Sin invitacion, solo cerrar modal
-            this.submitting.set(false);
-            this.invitacionEnviada.set({
-              usuarioId: usuario.publicId,
-              username: usuario.email,
-              emailPersonal: this.emailPersonal,
-              status: 'CREATED',
-              expiraEn: null as any,
-            });
-            this.cargarUsuarios();
-          }
+          // sendInvitation determina el estado: si es true, el backend ya envio la invitacion
+          // Si es false, la cuenta es ACTIVA con password temporal
+          this.submitting.set(false);
+          this.invitacionEnviada.set({
+            usuarioId: usuario.publicId,
+            username: usuario.email,
+            emailPersonal: this.emailPersonal,
+            status: this.enviarInvitacionPorEmail() ? 'INVITED' : 'CREATED',
+            expiraEn: null as any,
+          });
+          this.cargarUsuarios();
         } else {
           this.submitting.set(false);
           this.cargarUsuarios();
@@ -300,41 +289,6 @@ export class AdminUsuariosPage implements OnInit {
     });
   }
 
-  /**
-   * Envia invitacion despues de crear el usuario (fase B-C de ODD).
-   * Si falla, guarda el usuario en invitacionFallida para reintento.
-   */
-  private enviarInvitacionDesdeCar(usuarioCreado: UsuarioResponseDto): void {
-    this.service
-      .invitarUsuario({
-        nombre: this.nombre.trim(),
-        apellido: this.apellido.trim(),
-        emailPersonal: this.emailPersonal.trim(),
-        rolNombre: this.rol,
-        sendEmail: this.enviarInvitacionPorEmail(),
-      })
-      .subscribe({
-        next: (respuesta) => {
-          this.submitting.set(false);
-          this.invitacionEnviada.set(respuesta);
-          // Limpiar formulario
-          this.nombre = '';
-          this.apellido = '';
-          this.emailPersonal = '';
-          this.rol = 'OBSERVER';
-          this.cargarUsuarios();
-        },
-        error: (err) => {
-          this.submitting.set(false);
-          // Usuario fue creado, solo fallo el email: guardar para reintento
-          this.invitacionFallida.set(usuarioCreado);
-          this.error.set(
-            err?.message ||
-              'Usuario creado, pero no se pudo enviar la invitación. Intenta de nuevo.',
-          );
-        },
-      });
-  }
   // ── Invitación de una persona (T-AUTH-INV-02) ─────────────────────────────
 
   /**

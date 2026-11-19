@@ -12,10 +12,15 @@ import jakarta.validation.constraints.NotBlank;
  * @param invitar si es true, la cuenta nace esperando la activacion y se manda la invitacion por
  *     email. Si es false (el valor por defecto), la cuenta nace activa con una contrasena temporal
  *     que el panel muestra, como siempre.
+ * @param sendInvitation si es true, determina que la cuenta se cree con estado
+ *     PENDING_INVITATION e invitacion por email. Si es false, la cuenta se crea ACTIVA sin
+ *     invitacion. Reemplaza a {@code invitar} en la logica ODD, pero ambos se aceptan por
+ *     compatibilidad.
  */
 @RegisterForReflection
 public record CreateUsuarioRequest(
     @NotBlank String nombre,
     @NotBlank String apellido,
     @NotBlank String rolNombre,
-    boolean invitar) {}
+    boolean invitar,
+    boolean sendInvitation) {}
