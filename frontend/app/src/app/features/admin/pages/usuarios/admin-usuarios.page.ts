@@ -124,6 +124,9 @@ export class AdminUsuariosPage implements OnInit {
   readonly reenviando = signal(false);
   readonly roles: RolUsuario[] = ['MASTER', 'COORDINATOR', 'OBSERVER', 'ADMIN'];
 
+  /** Cache de items de menú por usuario para evitar re-cálculos en cada render. */
+  private accionesCache = new Map<string, MenuItem[]>();
+
   /** Filter options for the enabled state. */
   readonly estadoOptions: Array<{ label: string; value: string }> = [
     { label: 'Todos', value: 'TODOS' },
@@ -687,7 +690,19 @@ export class AdminUsuariosPage implements OnInit {
     });
   }
 
+  /**
+   * Obtiene acciones del usuario con caching para evitar re-cálculos en cada render.
+   * El cache se invalida cuando cambian los estados globales (enviandoInvitaciones, reenviando).
+   */
   obtenerAccionesUsuario(usuario: UsuarioResponseDto): MenuItem[] {
+    // Genera una clave única basada en el usuario y los estados que afectan el menú
+    const cacheKey = `${usuario.publicId}-${this.enviandoInvitaciones()}-${this.reenviando()}`;
+
+    // Si existe en caché, retorna directamente (evita re-cálculos en renders)
+    if (this.accionesCache.has(cacheKey)) {
+      return this.accionesCache.get(cacheKey)!;
+    }
+
     const items: MenuItem[] = [
       {
         label: 'Ver detalles',
@@ -730,6 +745,15 @@ export class AdminUsuariosPage implements OnInit {
         icon: 'pi pi-check',
         command: () => this.rehabilitar(usuario),
       });
+    }
+
+    // Guardar en caché
+    this.accionesCache.set(cacheKey, items);
+
+    // Limpiar caché antiguo (mantener máximo 50 entradas)
+    if (this.accionesCache.size > 50) {
+      const firstKey = this.accionesCache.keys().next().value;
+      this.accionesCache.delete(firstKey);
     }
 
     return items;
