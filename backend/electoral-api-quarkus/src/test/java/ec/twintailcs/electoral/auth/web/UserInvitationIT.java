@@ -47,6 +47,14 @@ class UserInvitationIT {
   private static final String APELLIDO = "García";
 
   /**
+   * Cache de emails por test.
+   *
+   * <p>Garantiza que múltiples llamadas a {@code emailDe()} con el mismo apellido dentro de un
+   * test devuelven el mismo email (determinismo). Se limpia en {@code @BeforeEach}.
+   */
+  private final java.util.Map<String, String> emailCache = new java.util.HashMap<>();
+
+  /**
    * IP por test.
    *
    * <p>El limitador de invitaciones es por IP y vive en toda la aplicacion de test: si dos tests
@@ -106,6 +114,7 @@ class UserInvitationIT {
   @BeforeEach
   void crearMasterDePrueba() {
     RecordingEmailService.limpiar();
+    emailCache.clear();
 
     // Cada test arranca con las tablas de invitacion y de auditoria vacias.
     //
@@ -117,6 +126,8 @@ class UserInvitationIT {
     // solo de lo que hace.
     limpiarTabla("delete from user_invitations");
     limpiarTabla("delete from audit_log");
+    limpiarTabla("delete from usuario where id > 1");
+    limpiarTabla("alter sequence usuario_id_seq restart with 2");
 
     Usuario master =
         QuarkusTransaction.requiringNew()
@@ -606,15 +617,21 @@ class UserInvitationIT {
    * 5322, y un local part con "í" seria un caso raro que no es lo que estos tests quieren probar.
    *
    * <p>Se agrega UUID corto para garantizar unicidad (constraint 046: email_personal UNIQUE).
+   * El email se cachea por test para garantizar determinismo: múltiples llamadas al mismo
+   * apellido dentro de un test devuelven el mismo email.
    */
-  private static String emailDe(String apellido) {
-    String limpio =
-        java.text.Normalizer.normalize(apellido, java.text.Normalizer.Form.NFD)
-            .replaceAll("\\p{Mn}", "")
-            .toLowerCase()
-            .replace(" ", "");
-    String uuid = java.util.UUID.randomUUID().toString().substring(0, 8);
-    return "juan." + limpio + "." + uuid + "@example.com";
+  private String emailDe(String apellido) {
+    return emailCache.computeIfAbsent(
+        apellido,
+        (key) -> {
+          String limpio =
+              java.text.Normalizer.normalize(key, java.text.Normalizer.Form.NFD)
+                  .replaceAll("\\p{Mn}", "")
+                  .toLowerCase()
+                  .replace(" ", "");
+          String uuid = java.util.UUID.randomUUID().toString().substring(0, 8);
+          return "juan." + limpio + "." + uuid + "@example.com";
+        });
   }
 
   private Response invitarDesde(String ip, String apellido) {

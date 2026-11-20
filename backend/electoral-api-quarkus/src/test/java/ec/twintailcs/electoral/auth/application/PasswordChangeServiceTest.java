@@ -8,6 +8,7 @@ import ec.twintailcs.electoral.auth.domain.Usuario;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,11 +28,22 @@ class PasswordChangeServiceTest {
 
   @Inject PasswordChangeService service;
   @Inject PasswordHasher hasher;
+  @Inject EntityManager em;
 
   private Usuario usuario;
 
   @BeforeEach
   void setup() {
+    // Limpiar usuarios de tests anteriores para evitar violaciones de constraint
+    // en bases de datos compartidas (en CI o cuando tests corren en paralelo).
+    QuarkusTransaction.requiringNew()
+        .call(
+            () -> {
+              em.createNativeQuery("delete from usuario where id > 1").executeUpdate();
+              em.createNativeQuery("alter sequence usuario_id_seq restart with 2").executeUpdate();
+              return null;
+            });
+
     usuario =
         QuarkusTransaction.requiringNew()
             .call(
