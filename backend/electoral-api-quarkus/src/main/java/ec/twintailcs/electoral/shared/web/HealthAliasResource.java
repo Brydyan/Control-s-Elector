@@ -1,6 +1,6 @@
 package ec.twintailcs.electoral.shared.web;
 
-import ec.twintailcs.electoral.storage.s3.S3StorageService;
+import ec.twintailcs.electoral.storage.s3.S3Properties;
 import io.agroal.api.AgroalDataSource;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -30,6 +30,7 @@ public class HealthAliasResource {
 
   @Inject AgroalDataSource dataSource;
   @Inject S3Client s3Client;
+  @Inject S3Properties s3Properties;
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
@@ -49,7 +50,8 @@ public class HealthAliasResource {
     boolean s3Up = true;
     String s3Detalle = "bucket-ok";
     try {
-      s3Client.headBucket(HeadBucketRequest.builder().bucket("control-electoral-mvp").build());
+      s3Client.headBucket(
+          HeadBucketRequest.builder().bucket(s3Properties.getBucket()).build());
     } catch (Exception e) {
       s3Up = false;
       s3Detalle = e.getMessage();
