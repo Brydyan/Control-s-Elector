@@ -119,12 +119,14 @@ public class ActaTestFixture {
               .setParameter(1, id)
               .getSingleResult();
       if (((Number) exists).longValue() == 0) {
+        // Usar diferente JRV para cada acta (distribuir con mod 7 sobre JRVs 1-7)
+        long jrvId = ((id - 101) % 7) + 1;
         entityManager
             .createNativeQuery(
                 "INSERT INTO acta (id, jrv_id, cargo_id, registrada_por, estado, total_sufragantes, votos_blancos, votos_nulos, fecha_registro) "
                     + "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)")
             .setParameter(1, id)
-            .setParameter(2, 1L) // jrv_id
+            .setParameter(2, jrvId) // jrv_id: distribuir entre 1-7
             .setParameter(3, 1L) // cargo_id
             .setParameter(4, 1L) // registrada_por (usuario 1)
             .setParameter(5, "BORRADOR") // estado
