@@ -34,6 +34,9 @@ public class Jrv extends PanacheEntityBase {
   @Column(name = "parroquia_id", nullable = false)
   Long parroquiaId;
 
+  @Column(name = "recinto_id")
+  Long recintoId;
+
   public Jrv() {}
 
   public Jrv(String numero, String recinto, int totalElectores, Long parroquiaId) {
@@ -73,5 +76,13 @@ public class Jrv extends PanacheEntityBase {
 
   public void setTotalElectores(int totalElectores) {
     this.totalElectores = totalElectores;
+  }
+
+  public Long getRecintoId() {
+    return recintoId;
+  }
+
+  public void setRecintoId(Long recintoId) {
+    this.recintoId = recintoId;
   }
 }

@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.shared.web;
 
+import ec.twintailcs.electoral.storage.s3.S3Properties;
 import io.agroal.api.AgroalDataSource;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -10,6 +11,8 @@ import jakarta.ws.rs.core.Response;
 import java.sql.Connection;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
 
 /**
  * Health check en {@code /actuator/health}, en el puerto principal.
@@ -26,33 +29,52 @@ import java.util.Map;
 public class HealthAliasResource {
 
   @Inject AgroalDataSource dataSource;
+  @Inject S3Client s3Client;
+  @Inject S3Properties s3Properties;
 
   @GET
   @Produces(MediaType.APPLICATION_JSON)
   public Response health() {
     boolean dbUp = true;
-    String detalle = "isValid()";
+    String dbDetalle = "isValid()";
     try (Connection connection = dataSource.getConnection()) {
       if (!connection.isValid(2)) {
         dbUp = false;
-        detalle = "connection not valid";
+        dbDetalle = "connection not valid";
       }
     } catch (Exception e) {
       dbUp = false;
-      detalle = e.getMessage();
+      dbDetalle = e.getMessage();
+    }
+
+    boolean s3Up = true;
+    String s3Detalle = "bucket-ok";
+    try {
+      s3Client.headBucket(HeadBucketRequest.builder().bucket(s3Properties.getBucket()).build());
+    } catch (Exception e) {
+      s3Up = false;
+      s3Detalle = e.getMessage();
     }
 
     Map<String, Object> db = new LinkedHashMap<>();
-    db.put("details", Map.of("validationQuery", detalle));
+    db.put("details", Map.of("validationQuery", dbDetalle));
     db.put("status", dbUp ? "UP" : "DOWN");
+
+    Map<String, Object> s3 = new LinkedHashMap<>();
+    s3.put("details", Map.of("bucket", s3Detalle));
+    s3.put("status", s3Up ? "UP" : "DOWN");
 
     Map<String, Object> components = new LinkedHashMap<>();
     components.put("db", db);
+    components.put("s3", s3);
 
+    // DB es crítico; S3 es informativo (non-blocking) para Kubernetes readiness probes.
+    // Si la BD está DOWN, el servicio no es ready. S3 DOWN se reporta pero no bloquea.
+    boolean allUp = dbUp;
     Map<String, Object> body = new LinkedHashMap<>();
-    body.put("status", dbUp ? "UP" : "DOWN");
+    body.put("status", allUp ? "UP" : "DOWN");
     body.put("components", components);
 
-    return Response.status(dbUp ? 200 : 503).type(MediaType.APPLICATION_JSON).entity(body).build();
+    return Response.status(allUp ? 200 : 503).type(MediaType.APPLICATION_JSON).entity(body).build();
   }
 }

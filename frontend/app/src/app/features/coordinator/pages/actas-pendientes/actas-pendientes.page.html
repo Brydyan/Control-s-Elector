@@ -1,0 +1,69 @@
+<div class="actas-pendientes-container">
+  <div class="page-header">
+    <h1>Actas Pendientes de Revisión</h1>
+  </div>
+
+  <p-message
+    *ngIf="error()"
+    severity="error"
+    [text]="error() || ''"
+    styleClass="w-full mb-4"
+  ></p-message>
+
+  <p-tabs [value]="tabActivo" (valueChange)="onTabChange($event)">
+    <p-tablist>
+      <p-tab value="0">Pendientes</p-tab>
+      <p-tab value="1">Revisadas</p-tab>
+    </p-tablist>
+  </p-tabs>
+
+  <div class="tab-content" [ngSwitch]="tabActivo">
+    <div *ngSwitchCase="0">
+      <div *ngIf="loading()" class="skeleton-wrapper">
+        <p-skeleton height="4rem" *ngFor="let i of [1, 2, 3]"></p-skeleton>
+      </div>
+
+      <app-empty-state
+        *ngIf="!loading() && actasPendientes().length === 0"
+        title="No hay actas pendientes"
+        description="Todas las actas han sido revisadas."
+      ></app-empty-state>
+
+      <div
+        *ngIf="!loading() && actasPendientes().length > 0"
+        class="actas-grid"
+      >
+        <app-acta-card
+          *ngFor="let acta of actasPendientes()"
+          [acta]="acta"
+          (verDetalle)="verDetalle($event)"
+        ></app-acta-card>
+      </div>
+    </div>
+
+    <div *ngSwitchCase="1">
+      <app-empty-state
+        *ngIf="actasRevisadas().length === 0"
+        title="No hay actas revisadas"
+        description="Las actas revisadas aparecerán aquí."
+      ></app-empty-state>
+
+      <div *ngIf="actasRevisadas().length > 0" class="actas-grid">
+        <app-acta-card
+          *ngFor="let acta of actasRevisadas()"
+          [acta]="acta"
+          (verDetalle)="verDetalle($event)"
+        ></app-acta-card>
+      </div>
+    </div>
+  </div>
+
+  <app-acta-detalle-modal
+    [abierto]="modalDetalleAbierto"
+    [acta]="actaSeleccionada"
+    [submitting]="submitting()"
+    (aprobar)="aprobarActa(actaSeleccionada!, $event)"
+    (rechazar)="rechazarActa(actaSeleccionada!, $event)"
+    (cerrado)="onModalCerrado()"
+  ></app-acta-detalle-modal>
+</div>

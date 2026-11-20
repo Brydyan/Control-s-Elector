@@ -41,7 +41,12 @@ public class MarcarEnDisputaActaUseCase {
           "No se puede marcar en disputa. Estado actual: " + acta.getEstado());
     }
 
+    if (motivo == null || motivo.trim().isEmpty()) {
+      throw new ActaInvalidaException("El motivo del rechazo es requerido");
+    }
+
     acta.setEstado(EstadoActa.EN_DISPUTA);
+    acta.setMotivoRechazo(motivo);
 
     // El aviso va a una tabla con RLS: sin el contexto de la sesion, la politica
     // de insercion no puede evaluarse y la escritura se deniega.
