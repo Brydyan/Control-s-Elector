@@ -49,10 +49,12 @@ class UserInvitationIT {
   /**
    * Cache de emails por test.
    *
-   * <p>Garantiza que múltiples llamadas a {@code emailDe()} con el mismo apellido dentro de un test
-   * devuelven el mismo email (determinismo). Se limpia en {@code @BeforeEach}.
+   * <p>Garantiza determinismo: cada llamada a {@code emailDe(apellido)} retorna email único pero
+   * predecible (mismo orden = mismo email en repeticiones). Contador incrementa por invocación,
+   * evitando colisiones UNIQUE mientras mantiene determinismo.
    */
   private final java.util.Map<String, String> emailCache = new java.util.HashMap<>();
+  private int emailCounter = 0;
 
   /**
    * IP por test.
@@ -115,6 +117,7 @@ class UserInvitationIT {
   void crearMasterDePrueba() {
     RecordingEmailService.limpiar();
     emailCache.clear();
+    emailCounter = 0;
 
     // Cada test arranca con las tablas de invitacion y de auditoria vacias.
     //
@@ -626,16 +629,18 @@ class UserInvitationIT {
    * <p>Se quitan las tildes: el corrector de correo del backend acepta el subconjunto ASCII de RFC
    * 5322, y un local part con "í" seria un caso raro que no es lo que estos tests quieren probar.
    *
-   * <p>Se agrega UUID corto para garantizar unicidad (constraint 046: email_personal UNIQUE). El
-   * email se cachea por test para garantizar determinismo: múltiples llamadas al mismo apellido
-   * dentro de un test devuelven el mismo email.
+   * <p>Se agrega UUID corto para garantizar unicidad (constraint 046: email_personal UNIQUE).
+   * Determinismo: contador incrementa por invocación. Mismo test, mismo orden de llamadas = mismo
+   * email. Diferente orden o test diferente = diferente email. Evita colisiones UNIQUE.
    */
   private String emailDe(String apellido) {
+    String cacheKey = apellido + "_" + emailCounter;
+    emailCounter++;
     return emailCache.computeIfAbsent(
-        apellido,
+        cacheKey,
         (key) -> {
           String limpio =
-              java.text.Normalizer.normalize(key, java.text.Normalizer.Form.NFD)
+              java.text.Normalizer.normalize(apellido, java.text.Normalizer.Form.NFD)
                   .replaceAll("\\p{Mn}", "")
                   .toLowerCase()
                   .replace(" ", "");
