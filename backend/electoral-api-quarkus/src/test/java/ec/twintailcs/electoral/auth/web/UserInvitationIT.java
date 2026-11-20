@@ -135,7 +135,6 @@ class UserInvitationIT {
     limpiarTabla("delete from jrv");
     limpiarTabla("delete from evidencia");
     limpiarTabla("delete from recinto");
-    limpiarTabla("delete from refresh_token");
     limpiarTabla("delete from sesion");
     limpiarTabla("delete from usuario where id > 1");
     limpiarTabla("alter sequence usuario_id_seq restart with 2");

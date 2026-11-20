@@ -48,7 +48,6 @@ class UserProfileServiceTest {
               em.createNativeQuery("delete from jrv").executeUpdate();
               em.createNativeQuery("delete from evidencia").executeUpdate();
               em.createNativeQuery("delete from recinto").executeUpdate();
-              em.createNativeQuery("delete from refresh_token").executeUpdate();
               em.createNativeQuery("delete from sesion").executeUpdate();
               em.createNativeQuery("delete from usuario where id > 1").executeUpdate();
               em.createNativeQuery("alter sequence usuario_id_seq restart with 2").executeUpdate();
