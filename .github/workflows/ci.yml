@@ -491,16 +491,15 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Se usa `./mvnw` y no el Maven del runner: el wrapper pinea la misma
-      # version (3.9.16) que usa el build nativo dentro de
-      # `Dockerfile.native`, asi que los tests y la imagen nativa se compilan
-      # con el mismo Maven. Si divergen, un test verde puede no reproducir el
-      # fallo del AOT.
+      # Se usa `mvn` del runner (CI) o `./mvnw` local: el wrapper pinea la misma
+      # version (3.9.16) que usa el build nativo dentro de `Dockerfile.native`.
+      # En CI, el wrapper.jar no se sube a GitHub (esta en .gitignore), asi que
+      # usamos el Maven del runner que ya fue instalado.
       # `verify` corre los tests (el surefire de este modulo incluye los *IT)
       # y ademas arma la app, asi que el job tambien cubre el packaging.
       - name: Run the Quarkus backend tests
         working-directory: backend/electoral-api-quarkus
-        run: ./mvnw -B clean verify
+        run: mvn -B clean verify
 
       # El plugin de JaCoCo ya corre DENTRO de `clean verify`: la ejecucion
       # `report` genera target/site/jacoco/ y la `check` aplica el piso de

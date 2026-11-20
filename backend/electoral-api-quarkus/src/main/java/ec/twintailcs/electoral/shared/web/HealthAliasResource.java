@@ -68,7 +68,9 @@ public class HealthAliasResource {
     components.put("db", db);
     components.put("s3", s3);
 
-    boolean allUp = dbUp && s3Up;
+    // DB es crítico; S3 es informativo (non-blocking) para Kubernetes readiness probes.
+    // Si la BD está DOWN, el servicio no es ready. S3 DOWN se reporta pero no bloquea.
+    boolean allUp = dbUp;
     Map<String, Object> body = new LinkedHashMap<>();
     body.put("status", allUp ? "UP" : "DOWN");
     body.put("components", components);
