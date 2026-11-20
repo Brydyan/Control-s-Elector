@@ -26,9 +26,17 @@ public class ActaTestFixture {
 
   /** Limpia actas previas para evitar conflictos de unique constraint. */
   private void limpiarActas() {
-    entityManager.createNativeQuery("DELETE FROM acta_detalle WHERE acta_id IN (SELECT id FROM acta WHERE id >= 101 AND id <= 124)").executeUpdate();
-    entityManager.createNativeQuery("DELETE FROM notificacion WHERE acta_id IN (SELECT id FROM acta WHERE id >= 101 AND id <= 124)").executeUpdate();
-    entityManager.createNativeQuery("DELETE FROM acta WHERE id >= 101 AND id <= 124").executeUpdate();
+    entityManager
+        .createNativeQuery(
+            "DELETE FROM acta_detalle WHERE acta_id IN (SELECT id FROM acta WHERE id >= 101 AND id <= 124)")
+        .executeUpdate();
+    entityManager
+        .createNativeQuery(
+            "DELETE FROM notificacion WHERE acta_id IN (SELECT id FROM acta WHERE id >= 101 AND id <= 124)")
+        .executeUpdate();
+    entityManager
+        .createNativeQuery("DELETE FROM acta WHERE id >= 101 AND id <= 124")
+        .executeUpdate();
   }
 
   /** Crea usuarios necesarios para NotificacionServiceTest (1-9) y UseCaseTests (100-105, 500). */
@@ -87,9 +95,7 @@ public class ActaTestFixture {
   /** Obtiene un cargo existente para usar en actas. */
   private Long obtenerCargoId() {
     Object result =
-        entityManager
-            .createNativeQuery("SELECT id FROM cargo LIMIT 1")
-            .getSingleResult();
+        entityManager.createNativeQuery("SELECT id FROM cargo LIMIT 1").getSingleResult();
     return ((Number) result).longValue();
   }
 
