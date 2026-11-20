@@ -83,6 +83,18 @@ public class Acta extends PanacheEntityBase {
   @Column(name = "motivo_anulacion", length = 500)
   String motivoAnulacion;
 
+  /** Usuario que aprobó el acta (el COORDINATOR). */
+  @Column(name = "aprobada_por")
+  Long aprobadaPorId;
+
+  /** Fecha en que se aprobó el acta. */
+  @Column(name = "fecha_aprobacion")
+  Instant fechaAprobacion;
+
+  /** Motivo del rechazo si el acta fue marcada en disputa. */
+  @Column(name = "motivo_rechazo", length = 500)
+  String motivoRechazo;
+
   public Long getId() {
     return id;
   }
@@ -169,6 +181,36 @@ public class Acta extends PanacheEntityBase {
       throw new ActaInvalidaException("El motivo de anulación no puede estar vacío");
     }
     this.motivoAnulacion = motivoAnulacion;
+  }
+
+  public Long getAprobadaPorId() {
+    return aprobadaPorId;
+  }
+
+  public void setAprobadaPorId(Long aprobadaPorId) {
+    this.aprobadaPorId = aprobadaPorId;
+  }
+
+  public Instant getFechaAprobacion() {
+    return fechaAprobacion;
+  }
+
+  public void setFechaAprobacion(Instant fechaAprobacion) {
+    this.fechaAprobacion = fechaAprobacion;
+  }
+
+  public String getMotivoRechazo() {
+    return motivoRechazo;
+  }
+
+  public void setMotivoRechazo(String motivoRechazo) {
+    if (motivoRechazo != null && motivoRechazo.trim().isEmpty()) {
+      throw new ActaInvalidaException("El motivo del rechazo no puede estar vacío");
+    }
+    if (motivoRechazo != null && motivoRechazo.length() > 500) {
+      throw new ActaInvalidaException("El motivo del rechazo no puede exceder 500 caracteres");
+    }
+    this.motivoRechazo = motivoRechazo;
   }
 
   /** Invariantes obligatorias del acta. Mismas comprobaciones que el backend Spring. */

@@ -291,4 +291,161 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     expect(invitarUsuario).not.toHaveBeenCalled();
     expect(page.error()).toBeTruthy();
   });
+
+  // ---------------------------------------------------------------------------
+  // ODD #504 (B-F): consolidacion de flujo en guardar()
+  // ---------------------------------------------------------------------------
+
+  it('guardar() con invitacion activada pasa sendInvitation=true al backend', () => {
+    const crearUsuario = vi.fn().mockReturnValue(
+      of({
+        publicId: 'u-new',
+        email: 'juagarobs@control.ttcs',
+        nombre: 'Juan',
+        apellido: 'García',
+        rolNombre: 'OBSERVER',
+        habilitado: true,
+        creadoEn: '2026-11-08T10:00:00Z',
+      }),
+    );
+
+    TestBed.inject(AdminApi).crearUsuario = crearUsuario;
+
+    page.nombre = 'Juan';
+    page.apellido = 'García';
+    page.emailPersonal = 'juan@example.com';
+    page.enviarInvitacionPorEmail.set(true);
+
+    page.guardar();
+
+    expect(crearUsuario).toHaveBeenCalledOnce();
+    expect(crearUsuario).toHaveBeenCalledWith({
+      nombre: 'Juan',
+      apellido: 'García',
+      rolNombre: 'OBSERVER',
+      sendInvitation: true,
+    });
+    expect(page.submitting()).toBe(false);
+    expect(page.invitacionEnviada()?.status).toBe('INVITED');
+  });
+
+  it('guardar() sin invitacion activada pasa sendInvitation=false al backend', () => {
+    const crearUsuario = vi.fn().mockReturnValue(
+      of({
+        publicId: 'u-new',
+        email: 'juagarobs@control.ttcs',
+        nombre: 'Juan',
+        apellido: 'García',
+        rolNombre: 'OBSERVER',
+        habilitado: true,
+        creadoEn: '2026-11-08T10:00:00Z',
+      }),
+    );
+
+    TestBed.inject(AdminApi).crearUsuario = crearUsuario;
+
+    page.nombre = 'Juan';
+    page.apellido = 'García';
+    page.emailPersonal = 'juan@example.com';
+    page.enviarInvitacionPorEmail.set(false);
+
+    page.guardar();
+
+    expect(crearUsuario).toHaveBeenCalledOnce();
+    expect(crearUsuario).toHaveBeenCalledWith({
+      nombre: 'Juan',
+      apellido: 'García',
+      rolNombre: 'OBSERVER',
+      sendInvitation: false,
+    });
+    expect(page.submitting()).toBe(false);
+    expect(page.invitacionEnviada()?.status).toBe('CREATED');
+  });
+
+  it('si falla crearUsuario con sendInvitation=true, muestra error', () => {
+    const crearUsuario = vi
+      .fn()
+      .mockReturnValue(
+        throwError(() => new Error('No se pudo enviar el email')),
+      );
+
+    TestBed.inject(AdminApi).crearUsuario = crearUsuario;
+
+    page.nombre = 'Juan';
+    page.apellido = 'García';
+    page.emailPersonal = 'juan@example.com';
+    page.enviarInvitacionPorEmail.set(true);
+
+    page.guardar();
+
+    expect(page.submitting()).toBe(false);
+    expect(page.error()).toContain('No se pudo enviar el email');
+  });
+
+  it('guardar con sendInvitation=true y contraseña temporal muestra solo estado', () => {
+    const crearUsuario = vi.fn().mockReturnValue(
+      of({
+        publicId: 'u-new',
+        email: 'juagarobs@control.ttcs',
+        nombre: 'Juan',
+        apellido: 'García',
+        rolNombre: 'OBSERVER',
+        habilitado: true,
+        creadoEn: '2026-11-08T10:00:00Z',
+        passwordTemporal: 'temp-pwd-123',
+      }),
+    );
+
+    TestBed.inject(AdminApi).crearUsuario = crearUsuario;
+
+    page.nombre = 'Juan';
+    page.apellido = 'García';
+    page.emailPersonal = 'juan@example.com';
+    page.enviarInvitacionPorEmail.set(true);
+
+    page.guardar();
+
+    expect(crearUsuario).toHaveBeenCalledWith({
+      nombre: 'Juan',
+      apellido: 'García',
+      rolNombre: 'OBSERVER',
+      sendInvitation: true,
+    });
+    expect(page.passwordTemporal).toBe('temp-pwd-123');
+    expect(page.submitting()).toBe(false);
+  });
+
+  it('cancelar modal de error no afecta usuario ya creado', () => {
+    const usuarioCreado = {
+      publicId: 'u-new',
+      email: 'juagarobs@control.ttcs',
+      nombre: 'Juan',
+      apellido: 'García',
+      rolNombre: 'OBSERVER' as const,
+      habilitado: true,
+      creadoEn: '2026-11-08T10:00:00Z',
+    };
+
+    // La cuenta se crea pero falla el email (simula fallo en backend)
+    const crearUsuario = vi
+      .fn()
+      .mockReturnValue(
+        throwError(() => new Error('No se pudo enviar la invitacion')),
+      );
+
+    TestBed.inject(AdminApi).crearUsuario = crearUsuario;
+
+    page.nombre = 'Juan';
+    page.apellido = 'García';
+    page.emailPersonal = 'juan@example.com';
+    page.enviarInvitacionPorEmail.set(true);
+
+    // El guardado falla
+    page.guardar();
+    expect(page.error()).toContain('No se pudo enviar la invitacion');
+
+    // Usuario puede cerrar el modal
+    page.modalAbierto = false;
+    expect(page.modalAbierto).toBe(false);
+  });
 });

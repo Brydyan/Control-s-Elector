@@ -126,10 +126,10 @@ jobs:
             -e DB_NAME=electoral_db \
             -e DB_USER=electoral_user \
             -e DB_PASSWORD=electoral_pass \
-            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true \
+            -e QUARKUS_LIQUIBASE_MIGRATE_AT_START=true \
             -e APP_MIGRATE_ONLY=true \
-            -e QUARKUS_HIBERNATE_GENERATION=none \
-            -e QUARKUS_LIQUIDASE_CONTEXTS=seed \
+            -e QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=none \
+            -e QUARKUS_LIQUIBASE_CONTEXTS=seed \
             electoral-api:load-test
 
       - name: Start the backend
@@ -145,9 +145,9 @@ jobs:
             -e SERVER_PORT=8080 \
             -e APP_JWT_SECRET=ci-only-load-test-secret-at-least-32-chars \
             -e APP_JWT_REFRESH_PEPPER=ci-only-load-test-pepper \
-            -e QUARKUS_LIQUIDASE_CONTEXTS=seed \
-            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false \
-            -e QUARKUS_HIBERNATE_GENERATION=none \
+            -e QUARKUS_LIQUIBASE_CONTEXTS=seed \
+            -e QUARKUS_LIQUIBASE_MIGRATE_AT_START=false \
+            -e QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=none \
             -e AWS_ACCESS_KEY_ID=rustfsadmin \
             -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
             -e AWS_S3_ENDPOINT=http://localhost:9000 \

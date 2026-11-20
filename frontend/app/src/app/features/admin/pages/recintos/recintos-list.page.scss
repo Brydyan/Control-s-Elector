@@ -1,0 +1,76 @@
+.recintos-container {
+  padding: 1.5rem;
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+
+    h1 {
+      margin: 0;
+      font-size: 1.75rem;
+      color: var(--color-text-primary);
+    }
+
+    button {
+      min-width: 150px;
+    }
+  }
+
+  .filters {
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-width: 150px;
+
+      label {
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: var(--color-text-muted);
+      }
+    }
+  }
+
+  .table-wrapper {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-surface);
+
+    .skeleton-wrapper {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+
+  .status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+
+    &.active {
+      background-color: var(--color-status-success-bg);
+      color: var(--color-status-success);
+    }
+
+    &.inactive {
+      background-color: var(--color-status-danger-bg);
+      color: var(--color-status-danger);
+    }
+  }
+
+  .actions-cell {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+}

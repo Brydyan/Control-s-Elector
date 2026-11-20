@@ -1,0 +1,143 @@
+<div class="recintos-container">
+  <div class="page-header">
+    <h1>Gestión de Recintos</h1>
+    <button
+      pButton
+      type="button"
+      label="Crear Recinto"
+      icon="pi pi-plus"
+      class="p-button-success"
+      (click)="abrirFormularioCrear()"
+    ></button>
+  </div>
+
+  <p-message
+    *ngIf="error()"
+    severity="error"
+    [text]="error() || ''"
+    styleClass="w-full mb-4"
+  ></p-message>
+
+  <div class="filters">
+    <div class="filter-group">
+      <label>Estado:</label>
+      <p-select
+        [(ngModel)]="estadoSeleccionado"
+        [options]="[
+          { label: 'Todos', value: '' },
+          { label: 'Activo', value: 'ACTIVO' },
+          { label: 'Inactivo', value: 'INACTIVO' }
+        ]"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="onEstadoChange()"
+      ></p-select>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <div *ngIf="loading()" class="skeleton-wrapper">
+      <p-skeleton height="2rem" *ngFor="let i of [1, 2, 3, 4, 5]"></p-skeleton>
+    </div>
+
+    <app-empty-state
+      *ngIf="!loading() && recintos().length === 0"
+      title="No hay recintos"
+      description="Crea un nuevo recinto para comenzar."
+    ></app-empty-state>
+
+    <p-table
+      styleClass="app-table"
+      *ngIf="!loading() && recintos().length > 0"
+      [value]="recintos()"
+      [rows]="size"
+      [totalRecords]="totalElements()"
+      [paginator]="true"
+      [globalFilterFields]="['nombre', 'parroquia']"
+      responseType="text"
+      dataKey="id"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      (onLazyLoad)="onPaginationChange($event)"
+      [lazy]="true"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="nombre">
+            Nombre <p-sortIcon field="nombre"></p-sortIcon>
+          </th>
+          <th pSortableColumn="parroquia">
+            Parroquia <p-sortIcon field="parroquia"></p-sortIcon>
+          </th>
+          <th pSortableColumn="coordinador">Coordinador</th>
+          <th pSortableColumn="totalMesas">Mesas</th>
+          <th pSortableColumn="estado">
+            Estado <p-sortIcon field="estado"></p-sortIcon>
+          </th>
+          <th>Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-recinto>
+        <tr>
+          <td>{{ recinto.nombre }}</td>
+          <td>{{ recinto.parroquia || '-' }}</td>
+          <td>{{ recinto.coordinador?.nombre || '-' }}</td>
+          <td class="text-center">{{ recinto.totalMesas || 0 }}</td>
+          <td>
+            <span
+              [class]="'status ' + (recinto.estado === 'ACTIVO' ? 'active' : 'inactive')"
+            >
+              {{ recinto.estado }}
+            </span>
+          </td>
+          <td>
+            <div class="actions-cell">
+              <button
+                pButton
+                type="button"
+                icon="pi pi-pencil"
+                class="p-button-rounded p-button-warning p-button-sm"
+                (click)="abrirFormularioEditar(recinto)"
+                pTooltip="Editar"
+                tooltipPosition="top"
+              ></button>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-list"
+                class="p-button-rounded p-button-info p-button-sm"
+                (click)="abrirModalJrvs(recinto)"
+                pTooltip="Asignar JRVs"
+                tooltipPosition="top"
+              ></button>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                class="p-button-rounded p-button-danger p-button-sm"
+                (click)="confirmarEliminar(recinto)"
+                [disabled]="submitting()"
+                pTooltip="Eliminar"
+                tooltipPosition="top"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+
+  <app-recinto-form-modal
+    [abierto]="modalFormAbierto"
+    [recinto]="recintoSeleccionado"
+    [modoEdicion]="modoEdicion"
+    (guardado)="onFormGuardado()"
+    (cancelado)="onFormCancelado()"
+  ></app-recinto-form-modal>
+
+  <app-recinto-jrvs-modal
+    [abierto]="modalJrvsAbierto"
+    [recinto]="recintoSeleccionado"
+    (guardado)="onJrvsGuardado()"
+    (cancelado)="onJrvsCancelado()"
+  ></app-recinto-jrvs-modal>
+</div>

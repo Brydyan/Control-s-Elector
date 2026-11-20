@@ -1,0 +1,314 @@
+<div class="profile-settings-container">
+  <!-- Tabs header -->
+  <div class="tabs-header">
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'profile'"
+      (click)="activeTab.set('profile')"
+    >
+      Mi Perfil
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'password'"
+      (click)="activeTab.set('password')"
+    >
+      Cambiar Contraseña
+    </button>
+    <button
+      class="tab-button"
+      [class.active]="activeTab() === 'email'"
+      (click)="activeTab.set('email')"
+    >
+      Email Personal
+    </button>
+  </div>
+
+  <!-- Tab content -->
+  <div class="tab-content-wrapper">
+    <!-- Tab 1: Mi Perfil -->
+    <div class="tab-content" *ngIf="activeTab() === 'profile'">
+      <div *ngIf="profileLoading()" class="loading-state">
+        <p>Cargando perfil...</p>
+      </div>
+
+      <div *ngIf="profileError()" class="error-state">
+        <p class="error-message">{{ profileError() }}</p>
+        <button
+          pButton
+          type="button"
+          label="Reintentar"
+          (click)="loadProfile()"
+        ></button>
+      </div>
+
+      <div *ngIf="profile() && !profileLoading()" class="profile-info">
+        <div class="profile-section">
+          <h3>Información de Cuenta</h3>
+
+          <div class="profile-field">
+            <label>Nombre</label>
+            <p class="field-value">{{ profile()?.nombre }}</p>
+          </div>
+
+          <div class="profile-field">
+            <label>Email de Control (inicio de sesión)</label>
+            <p class="field-value">{{ profile()?.emailControl }}</p>
+          </div>
+
+          <div class="profile-field">
+            <label>Email Personal</label>
+            <p class="field-value">
+              {{ profile()?.emailPersonal || 'No configurado' }}
+            </p>
+          </div>
+
+          <div class="profile-field">
+            <label>Rol</label>
+            <p class="field-value">{{ profile()?.rol }}</p>
+          </div>
+
+          <div class="profile-field">
+            <label>Estado</label>
+            <p class="field-value">{{ profile()?.estado }}</p>
+          </div>
+
+          <div class="profile-field">
+            <label>Último cambio de contraseña</label>
+            <p class="field-value">
+              {{ profile()?.lastPasswordChangeAt ?
+              (profile()?.lastPasswordChangeAt | date: 'short') : 'Nunca' }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Cambiar Contraseña -->
+    <div class="tab-content" *ngIf="activeTab() === 'password'">
+      <form class="form-container">
+        <h3>Cambiar Contraseña</h3>
+
+        <!-- Current password -->
+        <div class="form-group">
+          <label for="current-password">Contraseña Actual</label>
+          <div class="password-input-wrapper">
+            <input
+              pInputText
+              type="password"
+              id="current-password"
+              placeholder="Tu contraseña actual"
+              [(ngModel)]="currentPassword"
+              name="currentPassword"
+              [disabled]="changePasswordLoading()"
+              class="password-input"
+            />
+          </div>
+        </div>
+
+        <!-- New password -->
+        <div class="form-group">
+          <label for="new-password">Nueva Contraseña</label>
+          <div class="password-input-wrapper">
+            <input
+              pInputText
+              [type]="showNewPassword() ? 'text' : 'password'"
+              id="new-password"
+              placeholder="Tu nueva contraseña"
+              [(ngModel)]="newPassword"
+              name="newPassword"
+              [disabled]="changePasswordLoading()"
+              class="password-input"
+            />
+            <button
+              pButton
+              type="button"
+              [icon]="showNewPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              class="p-button-text password-toggle"
+              (click)="toggleNewPasswordVisibility()"
+            ></button>
+          </div>
+
+          <!-- Password requirements -->
+          <div class="password-requirements" *ngIf="newPassword()">
+            <div
+              class="requirement"
+              [class.met]="passwordRequirements().minLength"
+            >
+              <i
+                [class]="passwordRequirements().minLength ? 'pi pi-check' : 'pi pi-times'"
+              ></i>
+              <span>Mínimo 8 caracteres</span>
+            </div>
+            <div
+              class="requirement"
+              [class.met]="passwordRequirements().hasUppercase"
+            >
+              <i
+                [class]="passwordRequirements().hasUppercase ? 'pi pi-check' : 'pi pi-times'"
+              ></i>
+              <span>Letra mayúscula</span>
+            </div>
+            <div
+              class="requirement"
+              [class.met]="passwordRequirements().hasLowercase"
+            >
+              <i
+                [class]="passwordRequirements().hasLowercase ? 'pi pi-check' : 'pi pi-times'"
+              ></i>
+              <span>Letra minúscula</span>
+            </div>
+            <div
+              class="requirement"
+              [class.met]="passwordRequirements().hasNumber"
+            >
+              <i
+                [class]="passwordRequirements().hasNumber ? 'pi pi-check' : 'pi pi-times'"
+              ></i>
+              <span>Número</span>
+            </div>
+            <div
+              class="requirement"
+              [class.met]="passwordRequirements().hasSpecial"
+            >
+              <i
+                [class]="passwordRequirements().hasSpecial ? 'pi pi-check' : 'pi pi-times'"
+              ></i>
+              <span>Carácter especial (!@#$%^&*...)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Confirm password -->
+        <div class="form-group">
+          <label for="confirm-password">Confirmar Contraseña</label>
+          <input
+            pInputText
+            [type]="showNewPassword() ? 'text' : 'password'"
+            id="confirm-password"
+            placeholder="Confirma tu nueva contraseña"
+            [(ngModel)]="newPasswordConfirm"
+            name="newPasswordConfirm"
+            [disabled]="changePasswordLoading()"
+          />
+          <div
+            *ngIf="newPasswordConfirm() && !passwordsMatch()"
+            class="validation-error"
+          >
+            <i class="pi pi-times"></i>
+            <span>Las contraseñas no coinciden</span>
+          </div>
+          <div
+            *ngIf="newPasswordConfirm() && passwordsMatch()"
+            class="validation-success"
+          >
+            <i class="pi pi-check"></i>
+            <span>Las contraseñas coinciden</span>
+          </div>
+        </div>
+
+        <!-- Error message -->
+        <p-message
+          *ngIf="changePasswordError()"
+          severity="error"
+          [text]="changePasswordError()"
+          styleClass="error-message"
+        ></p-message>
+
+        <!-- Submit button -->
+        <button
+          pButton
+          type="button"
+          label="Cambiar Contraseña"
+          [loading]="changePasswordLoading()"
+          [disabled]="changePasswordDisabled()"
+          (click)="submitChangePassword()"
+          class="submit-btn"
+        ></button>
+      </form>
+    </div>
+
+    <!-- Tab 3: Email Personal -->
+    <div class="tab-content" *ngIf="activeTab() === 'email'">
+      <form class="form-container">
+        <h3>Actualizar Email Personal</h3>
+
+        <p class="form-hint">
+          Tu email personal será utilizado como contacto secundario. Esta
+          información está protegida por tu contraseña.
+        </p>
+
+        <!-- Email input -->
+        <div class="form-group">
+          <label for="personal-email">Email Personal</label>
+          <input
+            pInputText
+            type="email"
+            id="personal-email"
+            placeholder="tu.email@ejemplo.com"
+            [(ngModel)]="personalEmail"
+            name="personalEmail"
+            [disabled]="emailLoading()"
+          />
+          <div
+            *ngIf="personalEmail() && !emailFormatValid()"
+            class="validation-error"
+          >
+            <i class="pi pi-times"></i>
+            <span>El formato del email no es válido</span>
+          </div>
+          <div
+            *ngIf="personalEmail() && emailFormatValid()"
+            class="validation-success"
+          >
+            <i class="pi pi-check"></i>
+            <span>Formato válido</span>
+          </div>
+        </div>
+
+        <!-- Confirm password -->
+        <div class="form-group">
+          <label for="email-confirm-password">Confirmar Contraseña</label>
+          <div class="password-input-wrapper">
+            <input
+              pInputText
+              [type]="showEmailPassword() ? 'text' : 'password'"
+              id="email-confirm-password"
+              placeholder="Tu contraseña para confirmar"
+              [(ngModel)]="emailConfirmPassword"
+              name="emailConfirmPassword"
+              [disabled]="emailLoading()"
+              class="password-input"
+            />
+            <button
+              pButton
+              type="button"
+              [icon]="showEmailPassword() ? 'pi pi-eye-slash' : 'pi pi-eye'"
+              class="p-button-text password-toggle"
+              (click)="toggleEmailPasswordVisibility()"
+            ></button>
+          </div>
+        </div>
+
+        <!-- Error message -->
+        <p-message
+          *ngIf="emailError()"
+          severity="error"
+          [text]="emailError()"
+          styleClass="error-message"
+        ></p-message>
+
+        <!-- Submit button -->
+        <button
+          pButton
+          type="button"
+          label="Actualizar Email"
+          [loading]="emailLoading()"
+          [disabled]="updateEmailDisabled()"
+          (click)="submitUpdateEmail()"
+          class="submit-btn"
+        ></button>
+      </form>
+    </div>
+  </div>
+</div>

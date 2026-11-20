@@ -371,17 +371,6 @@
     <app-button [disabled]="submitting()" (clicked)="guardar()">
       {{ submitting() ? 'Guardando…' : 'Guardar' }}
     </app-button>
-    @if (!modoEdicion) {
-    <app-button
-      variant="secondary"
-      [disabled]="!puedeInvitar()"
-      [loading]="invitaando()"
-      (clicked)="invitar()"
-      data-testid="btn-invitar"
-    >
-      {{ invitaando() ? 'Enviando…' : 'Enviar invitación' }}
-    </app-button>
-    }
   </ng-template>
 </p-dialog>
 
@@ -451,6 +440,48 @@
       data-testid="btn-confirmar-reenvio"
     >
       {{ reenviando() ? 'Reenviando…' : 'Reenviar por email' }}
+    </app-button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  [visible]="!!invitacionFallida()"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '28rem' }"
+  header="Error al enviar invitación"
+  (visibleChange)="
+    $event || invitacionFallida.set(null);
+  "
+>
+  @if (invitacionFallida(); as usuario) {
+  <div class="error-reintento" data-testid="error-invitacion-reintento">
+    <p>
+      El usuario <strong>{{ usuario.nombre }} {{ usuario.apellido }}</strong>
+      fue creado pero no se pudo enviar la invitación a
+      <strong>{{ emailPersonal }}</strong>.
+    </p>
+    <small class="field-hint">
+      La cuenta ya existe en el sistema. Puedes intentar enviar la invitación
+      ahora o hacerlo más tarde desde la tabla de usuarios.
+    </small>
+  </div>
+  }
+  <ng-template #footer>
+    <app-button
+      variant="secondary"
+      [disabled]="submitting()"
+      (clicked)="invitacionFallida.set(null)"
+    >
+      Cancelar
+    </app-button>
+    <app-button
+      [loading]="submitting()"
+      (clicked)="reintentarInvitacion()"
+      data-testid="btn-reintentar-invitacion"
+    >
+      {{ submitting() ? 'Reenviando…' : 'Reintentar' }}
     </app-button>
   </ng-template>
 </p-dialog>

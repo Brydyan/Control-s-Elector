@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "date": "2026-11-19",
+    "epic": "Admin › Gestión de Usuarios",
+    "feature": "T-AUTH-INV-02 — User Invitations with Personal Email",
+    "description": "Consolidate redundant invitation flow in user creation modal"
+  },
+  "tickets": [
+    {
+      "name": "ODD — Consolidate Usuario Invitation Modal",
+      "description": "🎯 Merge redundant 'Enviar invitación' button into 'Guardar' action with error retry modal.\n\n## Context\nT-AUTH-INV-02 (User invitations) has a UX redundancy:\n- Checkbox: \"Enviar Invitación por Email\"\n- Separate button: \"Enviar invitación\" + \"Guardar\" button\n\n## Proposal\n✅ One \"Guardar\" button that:\n1. Creates user (always)\n2. Sends invitation IF checkbox is checked\n3. Shows error modal + retry if email fails\n\n## Scope (A-F)\n- **A**: Remove redundant button (lines 374-384)\n- **B**: Merge logic into guardar() method\n- **C**: Add retry error modal\n- **D**: Refactor methods (remove invitar(), add reintentarInvitacion())\n- **E**: Update visual states (Guardando…, error context)\n- **F**: Tests (success, skip-invite, error+retry)\n\n## Decisions\n- **D1**: Error modal separate from success (clear separation)\n- **D2**: User always created; email failure doesn't block creation\n- **D3**: Retry modal shows email destination\n\n## Changes\n- admin-usuarios.page.html (remove button)\n- admin-usuarios.page.ts (merge methods, add signal, add modal)\n\n## Files\n📄 /odd/tasks/consolidate-usuario-invitation-modal.md",
+      "estimate": "3"
+    }
+  ]
+}

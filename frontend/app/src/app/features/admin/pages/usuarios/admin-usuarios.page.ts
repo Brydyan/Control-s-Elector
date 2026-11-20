@@ -112,6 +112,8 @@ export class AdminUsuariosPage implements OnInit {
   readonly invitaando = signal(false);
   /** A quien se le mando la invitacion, para mostrarlo en la pantalla. */
   readonly invitacionEnviada = signal<UserInvitationResponse | null>(null);
+  /** Cuando falla el envio de invitacion en el modal de crear usuario, usuario se queda aqui para reintentar. */
+  readonly invitacionFallida = signal<UsuarioResponseDto | null>(null);
   /**
    * Toggle "Enviar Invitacion por Email" (ODD #504, A).
    *
@@ -123,6 +125,9 @@ export class AdminUsuariosPage implements OnInit {
   readonly usuarioAReenviar = signal<UsuarioResponseDto | null>(null);
   readonly reenviando = signal(false);
   readonly roles: RolUsuario[] = ['MASTER', 'COORDINATOR', 'OBSERVER', 'ADMIN'];
+
+  /** Cache de items de menú por usuario para evitar re-cálculos en cada render. */
+  private accionesCache = new Map<string, MenuItem[]>();
 
   /** Filter options for the enabled state. */
   readonly estadoOptions: Array<{ label: string; value: string }> = [
@@ -236,12 +241,16 @@ export class AdminUsuariosPage implements OnInit {
       this.error.set('Nombre y apellido son obligatorios.');
       return;
     }
+
     this.submitting.set(true);
     this.error.set(null);
     const payload = {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
       rolNombre: this.rol,
+      sendInvitation: !this.modoEdicion
+        ? this.enviarInvitacionPorEmail()
+        : undefined,
     };
     const request =
       this.modoEdicion && this.usuarioSeleccionado
@@ -252,12 +261,26 @@ export class AdminUsuariosPage implements OnInit {
         : this.service.crearUsuario(payload);
     request.subscribe({
       next: (usuario) => {
-        this.submitting.set(false);
-        if (!this.modoEdicion)
+        if (!this.modoEdicion) {
           this.passwordTemporal =
             (usuario as UsuarioConPasswordTemporal).passwordTemporal ?? null;
-        this.cargarUsuarios();
-        if (this.modoEdicion) this.modalAbierto = false;
+
+          // sendInvitation determina el estado: si es true, el backend ya envio la invitacion
+          // Si es false, la cuenta es ACTIVA con password temporal
+          this.submitting.set(false);
+          this.invitacionEnviada.set({
+            usuarioId: usuario.publicId,
+            username: usuario.email,
+            emailPersonal: this.emailPersonal,
+            status: this.enviarInvitacionPorEmail() ? 'INVITED' : 'CREATED',
+            expiraEn: null as any,
+          });
+          this.cargarUsuarios();
+        } else {
+          this.submitting.set(false);
+          this.cargarUsuarios();
+          this.modalAbierto = false;
+        }
       },
       error: (err) => {
         this.submitting.set(false);
@@ -265,6 +288,7 @@ export class AdminUsuariosPage implements OnInit {
       },
     });
   }
+
   // ── Invitación de una persona (T-AUTH-INV-02) ─────────────────────────────
 
   /**
@@ -319,6 +343,9 @@ export class AdminUsuariosPage implements OnInit {
    *
    * <p>El mensaje de exito dice a que direccion se mando y con que login entra
    * la persona: sin el login, quien recibe el correo no sabria como entrar.
+   *
+   * <p>NOTA: Mantiene compatibilidad con tests existentes. En la nueva UX,
+   * la invitacion se envía como parte de guardar().
    */
   invitar(): void {
     if (!this.puedeInvitar()) {
@@ -355,6 +382,49 @@ export class AdminUsuariosPage implements OnInit {
         error: (err) => {
           this.invitaando.set(false);
           this.error.set(err?.message || 'No se pudo enviar la invitación.');
+        },
+      });
+  }
+
+  /**
+   * Reintenta enviar invitacion a un usuario ya creado (ODD #504, D).
+   *
+   * <p>Se dispara desde el modal de error cuando fallo el email. El usuario
+   * ya existe en la base de datos, solo se reintenta el email.
+   */
+  reintentarInvitacion(): void {
+    const usuario = this.invitacionFallida();
+    if (!usuario) return;
+
+    this.submitting.set(true);
+    this.error.set(null);
+
+    this.service
+      .invitarUsuario({
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        emailPersonal: this.emailPersonal.trim(),
+        rolNombre: usuario.rolNombre as RolUsuario,
+        sendEmail: true,
+      })
+      .subscribe({
+        next: (respuesta) => {
+          this.submitting.set(false);
+          this.invitacionFallida.set(null);
+          this.invitacionEnviada.set(respuesta);
+          // Limpiar formulario
+          this.nombre = '';
+          this.apellido = '';
+          this.emailPersonal = '';
+          this.rol = 'OBSERVER';
+          this.cargarUsuarios();
+        },
+        error: (err) => {
+          this.submitting.set(false);
+          this.error.set(
+            err?.message ||
+              'No se pudo enviar la invitación. Intenta de nuevo.',
+          );
         },
       });
   }
@@ -687,7 +757,19 @@ export class AdminUsuariosPage implements OnInit {
     });
   }
 
+  /**
+   * Obtiene acciones del usuario con caching para evitar re-cálculos en cada render.
+   * El cache se invalida cuando cambian estados que afectan los items (esMaster, habilitado, invitaciones).
+   */
   obtenerAccionesUsuario(usuario: UsuarioResponseDto): MenuItem[] {
+    // Genera una clave única basada en TODOS los estados que determinan qué items aparecen
+    const cacheKey = `${usuario.publicId}-${this.esMaster()}-${usuario.habilitado}-${this.puedeReenviarInvitacion(usuario)}-${this.enviandoInvitaciones()}-${this.reenviando()}`;
+
+    // Si existe en caché, retorna directamente (evita re-cálculos en renders)
+    if (this.accionesCache.has(cacheKey)) {
+      return this.accionesCache.get(cacheKey)!;
+    }
+
     const items: MenuItem[] = [
       {
         label: 'Ver detalles',
@@ -730,6 +812,17 @@ export class AdminUsuariosPage implements OnInit {
         icon: 'pi pi-check',
         command: () => this.rehabilitar(usuario),
       });
+    }
+
+    // Guardar en caché
+    this.accionesCache.set(cacheKey, items);
+
+    // Limpiar caché antiguo (mantener máximo 50 entradas)
+    if (this.accionesCache.size > 50) {
+      const firstKey = this.accionesCache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.accionesCache.delete(firstKey);
+      }
     }
 
     return items;

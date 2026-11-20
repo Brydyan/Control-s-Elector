@@ -87,6 +87,13 @@ export interface CreateUsuarioRequest {
   nombre: string;
   apellido: string;
   rolNombre: RolUsuario;
+  /**
+   * Si la invitacion por email se debe enviar (ODD Invitación Inversible).
+   *
+   * <p>Si es true, la cuenta se crea con estado PENDING_INVITATION e invitacion por email.
+   * Si es false, la cuenta se crea ACTIVA sin invitacion.
+   */
+  sendInvitation?: boolean;
 }
 
 export interface UpdateUsuarioRequest {

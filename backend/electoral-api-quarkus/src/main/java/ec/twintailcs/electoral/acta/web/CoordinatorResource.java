@@ -66,6 +66,21 @@ public class CoordinatorResource {
   @Inject IncidenciaService incidenciaService;
 
   /**
+   * Actas pendientes de aprobacion (estado ENVIADA) para el coordinator.
+   *
+   * <p>RLS: obtiene solo los recintos asignados al coordinator autenticado.
+   */
+  @GET
+  @Path("/actas-pendientes")
+  public PagedResponse<ActaResponseDto> actasPendientes(
+      @QueryParam("page") @DefaultValue("0") int page,
+      @QueryParam("size") @DefaultValue("20") int size) {
+    autorizador.exigir("COORDINATOR", "MASTER");
+
+    return actaService.actasPendientesDelCoordinator(page, size);
+  }
+
+  /**
    * Bandeja de actas, con filtros, busqueda libre y paginacion.
    *
    * @param estado filtro por estado del acta
