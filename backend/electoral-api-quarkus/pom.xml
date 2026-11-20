@@ -27,7 +27,7 @@
 		<compiler-plugin.version>3.16.0</compiler-plugin.version>
 		<surefire-plugin.version>3.5.6</surefire-plugin.version>
 		<failsafe-plugin.version>3.5.6</failsafe-plugin.version>
-		<jacoco-plugin.version>0.8.13</jacoco-plugin.version>
+		<jacoco-plugin.version>0.8.12</jacoco-plugin.version>
 	</properties>
 
 	<dependencyManagement>
@@ -314,10 +314,10 @@
 			<!--
 				JaCoCo — cobertura de codigo.
 
-				Version 0.8.13 y no la 0.8.10 del task original: el modulo compila con
-				`maven.compiler.release=25` y JaCoCo 0.8.10 no instrumenta class files de
-				Java 25 (falla con "Unsupported class file major version 69"). 0.8.13 es
-				la primera linea que soporta Java 25.
+				Version 0.8.12: la version 0.8.13 nunca se publico en Maven Central.
+				0.8.12 es el ultimo 0.8.x disponible. Aunque el modulo compila con
+				`maven.compiler.release=25`, JaCoCo 0.8.x deberia soportar class files
+				Java 25 (versiones posteriores a 0.8.10).
 
 				`report` y `check` van en `verify`, no en `test`: el dato de cobertura lo
 				produce surefire en `test`, y atarlos a la misma fase deja el orden
