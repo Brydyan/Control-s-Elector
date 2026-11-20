@@ -4,12 +4,16 @@ import ec.twintailcs.electoral.auth.application.AuthException;
 import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.LoginUseCase;
 import ec.twintailcs.electoral.auth.application.LogoutUseCase;
+import ec.twintailcs.electoral.auth.application.PasswordChangeException;
+import ec.twintailcs.electoral.auth.application.PasswordChangeService;
 import ec.twintailcs.electoral.auth.application.RefreshTokenUseCase;
 import ec.twintailcs.electoral.auth.application.RegistrarUsuarioUseCase;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.auth.security.CurrentUser;
+import ec.twintailcs.electoral.auth.security.PasswordChangeRateLimiter;
 import ec.twintailcs.electoral.auth.web.dto.AuthResponse;
+import ec.twintailcs.electoral.auth.web.dto.ChangePasswordRequest;
 import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
 import ec.twintailcs.electoral.auth.web.dto.RefreshRequest;
 import ec.twintailcs.electoral.auth.web.dto.RegisterRequest;
@@ -28,6 +32,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -62,6 +67,10 @@ public class AuthResource {
   @Inject LogoutUseCase logoutUseCase;
 
   @Inject RegistrarUsuarioUseCase registrarUsuarioUseCase;
+
+  @Inject PasswordChangeService passwordChangeService;
+
+  @Inject PasswordChangeRateLimiter rateLimiter;
 
   @Inject JwtService jwt;
 
@@ -164,6 +173,46 @@ public class AuthResource {
         registrarUsuarioUseCase.execute(
             body.nombre(), body.apellido(), body.password(), body.rol());
     return Response.status(201).entity(mapper.toDto(u)).build();
+  }
+
+  /**
+   * Cambiar contraseña del usuario actual.
+   *
+   * <p>Requiere JWT válido. Rate limited a 1 cambio por hora por usuario+IP (design D3).
+   * Validaciones: - Contraseña actual debe ser correcta - Nueva contraseña debe cumplir requisitos
+   * (8+ chars, upper, lower, number, special) - Nueva no puede ser igual a la anterior - Ambas
+   * nuevas deben coincidir
+   */
+  @POST
+  @Path("/change-password")
+  public Response changePassword(@Valid ChangePasswordRequest body) {
+    String email = currentUser.email();
+    if (email == null) {
+      throw new AuthException("No autenticado");
+    }
+
+    Usuario usuario = Usuario.find("email", email).firstResult();
+    if (usuario == null) {
+      throw new AuthException("No autenticado");
+    }
+
+    // Rate limit: 1 cambio por hora
+    rateLimiter.registerAttempt(usuario.getId(), ipDe());
+
+    // Realizar cambio de contraseña
+    try {
+      passwordChangeService.changePassword(
+          usuario.getPublicId(),
+          body.currentPassword(),
+          body.newPassword(),
+          body.passwordConfirm());
+    } catch (PasswordChangeException e) {
+      return Response.status(e.getStatusCode())
+          .entity(Map.of("error", e.getMessage(), "code", e.getErrorCode()))
+          .build();
+    }
+
+    return Response.ok(Map.of("message", "Password updated successfully")).build();
   }
 
   // --------- helpers ---------

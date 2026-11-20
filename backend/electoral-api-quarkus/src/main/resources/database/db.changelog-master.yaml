@@ -104,6 +104,10 @@ databaseChangeLog:
   # electoral_app se creó manualmente DESPUÉS del 036, quedando sin permisos en
   # SEQUENCES. Este changeset fixa bases ya migradas otorgando permisos explícitos.
   - include: { file: database/changelog/040-grant-sequences-permissions.sql }
+  # User Profile & Settings (T-AUTH-SETTINGS-01, SDD 2026-11-19): restricción
+  # UNIQUE en email_personal para garantizar integridad de datos de contacto.
+  # La columna ya existe desde 029, este changeset agrega el índice y constraint.
+  - include: { file: database/changelog/046-usuario-email-personal-unique.sql }
   # Recintos y notificaciones de actas pendientes (SDD 2026-11-19-recintos-notificaciones):
   # creación de tabla recinto, migración de JRVs, extensión de acta con campos
   # de aprobación (aprobada_por, fecha_aprobacion, motivo_rechazo), y extensión

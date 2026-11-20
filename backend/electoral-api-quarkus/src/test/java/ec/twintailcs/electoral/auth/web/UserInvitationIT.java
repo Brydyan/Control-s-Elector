@@ -47,6 +47,23 @@ class UserInvitationIT {
   private static final String APELLIDO = "García";
 
   /**
+   * Cache de emails por test.
+   *
+   * <p>Garantiza determinismo: cada llamada a {@code emailDe(apellido)} retorna email único pero
+   * predecible (mismo orden = mismo email en repeticiones). Contador incrementa por invocación,
+   * evitando colisiones UNIQUE mientras mantiene determinismo.
+   */
+  private final java.util.Map<String, String> emailCache = new java.util.HashMap<>();
+
+  private int emailCounter = 0;
+
+  /**
+   * Cachea emails por (IP, apellido) para permitir múltiples invitaciones distintas con el mismo
+   * apellido desde IPs diferentes.
+   */
+  private final java.util.Map<String, String> invitationEmailCache = new java.util.HashMap<>();
+
+  /**
    * IP por test.
    *
    * <p>El limitador de invitaciones es por IP y vive en toda la aplicacion de test: si dos tests
@@ -106,6 +123,9 @@ class UserInvitationIT {
   @BeforeEach
   void crearMasterDePrueba() {
     RecordingEmailService.limpiar();
+    emailCache.clear();
+    emailCounter = 0;
+    invitationEmailCache.clear();
 
     // Cada test arranca con las tablas de invitacion y de auditoria vacias.
     //
@@ -115,8 +135,20 @@ class UserInvitationIT {
     // fila que dejo una corrida anterior —una mutacion, por ejemplo— con el mismo
     // dato hace fallar el test de hoy. Borrar las tablas deja el test dependiendo
     // solo de lo que hace.
+    // Delete in correct FK order (cascade-safe, child-first)
+    // Order derived from FK dependency graph
     limpiarTabla("delete from user_invitations");
+    limpiarTabla("delete from notificacion");
+    limpiarTabla("delete from acta");
+    limpiarTabla("delete from observer_jrv_asignacion");
+    limpiarTabla("delete from jrv_cargo");
     limpiarTabla("delete from audit_log");
+    limpiarTabla("delete from jrv");
+    limpiarTabla("delete from evidencia");
+    limpiarTabla("delete from recinto");
+    limpiarTabla("delete from sesion");
+    limpiarTabla("delete from usuario where id > 1");
+    limpiarTabla("alter sequence usuario_id_seq restart with 2");
 
     Usuario master =
         QuarkusTransaction.requiringNew()
@@ -604,17 +636,51 @@ class UserInvitationIT {
    *
    * <p>Se quitan las tildes: el corrector de correo del backend acepta el subconjunto ASCII de RFC
    * 5322, y un local part con "í" seria un caso raro que no es lo que estos tests quieren probar.
+   *
+   * <p>Se agrega UUID corto para garantizar unicidad (constraint 046: email_personal UNIQUE).
+   * Determinismo: contador incrementa por invocación. Mismo test, mismo orden de llamadas = mismo
+   * email. Diferente orden o test diferente = diferente email. Evita colisiones UNIQUE.
    */
-  private static String emailDe(String apellido) {
-    String limpio =
-        java.text.Normalizer.normalize(apellido, java.text.Normalizer.Form.NFD)
-            .replaceAll("\\p{Mn}", "")
-            .toLowerCase()
-            .replace(" ", "");
-    return "juan." + limpio + "@example.com";
+  private String emailDe(String apellido) {
+    // Usar caché por apellido para determinismo.
+    // Dentro de un test, múltiples calls con el mismo apellido retornan el mismo email.
+    // Entre tests, cada uno arranca con emailCounter=0.
+    return emailCache.computeIfAbsent(
+        apellido,
+        (key) -> {
+          emailCounter++;
+          String limpio =
+              java.text.Normalizer.normalize(apellido, java.text.Normalizer.Form.NFD)
+                  .replaceAll("\\p{Mn}", "")
+                  .toLowerCase()
+                  .replace(" ", "");
+          String uuid = String.format("%08d", emailCounter);
+          return "juan." + limpio + "." + uuid + "@example.com";
+        });
   }
 
   private Response invitarDesde(String ip, String apellido) {
+    // Cache per (IP, apellido) para permitir múltiples invitaciones con el mismo apellido
+    // desde distintas IPs (cada una recibe email único).
+    String cacheKey = ip + "|" + apellido;
+    String email =
+        invitationEmailCache.computeIfAbsent(
+            cacheKey,
+            (key) -> {
+              // Generar email único por IP + apellido
+              emailCounter++;
+              String limpio =
+                  java.text.Normalizer.normalize(apellido, java.text.Normalizer.Form.NFD)
+                      .replaceAll("\\p{Mn}", "")
+                      .toLowerCase()
+                      .replace(" ", "");
+              String uuid = String.format("%08d", emailCounter);
+              return "juan." + limpio + "." + uuid + "@example.com";
+            });
+
+    // Cachear también en emailCache para que emailDe() después lo encuentre
+    emailCache.putIfAbsent(apellido, email);
+
     return given()
         .header("Authorization", "Bearer " + tokenMaster)
         .header("X-Forwarded-For", ip)
@@ -624,7 +690,7 @@ class UserInvitationIT {
             """
             {"nombre":"Juan","apellido":"%s","emailPersonal":"%s","rolNombre":"OBSERVER"}
             """
-                .formatted(apellido, emailDe(apellido)))
+                .formatted(apellido, email))
         .when()
         .post("/api/v1/users/invite");
   }
