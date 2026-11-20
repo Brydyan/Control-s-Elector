@@ -18,7 +18,14 @@ COPY src ./src
 # Build. Use system Maven 3.9 from base image (avoid mvnw rate limiting on GitHub Actions).
 # -B = batch mode (no interactivity), -DskipTests = skip unit/integration tests in Docker.
 # env -i isolates Maven from corrupted environment variables (MAVEN_OPTS, etc).
-RUN env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B clean package -DskipTests
+# Retry with backoff on 429 rate limit errors from Maven Central.
+RUN env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B \
+    -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
+    clean package -DskipTests || \
+    (echo "First attempt failed, retrying after 15s..." && sleep 15 && \
+    env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B \
+    -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
+    clean package -DskipTests)
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
