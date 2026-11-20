@@ -635,17 +635,16 @@ class UserInvitationIT {
    * email. Diferente orden o test diferente = diferente email. Evita colisiones UNIQUE.
    */
   private String emailDe(String apellido) {
-    String cacheKey = apellido + "_" + emailCounter;
-    emailCounter++;
     return emailCache.computeIfAbsent(
-        cacheKey,
+        apellido,
         (key) -> {
+          emailCounter++;
           String limpio =
               java.text.Normalizer.normalize(apellido, java.text.Normalizer.Form.NFD)
                   .replaceAll("\\p{Mn}", "")
                   .toLowerCase()
                   .replace(" ", "");
-          String uuid = java.util.UUID.randomUUID().toString().substring(0, 8);
+          String uuid = String.format("%08d", emailCounter);
           return "juan." + limpio + "." + uuid + "@example.com";
         });
   }
