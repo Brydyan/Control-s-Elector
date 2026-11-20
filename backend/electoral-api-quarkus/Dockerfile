@@ -17,7 +17,8 @@ COPY src ./src
 
 # Build. Use system Maven 3.9 from base image (avoid mvnw rate limiting on GitHub Actions).
 # -B = batch mode (no interactivity), -DskipTests = skip unit/integration tests in Docker.
-RUN /usr/bin/mvn -B clean package -DskipTests
+# env -i isolates Maven from corrupted environment variables (MAVEN_OPTS, etc).
+RUN env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B clean package -DskipTests
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
