@@ -604,6 +604,8 @@ class UserInvitationIT {
    *
    * <p>Se quitan las tildes: el corrector de correo del backend acepta el subconjunto ASCII de RFC
    * 5322, y un local part con "í" seria un caso raro que no es lo que estos tests quieren probar.
+   *
+   * <p>Se agrega UUID corto para garantizar unicidad (constraint 046: email_personal UNIQUE).
    */
   private static String emailDe(String apellido) {
     String limpio =
@@ -611,7 +613,8 @@ class UserInvitationIT {
             .replaceAll("\\p{Mn}", "")
             .toLowerCase()
             .replace(" ", "");
-    return "juan." + limpio + "@example.com";
+    String uuid = java.util.UUID.randomUUID().toString().substring(0, 8);
+    return "juan." + limpio + "." + uuid + "@example.com";
   }
 
   private Response invitarDesde(String ip, String apellido) {

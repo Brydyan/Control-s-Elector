@@ -38,7 +38,7 @@ class UserProfileServiceTest {
                   Rol rol = Rol.find("nombre", "MASTER").firstResult();
                   Usuario u = new Usuario();
                   u.setEmail("test-" + UUID.randomUUID() + "@test.local");
-                  u.setNombre("Test");
+                  u.setNombre("Test-" + UUID.randomUUID());
                   u.setApellido("User");
                   u.setPasswordHash(hasher.hash(PASSWORD));
                   u.setRol(rol);

@@ -39,7 +39,7 @@ class PasswordChangeServiceTest {
                   Rol rol = Rol.find("nombre", "MASTER").firstResult();
                   Usuario u = new Usuario();
                   u.setEmail("test-" + UUID.randomUUID() + "@test.local");
-                  u.setNombre("Test");
+                  u.setNombre("Test-" + UUID.randomUUID());
                   u.setApellido("User");
                   u.setPasswordHash(hasher.hash(CURRENT_PASSWORD));
                   u.setRol(rol);
