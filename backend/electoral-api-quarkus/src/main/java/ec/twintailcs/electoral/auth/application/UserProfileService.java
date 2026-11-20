@@ -1,8 +1,8 @@
 package ec.twintailcs.electoral.auth.application;
 
-import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.auditlog.domain.AuditLog;
+import ec.twintailcs.electoral.auth.domain.Usuario;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -54,7 +54,8 @@ public class UserProfileService {
     }
 
     // Validar nuevo email personal
-    String normalizedEmail = newEmailPersonal == null ? null : newEmailPersonal.trim().toLowerCase();
+    String normalizedEmail =
+        newEmailPersonal == null ? null : newEmailPersonal.trim().toLowerCase();
 
     if (normalizedEmail != null && !normalizedEmail.isEmpty()) {
       // Validar formato

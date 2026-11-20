@@ -49,10 +49,7 @@ public class PasswordChangeException extends RuntimeException {
 
   public static PasswordChangeException passwordNotValid(List<String> missing) {
     return new PasswordChangeException(
-        "La nueva contraseña no cumple los requisitos",
-        "PASSWORD_NOT_VALID",
-        400,
-        missing);
+        "La nueva contraseña no cumple los requisitos", "PASSWORD_NOT_VALID", 400, missing);
   }
 
   public static PasswordChangeException passwordSameAsOld() {

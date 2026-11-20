@@ -179,11 +179,9 @@ public class AuthResource {
    * Cambiar contraseña del usuario actual.
    *
    * <p>Requiere JWT válido. Rate limited a 1 cambio por hora por usuario+IP (design D3).
-   * Validaciones:
-   * - Contraseña actual debe ser correcta
-   * - Nueva contraseña debe cumplir requisitos (8+ chars, upper, lower, number, special)
-   * - Nueva no puede ser igual a la anterior
-   * - Ambas nuevas deben coincidir
+   * Validaciones: - Contraseña actual debe ser correcta - Nueva contraseña debe cumplir requisitos
+   * (8+ chars, upper, lower, number, special) - Nueva no puede ser igual a la anterior - Ambas
+   * nuevas deben coincidir
    */
   @POST
   @Path("/change-password")

@@ -1,8 +1,8 @@
 package ec.twintailcs.electoral.auth.application;
 
-import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.auditlog.domain.AuditLog;
+import ec.twintailcs.electoral.auth.domain.Usuario;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -12,11 +12,9 @@ import org.jboss.logging.Logger;
 /**
  * Servicio para cambiar contraseña del usuario.
  *
- * <p>Validaciones:
- * - Contraseña actual debe ser correcta
- * - Nueva contraseña debe cumplir requisitos de complejidad
- * - Nueva contraseña no puede ser igual a la anterior
- * - Ambas contraseñas deben coincidir
+ * <p>Validaciones: - Contraseña actual debe ser correcta - Nueva contraseña debe cumplir requisitos
+ * de complejidad - Nueva contraseña no puede ser igual a la anterior - Ambas contraseñas deben
+ * coincidir
  */
 @ApplicationScoped
 public class PasswordChangeService {
@@ -38,10 +36,7 @@ public class PasswordChangeService {
    */
   @Transactional
   public void changePassword(
-      UUID usuarioId,
-      String currentPassword,
-      String newPassword,
-      String confirmPassword) {
+      UUID usuarioId, String currentPassword, String newPassword, String confirmPassword) {
 
     // Fetch usuario
     Usuario usuario = Usuario.find("publicId", usuarioId).firstResult();

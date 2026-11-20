@@ -25,25 +25,20 @@ public class UserProfileException extends RuntimeException {
   }
 
   public static UserProfileException passwordIncorrect() {
-    return new UserProfileException(
-        "Contraseña incorrecta", "PASSWORD_INCORRECT", 400);
+    return new UserProfileException("Contraseña incorrecta", "PASSWORD_INCORRECT", 400);
   }
 
   public static UserProfileException invalidEmailFormat() {
-    return new UserProfileException(
-        "Formato de email inválido", "INVALID_EMAIL_FORMAT", 400);
+    return new UserProfileException("Formato de email inválido", "INVALID_EMAIL_FORMAT", 400);
   }
 
   public static UserProfileException emailTooLong() {
-    return new UserProfileException(
-        "El email es demasiado largo", "EMAIL_TOO_LONG", 400);
+    return new UserProfileException("El email es demasiado largo", "EMAIL_TOO_LONG", 400);
   }
 
   public static UserProfileException emailSameAsControl() {
     return new UserProfileException(
-        "El email personal no puede ser igual al email de control",
-        "EMAIL_SAME_AS_CONTROL",
-        400);
+        "El email personal no puede ser igual al email de control", "EMAIL_SAME_AS_CONTROL", 400);
   }
 
   public static UserProfileException emailAlreadyInUse() {

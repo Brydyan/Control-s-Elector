@@ -16,11 +16,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests unitarios para actualización de email personal.
  *
- * <p>Validaciones:
- * - Contraseña debe ser correcta
- * - Email debe tener formato válido
- * - Email no puede ser igual al email control
- * - Email debe ser único en el sistema (si no es null)
+ * <p>Validaciones: - Contraseña debe ser correcta - Email debe tener formato válido - Email no
+ * puede ser igual al email control - Email debe ser único en el sistema (si no es null)
  */
 @QuarkusTest
 class UserProfileServiceTest {

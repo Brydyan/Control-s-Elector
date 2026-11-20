@@ -99,8 +99,10 @@ public class UserResource {
 
     return Response.ok(
             Map.of(
-                "message", "Personal email updated successfully",
-                "emailPersonal", request.emailPersonal() == null ? "" : request.emailPersonal()))
+                "message",
+                "Personal email updated successfully",
+                "emailPersonal",
+                request.emailPersonal() == null ? "" : request.emailPersonal()))
         .build();
   }
 }

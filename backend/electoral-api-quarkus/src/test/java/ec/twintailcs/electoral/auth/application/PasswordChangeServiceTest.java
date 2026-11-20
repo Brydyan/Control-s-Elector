@@ -16,11 +16,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests unitarios para cambio de contraseña.
  *
- * <p>Validaciones:
- * - Contraseña actual debe ser correcta
- * - Nueva contraseña debe cumplir requisitos
- * - Nueva no puede ser igual a la anterior
- * - Ambas nuevas deben coincidir
+ * <p>Validaciones: - Contraseña actual debe ser correcta - Nueva contraseña debe cumplir requisitos
+ * - Nueva no puede ser igual a la anterior - Ambas nuevas deben coincidir
  */
 @QuarkusTest
 class PasswordChangeServiceTest {
@@ -84,10 +81,7 @@ class PasswordChangeServiceTest {
                     .call(
                         () -> {
                           service.changePassword(
-                              usuario.getPublicId(),
-                              "WrongPassword@1",
-                              NEW_PASSWORD,
-                              NEW_PASSWORD);
+                              usuario.getPublicId(), "WrongPassword@1", NEW_PASSWORD, NEW_PASSWORD);
                           return null;
                         }))
         .isInstanceOf(PasswordChangeException.class)
@@ -141,10 +135,7 @@ class PasswordChangeServiceTest {
                     .call(
                         () -> {
                           service.changePassword(
-                              usuario.getPublicId(),
-                              CURRENT_PASSWORD,
-                              "weak",
-                              "weak");
+                              usuario.getPublicId(), CURRENT_PASSWORD, "weak", "weak");
                           return null;
                         }))
         .isInstanceOf(PasswordChangeException.class)

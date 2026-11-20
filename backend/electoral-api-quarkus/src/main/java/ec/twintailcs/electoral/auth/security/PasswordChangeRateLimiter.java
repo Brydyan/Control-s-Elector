@@ -52,8 +52,7 @@ public class PasswordChangeRateLimiter {
             });
 
     if (window.attempts() > MAX_ATTEMPTS) {
-      throw ec.twintailcs.electoral.auth.application.PasswordChangeException
-          .rateLimitExceeded();
+      throw ec.twintailcs.electoral.auth.application.PasswordChangeException.rateLimitExceeded();
     }
   }
 
