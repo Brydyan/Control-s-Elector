@@ -53,15 +53,25 @@ MaxAgeSeconds: 3600
 
 ## Phase C: Backend S3Client Integration
 
-- [x] **C.1** — Actualizado `application.properties` con credenciales R2:
+- [x] **C.1** — Actualizado `application.properties` con variables configurables:
   ```properties
-  aws.s3.endpoint=https://ead7aaabe04469c462f381e0539c5824.r2.cloudflarestorage.com
-  aws.s3.region=auto
-  aws.s3.bucket=control-electoral-mvp
-  aws.access.key.id=79b615810b6fd1dca3b4bd5dde108537
-  aws.secret.access.key=67a9b46b1878d280a67395b8752709a81eeee2ef9e3697653e13dcc4243168f7
-  aws.s3.force-path-style=true
-  app.s3.presign-expiry=PT15M
+  aws.s3.endpoint=${AWS_S3_ENDPOINT:http://localhost:9000}
+  aws.s3.region=${AWS_S3_REGION:auto}
+  aws.s3.bucket=${AWS_S3_BUCKET:electoral-evidences}
+  aws.access.key.id=${AWS_ACCESS_KEY_ID:rustfsadmin}
+  aws.secret.access.key=${AWS_SECRET_ACCESS_KEY:rustfsadmin123}
+  aws.s3.force-path-style=${AWS_S3_PATH_STYLE:true}
+  app.s3.presign-expiry=${APP_S3_PRESIGN_EXPIRY:PT15M}
+  ```
+  
+  **Para R2 en staging/producción, Railway usa variables de entorno:**
+  ```
+  AWS_S3_ENDPOINT=https://ead7aaabe04469c462f381e0539c5824.r2.cloudflarestorage.com
+  AWS_S3_REGION=auto
+  AWS_S3_BUCKET=control-electoral-mvp
+  AWS_ACCESS_KEY_ID=79b615810b6fd1dca3b4bd5dde108537
+  AWS_SECRET_ACCESS_KEY=67a9b46b1878d280a67395b8752709a81eeee2ef9e3697653e13dcc4243168f7
+  AWS_S3_PATH_STYLE=true
   ```
 
 - [x] **C.2** — Implementado en `S3StorageService.java`:
@@ -83,6 +93,7 @@ MaxAgeSeconds: 3600
 
 - [x] **D.1** — Health check agregado en `HealthAliasResource.java`:
   - `s3Client.headBucket(HeadBucketRequest)` para validar acceso
+  - Usa `s3Properties.getBucket()` (configurable vía AWS_S3_BUCKET)
   - Componente `s3` en respuesta de `/actuator/health`
   - Status HTTP 200 (UP) si BD + S3 OK; 503 si alguno falla
 
