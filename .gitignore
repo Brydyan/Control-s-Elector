@@ -24,7 +24,8 @@ out/
 *.nar
 hs_err_pid*
 replay_pid*
-.mvn/wrapper/maven-wrapper.jar
+# Maven wrapper JAR es necesario para que ./mvnw funcione en CI/local
+!.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 .quarkus/
