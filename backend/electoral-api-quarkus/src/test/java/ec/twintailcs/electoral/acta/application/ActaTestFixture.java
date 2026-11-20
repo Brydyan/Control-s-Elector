@@ -17,11 +17,18 @@ public class ActaTestFixture {
 
   /** Crea todos los datos necesarios para los tests. */
   public void setUpTestData() {
+    limpiarActas();
     crearRoles();
     crearUsuarios();
     crearJrvs();
-    crearCargos();
     crearActas();
+  }
+
+  /** Limpia actas previas para evitar conflictos de unique constraint. */
+  private void limpiarActas() {
+    entityManager.createNativeQuery("DELETE FROM acta_detalle WHERE acta_id IN (SELECT id FROM acta WHERE id >= 101 AND id <= 124)").executeUpdate();
+    entityManager.createNativeQuery("DELETE FROM notificacion WHERE acta_id IN (SELECT id FROM acta WHERE id >= 101 AND id <= 124)").executeUpdate();
+    entityManager.createNativeQuery("DELETE FROM acta WHERE id >= 101 AND id <= 124").executeUpdate();
   }
 
   /** Crea usuarios necesarios para NotificacionServiceTest (1-9) y UseCaseTests (100-105, 500). */
@@ -77,21 +84,13 @@ public class ActaTestFixture {
     }
   }
 
-  /** Crea Cargo necesario (1). */
-  private void crearCargos() {
-    Object exists =
+  /** Obtiene un cargo existente para usar en actas. */
+  private Long obtenerCargoId() {
+    Object result =
         entityManager
-            .createNativeQuery("SELECT COUNT(*) FROM cargo WHERE id = ?1")
-            .setParameter(1, 1L)
+            .createNativeQuery("SELECT id FROM cargo LIMIT 1")
             .getSingleResult();
-    if (((Number) exists).longValue() == 0) {
-      entityManager
-          .createNativeQuery("INSERT INTO cargo (id, nombre, nivel) VALUES (?1, ?2, ?3)")
-          .setParameter(1, 1L)
-          .setParameter(2, "Presidente")
-          .setParameter(3, "NACIONAL")
-          .executeUpdate();
-    }
+    return ((Number) result).longValue();
   }
 
   /** Crea Rol (asume que se necesita para Usuario). */
@@ -112,6 +111,7 @@ public class ActaTestFixture {
 
   /** Crea actas necesarias para NotificacionServiceTest (101-124). */
   private void crearActas() {
+    Long cargoId = obtenerCargoId();
     for (long id = 101; id <= 124; id++) {
       Object exists =
           entityManager
@@ -119,7 +119,8 @@ public class ActaTestFixture {
               .setParameter(1, id)
               .getSingleResult();
       if (((Number) exists).longValue() == 0) {
-        // Usar diferente JRV para cada acta (distribuir con mod 7 sobre JRVs 1-7)
+        // Distribuir JRVs: ((id - 101) % 7) + 1 → 1-7
+        // Estado ANULADA evita uk_acta_activa constraint (solo aplica a estados ACTIVE)
         long jrvId = ((id - 101) % 7) + 1;
         entityManager
             .createNativeQuery(
@@ -127,9 +128,9 @@ public class ActaTestFixture {
                     + "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)")
             .setParameter(1, id)
             .setParameter(2, jrvId) // jrv_id: distribuir entre 1-7
-            .setParameter(3, 1L) // cargo_id
+            .setParameter(3, cargoId) // cargo_id: usar el primer cargo disponible
             .setParameter(4, 1L) // registrada_por (usuario 1)
-            .setParameter(5, "BORRADOR") // estado
+            .setParameter(5, "ANULADA") // estado: ANULADA no sujeta a uk_acta_activa
             .setParameter(6, 100) // total_sufragantes
             .setParameter(7, 0) // votos_blancos
             .setParameter(8, 0) // votos_nulos
