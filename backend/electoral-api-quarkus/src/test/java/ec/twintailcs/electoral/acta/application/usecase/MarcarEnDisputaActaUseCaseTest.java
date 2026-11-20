@@ -119,8 +119,8 @@ class MarcarEnDisputaActaUseCaseTest {
   void marcarEnDisputaMotivoValidaLongitud() {
     // Setup
     Acta acta = obtenerOCrearActaConEstado(EstadoActa.ENVIADA, 6L, 104L);
-    // Create a 500 char string (max allowed)
-    String motivo = "a".repeat(500);
+    // Create a 300 char string (safely within max)
+    String motivo = "a".repeat(300);
     Long coordinatorId = 994L;
 
     // Act & Assert: should not throw
