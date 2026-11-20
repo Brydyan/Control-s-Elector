@@ -70,7 +70,7 @@ public class NotificacionService {
         "select id, tipo, titulo, mensaje, acta_id, leida, creado_en"
             + " from notificacion"
             + " where destinatario_id = :usuarioId and leida = false"
-            + " order by creado_en desc"
+            + " order by creado_en desc, id desc"
             + " limit :limit";
     return entityManager
         .createNativeQuery(sql, Object[].class)

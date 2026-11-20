@@ -156,11 +156,11 @@ class NotificacionServiceTest {
 
   @Test
   @Transactional
-  void obtenerPendientesOrdenaDescendentePorFecha() {
+  void obtenerPendientesOrdenaDescendentePorFecha() throws InterruptedException {
     // Setup: create notifications
     Long usuarioId = 8L;
     service.crearNotificacion(usuarioId, "ACTA_ENVIADA", "Notif 1", 121L);
-    Thread.yield(); // Small delay to ensure different timestamps
+    Thread.sleep(100); // Ensure different timestamps
     service.crearNotificacion(usuarioId, "ACTA_APROBADA", "Notif 2", 122L);
 
     // Act
