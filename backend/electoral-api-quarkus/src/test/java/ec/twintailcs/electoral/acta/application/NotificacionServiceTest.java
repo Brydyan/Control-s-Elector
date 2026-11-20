@@ -2,28 +2,31 @@ package ec.twintailcs.electoral.acta.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import io.quarkus.test.InjectMock;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for NotificacionService.
  *
- * <p>Tests notification creation, retrieval, and read status:
- * - Crear notificación
- * - Obtener notificaciones pendientes
- * - Marcar como leída
- * - Contar notificaciones sin leer
+ * <p>Tests notification creation, retrieval, and read status: - Crear notificación - Obtener
+ * notificaciones pendientes - Marcar como leída - Contar notificaciones sin leer
  */
 @QuarkusTest
 class NotificacionServiceTest {
 
   @Inject NotificacionService service;
   @Inject EntityManager entityManager;
+
+  @BeforeEach
+  @Transactional
+  void setUpTestData() {
+    new ActaTestFixture(entityManager).setUpTestData();
+  }
 
   @Test
   @Transactional
@@ -100,10 +103,10 @@ class NotificacionServiceTest {
     // Get notification id
     Long notifId =
         ((Number)
-            entityManager
-                .createNativeQuery("select id from notificacion where destinatario_id = ?1")
-                .setParameter(1, usuarioId)
-                .getSingleResult())
+                entityManager
+                    .createNativeQuery("select id from notificacion where destinatario_id = ?1")
+                    .setParameter(1, usuarioId)
+                    .getSingleResult())
             .longValue();
 
     // Act
@@ -153,11 +156,11 @@ class NotificacionServiceTest {
 
   @Test
   @Transactional
-  void obtenerPendientesOrdenaDescendentePorFecha() {
+  void obtenerPendientesOrdenaDescendentePorFecha() throws InterruptedException {
     // Setup: create notifications
     Long usuarioId = 8L;
     service.crearNotificacion(usuarioId, "ACTA_ENVIADA", "Notif 1", 121L);
-    Thread.yield(); // Small delay to ensure different timestamps
+    Thread.sleep(100); // Ensure different timestamps
     service.crearNotificacion(usuarioId, "ACTA_APROBADA", "Notif 2", 122L);
 
     // Act
@@ -180,10 +183,11 @@ class NotificacionServiceTest {
     // Mark first one as read
     Long notifId =
         ((Number)
-            entityManager
-                .createNativeQuery("select id from notificacion where destinatario_id = ?1 limit 1")
-                .setParameter(1, usuarioId)
-                .getSingleResult())
+                entityManager
+                    .createNativeQuery(
+                        "select id from notificacion where destinatario_id = ?1 limit 1")
+                    .setParameter(1, usuarioId)
+                    .getSingleResult())
             .longValue();
     service.marcarComoLeida(notifId);
 

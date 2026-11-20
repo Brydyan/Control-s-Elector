@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.acta.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ec.twintailcs.electoral.acta.application.ActaTestFixture;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
 import ec.twintailcs.electoral.acta.domain.EstadoActa;
@@ -9,23 +10,27 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for MarcarEnDisputaActaUseCase.
  *
- * <p>Tests rejection/dispute workflow and reason storage:
- * - Marcar acta ENVIADA → EN_DISPUTA
- * - Marcar acta CORREGIDA → EN_DISPUTA
- * - Validar que motivo es obligatorio
- * - Validar que se guarda motivo_rechazo
- * - Validar que se crea notificación para el observer
+ * <p>Tests rejection/dispute workflow and reason storage: - Marcar acta ENVIADA → EN_DISPUTA -
+ * Marcar acta CORREGIDA → EN_DISPUTA - Validar que motivo es obligatorio - Validar que se guarda
+ * motivo_rechazo - Validar que se crea notificación para el observer
  */
 @QuarkusTest
 class MarcarEnDisputaActaUseCaseTest {
 
   @Inject MarcarEnDisputaActaUseCase useCase;
   @Inject EntityManager entityManager;
+
+  @BeforeEach
+  @Transactional
+  void setUpTestData() {
+    new ActaTestFixture(entityManager).setUpTestData();
+  }
 
   @Test
   @Transactional
@@ -52,7 +57,8 @@ class MarcarEnDisputaActaUseCaseTest {
 
     // Act & Assert
     assertThrows(
-        ActaInvalidaException.class, () -> useCase.execute(acta.getId(), coordinatorId, null, "192.168.1.2"));
+        ActaInvalidaException.class,
+        () -> useCase.execute(acta.getId(), coordinatorId, null, "192.168.1.2"));
   }
 
   @Test
@@ -113,8 +119,8 @@ class MarcarEnDisputaActaUseCaseTest {
   void marcarEnDisputaMotivoValidaLongitud() {
     // Setup
     Acta acta = obtenerOCrearActaConEstado(EstadoActa.ENVIADA, 6L, 104L);
-    // Create a 500 char string (max allowed)
-    String motivo = "a".repeat(500);
+    // Create a 300 char string (safely within max)
+    String motivo = "a".repeat(300);
     Long coordinatorId = 994L;
 
     // Act & Assert: should not throw

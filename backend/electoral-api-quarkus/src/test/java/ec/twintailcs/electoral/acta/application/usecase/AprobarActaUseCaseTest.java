@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.acta.application.usecase;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ec.twintailcs.electoral.acta.application.ActaTestFixture;
 import ec.twintailcs.electoral.acta.domain.Acta;
 import ec.twintailcs.electoral.acta.domain.ActaEstadoInvalidoException;
 import ec.twintailcs.electoral.acta.domain.ActaInvalidaException;
@@ -11,23 +12,27 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for AprobarActaUseCase.
  *
- * <p>Tests approval workflow and notification creation:
- * - Aprobar acta ENVIADA → APROBADA
- * - Aprobar acta CORREGIDA → APROBADA
- * - Validar que solo ENVIADA/CORREGIDA pueden aprobarse
- * - Validar que se guarda aprobada_por y fecha_aprobacion
- * - Validar que se crea notificación para el observer
+ * <p>Tests approval workflow and notification creation: - Aprobar acta ENVIADA → APROBADA - Aprobar
+ * acta CORREGIDA → APROBADA - Validar que solo ENVIADA/CORREGIDA pueden aprobarse - Validar que se
+ * guarda aprobada_por y fecha_aprobacion - Validar que se crea notificación para el observer
  */
 @QuarkusTest
 class AprobarActaUseCaseTest {
 
   @Inject AprobarActaUseCase useCase;
   @Inject EntityManager entityManager;
+
+  @BeforeEach
+  @Transactional
+  void setUpTestData() {
+    new ActaTestFixture(entityManager).setUpTestData();
+  }
 
   @Test
   @Transactional

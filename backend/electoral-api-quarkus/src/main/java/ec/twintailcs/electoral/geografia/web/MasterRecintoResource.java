@@ -27,8 +27,8 @@ import jakarta.ws.rs.core.Response;
 /**
  * CRUD de Recintos en {@code /api/v1/admin/recintos}.
  *
- * <p>Todas las operaciones exigen {@code configuracion:write}, que solo MASTER tiene.
- * Recintos agrupa múltiples JRVs bajo un COORDINATOR responsable de validar actas.
+ * <p>Todas las operaciones exigen {@code configuracion:write}, que solo MASTER tiene. Recintos
+ * agrupa múltiples JRVs bajo un COORDINATOR responsable de validar actas.
  */
 @Path("/api/v1/admin/recintos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -82,8 +82,7 @@ public class MasterRecintoResource {
     autorizador.exigir("configuracion:write");
 
     Recinto recinto =
-        service.crearRecinto(
-            dto.nombre(), dto.parroquiaId(), dto.coordinatorId(), dto.estado());
+        service.crearRecinto(dto.nombre(), dto.parroquiaId(), dto.coordinatorId(), dto.estado());
     return Response.status(Response.Status.CREATED).entity(toDto(recinto)).build();
   }
 
