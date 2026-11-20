@@ -124,10 +124,15 @@ class UserInvitationIT {
     // fila que dejo una corrida anterior —una mutacion, por ejemplo— con el mismo
     // dato hace fallar el test de hoy. Borrar las tablas deja el test dependiendo
     // solo de lo que hace.
-    // Delete in correct FK order (child tables before parents)
+    // Delete in correct FK order (cascade-safe, child-first)
+    // Order derived from FK dependency graph
     limpiarTabla("delete from user_invitations");
-    limpiarTabla("delete from audit_log");
+    limpiarTabla("delete from notificacion");
     limpiarTabla("delete from acta");
+    limpiarTabla("delete from observer_jrv_asignacion");
+    limpiarTabla("delete from jrv_cargo");
+    limpiarTabla("delete from audit_log");
+    limpiarTabla("delete from jrv");
     limpiarTabla("delete from evidencia");
     limpiarTabla("delete from recinto");
     limpiarTabla("delete from refresh_token");
