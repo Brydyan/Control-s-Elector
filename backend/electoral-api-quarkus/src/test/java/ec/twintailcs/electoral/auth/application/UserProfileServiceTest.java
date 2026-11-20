@@ -35,10 +35,14 @@ class UserProfileServiceTest {
   void setup() {
     // Limpiar usuarios de tests anteriores para evitar violaciones de constraint
     // en bases de datos compartidas (en CI o cuando tests corren en paralelo).
-    // Orden: child tables first (sesion), then parent (usuario).
+    // Orden: delete child tables before parents (inverse of creation order)
     QuarkusTransaction.requiringNew()
         .call(
             () -> {
+              em.createNativeQuery("delete from acta").executeUpdate();
+              em.createNativeQuery("delete from evidencia").executeUpdate();
+              em.createNativeQuery("delete from recinto").executeUpdate();
+              em.createNativeQuery("delete from refresh_token").executeUpdate();
               em.createNativeQuery("delete from sesion").executeUpdate();
               em.createNativeQuery("delete from usuario where id > 1").executeUpdate();
               em.createNativeQuery("alter sequence usuario_id_seq restart with 2").executeUpdate();
