@@ -17,10 +17,11 @@ public class ActaTestFixture {
 
   /** Crea todos los datos necesarios para los tests. */
   public void setUpTestData() {
+    crearRoles();
     crearUsuarios();
     crearJrvs();
     crearCargos();
-    crearRoles();
+    crearActas();
   }
 
   /** Crea usuarios necesarios para NotificacionServiceTest (1-9) y UseCaseTests (100-105, 500). */
@@ -106,6 +107,32 @@ public class ActaTestFixture {
           .setParameter(1, 1L)
           .setParameter(2, "OBSERVER")
           .executeUpdate();
+    }
+  }
+
+  /** Crea actas necesarias para NotificacionServiceTest (101-124). */
+  private void crearActas() {
+    for (long id = 101; id <= 124; id++) {
+      Object exists =
+          entityManager
+              .createNativeQuery("SELECT COUNT(*) FROM acta WHERE id = ?1")
+              .setParameter(1, id)
+              .getSingleResult();
+      if (((Number) exists).longValue() == 0) {
+        entityManager
+            .createNativeQuery(
+                "INSERT INTO acta (id, jrv_id, cargo_id, registrada_por, estado, total_sufragantes, votos_blancos, votos_nulos, fecha_registro) "
+                    + "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)")
+            .setParameter(1, id)
+            .setParameter(2, 1L) // jrv_id
+            .setParameter(3, 1L) // cargo_id
+            .setParameter(4, 1L) // registrada_por (usuario 1)
+            .setParameter(5, "BORRADOR") // estado
+            .setParameter(6, 100) // total_sufragantes
+            .setParameter(7, 0) // votos_blancos
+            .setParameter(8, 0) // votos_nulos
+            .executeUpdate();
+      }
     }
   }
 }
