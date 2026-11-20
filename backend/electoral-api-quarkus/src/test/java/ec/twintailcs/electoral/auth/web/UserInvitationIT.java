@@ -126,6 +126,7 @@ class UserInvitationIT {
     // solo de lo que hace.
     limpiarTabla("delete from user_invitations");
     limpiarTabla("delete from audit_log");
+    limpiarTabla("delete from sesion");
     limpiarTabla("delete from usuario where id > 1");
     limpiarTabla("alter sequence usuario_id_seq restart with 2");
 

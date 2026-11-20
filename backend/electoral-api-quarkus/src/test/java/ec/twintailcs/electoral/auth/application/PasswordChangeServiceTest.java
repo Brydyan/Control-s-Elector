@@ -36,9 +36,11 @@ class PasswordChangeServiceTest {
   void setup() {
     // Limpiar usuarios de tests anteriores para evitar violaciones de constraint
     // en bases de datos compartidas (en CI o cuando tests corren en paralelo).
+    // Orden: child tables first (sesion), then parent (usuario).
     QuarkusTransaction.requiringNew()
         .call(
             () -> {
+              em.createNativeQuery("delete from sesion").executeUpdate();
               em.createNativeQuery("delete from usuario where id > 1").executeUpdate();
               em.createNativeQuery("alter sequence usuario_id_seq restart with 2").executeUpdate();
               return null;
