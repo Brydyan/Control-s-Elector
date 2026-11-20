@@ -16,11 +16,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Unit tests for RecintoService.
  *
- * <p>Tests CRUD operations and validations:
- * - Crear recinto válido
- * - Duplicado nombre+parroquia → error
- * - Coordinator inválido → error
- * - Eliminar con JRVs → error
+ * <p>Tests CRUD operations and validations: - Crear recinto válido - Duplicado nombre+parroquia →
+ * error - Coordinator inválido → error - Eliminar con JRVs → error
  */
 @QuarkusTest
 class RecintoServiceTest {
@@ -37,8 +34,7 @@ class RecintoServiceTest {
     assertNotNull(parroquia, "Test requires at least one Parroquia to exist");
 
     // Act
-    Recinto created =
-        service.crearRecinto("Test Recinto", parroquia.getId(), null, "ACTIVO");
+    Recinto created = service.crearRecinto("Test Recinto", parroquia.getId(), null, "ACTIVO");
 
     // Assert
     assertNotNull(created);
@@ -76,8 +72,7 @@ class RecintoServiceTest {
   void obtenerRecintoExistente() {
     // Setup
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
-    Recinto created =
-        service.crearRecinto("Get Test", parroquia.getId(), null, "ACTIVO");
+    Recinto created = service.crearRecinto("Get Test", parroquia.getId(), null, "ACTIVO");
 
     // Act
     Recinto obtained = service.obtenerRecinto(created.getId());
@@ -91,8 +86,7 @@ class RecintoServiceTest {
   @Transactional
   void obtenerRecintoInexistente() {
     // Act & Assert
-    assertThrows(
-        GeografiaNotFoundException.class, () -> service.obtenerRecinto(99999L));
+    assertThrows(GeografiaNotFoundException.class, () -> service.obtenerRecinto(99999L));
   }
 
   @Test
@@ -100,12 +94,10 @@ class RecintoServiceTest {
   void actualizarRecinto() {
     // Setup
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
-    Recinto recinto =
-        service.crearRecinto("Original Name", parroquia.getId(), null, "ACTIVO");
+    Recinto recinto = service.crearRecinto("Original Name", parroquia.getId(), null, "ACTIVO");
 
     // Act
-    Recinto updated =
-        service.actualizarRecinto(recinto.getId(), "Updated Name", null, "INACTIVO");
+    Recinto updated = service.actualizarRecinto(recinto.getId(), "Updated Name", null, "INACTIVO");
 
     // Assert
     assertEquals("Updated Name", updated.getNombre());
@@ -117,15 +109,13 @@ class RecintoServiceTest {
   void eliminarRecintoSinJrvs() {
     // Setup
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
-    Recinto recinto =
-        service.crearRecinto("To Delete", parroquia.getId(), null, "ACTIVO");
+    Recinto recinto = service.crearRecinto("To Delete", parroquia.getId(), null, "ACTIVO");
 
     // Act
     service.eliminarRecinto(recinto.getId());
 
     // Assert: recinto should no longer exist
-    assertThrows(
-        GeografiaNotFoundException.class, () -> service.obtenerRecinto(recinto.getId()));
+    assertThrows(GeografiaNotFoundException.class, () -> service.obtenerRecinto(recinto.getId()));
   }
 
   @Test

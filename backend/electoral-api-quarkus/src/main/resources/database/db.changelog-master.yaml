@@ -108,3 +108,13 @@ databaseChangeLog:
   # UNIQUE en email_personal para garantizar integridad de datos de contacto.
   # La columna ya existe desde 029, este changeset agrega el índice y constraint.
   - include: { file: database/changelog/046-usuario-email-personal-unique.sql }
+  # Recintos y notificaciones de actas pendientes (SDD 2026-11-19-recintos-notificaciones):
+  # creación de tabla recinto, migración de JRVs, extensión de acta con campos
+  # de aprobación (aprobada_por, fecha_aprobacion, motivo_rechazo), y extensión
+  # de notificacion con columna titulo. Incluye data migration 043 para crear
+  # 1 recinto por parroquia y asignar JRVs existentes.
+  - include: { file: database/changelog/041-recinto-create.sql }
+  - include: { file: database/changelog/042-jrv-add-recinto-id.sql }
+  - include: { file: database/changelog/043-jrv-migrate-to-recintos.sql }
+  - include: { file: database/changelog/044-acta-add-approval-fields.sql }
+  - include: { file: database/changelog/045-notificacion-create.sql }

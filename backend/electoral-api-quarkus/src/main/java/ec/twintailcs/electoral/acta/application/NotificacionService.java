@@ -9,13 +9,11 @@ import java.util.List;
 /**
  * Service for Notificacion CRUD operations.
  *
- * <p>Notifications inform:
- * - COORDINATOR: when new acta is ENVIADA (pending review)
- * - OBSERVER: when acta is APROBADA or RECHAZADA
+ * <p>Notifications inform: - COORDINATOR: when new acta is ENVIADA (pending review) - OBSERVER:
+ * when acta is APROBADA or RECHAZADA
  *
- * <p>Notification table uses native SQL for compatibility with backend Spring.
- * Table schema: notificacion(id, destinatario_id, tipo, acta_id, titulo, mensaje, leida,
- * creado_en)
+ * <p>Notification table uses native SQL for compatibility with backend Spring. Table schema:
+ * notificacion(id, destinatario_id, tipo, acta_id, titulo, mensaje, leida, creado_en)
  */
 @ApplicationScoped
 public class NotificacionService {
@@ -72,7 +70,7 @@ public class NotificacionService {
         "select id, tipo, titulo, mensaje, acta_id, leida, creado_en"
             + " from notificacion"
             + " where destinatario_id = :usuarioId and leida = false"
-            + " order by creado_en desc"
+            + " order by creado_en desc, id desc"
             + " limit :limit";
     return entityManager
         .createNativeQuery(sql, Object[].class)
