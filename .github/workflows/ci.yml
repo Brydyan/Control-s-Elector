@@ -274,10 +274,10 @@ jobs:
             -e DB_NAME=electoral_db \
             -e DB_USER=electoral_user \
             -e DB_PASSWORD=electoral_pass \
-            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true \
+            -e QUARKUS_LIQUIBASE_MIGRATE_AT_START=true \
             -e APP_MIGRATE_ONLY=true \
-            -e QUARKUS_HIBERNATE_GENERATION=none \
-            -e QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin \
+            -e QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=none \
+            -e QUARKUS_LIQUIBASE_CONTEXTS=seed,bootstrap-admin \
             -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
             -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
             electoral-api:contract
@@ -298,11 +298,11 @@ jobs:
             -e DB_PASSWORD=electoral_app_pass \
             -e QUARKUS_LIQUIBASE_USERNAME=electoral_user \
             -e QUARKUS_LIQUIBASE_PASSWORD=electoral_pass \
-            -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false \
+            -e QUARKUS_LIQUIBASE_MIGRATE_AT_START=false \
             -e SERVER_PORT=8080 \
             -e APP_JWT_SECRET=ci-only-contract-secret-at-least-32-chars \
             -e APP_JWT_REFRESH_PEPPER=ci-only-contract-pepper \
-            -e QUARKUS_LIQUIDASE_CONTEXTS=seed,bootstrap-admin \
+            -e QUARKUS_LIQUIBASE_CONTEXTS=seed,bootstrap-admin \
             -e AWS_ACCESS_KEY_ID=rustfsadmin \
             -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
             -e AWS_S3_ENDPOINT=http://localhost:9000 \
@@ -441,13 +441,13 @@ jobs:
           }
 
           DB_USER=electoral_user DB_PASSWORD=electoral_pass \
-            boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=true -e QUARKUS_HIBERNATE_GENERATION=none
+            boot_quarkus -e QUARKUS_LIQUIBASE_MIGRATE_AT_START=true -e QUARKUS_HIBERNATE_ORM_DATABASE_GENERATION=none
           wait_healthy || exit 1
           echo "Primer arranque: el backend creo el schema y quedo saludable"
 
           docker rm -f electoral-api-quarkus
           DB_USER=electoral_app DB_PASSWORD=electoral_app_pass \
-            boot_quarkus -e QUARKUS_LIQUIDASE_MIGRATE_AT_START=false
+            boot_quarkus -e QUARKUS_LIQUIBASE_MIGRATE_AT_START=false
           wait_healthy || exit 1
           echo "Segundo arranque: el backend valido el schema y quedo saludable"
           curl -s http://localhost:8080/actuator/health
