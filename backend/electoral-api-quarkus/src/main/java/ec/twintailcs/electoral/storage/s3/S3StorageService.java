@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
 /**
  * Wrapper sobre el {@link S3Client} singleton con operaciones de alto nivel. Los resources y los
@@ -100,5 +101,22 @@ public class S3StorageService {
             .getObjectRequest(GetObjectRequest.builder().bucket(props.getBucket()).key(key).build())
             .build();
     return presigner.presignGetObject(req).url().toString();
+  }
+
+  /**
+   * URL prefirmada para subir un objeto. La expiracion sale de {@link
+   * S3Properties#getPresignExpiry()} (default 15 min, configurable por entorno via {@code
+   * aws.s3.presign-expiry}). RF-STG-04.
+   *
+   * <p>El frontend la usa para subir evidencias de fotos sin pasar por el backend.
+   */
+  public String presignUploadUrl(String key) {
+    PutObjectPresignRequest req =
+        PutObjectPresignRequest.builder()
+            .signatureDuration(props.getPresignExpiry())
+            .putObjectRequest(
+                PutObjectRequest.builder().bucket(props.getBucket()).key(key).build())
+            .build();
+    return presigner.presignPutObject(req).url().toString();
   }
 }
