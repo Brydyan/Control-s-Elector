@@ -8,6 +8,8 @@ import ec.twintailcs.electoral.evidencia.web.dto.CambiarEstadoRequest;
 import ec.twintailcs.electoral.evidencia.web.dto.DownloadUrlResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.MarcarObservacionesRequest;
+import ec.twintailcs.electoral.evidencia.web.dto.UploadUrlResponse;
+import ec.twintailcs.electoral.storage.s3.S3StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -52,6 +54,7 @@ public class EvidenciaResource {
 
   @Inject Autorizador autorizador;
   @Inject EvidenciaService service;
+  @Inject S3StorageService s3Storage;
 
   /**
    * Sube la foto de un acta.
@@ -94,6 +97,17 @@ public class EvidenciaResource {
     autorizador.exigir("evidencia:download");
 
     return service.urlDescarga(id);
+  }
+
+  /** Obtener la URL prefirmada para subir la foto de la evidencia (15 min de validez). RF-STG-04. */
+  @POST
+  @Path("/{id}/upload-url")
+  public UploadUrlResponse urlSubida(@PathParam("id") UUID id) {
+    autorizador.exigir("evidencia:upload");
+
+    String key = "evidencias/" + id + ".webp";
+    String url = s3Storage.presignUploadUrl(key);
+    return new UploadUrlResponse(id, url);
   }
 
   /** Transicionar la evidencia a APROBADA o RECHAZADA. */
