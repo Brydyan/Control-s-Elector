@@ -49,8 +49,8 @@ class UserInvitationIT {
   /**
    * Cache de emails por test.
    *
-   * <p>Garantiza que múltiples llamadas a {@code emailDe()} con el mismo apellido dentro de un
-   * test devuelven el mismo email (determinismo). Se limpia en {@code @BeforeEach}.
+   * <p>Garantiza que múltiples llamadas a {@code emailDe()} con el mismo apellido dentro de un test
+   * devuelven el mismo email (determinismo). Se limpia en {@code @BeforeEach}.
    */
   private final java.util.Map<String, String> emailCache = new java.util.HashMap<>();
 
@@ -616,9 +616,9 @@ class UserInvitationIT {
    * <p>Se quitan las tildes: el corrector de correo del backend acepta el subconjunto ASCII de RFC
    * 5322, y un local part con "í" seria un caso raro que no es lo que estos tests quieren probar.
    *
-   * <p>Se agrega UUID corto para garantizar unicidad (constraint 046: email_personal UNIQUE).
-   * El email se cachea por test para garantizar determinismo: múltiples llamadas al mismo
-   * apellido dentro de un test devuelven el mismo email.
+   * <p>Se agrega UUID corto para garantizar unicidad (constraint 046: email_personal UNIQUE). El
+   * email se cachea por test para garantizar determinismo: múltiples llamadas al mismo apellido
+   * dentro de un test devuelven el mismo email.
    */
   private String emailDe(String apellido) {
     return emailCache.computeIfAbsent(
