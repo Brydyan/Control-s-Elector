@@ -58,6 +58,12 @@ class UserInvitationIT {
   private int emailCounter = 0;
 
   /**
+   * Cachea emails por (IP, apellido) para permitir múltiples invitaciones distintas
+   * con el mismo apellido desde IPs diferentes.
+   */
+  private final java.util.Map<String, String> invitationEmailCache = new java.util.HashMap<>();
+
+  /**
    * IP por test.
    *
    * <p>El limitador de invitaciones es por IP y vive en toda la aplicacion de test: si dos tests
@@ -119,6 +125,7 @@ class UserInvitationIT {
     RecordingEmailService.limpiar();
     emailCache.clear();
     emailCounter = 0;
+    invitationEmailCache.clear();
 
     // Cada test arranca con las tablas de invitacion y de auditoria vacias.
     //
@@ -635,6 +642,9 @@ class UserInvitationIT {
    * email. Diferente orden o test diferente = diferente email. Evita colisiones UNIQUE.
    */
   private String emailDe(String apellido) {
+    // Usar caché por apellido para determinismo.
+    // Dentro de un test, múltiples calls con el mismo apellido retornan el mismo email.
+    // Entre tests, cada uno arranca con emailCounter=0.
     return emailCache.computeIfAbsent(
         apellido,
         (key) -> {
@@ -650,6 +660,27 @@ class UserInvitationIT {
   }
 
   private Response invitarDesde(String ip, String apellido) {
+    // Cache per (IP, apellido) para permitir múltiples invitaciones con el mismo apellido
+    // desde distintas IPs (cada una recibe email único).
+    String cacheKey = ip + "|" + apellido;
+    String email =
+        invitationEmailCache.computeIfAbsent(
+            cacheKey,
+            (key) -> {
+              // Generar email único por IP + apellido
+              emailCounter++;
+              String limpio =
+                  java.text.Normalizer.normalize(apellido, java.text.Normalizer.Form.NFD)
+                      .replaceAll("\\p{Mn}", "")
+                      .toLowerCase()
+                      .replace(" ", "");
+              String uuid = String.format("%08d", emailCounter);
+              return "juan." + limpio + "." + uuid + "@example.com";
+            });
+
+    // Cachear también en emailCache para que emailDe() después lo encuentre
+    emailCache.putIfAbsent(apellido, email);
+
     return given()
         .header("Authorization", "Bearer " + tokenMaster)
         .header("X-Forwarded-For", ip)
@@ -659,7 +690,7 @@ class UserInvitationIT {
             """
             {"nombre":"Juan","apellido":"%s","emailPersonal":"%s","rolNombre":"OBSERVER"}
             """
-                .formatted(apellido, emailDe(apellido)))
+                .formatted(apellido, email))
         .when()
         .post("/api/v1/users/invite");
   }
