@@ -4,16 +4,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /**
  * Tests unitarios para {@link S3StorageService}.
  *
- * <p>Verifica que las URLs prefirmadas se generan correctamente con:
- * - Expiración: 15 minutos (PT15M)
- * - Firma: contiene X-Amz-Signature
- * - Path: contiene la clave esperada
+ * <p>Verifica que las URLs prefirmadas se generan correctamente con: - Expiración: 15 minutos
+ * (PT15M) - Firma: contiene X-Amz-Signature - Path: contiene la clave esperada
  */
 @QuarkusTest
 class S3StorageServiceTest {

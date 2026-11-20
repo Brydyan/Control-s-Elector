@@ -9,11 +9,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests de integración para {@link HealthAliasResource}.
  *
- * <p>Verifica que:
- * - GET /actuator/health devuelve status UP cuando BD y S3 están OK
- * - Contiene componentes "db" y "s3" en la respuesta
- * - Status HTTP es 200 cuando todos los componentes están UP
- * - Status HTTP es 503 si alguno falla
+ * <p>Verifica que: - GET /actuator/health devuelve status UP cuando BD y S3 están OK - Contiene
+ * componentes "db" y "s3" en la respuesta - Status HTTP es 200 cuando todos los componentes están
+ * UP - Status HTTP es 503 si alguno falla
  */
 @QuarkusTest
 class HealthAliasResourceTest {

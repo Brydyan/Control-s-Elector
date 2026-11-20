@@ -114,8 +114,7 @@ public class S3StorageService {
     PutObjectPresignRequest req =
         PutObjectPresignRequest.builder()
             .signatureDuration(props.getPresignExpiry())
-            .putObjectRequest(
-                PutObjectRequest.builder().bucket(props.getBucket()).key(key).build())
+            .putObjectRequest(PutObjectRequest.builder().bucket(props.getBucket()).key(key).build())
             .build();
     return presigner.presignPutObject(req).url().toString();
   }

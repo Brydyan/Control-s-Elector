@@ -50,8 +50,7 @@ public class HealthAliasResource {
     boolean s3Up = true;
     String s3Detalle = "bucket-ok";
     try {
-      s3Client.headBucket(
-          HeadBucketRequest.builder().bucket(s3Properties.getBucket()).build());
+      s3Client.headBucket(HeadBucketRequest.builder().bucket(s3Properties.getBucket()).build());
     } catch (Exception e) {
       s3Up = false;
       s3Detalle = e.getMessage();

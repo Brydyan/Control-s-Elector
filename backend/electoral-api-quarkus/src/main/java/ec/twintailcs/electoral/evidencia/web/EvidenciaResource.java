@@ -99,7 +99,9 @@ public class EvidenciaResource {
     return service.urlDescarga(id);
   }
 
-  /** Obtener la URL prefirmada para subir la foto de la evidencia (15 min de validez). RF-STG-04. */
+  /**
+   * Obtener la URL prefirmada para subir la foto de la evidencia (15 min de validez). RF-STG-04.
+   */
   @POST
   @Path("/{id}/upload-url")
   public UploadUrlResponse urlSubida(@PathParam("id") UUID id) {
