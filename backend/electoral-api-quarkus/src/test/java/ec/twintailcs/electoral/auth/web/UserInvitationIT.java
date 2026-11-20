@@ -58,8 +58,8 @@ class UserInvitationIT {
   private int emailCounter = 0;
 
   /**
-   * Cachea emails por (IP, apellido) para permitir múltiples invitaciones distintas
-   * con el mismo apellido desde IPs diferentes.
+   * Cachea emails por (IP, apellido) para permitir múltiples invitaciones distintas con el mismo
+   * apellido desde IPs diferentes.
    */
   private final java.util.Map<String, String> invitationEmailCache = new java.util.HashMap<>();
 
