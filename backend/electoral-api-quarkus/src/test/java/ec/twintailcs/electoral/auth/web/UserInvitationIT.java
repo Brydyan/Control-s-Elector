@@ -54,6 +54,7 @@ class UserInvitationIT {
    * evitando colisiones UNIQUE mientras mantiene determinismo.
    */
   private final java.util.Map<String, String> emailCache = new java.util.HashMap<>();
+
   private int emailCounter = 0;
 
   /**
