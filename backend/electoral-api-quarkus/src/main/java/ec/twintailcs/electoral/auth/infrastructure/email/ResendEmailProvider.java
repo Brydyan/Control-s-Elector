@@ -8,6 +8,7 @@ import java.net.http.HttpResponse;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jboss.logging.Logger;
+import ec.twintailcs.electoral.auth.infrastructure.email.ResendProvider;
 
 /**
  * Envio de email por Resend.com.
