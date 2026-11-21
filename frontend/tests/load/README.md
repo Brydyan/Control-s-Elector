@@ -170,6 +170,28 @@ API_HOST=api.electoral.ec:8080 ./run.sh pico
 K6_DOCKER=true ./run.sh pico
 ```
 
+### Cache Hit Ratio (T-CACHE-STRAT-01 F.5)
+```bash
+# 100 VUs, ramp up 10s, 10 lecturas por VU sobre los 4 endpoints cacheados
+k6 run scenarios/cache-hit-ratio.js
+
+# Con credenciales del MASTER (la geografía exige `configuracion:read`)
+MASTER_EMAIL=... MASTER_PASSWORD=... k6 run scenarios/cache-hit-ratio.js
+```
+El script lee el hit ratio real de las métricas Micrometer del backend
+(`cache_hits_total` / `cache_misses_total` en `/q/metrics`), no lo estima.
+Escribe el reporte en `results/cache-hit-ratio-summary.{md,json}`.
+
+Comparación con/sin cache (el número que justifica la cache):
+
+```bash
+# 1) Backend con la cache activa → guardar resumen
+k6 run scenarios/cache-hit-ratio.js
+
+# 2) Backend con QUARKUS_CACHE_ENABLED=false → guardar resumen
+k6 run scenarios/cache-hit-ratio.js
+```
+
 ---
 
 ## 📊 Interpretar Resultados
