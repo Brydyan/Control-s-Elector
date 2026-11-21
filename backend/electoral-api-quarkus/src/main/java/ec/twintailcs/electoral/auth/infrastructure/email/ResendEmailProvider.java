@@ -1,7 +1,6 @@
 package ec.twintailcs.electoral.auth.infrastructure.email;
 
 import jakarta.enterprise.context.Dependent;
-import jakarta.enterprise.inject.Alternative;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -13,8 +12,8 @@ import org.jboss.logging.Logger;
 /**
  * Envio de email por Resend.com.
  *
- * <p>Este bean es inyectado por EmailServiceProducer. Marcado con @Alternative para que no sea un
- * candidato directo en la resolución CDI, solo el productor lo usa. El productor selecciona la
+ * <p>Este bean es inyectado por EmailServiceProducer. Marcado con @ResendProvider para que CDI
+ * pueda distinguirlo de otras implementaciones de EmailService. El productor selecciona la
  * implementación correcta basado en {@code app.email.provider=resend}. Requiere variable de entorno
  * {@code RESEND_API_KEY} configurada con la API key de Resend.
  *
@@ -27,7 +26,7 @@ import org.jboss.logging.Logger;
  * Value: send.forge.rmta.net
  * </code>
  */
-@Alternative
+@ResendProvider
 @Dependent
 public class ResendEmailProvider implements EmailService {
 
