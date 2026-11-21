@@ -3,6 +3,8 @@ package ec.twintailcs.electoral.auth.infrastructure.email;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import ec.twintailcs.electoral.auth.infrastructure.email.SmtpProvider;
+import ec.twintailcs.electoral.auth.infrastructure.email.ResendProvider;
 
 /**
  * Productor que selecciona la implementación de EmailService basado en la configuración.
