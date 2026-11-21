@@ -29,12 +29,34 @@ export class DashboardApi {
   /** T-FE-15 A.2: Cache de progreso con desglose de parroquias. */
   private progresoDetalles$: Observable<ProgresoCantonDto[]> | null = null;
 
+  /** T-FE-15 B.1: Cache de resumen. */
+  private resumen$: Observable<ResumenActas> | null = null;
+
+  /** T-FE-15 B.1: Cache de resultados base. */
+  private resultados$: Observable<ResultadoCargo[]> | null = null;
+
+  /** T-FE-15 B.1: Cache de progreso base. */
+  private progreso$: Observable<ProgresoCantonDto[]> | null = null;
+
+  /** T-FE-15 B.1: Cache de novedades. */
+  private novedades$: Observable<Novedad[]> | null = null;
+
   getResumen(): Observable<ResumenActas> {
-    return this.http.get<ResumenActas>(`${this.baseUrl}/resumen`);
+    if (!this.resumen$) {
+      this.resumen$ = this.http
+        .get<ResumenActas>(`${this.baseUrl}/resumen`)
+        .pipe(shareReplay(1));
+    }
+    return this.resumen$;
   }
 
   getResultados(): Observable<ResultadoCargo[]> {
-    return this.http.get<ResultadoCargo[]>(`${this.baseUrl}/resultados`);
+    if (!this.resultados$) {
+      this.resultados$ = this.http
+        .get<ResultadoCargo[]>(`${this.baseUrl}/resultados`)
+        .pipe(shareReplay(1));
+    }
+    return this.resultados$;
   }
 
   /**
@@ -44,11 +66,21 @@ export class DashboardApi {
    * el tipo de la respuesta es el DTO completo y no la base `ProgresoCanton`.
    */
   getProgreso(): Observable<ProgresoCantonDto[]> {
-    return this.http.get<ProgresoCantonDto[]>(`${this.baseUrl}/progreso`);
+    if (!this.progreso$) {
+      this.progreso$ = this.http
+        .get<ProgresoCantonDto[]>(`${this.baseUrl}/progreso`)
+        .pipe(shareReplay(1));
+    }
+    return this.progreso$;
   }
 
   getNovedades(): Observable<Novedad[]> {
-    return this.http.get<Novedad[]>(`${this.baseUrl}/novedades`);
+    if (!this.novedades$) {
+      this.novedades$ = this.http
+        .get<Novedad[]>(`${this.baseUrl}/novedades`)
+        .pipe(shareReplay(1));
+    }
+    return this.novedades$;
   }
 
   /**
@@ -144,6 +176,10 @@ export class DashboardApi {
    * Llamar en caso de que el usuario dispare un "Actualizar" explícito.
    */
   invalidateCache(): void {
+    this.resumen$ = null;
+    this.resultados$ = null;
+    this.progreso$ = null;
+    this.novedades$ = null;
     this.resultadosDetalles$ = null;
     this.progresoDetalles$ = null;
   }

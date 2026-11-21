@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map } from 'rxjs';
+import { Observable, forkJoin, map, shareReplay } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import type { OpcionesTransmision } from '../../../core/offline/sync.service';
 import {
@@ -33,6 +33,7 @@ export class ObserverApi {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/observer`;
   private readonly configUrl = `${environment.apiUrl}/configuracion`;
+  private partidosCache$: Observable<PartidoDto[]> | null = null;
 
   getMisJrvs(): Observable<JrvConEstado[]> {
     return this.http.get<any[]>(`${this.baseUrl}/jrvs`).pipe(
@@ -64,11 +65,17 @@ export class ObserverApi {
   }
 
   getCandidatosPorCargo(cargoId: number): Observable<CandidatoInfo[]> {
+    if (!this.partidosCache$) {
+      this.partidosCache$ = this.http
+        .get<PartidoDto[]>(`${this.configUrl}/partidos`)
+        .pipe(shareReplay(1));
+    }
+
     return forkJoin({
       candidatos: this.http.get<CandidatoDto[]>(
         `${this.configUrl}/candidatos?cargoId=${cargoId}`,
       ),
-      partidos: this.http.get<PartidoDto[]>(`${this.configUrl}/partidos`),
+      partidos: this.partidosCache$,
     }).pipe(
       map(({ candidatos, partidos }) => {
         const partidosMap = new Map(partidos.map((p) => [p.id, p]));

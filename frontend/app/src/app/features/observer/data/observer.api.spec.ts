@@ -148,4 +148,54 @@ describe('ObserverApi', () => {
     expect(req.request.body).toEqual(payload);
     req.flush({ id: 123, estado: 'CORREGIDA' });
   });
+
+  it('should cache partidos and reuse on second call', (done) => {
+    const mockPartidos = [
+      { id: 1, nombre: 'PAIS', siglas: 'P', numeroLista: 1 },
+    ];
+    const mockCandidatos1 = [
+      {
+        id: 1,
+        nombre: 'Candidato 1',
+        orden: 1,
+        cargoId: 1,
+        partidoId: 1,
+      },
+    ];
+    const mockCandidatos2 = [
+      {
+        id: 2,
+        nombre: 'Candidato 2',
+        orden: 1,
+        cargoId: 2,
+        partidoId: 1,
+      },
+    ];
+
+    let firstCallComplete = false;
+
+    service.getCandidatosPorCargo(1).subscribe(() => {
+      firstCallComplete = true;
+
+      service.getCandidatosPorCargo(2).subscribe(() => {
+        expect(firstCallComplete).toBe(true);
+        done();
+      });
+
+      // Handle second call: only candidatos request (partidos should be cached)
+      const req2 = httpMock.expectOne((req) =>
+        req.url.includes('/candidatos?cargoId=2'),
+      );
+      req2.flush(mockCandidatos2);
+    });
+
+    // Handle first call requests: both candidatos and partidos
+    const req1Cand = httpMock.expectOne((req) =>
+      req.url.includes('/candidatos?cargoId=1'),
+    );
+    const req1Part = httpMock.expectOne((req) => req.url.includes('/partidos'));
+
+    req1Cand.flush(mockCandidatos1);
+    req1Part.flush(mockPartidos);
+  });
 });

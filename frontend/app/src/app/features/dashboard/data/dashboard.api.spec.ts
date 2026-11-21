@@ -298,3 +298,163 @@ describe('DashboardApi — endpoints canonicos y cache sin errores', () => {
     expect(segundoError).toBeNull();
   });
 });
+
+describe('DashboardApi — B.1 cache for base methods (T-FE-15)', () => {
+  let service: DashboardApi;
+  let httpTesting: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        DashboardApi,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
+    service = TestBed.inject(DashboardApi);
+    httpTesting = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpTesting.verify();
+  });
+
+  it('should cache resumen and reuse on second call', (done) => {
+    const mockResumen = {
+      enviadas: 1,
+      enDisputa: 1,
+      corregidas: 1,
+      aprobadas: 2,
+      totalActivas: 5,
+    };
+
+    let firstCallComplete = false;
+
+    service.getResumen().subscribe(() => {
+      firstCallComplete = true;
+
+      service.getResumen().subscribe(() => {
+        expect(firstCallComplete).toBe(true);
+        done();
+      });
+
+      // Second call: should NOT trigger another HTTP request
+      // If it does, expectOne will fail because we only flush once
+    });
+
+    // Only one request expected for both calls (due to shareReplay)
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/dashboard/resumen`,
+    );
+    req.flush(mockResumen);
+  });
+
+  it('should cache resultados and reuse on second call', (done) => {
+    const mockResultados = [
+      { cargoId: 1, cargoNombre: 'Prefecto/a', candidatos: [] },
+    ];
+
+    let firstCallComplete = false;
+
+    service.getResultados().subscribe(() => {
+      firstCallComplete = true;
+
+      service.getResultados().subscribe(() => {
+        expect(firstCallComplete).toBe(true);
+        done();
+      });
+    });
+
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/dashboard/resultados`,
+    );
+    req.flush(mockResultados);
+  });
+
+  it('should cache progreso and reuse on second call', (done) => {
+    const mockProgreso = [
+      {
+        cantonId: 1,
+        cantonNombre: 'Santa Elena',
+        totalJrvs: 200,
+        jrvsConActa: 150,
+        porcentaje: 75,
+      },
+    ];
+
+    let firstCallComplete = false;
+
+    service.getProgreso().subscribe(() => {
+      firstCallComplete = true;
+
+      service.getProgreso().subscribe(() => {
+        expect(firstCallComplete).toBe(true);
+        done();
+      });
+    });
+
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/dashboard/progreso`,
+    );
+    req.flush(mockProgreso);
+  });
+
+  it('should cache novedades and reuse on second call', (done) => {
+    const mockNovedades = [
+      {
+        actaPublicId: '11111111-1111-1111-1111-111111111111',
+        tipo: 'ACTA_EN_DISPUTA',
+        jrvId: 1,
+        jrvNumero: '0023',
+        cargoId: 1,
+        cargoNombre: 'Alcalde/sa',
+        observerPublicId: '22222222-2222-2222-2222-222222222222',
+        observerNombre: 'Juan Pérez',
+        motivo: null,
+        minutosTranscurridos: 35,
+      },
+    ];
+
+    let firstCallComplete = false;
+
+    service.getNovedades().subscribe(() => {
+      firstCallComplete = true;
+
+      service.getNovedades().subscribe(() => {
+        expect(firstCallComplete).toBe(true);
+        done();
+      });
+    });
+
+    const req = httpTesting.expectOne(
+      `${environment.apiUrl}/dashboard/novedades`,
+    );
+    req.flush(mockNovedades);
+  });
+
+  it('invalidateCache should clear all base and detail caches', (done) => {
+    const mockResumen = {
+      enviadas: 1,
+      enDisputa: 1,
+      corregidas: 1,
+      aprobadas: 2,
+      totalActivas: 5,
+    };
+    const mockResultados = [{ cargoId: 1, cargoNombre: 'X', candidatos: [] }];
+
+    service.getResumen().subscribe(() => {
+      service.invalidateCache();
+
+      service.getResumen().subscribe(() => {
+        done();
+      });
+    });
+
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resumen`)
+      .flush(mockResumen);
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resumen`)
+      .flush(mockResumen);
+  });
+});
