@@ -298,6 +298,28 @@ describe('ProfileSettingsPage (SDD Phase D)', () => {
       expect(messageService.add).toHaveBeenCalled();
     });
 
+    it('con 429 muestra el tiempo de espera que manda el backend', () => {
+      const error = {
+        status: 429,
+        error: {
+          status: 429,
+          error: 'Too Many Requests',
+          message: 'Demasiadas solicitudes. Reintente en 840 segundos.',
+        },
+      };
+      userApi.updatePersonalEmail.mockReturnValue(throwError(() => error));
+
+      component.personalEmail.set('nuevo@example.com');
+      component.emailConfirmPassword.set('Password123!');
+
+      component.submitUpdateEmail();
+
+      expect(component.emailError()).toBe(
+        'Demasiadas solicitudes. Reintente en 840 segundos.',
+      );
+      expect(component.emailLoading()).toBe(false);
+    });
+
     it('valida formato de email antes de enviar', () => {
       component.personalEmail.set('invalid-email');
       component.emailConfirmPassword.set('Password123!');
