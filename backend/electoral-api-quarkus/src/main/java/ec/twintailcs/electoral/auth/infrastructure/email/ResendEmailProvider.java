@@ -33,20 +33,28 @@ public class ResendEmailProvider implements EmailService {
   private static final Logger log = Logger.getLogger(ResendEmailProvider.class);
   private static final String RESEND_API_URL = "https://api.resend.com/emails";
 
-  private final String resendApiKey;
   private final String fromEmail;
   private final HttpClient httpClient;
+  private final org.eclipse.microprofile.config.Config config;
 
   public ResendEmailProvider(
       @org.eclipse.microprofile.config.inject.ConfigProperty(name = "app.email.from")
           String fromEmail,
-      @org.eclipse.microprofile.config.inject.ConfigProperty(
-              name = "RESEND_API_KEY",
-              defaultValue = "")
-          String resendApiKey) {
+      org.eclipse.microprofile.config.Config config) {
     this.fromEmail = fromEmail;
-    this.resendApiKey = resendApiKey;
+    this.config = config;
     this.httpClient = HttpClient.newHttpClient();
+  }
+
+  /**
+   * Resuelve la API key de Resend lazy (en runtime, no en compile-time).
+   *
+   * <p>Quarkus ARC valida TODAS las @ConfigProperty en tiempo de compilación, incluso con
+   * defaultValue. Esto bloquea el nativo build si RESEND_API_KEY no está disponible. Usar
+   * Config.getOptionalValue() permite que la resolución ocurra en runtime, no en AOT.
+   */
+  private String getResendApiKey() {
+    return config.getOptionalValue("RESEND_API_KEY", String.class).orElse("");
   }
 
   @Override
@@ -97,7 +105,7 @@ public class ResendEmailProvider implements EmailService {
           HttpRequest.newBuilder()
               .uri(new URI(RESEND_API_URL))
               .header("Content-Type", "application/json")
-              .header("Authorization", "Bearer " + resendApiKey)
+              .header("Authorization", "Bearer " + getResendApiKey())
               .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
               .build();
 
