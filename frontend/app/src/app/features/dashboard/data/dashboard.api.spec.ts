@@ -4,6 +4,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { DashboardApi } from './dashboard.api';
 
@@ -319,7 +320,12 @@ describe('DashboardApi — B.1 cache for base methods (T-FE-15)', () => {
     httpTesting.verify();
   });
 
-  it('should cache resumen and reuse on second call', (done) => {
+  /**
+   * Cachear no es "responder igual": es no volver a pedir. La asercion mira si queda
+   * alguna peticion HTTP abierta: una segunda llamada con la cache activa no deja
+   * ninguna, y con la cache rota deja una — y el test cae.
+   */
+  it('should cache resumen and reuse on second call', async () => {
     const mockResumen = {
       enviadas: 1,
       enDisputa: 1,
@@ -328,50 +334,40 @@ describe('DashboardApi — B.1 cache for base methods (T-FE-15)', () => {
       totalActivas: 5,
     };
 
-    let firstCallComplete = false;
+    const primera = firstValueFrom(service.getResumen());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resumen`)
+      .flush(mockResumen);
+    await primera;
 
-    service.getResumen().subscribe(() => {
-      firstCallComplete = true;
+    const segunda = firstValueFrom(service.getResumen());
+    await segunda;
 
-      service.getResumen().subscribe(() => {
-        expect(firstCallComplete).toBe(true);
-        done();
-      });
-
-      // Second call: should NOT trigger another HTTP request
-      // If it does, expectOne will fail because we only flush once
-    });
-
-    // Only one request expected for both calls (due to shareReplay)
-    const req = httpTesting.expectOne(
-      `${environment.apiUrl}/dashboard/resumen`,
-    );
-    req.flush(mockResumen);
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/resumen`),
+    ).toHaveLength(0);
   });
 
-  it('should cache resultados and reuse on second call', (done) => {
+  it('should cache resultados and reuse on second call', async () => {
     const mockResultados = [
       { cargoId: 1, cargoNombre: 'Prefecto/a', candidatos: [] },
     ];
 
-    let firstCallComplete = false;
+    const primera = firstValueFrom(service.getResultados());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resultados`)
+      .flush(mockResultados);
+    await primera;
 
-    service.getResultados().subscribe(() => {
-      firstCallComplete = true;
+    const segunda = firstValueFrom(service.getResultados());
+    await segunda;
 
-      service.getResultados().subscribe(() => {
-        expect(firstCallComplete).toBe(true);
-        done();
-      });
-    });
-
-    const req = httpTesting.expectOne(
-      `${environment.apiUrl}/dashboard/resultados`,
-    );
-    req.flush(mockResultados);
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/resultados`),
+    ).toHaveLength(0);
   });
 
-  it('should cache progreso and reuse on second call', (done) => {
+  it('should cache progreso and reuse on second call', async () => {
     const mockProgreso = [
       {
         cantonId: 1,
@@ -382,24 +378,21 @@ describe('DashboardApi — B.1 cache for base methods (T-FE-15)', () => {
       },
     ];
 
-    let firstCallComplete = false;
+    const primera = firstValueFrom(service.getProgreso());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/progreso`)
+      .flush(mockProgreso);
+    await primera;
 
-    service.getProgreso().subscribe(() => {
-      firstCallComplete = true;
+    const segunda = firstValueFrom(service.getProgreso());
+    await segunda;
 
-      service.getProgreso().subscribe(() => {
-        expect(firstCallComplete).toBe(true);
-        done();
-      });
-    });
-
-    const req = httpTesting.expectOne(
-      `${environment.apiUrl}/dashboard/progreso`,
-    );
-    req.flush(mockProgreso);
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/progreso`),
+    ).toHaveLength(0);
   });
 
-  it('should cache novedades and reuse on second call', (done) => {
+  it('should cache novedades and reuse on second call', async () => {
     const mockNovedades = [
       {
         actaPublicId: '11111111-1111-1111-1111-111111111111',
@@ -415,24 +408,21 @@ describe('DashboardApi — B.1 cache for base methods (T-FE-15)', () => {
       },
     ];
 
-    let firstCallComplete = false;
+    const primera = firstValueFrom(service.getNovedades());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/novedades`)
+      .flush(mockNovedades);
+    await primera;
 
-    service.getNovedades().subscribe(() => {
-      firstCallComplete = true;
+    const segunda = firstValueFrom(service.getNovedades());
+    await segunda;
 
-      service.getNovedades().subscribe(() => {
-        expect(firstCallComplete).toBe(true);
-        done();
-      });
-    });
-
-    const req = httpTesting.expectOne(
-      `${environment.apiUrl}/dashboard/novedades`,
-    );
-    req.flush(mockNovedades);
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/novedades`),
+    ).toHaveLength(0);
   });
 
-  it('invalidateCache should clear all base and detail caches', (done) => {
+  it('invalidateCache should clear all base and detail caches', async () => {
     const mockResumen = {
       enviadas: 1,
       enDisputa: 1,
@@ -440,21 +430,23 @@ describe('DashboardApi — B.1 cache for base methods (T-FE-15)', () => {
       aprobadas: 2,
       totalActivas: 5,
     };
-    const mockResultados = [{ cargoId: 1, cargoNombre: 'X', candidatos: [] }];
 
-    service.getResumen().subscribe(() => {
-      service.invalidateCache();
-
-      service.getResumen().subscribe(() => {
-        done();
-      });
-    });
-
+    const primera = firstValueFrom(service.getResumen());
     httpTesting
       .expectOne(`${environment.apiUrl}/dashboard/resumen`)
       .flush(mockResumen);
+    await primera;
+
+    service.invalidateCache();
+
+    const segunda = firstValueFrom(service.getResumen());
     httpTesting
       .expectOne(`${environment.apiUrl}/dashboard/resumen`)
       .flush(mockResumen);
+    await segunda;
+
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/resumen`),
+    ).toHaveLength(0);
   });
 });
