@@ -4,13 +4,14 @@ import { RecintoApi } from '../../data/recinto.api';
 import { AdminApi } from '../../data/admin.api';
 import { GeografiaApi } from '../../data/geografia.api';
 import { of, throwError } from 'rxjs';
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 
 describe('RecintoCreateWizardModalComponent', () => {
   let component: RecintoCreateWizardModalComponent;
   let fixture: ComponentFixture<RecintoCreateWizardModalComponent>;
-  let recintoApiMock: jasmine.SpyObj<RecintoApi>;
-  let adminApiMock: jasmine.SpyObj<AdminApi>;
-  let geografiaApiMock: jasmine.SpyObj<GeografiaApi>;
+  let recintoApiMock: any;
+  let adminApiMock: any;
+  let geografiaApiMock: any;
 
   const mockGeografia = {
     provincias: [
@@ -76,16 +77,15 @@ describe('RecintoCreateWizardModalComponent', () => {
   };
 
   beforeEach(async () => {
-    recintoApiMock = jasmine.createSpyObj('RecintoApi', [
-      'crearRecintoConAsignaciones',
-    ]);
-    adminApiMock = jasmine.createSpyObj('AdminApi', ['listarUsuarios']);
-    geografiaApiMock = jasmine.createSpyObj('GeografiaApi', [
-      'obtenerGeografia',
-    ]);
-
-    adminApiMock.listarUsuarios.and.returnValue(of(mockUsuarios));
-    geografiaApiMock.obtenerGeografia.and.returnValue(of(mockGeografia));
+    recintoApiMock = {
+      crearRecintoConAsignaciones: vi.fn(),
+    };
+    adminApiMock = {
+      listarUsuarios: vi.fn().mockReturnValue(of(mockUsuarios)),
+    };
+    geografiaApiMock = {
+      obtenerGeografia: vi.fn().mockReturnValue(of(mockGeografia)),
+    };
 
     await TestBed.configureTestingModule({
       imports: [RecintoCreateWizardModalComponent],
@@ -155,7 +155,7 @@ describe('RecintoCreateWizardModalComponent', () => {
   });
 
   it('should validate maximum 5 coordinators', () => {
-    recintoApiMock.crearRecintoConAsignaciones.and.returnValue(
+    recintoApiMock.crearRecintoConAsignaciones.mockReturnValue(
       of({ recintoId: 'new-id' }),
     );
 
@@ -190,7 +190,7 @@ describe('RecintoCreateWizardModalComponent', () => {
   });
 
   it('should handle API errors gracefully', () => {
-    recintoApiMock.crearRecintoConAsignaciones.and.returnValue(
+    recintoApiMock.crearRecintoConAsignaciones.mockReturnValue(
       throwError(() => new Error('Network error')),
     );
 
@@ -213,7 +213,7 @@ describe('RecintoCreateWizardModalComponent', () => {
   });
 
   it('should emit guardado event on successful creation', () => {
-    recintoApiMock.crearRecintoConAsignaciones.and.returnValue(
+    recintoApiMock.crearRecintoConAsignaciones.mockReturnValue(
       of({ recintoId: 'new-id' }),
     );
 

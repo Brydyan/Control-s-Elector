@@ -4,13 +4,14 @@ import { RecintoApi } from '../../data/recinto.api';
 import { AdminApi } from '../../data/admin.api';
 import { GeografiaApi } from '../../data/geografia.api';
 import { of } from 'rxjs';
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 
 describe('RecintoEditWizardModalComponent', () => {
   let component: RecintoEditWizardModalComponent;
   let fixture: ComponentFixture<RecintoEditWizardModalComponent>;
-  let recintoApiMock: jasmine.SpyObj<RecintoApi>;
-  let adminApiMock: jasmine.SpyObj<AdminApi>;
-  let geografiaApiMock: jasmine.SpyObj<GeografiaApi>;
+  let recintoApiMock: any;
+  let adminApiMock: any;
+  let geografiaApiMock: any;
 
   const mockGeografia = {
     provincias: [
@@ -90,20 +91,18 @@ describe('RecintoEditWizardModalComponent', () => {
   };
 
   beforeEach(async () => {
-    recintoApiMock = jasmine.createSpyObj('RecintoApi', [
-      'editarRecintoConAsignaciones',
-      'obtenerRecintoConAsignaciones',
-    ]);
-    adminApiMock = jasmine.createSpyObj('AdminApi', ['listarUsuarios']);
-    geografiaApiMock = jasmine.createSpyObj('GeografiaApi', [
-      'obtenerGeografia',
-    ]);
-
-    adminApiMock.listarUsuarios.and.returnValue(of(mockUsuarios));
-    geografiaApiMock.obtenerGeografia.and.returnValue(of(mockGeografia));
-    recintoApiMock.obtenerRecintoConAsignaciones.and.returnValue(
-      of(mockRecintoData),
-    );
+    recintoApiMock = {
+      editarRecintoConAsignaciones: vi.fn(),
+      obtenerRecintoConAsignaciones: vi
+        .fn()
+        .mockReturnValue(of(mockRecintoData)),
+    };
+    adminApiMock = {
+      listarUsuarios: vi.fn().mockReturnValue(of(mockUsuarios)),
+    };
+    geografiaApiMock = {
+      obtenerGeografia: vi.fn().mockReturnValue(of(mockGeografia)),
+    };
 
     await TestBed.configureTestingModule({
       imports: [RecintoEditWizardModalComponent],
@@ -144,7 +143,7 @@ describe('RecintoEditWizardModalComponent', () => {
   });
 
   it('should handle successful update', () => {
-    recintoApiMock.editarRecintoConAsignaciones.and.returnValue(of(void 0));
+    recintoApiMock.editarRecintoConAsignaciones.mockReturnValue(of(void 0));
 
     return new Promise<void>((resolve) => {
       component.abierto = true;

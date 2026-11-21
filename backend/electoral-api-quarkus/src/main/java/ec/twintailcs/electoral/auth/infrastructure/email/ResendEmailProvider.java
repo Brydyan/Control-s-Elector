@@ -1,7 +1,6 @@
 package ec.twintailcs.electoral.auth.infrastructure.email;
 
-import io.quarkus.arc.lookup.LookupIfProperty;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import java.net.URI;
@@ -16,8 +15,10 @@ import org.jboss.logging.Logger;
 /**
  * Envio de email por Resend.com.
  *
- * <p>El bean solo se activa cuando {@code app.email.provider=resend}. Requiere variable de
- * entorno {@code RESEND_API_KEY} configurada con la API key de Resend.
+ * <p>Este bean es inyectado por EmailServiceProducer. No es un bean CDI directo para evitar
+ * ambigüedad con SmtpEmailProvider. El productor selecciona la implementación correcta basado
+ * en {@code app.email.provider=resend}. Requiere variable de entorno {@code RESEND_API_KEY}
+ * configurada con la API key de Resend.
  *
  * <p>El metodo no captura la excepcion: el reintento con backoff y la auditoria de cada intento
  * viven por encima de esta interfaz, y para poder reintentar el fallo tiene que propagarse.
@@ -29,8 +30,7 @@ import org.jboss.logging.Logger;
  * Value: send.forge.rmta.net
  * </code>
  */
-@ApplicationScoped
-@LookupIfProperty(name = "app.email.provider", stringValue = "resend")
+@Dependent
 public class ResendEmailProvider implements EmailService {
 
   private static final Logger log = Logger.getLogger(ResendEmailProvider.class);
