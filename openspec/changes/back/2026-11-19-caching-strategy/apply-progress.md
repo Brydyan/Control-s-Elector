@@ -87,10 +87,13 @@ contradigan al codigo.
 - [ ] **F.5 (ejecucion)**: correr `k6 run scenarios/cache-hit-ratio.js` con el stack arriba (no hay
       Postgres ni Docker en este entorno) y pegar el reporte con p95 y hit ratio reales.
 - [ ] Alertas de memoria de la cache (parte de F.6 que no depende de D2).
-- [ ] Corregir referencias de commit: el SDD es `T-CACHE-STRAT-01`, no `T-FE-15` (colisiona con
-      un SDD archivado sin relacion). Los commits viejos no se reescriben: queda como P2.
-- [ ] Sacar `odd/tasks/invitacion-duplicada-race-condition.md` del commit de cache: no es de este
-      SDD (P2, sin reescribir historia).
+- [x] Corregir referencias `T-FE-15` → `T-CACHE-STRAT-01` en el codigo de este SDD (endpoint,
+      tests de cache, `observer.api.ts`, `dashboard.api.ts`, `application.properties`). Las
+      referencias de `dashboard.model.ts` y de las paginas de resultados/progreso se dejan: esas
+      vienen del SDD archivado `T-FE-15` de analitica, que si es al que apuntan.
+- [ ] Sacar `odd/tasks/invitacion-duplicada-race-condition.md` del commit de cache (`1bf7dcb`): no
+      es de este SDD. No se puede deshacer sin reescribir historia (excluido por decision); el
+      archivo esta en su carpeta correcta (`odd/tasks/`) y queda en el commit equivocado.
 
 ---
 

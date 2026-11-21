@@ -300,7 +300,7 @@ describe('DashboardApi — endpoints canonicos y cache sin errores', () => {
   });
 });
 
-describe('DashboardApi — B.1 cache for base methods (T-FE-15)', () => {
+describe('DashboardApi — B.1 cache for base methods (T-CACHE-STRAT-01)', () => {
   let service: DashboardApi;
   let httpTesting: HttpTestingController;
 

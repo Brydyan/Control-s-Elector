@@ -26,7 +26,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * T-FE-15 E.2: el endpoint de vaciado de cache.
+ * T-CACHE-STRAT-01 E.2: el endpoint de vaciado de cache.
  *
  * <p>Verifica lo que el SDD pide, con la matriz de roles escrita:
  *

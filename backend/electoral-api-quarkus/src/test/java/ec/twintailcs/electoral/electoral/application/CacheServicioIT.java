@@ -16,7 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * T-FE-15 F.2: la cache de verdad evita la consulta.
+ * T-CACHE-STRAT-01 F.2: la cache de verdad evita la consulta.
  *
  * <p>Un cache que no evita nada no es un cache: es un almacen de respuestas con pasos extra. Este
  * test cuenta las consultas a la base con el contador de Hibernate y afirma dos cosas:

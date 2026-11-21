@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * T-FE-15 E.1: endpoint de administracion para invalidar la cache de datos estaticos.
+ * T-CACHE-STRAT-01 E.1: endpoint de administracion para invalidar la cache de datos estaticos.
  *
  * <p>Ejemplos:
  *

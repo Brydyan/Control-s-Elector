@@ -168,7 +168,7 @@ export class ObserverApi {
   }
 
   /**
-   * T-FE-15: invalida la cache de partidos.
+   * T-CACHE-STRAT-01: invalida la cache de partidos.
    *
    * <p>Los partidos se cachean para toda la sesion con `shareReplay(1)`: sin esto, un MASTER que
    * actualiza un partido no lo veria aqui hasta que la persona recargara la pagina. Es el

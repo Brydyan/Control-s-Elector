@@ -23,22 +23,22 @@ export class DashboardApi {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/dashboard`;
 
-  /** T-FE-15 A.2: Cache de resultados con detalles. Nunca refetch, compartir entre suscriptores. */
+  /** T-CACHE-STRAT-01 B.1: Cache de resultados con detalles. Nunca refetch, compartir entre suscriptores. */
   private resultadosDetalles$: Observable<ResultadoCargoDto[]> | null = null;
 
-  /** T-FE-15 A.2: Cache de progreso con desglose de parroquias. */
+  /** T-CACHE-STRAT-01 B.1: Cache de progreso con desglose de parroquias. */
   private progresoDetalles$: Observable<ProgresoCantonDto[]> | null = null;
 
-  /** T-FE-15 B.1: Cache de resumen. */
+  /** T-CACHE-STRAT-01 B.1: Cache de resumen. */
   private resumen$: Observable<ResumenActas> | null = null;
 
-  /** T-FE-15 B.1: Cache de resultados base. */
+  /** T-CACHE-STRAT-01 B.1: Cache de resultados base. */
   private resultados$: Observable<ResultadoCargo[]> | null = null;
 
-  /** T-FE-15 B.1: Cache de progreso base. */
+  /** T-CACHE-STRAT-01 B.1: Cache de progreso base. */
   private progreso$: Observable<ProgresoCantonDto[]> | null = null;
 
-  /** T-FE-15 B.1: Cache de novedades. */
+  /** T-CACHE-STRAT-01 B.1: Cache de novedades. */
   private novedades$: Observable<Novedad[]> | null = null;
 
   getResumen(): Observable<ResumenActas> {
@@ -107,7 +107,7 @@ export class DashboardApi {
   }
 
   /**
-   * T-FE-15 A.2: Obtener resultados detallados por cargo con estado, foto, porcentaje.
+   * T-CACHE-STRAT-01 B.1: Obtener resultados detallados por cargo con estado, foto, porcentaje.
    * Cachea en memoria via shareReplay(1) — una sola llamada HTTP incluso con múltiples suscriptores.
    * Consume el endpoint canónico `/resultados` y enriquece los datos calculando votos válidos,
    * porcentajes y estados provisionales.
@@ -156,7 +156,7 @@ export class DashboardApi {
   }
 
   /**
-   * T-FE-15 A.2: Obtener progreso por cantón con desglose de parroquias.
+   * T-CACHE-STRAT-01 B.1: Obtener progreso por cantón con desglose de parroquias.
    * Cachea en memoria via shareReplay(1).
    * Consume el endpoint canónico `/progreso`, que ya devuelve el desglose anidado.
    *
@@ -172,7 +172,7 @@ export class DashboardApi {
   }
 
   /**
-   * T-FE-15: Invalidar caché (útil para refresh manual en UI).
+   * T-CACHE-STRAT-01: Invalidar caché (útil para refresh manual en UI).
    * Llamar en caso de que el usuario dispare un "Actualizar" explícito.
    */
   invalidateCache(): void {

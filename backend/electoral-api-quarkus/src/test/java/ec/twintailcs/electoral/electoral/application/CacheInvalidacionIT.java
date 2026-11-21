@@ -19,7 +19,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * T-FE-15 D: la cache no puede servir dato viejo.
+ * T-CACHE-STRAT-01 D: la cache no puede servir dato viejo.
  *
  * <p>Los datos de referencia se cachean (cargos, partidos, candidatos, geografia), asi que una
  * escritura tiene que tirar el cache: sin eso, el MASTER crea un cargo y el listado sigue mostrando
