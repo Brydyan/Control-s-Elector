@@ -3,10 +3,6 @@ package ec.twintailcs.electoral.auth.infrastructure.email;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-// spotless:off — Qualifier imports needed by Quarkus ARC @Qualifier annotation processing
-import ec.twintailcs.electoral.auth.infrastructure.email.SmtpProvider;
-import ec.twintailcs.electoral.auth.infrastructure.email.ResendProvider;
-// spotless:on
 
 /**
  * Productor que selecciona la implementación de EmailService basado en la configuración.
@@ -31,8 +27,9 @@ public class EmailServiceProducer {
   @Produces
   public EmailService produceEmailService(
       @ConfigProperty(name = "app.email.provider") String provider,
-      @SmtpProvider SmtpEmailProvider smtp,
-      @ResendProvider ResendEmailProvider resend) {
+      @ec.twintailcs.electoral.auth.infrastructure.email.SmtpProvider SmtpEmailProvider smtp,
+      @ec.twintailcs.electoral.auth.infrastructure.email.ResendProvider
+          ResendEmailProvider resend) {
     return switch (provider) {
       case "resend" -> resend;
       case "smtp" -> smtp;
