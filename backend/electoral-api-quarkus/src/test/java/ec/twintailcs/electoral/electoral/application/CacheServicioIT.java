@@ -26,8 +26,8 @@ import org.junit.jupiter.api.Test;
  *   <li>con la cache llena, la segunda llamada no consulta.
  * </ul>
  *
- * <p>Las dos mitades son necesarias: con la primera sola, un contador roto haria pasar el test;
- * con la segunda sola, un cache que nunca se llena tambien pasaria.
+ * <p>Las dos mitades son necesarias: con la primera sola, un contador roto haria pasar el test; con
+ * la segunda sola, un cache que nunca se llena tambien pasaria.
  */
 @QuarkusTest
 @TestProfile(CacheServicioTestProfile.class)

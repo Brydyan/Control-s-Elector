@@ -1,10 +1,12 @@
 package ec.twintailcs.electoral.electoral.application.usecase;
 
 import ec.twintailcs.electoral.electoral.domain.Candidato;
-import io.quarkus.cache.CacheResult;
+import ec.twintailcs.electoral.shared.cache.CacheDeLectura;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Listado de candidatos, con filtros opcionales por cargo y por partido.
@@ -15,10 +17,27 @@ import java.util.List;
 @ApplicationScoped
 public class ListarCandidatosUseCase {
 
-  /** Candidatos del cargo y del partido pedidos. Cacheado con TTL de 10 minutos. */
+  @Inject CacheDeLectura cache;
+
+  /**
+   * Candidatos del cargo y del partido pedidos. Cacheado con TTL de 10 minutos.
+   *
+   * <p>La clave lleva los filtros: el listado sin filtros y el de un cargo son datos distintos y no
+   * pueden compartir entrada.
+   */
   @Transactional
-  @CacheResult(cacheName = "candidatos")
   public List<Candidato> execute(Long cargoId, Long partidoId) {
+    String clave = "cargo:" + cargoId + "|partido:" + partidoId;
+    Optional<List<Candidato>> cacheado = cache.leer("candidatos", clave);
+    if (cacheado.isPresent()) {
+      return cacheado.get();
+    }
+    List<Candidato> candidatos = buscar(cargoId, partidoId);
+    cache.guardar("candidatos", clave, candidatos);
+    return candidatos;
+  }
+
+  private List<Candidato> buscar(Long cargoId, Long partidoId) {
     if (cargoId != null && partidoId != null) {
       return Candidato.getEntityManager()
           .createQuery(

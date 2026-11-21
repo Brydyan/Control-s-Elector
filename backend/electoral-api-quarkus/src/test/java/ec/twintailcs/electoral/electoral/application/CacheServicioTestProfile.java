@@ -9,8 +9,8 @@ import java.util.Map;
  * Perfil de los tests de cache por servicio.
  *
  * <p>Postgres real (Testcontainers) porque el cache guarda lo que devuelve la base: sin base de
- * verdad el contador de consultas no mediria nada. Ademas se enciende el contador de Hibernate,
- * que es el que permite afirmar "la segunda llamada no consulto" en vez de suponerlo.
+ * verdad el contador de consultas no mediria nada. Ademas se enciende el contador de Hibernate, que
+ * es el que permite afirmar "la segunda llamada no consulto" en vez de suponerlo.
  */
 public class CacheServicioTestProfile implements QuarkusTestProfile {
 
