@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.auth.web.dto.CreateUsuarioRequest;
 import ec.twintailcs.electoral.auth.web.dto.UpdateUsuarioRequest;
 import ec.twintailcs.electoral.auth.web.dto.UsuarioResponseDto;
+import ec.twintailcs.electoral.common.web.RateLimited;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -45,6 +46,7 @@ public class UsuarioResource {
 
   /** Listar usuarios, con filtros opcionales. */
   @GET
+  @RateLimited("admin-usuarios")
   public PagedResponse<UsuarioResponseDto> listar(
       @QueryParam("page") @DefaultValue("0") int page,
       @QueryParam("size") @DefaultValue("20") int size,

@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.electoral.web;
 
 import ec.twintailcs.electoral.auth.security.Autorizador;
+import ec.twintailcs.electoral.common.web.RateLimited;
 import ec.twintailcs.electoral.electoral.application.ConfiguracionService;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.web.dto.PartidoRequest;
@@ -44,6 +45,7 @@ public class PartidoResource {
 
   /** Listar partidos politicos. */
   @GET
+  @RateLimited("config-read")
   public List<PartidoResponse> listar() {
     return service.listPartidos().stream().map(mapper::toDto).toList();
   }

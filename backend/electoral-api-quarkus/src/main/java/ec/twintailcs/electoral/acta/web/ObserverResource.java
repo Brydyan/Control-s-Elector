@@ -9,6 +9,7 @@ import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.CargoConEstadoDto;
 import ec.twintailcs.electoral.acta.web.dto.JrvConEstadoDto;
 import ec.twintailcs.electoral.auth.security.Autorizador;
+import ec.twintailcs.electoral.common.web.RateLimited;
 import ec.twintailcs.electoral.evidencia.application.ArchivoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaInvalidaException;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
@@ -122,14 +123,19 @@ public class ObserverResource {
   /** JRVs con su estado de registro. */
   @GET
   @Path("/jrvs")
+  @RateLimited("observer-jrvs")
   public List<JrvConEstadoDto> jrvs() {
+    // OBSERVER registra; COORDINATOR, ADMIN y MASTER la consultan (acta:read en el seed).
+    autorizador.exigir("acta:read");
     return actaService.jrvs();
   }
 
   /** Cargos de una JRV con el estado del acta de cada par. */
   @GET
   @Path("/jrv/{jrvId}/cargos")
+  @RateLimited("observer-jrvs")
   public List<CargoConEstadoDto> cargosDeJrv(@PathParam("jrvId") Long jrvId) {
+    autorizador.exigir("acta:read");
     return actaService.cargosDeJrv(jrvId);
   }
 
@@ -140,6 +146,7 @@ public class ObserverResource {
    */
   @POST
   @Path("/actas")
+  @RateLimited("observer-actas")
   public Response registrarActa(
       @Valid ActaRequestDto dto, @HeaderParam("X-Forwarded-For") String xForwardedFor) {
     autorizador.exigir("acta:upload");

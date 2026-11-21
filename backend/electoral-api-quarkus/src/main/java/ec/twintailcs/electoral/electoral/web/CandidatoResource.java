@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.electoral.web;
 
 import ec.twintailcs.electoral.auth.security.Autorizador;
+import ec.twintailcs.electoral.common.web.RateLimited;
 import ec.twintailcs.electoral.electoral.application.ConfiguracionService;
 import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.electoral.web.dto.CandidatoRequest;
@@ -42,6 +43,7 @@ public class CandidatoResource {
 
   /** Listar candidatos, con filtros opcionales por cargo y por partido. */
   @GET
+  @RateLimited("config-read")
   public List<CandidatoResponse> listar(
       @QueryParam("cargoId") Long cargoId, @QueryParam("partidoId") Long partidoId) {
     return service.listCandidatos(cargoId, partidoId).stream().map(mapper::toDto).toList();
