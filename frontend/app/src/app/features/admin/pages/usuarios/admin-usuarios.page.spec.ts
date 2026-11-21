@@ -40,6 +40,7 @@ describe('AdminUsuariosPage', () => {
     deshabilitarUsuario: () => of(undefined),
   };
   beforeEach(async () => {
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [AdminUsuariosPage],
       providers: [{ provide: AdminApi, useValue: service }, providePrimeNG()],
