@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -30,12 +31,28 @@ public class LoginUseCase {
 
   @Inject InvitationAuditService invitationAudit;
 
+  @Inject LoginAttemptGuard attemptGuard;
+
+  /**
+   * Autentica y abre sesion.
+   *
+   * @param ipCliente IP para auditoria y sesion
+   * @param ipConfiable IP del cliente apta para rate limiting, si se pudo probar
+   * @throws ec.twintailcs.electoral.common.application.ratelimit.RateLimitExceededException si la
+   *     cuenta agoto sus intentos fallidos (se chequea antes de verificar la contrasena)
+   */
   @Transactional
   public JwtService.TokenPair execute(
-      String email, String password, String ipCliente, String userAgent) {
+      String email,
+      String password,
+      String ipCliente,
+      Optional<String> ipConfiable,
+      String userAgent) {
+    attemptGuard.checkAllowed(email, ipConfiable);
     Usuario u =
         Usuario.find("email", email == null ? "" : email.trim().toLowerCase()).firstResult();
     if (u == null || !u.isHabilitado() || !hasher.matches(password, u.getPasswordHash())) {
+      attemptGuard.recordFailure(email, ipConfiable);
       auditLog.recordLoginFail(email, ipCliente);
       throw new AuthException("Credenciales invalidas");
     }
