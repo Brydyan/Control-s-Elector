@@ -3,16 +3,14 @@ package ec.twintailcs.electoral.auth.infrastructure.email;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import ec.twintailcs.electoral.auth.infrastructure.email.SmtpProvider;
-import ec.twintailcs.electoral.auth.infrastructure.email.ResendProvider;
 
 /**
  * Productor que selecciona la implementación de EmailService basado en la configuración.
  *
  * <p>Resuelve la ambigüedad de CDI usando @Qualifier: cada implementación tiene un qualifier
- * (@SmtpProvider, @ResendProvider). El productor inyecta ambas con sus qualifiers, luego elige
- * cuál retornar basado en la configuración. El app code inyecta EmailService sin qualifier, viendo
- * solo el método productor como candidato (sin ambigüedad).
+ * (@SmtpProvider, @ResendProvider). El productor inyecta ambas con sus qualifiers, luego elige cuál
+ * retornar basado en la configuración. El app code inyecta EmailService sin qualifier, viendo solo
+ * el método productor como candidato (sin ambigüedad).
  */
 @ApplicationScoped
 public class EmailServiceProducer {
