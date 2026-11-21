@@ -8,7 +8,9 @@ import java.net.http.HttpResponse;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jboss.logging.Logger;
+// spotless:off — ResendProvider import needed by Quarkus ARC @Qualifier annotation processing
 import ec.twintailcs.electoral.auth.infrastructure.email.ResendProvider;
+// spotless:on
 
 /**
  * Envio de email por Resend.com.
@@ -41,7 +43,9 @@ public class ResendEmailProvider implements EmailService {
   public ResendEmailProvider(
       @org.eclipse.microprofile.config.inject.ConfigProperty(name = "app.email.from")
           String fromEmail,
-      @org.eclipse.microprofile.config.inject.ConfigProperty(name = "RESEND_API_KEY", defaultValue = "")
+      @org.eclipse.microprofile.config.inject.ConfigProperty(
+          name = "RESEND_API_KEY",
+          defaultValue = "")
           String resendApiKey) {
     this.fromEmail = fromEmail;
     this.resendApiKey = resendApiKey;

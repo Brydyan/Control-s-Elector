@@ -5,7 +5,9 @@ import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.Dependent;
 import java.util.LinkedHashMap;
 import java.util.Map;
+// spotless:off — SmtpProvider import needed by Quarkus ARC @Qualifier annotation processing
 import ec.twintailcs.electoral.auth.infrastructure.email.SmtpProvider;
+// spotless:on
 
 /**
  * Envio de email por SMTP, con el mailer de Quarkus.
