@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.web.dto.PartidoRequest;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -19,6 +20,7 @@ public class ActualizarPartidoUseCase {
    * Actualiza el partido. El numero de lista sigue siendo unico: si el numero pedido ya lo tiene
    * otro partido, la operacion se rechaza con 409.
    */
+  @CacheInvalidateAll(cacheName = "partidos")
   @Transactional
   public Partido execute(Long id, PartidoRequest dto, Long masterId, String ipAddress) {
     Partido partido = Partido.findById(id);

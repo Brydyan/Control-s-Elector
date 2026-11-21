@@ -6,6 +6,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Provincia;
 import ec.twintailcs.electoral.geografia.web.dto.CantonRequest;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -25,6 +26,7 @@ public class ActualizarCantonUseCase {
   @Inject EntityManager entityManager;
 
   /** Actualiza el canton y deja rastro en la auditoria. */
+  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public Canton execute(Long id, CantonRequest dto, Long masterId, String ipAddress) {
     Canton canton = entityManager.find(Canton.class, id);

@@ -6,6 +6,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.web.dto.JrvRequest;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -19,6 +20,7 @@ public class ActualizarJrvUseCase {
   @Inject EntityManager entityManager;
 
   /** Actualiza la JRV y deja rastro en la auditoria. */
+  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public Jrv execute(Long id, JrvRequest dto, Long masterId, String ipAddress) {
     Jrv jrv = entityManager.find(Jrv.class, id);

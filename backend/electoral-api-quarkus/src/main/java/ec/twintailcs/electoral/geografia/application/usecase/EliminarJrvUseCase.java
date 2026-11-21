@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.evidencia.domain.RlsContexto;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -29,6 +30,7 @@ public class EliminarJrvUseCase {
   @Inject EntityManager entityManager;
 
   /** Elimina la JRV y deja rastro en la auditoria. */
+  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public void execute(Long id, Long masterId, String ipAddress) {
     rls.activar(masterId);

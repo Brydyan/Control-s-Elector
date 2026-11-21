@@ -23,7 +23,10 @@ public class ListarGeografiaUseCase {
 
   @Inject EntityManager entityManager;
 
-  /** Devuelve el arbol completo, con listas vacias en los niveles sin hijos. Cacheado con TTL de 10 minutos. */
+  /**
+   * Devuelve el arbol completo, con listas vacias en los niveles sin hijos. Cacheado con TTL de 10
+   * minutos.
+   */
   @Transactional
   @CacheResult(cacheName = "geografia")
   public GeografiaTreeDto execute() {
