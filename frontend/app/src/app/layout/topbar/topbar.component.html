@@ -162,15 +162,40 @@
 
 <p-popover #userPanel>
   <div class="layout-user-panel">
-    <p class="layout-user-panel-name">{{ displayName() }}</p>
-    <p class="layout-user-panel-role">{{ roleLabel() }}</p>
-    <button
-      class="layout-topbar-action layout-logout"
-      type="button"
-      (click)="logout()"
-    >
-      <i class="pi pi-sign-out" aria-hidden="true"></i>
-      <span>Cerrar sesión</span>
-    </button>
+    <div class="layout-user-panel-header">
+      <p class="layout-user-panel-name">{{ displayName() }}</p>
+      <p class="layout-user-panel-role">{{ roleLabel() }}</p>
+    </div>
+
+    <div class="layout-user-panel-menu">
+      <button
+        class="layout-user-panel-item"
+        type="button"
+        (click)="goToProfile()"
+      >
+        <i class="pi pi-user" aria-hidden="true"></i>
+        <span>Mi Perfil</span>
+      </button>
+
+      <button
+        class="layout-user-panel-item"
+        type="button"
+        (click)="goToSettings()"
+      >
+        <i class="pi pi-cog" aria-hidden="true"></i>
+        <span>Configuración</span>
+      </button>
+
+      <div class="layout-user-panel-divider"></div>
+
+      <button
+        class="layout-user-panel-item layout-user-panel-item--logout"
+        type="button"
+        (click)="logout()"
+      >
+        <i class="pi pi-sign-out" aria-hidden="true"></i>
+        <span>Cerrar sesión</span>
+      </button>
+    </div>
   </div>
 </p-popover>

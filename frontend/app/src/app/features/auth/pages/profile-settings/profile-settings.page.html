@@ -222,7 +222,7 @@
           label="Cambiar Contraseña"
           [loading]="changePasswordLoading()"
           [disabled]="changePasswordDisabled()"
-          (click)="submitChangePassword()"
+          (click)="openChangePasswordConfirm()"
           class="submit-btn"
         ></button>
       </form>
@@ -305,10 +305,48 @@
           label="Actualizar Email"
           [loading]="emailLoading()"
           [disabled]="updateEmailDisabled()"
-          (click)="submitUpdateEmail()"
+          (click)="openUpdateEmailConfirm()"
           class="submit-btn"
         ></button>
       </form>
     </div>
   </div>
 </div>
+
+<!-- Confirmation Modal -->
+<p-dialog
+  [(visible)]="showConfirmModal"
+  [modal]="true"
+  [header]="confirmAction() === 'password' ? 'Confirmar cambio de contraseña' : 'Confirmar actualización de email'"
+  [style]="{ width: '90vw', maxWidth: '400px' }"
+  [closable]="true"
+  (onHide)="cancelConfirm()"
+>
+  <div class="confirm-modal-content">
+    <p *ngIf="confirmAction() === 'password'">
+      ¿Estás seguro de que deseas cambiar tu contraseña? Esta acción no se puede
+      deshacer.
+    </p>
+    <p *ngIf="confirmAction() === 'email'">
+      ¿Estás seguro de que deseas actualizar tu email personal a
+      <strong>{{ personalEmail() }}</strong>?
+    </p>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <button
+      pButton
+      type="button"
+      label="Cancelar"
+      class="p-button-secondary"
+      (click)="cancelConfirm()"
+    ></button>
+    <button
+      pButton
+      type="button"
+      [label]="confirmAction() === 'password' ? 'Cambiar Contraseña' : 'Actualizar Email'"
+      [loading]="confirmAction() === 'password' ? changePasswordLoading() : emailLoading()"
+      (click)="confirmActionSubmit()"
+    ></button>
+  </ng-template>
+</p-dialog>
