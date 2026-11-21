@@ -148,6 +148,15 @@
   --color-border-subtle: var(--primitive-slate-100);
   --color-border-medium: var(--primitive-slate-200);
 
+  // Escala de Grises Semántica (para componentes)
+  --color-gray-50: var(--primitive-slate-50);
+  --color-gray-200: var(--primitive-slate-200);
+  --color-gray-500: var(--primitive-slate-500);
+  --color-gray-600: var(--primitive-slate-600);
+
+  // Rojo Semántico (para estados de error/peligro)
+  --color-red-500: var(--primitive-red-300);
+
   // Estados de Actas (Fondo, Borde, Texto Accesible)
   --color-status-success: var(--primitive-green-800);
   --color-status-success-bg: var(--primitive-green-50);
@@ -446,6 +455,15 @@
   /* Bordes — mucho más sutiles que en claro. */
   --color-border-subtle: rgba(148, 163, 184, 0.14);
   --color-border-medium: rgba(148, 163, 184, 0.24);
+
+  /* Escala de Grises Semántica (para componentes) */
+  --color-gray-50: var(--primitive-slate-200);
+  --color-gray-200: var(--primitive-slate-700);
+  --color-gray-500: var(--primitive-slate-400);
+  --color-gray-600: var(--primitive-slate-500);
+
+  /* Rojo Semántico (para estados de error/peligro) */
+  --color-red-500: var(--primitive-red-200);
 
   /* Estado — mismo tono, foreground aclarado sobre superficie translúcida. */
   --color-status-success: var(--primitive-green-300);
