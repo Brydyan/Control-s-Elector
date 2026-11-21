@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.electoral.application.usecase;
 
 import ec.twintailcs.electoral.electoral.domain.Candidato;
+import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import java.util.List;
@@ -14,8 +15,9 @@ import java.util.List;
 @ApplicationScoped
 public class ListarCandidatosUseCase {
 
-  /** Candidatos del cargo y del partido pedidos. */
+  /** Candidatos del cargo y del partido pedidos. Cacheado con TTL de 10 minutos. */
   @Transactional
+  @CacheResult(cacheName = "candidatos")
   public List<Candidato> execute(Long cargoId, Long partidoId) {
     if (cargoId != null && partidoId != null) {
       return Candidato.getEntityManager()

@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.geografia.application.usecase;
 
 import ec.twintailcs.electoral.geografia.web.dto.GeografiaTreeDto;
+import io.quarkus.cache.CacheResult;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -22,8 +23,9 @@ public class ListarGeografiaUseCase {
 
   @Inject EntityManager entityManager;
 
-  /** Devuelve el arbol completo, con listas vacias en los niveles sin hijos. */
+  /** Devuelve el arbol completo, con listas vacias en los niveles sin hijos. Cacheado con TTL de 10 minutos. */
   @Transactional
+  @CacheResult(cacheName = "geografia")
   public GeografiaTreeDto execute() {
     List<Object[]> filas =
         entityManager

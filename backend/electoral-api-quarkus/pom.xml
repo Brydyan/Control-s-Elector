@@ -151,6 +151,14 @@
 			<artifactId>quarkus-mailer</artifactId>
 		</dependency>
 
+		<!-- Caching: T-FE-15 B.1. Cache de datos estáticos (cargos, partidos, geografia)
+		     con backend en memoria. Los datos se cachean por 10 minutos (configurable).
+		     Utiliza @CacheResult en los UseCase que cargan datos de referencia. -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-cache</artifactId>
+		</dependency>
+
 		<!-- Sentry: Error tracking y crash reporting con PII scrubbing.
 
 		     Se declara el SDK suelto y no `io.quarkus:quarkus-sentry` porque esa
