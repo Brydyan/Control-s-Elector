@@ -1,8 +1,29 @@
 # ODD — Rate Limiting ajuste Post-Caching Strategy
 
 **Referencia:** T-RATELIMIT-ADJ-01  
-**Depende de:** T-CACHE-STRAT-01 (SDD Caching Strategy)  
+**Depende de:** ~~T-CACHE-STRAT-01 (SDD Caching Strategy)~~ — sin dependencia real (ver abajo)  
 **Epic:** Infra › Escalabilidad & Performance  
+
+> **Estado (2026-11-20, sc-521): reemplazada por
+> `openspec/changes/back/2026-11-20-rate-limiting-adjustment/design.md`.**
+>
+> Al revisar el código se encontró que el rate limiting no funcionaba: el
+> interceptor nunca se aplicaba (faltaba `@Nonbinding`), USER_LIMIT no se leía y
+> no había Redis en producción. El ajuste quedó así:
+>
+> - **C (USER_LIMIT 1000 → 2000): descartado.** Se queda en 1000/min, ahora
+>   aplicado de verdad y configurable (`APP_RATELIMIT_USER_GLOBAL_LIMIT`). Un
+>   observador real usa 10-50 req/min; el 45% no tenía medición detrás.
+> - **B (proyección con caché): reemplazado** por límites configurables que se
+>   ajustan con medición real.
+> - **D (6 endpoints): hecho**, con clave por usuario (no por IP: los recintos
+>   comparten IP) y matriz de permisos declarada.
+> - **E (coordinación Redis): hecho**, prefijos `rl:v1:` vs. `cache:` y TTL en
+>   toda clave (`RedisRateLimitBackendIT`).
+> - **F (docs): el design.md citado arriba.**
+> - El prerequisito de caché no aplica: el rate limiting no depende de él.
+>
+> El contenido original queda abajo como referencia histórica.
 
 ---
 
