@@ -10,9 +10,9 @@ import java.util.Map;
 /**
  * Envio de email por SMTP, con el mailer de Quarkus.
  *
- * <p>Este bean es inyectado por EmailServiceProducer. Marcado con @Alternative para que no sea
- * un candidato directo en la resolución CDI, solo el productor lo usa. El productor selecciona
- * la implementación correcta basado en {@code app.email.provider}.
+ * <p>Este bean es inyectado por EmailServiceProducer. Marcado con @Alternative para que no sea un
+ * candidato directo en la resolución CDI, solo el productor lo usa. El productor selecciona la
+ * implementación correcta basado en {@code app.email.provider}.
  *
  * <p>El metodo no captura la excepcion: el reintento con backoff y la auditoria de cada intento
  * viven por encima de esta interfaz, y para poder reintentar el fallo tiene que propagarse.

@@ -30,8 +30,9 @@ public class EmailServiceProducer {
     return switch (provider) {
       case "resend" -> resend;
       case "smtp" -> smtp;
-      default -> throw new IllegalArgumentException(
-          "Unrecognized email provider: " + provider + ". Must be 'smtp' or 'resend'.");
+      default ->
+          throw new IllegalArgumentException(
+              "Unrecognized email provider: " + provider + ". Must be 'smtp' or 'resend'.");
     };
   }
 }

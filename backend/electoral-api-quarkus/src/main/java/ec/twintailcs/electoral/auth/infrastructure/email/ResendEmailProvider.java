@@ -2,13 +2,10 @@ package ec.twintailcs.electoral.auth.infrastructure.email;
 
 import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Alternative;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jboss.logging.Logger;
@@ -16,16 +13,15 @@ import org.jboss.logging.Logger;
 /**
  * Envio de email por Resend.com.
  *
- * <p>Este bean es inyectado por EmailServiceProducer. Marcado con @Alternative para que no sea
- * un candidato directo en la resolución CDI, solo el productor lo usa. El productor selecciona
- * la implementación correcta basado en {@code app.email.provider=resend}. Requiere variable de
- * entorno {@code RESEND_API_KEY} configurada con la API key de Resend.
+ * <p>Este bean es inyectado por EmailServiceProducer. Marcado con @Alternative para que no sea un
+ * candidato directo en la resolución CDI, solo el productor lo usa. El productor selecciona la
+ * implementación correcta basado en {@code app.email.provider=resend}. Requiere variable de entorno
+ * {@code RESEND_API_KEY} configurada con la API key de Resend.
  *
  * <p>El metodo no captura la excepcion: el reintento con backoff y la auditoria de cada intento
  * viven por encima de esta interfaz, y para poder reintentar el fallo tiene que propagarse.
  *
- * <p>DNS CNAME debe estar propagado antes de enviar:
- * <code>
+ * <p>DNS CNAME debe estar propagado antes de enviar: <code>
  * Type: CNAME
  * Host: send.mail
  * Value: send.forge.rmta.net
@@ -86,28 +82,26 @@ public class ResendEmailProvider implements EmailService {
     sendEmailViaResend(destinatario, "Tu cuenta de Control's Elector ya esta activa", html);
   }
 
-  /**
-   * Envia email por HTTP a Resend API.
-   */
+  /** Envia email por HTTP a Resend API. */
   private void sendEmailViaResend(String to, String subject, String html) {
-    String jsonBody = String.format(
-        """
+    String jsonBody =
+        String.format(
+            """
         {"from":"%s","to":"%s","subject":"%s","html":"%s"}
         """,
-        escapeJson(fromEmail),
-        escapeJson(to),
-        escapeJson(subject),
-        escapeJson(html));
+            escapeJson(fromEmail), escapeJson(to), escapeJson(subject), escapeJson(html));
 
     try {
-      HttpRequest request = HttpRequest.newBuilder()
-          .uri(new URI(RESEND_API_URL))
-          .header("Content-Type", "application/json")
-          .header("Authorization", "Bearer " + resendApiKey)
-          .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-          .build();
+      HttpRequest request =
+          HttpRequest.newBuilder()
+              .uri(new URI(RESEND_API_URL))
+              .header("Content-Type", "application/json")
+              .header("Authorization", "Bearer " + resendApiKey)
+              .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+              .build();
 
-      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      HttpResponse<String> response =
+          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() >= 200 && response.statusCode() < 300) {
         log.debugf("Resend email sent successfully to %s", to);
@@ -121,18 +115,14 @@ public class ResendEmailProvider implements EmailService {
     }
   }
 
-  /**
-   * Asunto del correo.
-   */
+  /** Asunto del correo. */
   private String asunto(EmailAEnviar.TipoEmail tipo) {
     return tipo == EmailAEnviar.TipoEmail.REENVIO
         ? "Reenviamos tu invitación a Control's Elector"
         : "Bienvenido a Control's Elector - Activa tu cuenta";
   }
 
-  /**
-   * Extrae el usuario sin dominio: "juagarobs@control.ttcs" → "juagarobs".
-   */
+  /** Extrae el usuario sin dominio: "juagarobs@control.ttcs" → "juagarobs". */
   private static String usuarioCorto(String username) {
     if (username == null || username.isBlank()) {
       return "";
@@ -141,9 +131,7 @@ public class ResendEmailProvider implements EmailService {
     return atIndex > 0 ? username.substring(0, atIndex) : username;
   }
 
-  /**
-   * Escapa caracteres especiales para JSON.
-   */
+  /** Escapa caracteres especiales para JSON. */
   private static String escapeJson(String value) {
     if (value == null) {
       return "";

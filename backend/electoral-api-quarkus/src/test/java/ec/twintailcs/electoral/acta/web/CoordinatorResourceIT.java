@@ -32,9 +32,8 @@ class CoordinatorResourceIT {
    * <p>This test placeholder documents the RLS requirement. Full HTTP-level tests require JWT
    * security context setup in Phase 2.
    *
-   * <p>Expected behavior:
-   * - Coordinator1 assigned to Recinto1 → sees actas from Recinto1 only
-   * - Coordinator2 assigned to Recinto2 → sees actas from Recinto2 only
+   * <p>Expected behavior: - Coordinator1 assigned to Recinto1 → sees actas from Recinto1 only -
+   * Coordinator2 assigned to Recinto2 → sees actas from Recinto2 only
    */
   @Test
   void coordinatorRLSImplemented() {
