@@ -41,7 +41,7 @@ public class ResendEmailProvider implements EmailService {
   public ResendEmailProvider(
       @org.eclipse.microprofile.config.inject.ConfigProperty(name = "app.email.from")
           String fromEmail,
-      @org.eclipse.microprofile.config.inject.ConfigProperty(name = "RESEND_API_KEY")
+      @org.eclipse.microprofile.config.inject.ConfigProperty(name = "RESEND_API_KEY", defaultValue = "")
           String resendApiKey) {
     this.fromEmail = fromEmail;
     this.resendApiKey = resendApiKey;
