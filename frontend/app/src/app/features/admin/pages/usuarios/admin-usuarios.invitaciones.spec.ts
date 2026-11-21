@@ -74,6 +74,7 @@ describe('AdminUsuariosPage (invitaciones en lote)', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    localStorage.clear();
     await TestBed.configureTestingModule({
       imports: [AdminUsuariosPage],
       providers: [{ provide: AdminApi, useValue: service }, providePrimeNG()],
