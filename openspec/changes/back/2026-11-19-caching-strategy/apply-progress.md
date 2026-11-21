@@ -4,7 +4,7 @@
 **Implementado por:** Builder (`/02-builder-sdd`) + rework de verificación (`/03-verify-sdd`)
 **Última actualización:** 2026-11-21
 
-## Estado: PARCIAL — backend y frontend implementados; falta cierre de observabilidad y E2E
+## Estado: PARCIAL — implementacion completa (backend, frontend, tests, metricas, E2E, k6, docs); falta la decision D2 y ejecutar el load test
 
 ---
 
@@ -22,11 +22,11 @@
 | D.4 Test de invalidacion | ✅ | `CacheInvalidacionIT` — mutacion verificada (sin invalidar, el test cae) |
 | E.1 Endpoint de vaciado | ✅ | `AdminCacheResource` — exige MASTER, deja rastro en `audit_log` |
 | E.2 Test del vaciado | ✅ | `AdminCacheResourceTest` — 7 tests: matriz de roles, estado post-call, auditoria |
-| F.1/F.2 Tests unitarios | ✅ (frontend) / ⚠️ (backend) | ver "Pendientes" |
-| F.3/F.4 E2E | ❌ | sin cobertura Playwright del cache |
-| F.5 Load test | ❌ | sin script k6 para cache |
-| F.6 Monitoring | ❌ | sin metricas de hit ratio |
-| G Documentacion | ⚠️ | 1 de 3 docs (`CACHING_STRATEGY.md`); faltan los otros dos |
+| F.1/F.2 Tests unitarios | ✅ | frontend (`observer.api.spec.ts`, `dashboard.api.spec.ts`) y backend (`CacheServicioIT`, 4 caches) |
+| F.3/F.4 E2E | ✅ | `e2e/cache-datos-estaticos.spec.ts` — 2 tests, mutacion verificada |
+| F.5 Load test | ✅ (script) / ⏳ (sin ejecutar) | `frontend/tests/load/scenarios/cache-hit-ratio.js` — falta correrlo con el stack arriba |
+| F.6 Monitoring | ✅ | micrometer + prometheus: `cache_hits_total` / `cache_misses_total` (`CacheMetricasIT`) |
+| G Documentacion | ✅ | `CACHING_STRATEGY.md`, `CACHE_INVALIDATION.md`, `CACHE_SETUP_GUIDE.md` (duplicado de `docs/` borrado) |
 
 ---
 
@@ -41,6 +41,10 @@
 | (rework) | Autorizacion MASTER + auditoria + vaciado real del endpoint |
 | (rework) | `@CacheInvalidateAll` en las 21 escrituras + test de invalidacion |
 | (rework) | Frontend: sin `done()` deprecado (CI rojo) + `invalidateCache()` en observer |
+| `7906806` | `CacheServicioIT`: contador de consultas — la 2a lectura no toca la base (mutacion verificada) |
+| `a7d7e0b` | Metricas de hit ratio (micrometer + prometheus) y lectura explicita de la cache |
+| `f1ba1b7` | E2E Playwright: formulario del observer (F.3) y tabs del dashboard (F.4) |
+| `55d1a7d` | Script k6 de hit ratio con 100 VUs (F.5) |
 
 ---
 
@@ -78,19 +82,15 @@ contradigan al codigo.
 
 ## Pendientes
 
-- [ ] **F.2**: tests de cache por servicio con contador de queries (6 servicios) — la mutacion
-      "quitar `@CacheResult`" sigue sin cubrir en el camino del servicio, solo en el de la
-      escritura.
-- [ ] **F.3/F.4**: E2E Playwright del formulario del observer y de los 4 tabs del dashboard,
-      contando peticiones.
-- [ ] **F.5**: script k6 con 100 usuarios y reporte de hit ratio.
-- [ ] **F.6 / D.5**: metricas de hit ratio por cache (micrometer + prometheus) y alertas de memoria.
-- [ ] **G**: `REDIS_SETUP_GUIDE.md` y `CACHE_INVALIDATION.md` (o su equivalente Caffeine).
-- [ ] Corregir `docs/CACHING_STRATEGY.md` duplicado: el original esta en `documents/`.
+- [ ] **D2 (decision humana)**: Redis compartido vs Caffeine en memoria. Sin esto, el codigo y el
+      `design.md` se contradicen, y con 2 replicas la cache se parte.
+- [ ] **F.5 (ejecucion)**: correr `k6 run scenarios/cache-hit-ratio.js` con el stack arriba (no hay
+      Postgres ni Docker en este entorno) y pegar el reporte con p95 y hit ratio reales.
+- [ ] Alertas de memoria de la cache (parte de F.6 que no depende de D2).
 - [ ] Corregir referencias de commit: el SDD es `T-CACHE-STRAT-01`, no `T-FE-15` (colisiona con
-      un SDD archivado sin relacion).
+      un SDD archivado sin relacion). Los commits viejos no se reescriben: queda como P2.
 - [ ] Sacar `odd/tasks/invitacion-duplicada-race-condition.md` del commit de cache: no es de este
-      SDD.
+      SDD (P2, sin reescribir historia).
 
 ---
 
@@ -98,9 +98,11 @@ contradigan al codigo.
 
 ```
 frontend  npx vitest run --exclude '**/*.a11y.spec.ts'  → 105 files / 1090 tests, exit 0
-backend   ./mvnw -o test                                → 227+ tests, BUILD SUCCESS
+backend   ./mvnw -o test                                → 238 tests, BUILD SUCCESS
 backend   ./mvnw -o spotless:check                      → sin violaciones
 frontend  pnpm format:check && pnpm lint                → sin observaciones
+e2e       npx playwright test e2e/cache-datos-estaticos.spec.ts
+          → 4 tests (Desktop Chrome + Mobile Chrome), exit 0
 ```
 
 ---
@@ -109,11 +111,11 @@ frontend  pnpm format:check && pnpm lint                → sin observaciones
 
 | Metrica | Target | Medido |
 |---|---|---|
-| Cache hit ratio | > 90% | sin metricas todavia (F.6) |
-| Latencia formulario observer | < 1s | sin medicion E2E |
-| Latencia tabs dashboard | < 0.5s | sin medicion E2E |
-| P95 con 100 usuarios | < 2s | sin load test |
-| Redis / cache memory | < 100MB | sin monitoring |
+| Cache hit ratio | > 90% | medible (`/q/metrics`); el valor real sale del k6 (F.5, sin ejecutar) |
+| Latencia formulario observer | < 1s | no medida (el E2E cuenta peticiones, no tiempos) |
+| Latencia tabs dashboard | < 0.5s | no medida (idem) |
+| P95 con 100 usuarios | < 2s | sin medicion (F.5 sin ejecutar) |
+| Redis / cache memory | < 100MB | sin monitoring (Caffeine: memoria de la JVM) |
 
 ---
 
