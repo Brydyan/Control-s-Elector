@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures/auth.fixture';
 import { loginReal } from './fixtures/auth.fixture';
-import type { APIRequestContext, Page } from '@playwright/test';
+import type { APIRequestContext, APIResponse, Page } from '@playwright/test';
 
 /**
  * J1 — Flujo Feliz Observador contra la API REAL
@@ -73,6 +73,43 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
   }
 
   /**
+   * Pide un recurso a la API y falla con un mensaje util si la respuesta no
+   * es 2xx.
+   *
+   * <p>Sin esto, un 429 del rate limit se deserializa como si fuera el array
+   * esperado, y el fallo aparece como "jrvs is not iterable" o "cargos is not
+   * iterable": un sintoma que no dice nada del motivo real.
+   *
+   * @param page pagina ya autenticada; su contexto comparte las cookies
+   * @param ruta ruta relativa al prefijo `/api`
+   * @param cabeceras cabeceras de la peticion
+   * @returns la respuesta, con status 2xx garantizado
+   */
+  async function pedirJson(
+    page: Page,
+    ruta: string,
+    cabeceras: Record<string, string>,
+  ): Promise<APIResponse> {
+    const respuesta = await page.request.get(ruta, { headers: cabeceras });
+
+    if (!respuesta.ok()) {
+      const cuerpo = await respuesta.text();
+      const pista =
+        respuesta.status() === 429
+          ? ' | rate limit del backend: la policy `observer-jrvs` (60/min por ' +
+            'usuario) se rebasa cuando la suite corre los tres proyectos de ' +
+            'navegador. Sube APP_RATELIMIT_OBSERVER_JRVS_LIMIT al backend ' +
+            'para la corrida E2E.'
+          : '';
+      throw new Error(
+        `GET ${ruta} devolvio HTTP ${respuesta.status()}: ${cuerpo}${pista}`,
+      );
+    }
+
+    return respuesta;
+  }
+
+  /**
    * Busca el primer par (JRV, cargo) sin acta activa.
    *
    * @param page pagina ya autenticada; su contexto comparte las cookies
@@ -87,7 +124,7 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
     const cabeceras = { Authorization: `Bearer ${token}` };
 
     const jrvs = (await (
-      await page.request.get('/api/v1/observer/jrvs', { headers: cabeceras })
+      await pedirJson(page, '/api/v1/observer/jrvs', cabeceras)
     ).json()) as Array<{
       id: number;
       numero: string;
@@ -99,9 +136,11 @@ test.describe('J1 — Flujo Feliz Observador (API real) @guardian @no-intercept'
         continue;
       }
       const cargos = (await (
-        await page.request.get(`/api/v1/observer/jrv/${jrv.id}/cargos`, {
-          headers: cabeceras,
-        })
+        await pedirJson(
+          page,
+          `/api/v1/observer/jrv/${jrv.id}/cargos`,
+          cabeceras,
+        )
       ).json()) as Array<{
         id: number;
         nombre: string;

@@ -15,6 +15,7 @@
 #
 # Environment Variables:
 #   API_HOST              Backend URL (default: localhost:8080)
+#   API_URL               Backend URL completa con esquema (default: vacio; gana sobre API_HOST)
 #   SLEEP_DURATION        Sleep between requests in seconds (default: 2)
 #   K6_DOCKER             Use Docker instead of local k6 (default: false)
 #######################################################################
@@ -32,6 +33,9 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RESULTS_DIR="${SCRIPT_DIR}/results"
 API_HOST="${API_HOST:-localhost:8080}"
+# URL COMPLETA del backend (esquema incluido). Tiene prioridad sobre API_HOST:
+# sin esto no se puede apuntar a un backend remoto (Railway/Neon exponen https).
+API_URL="${API_URL:-}"
 SLEEP_DURATION="${SLEEP_DURATION:-2}"
 K6_DOCKER="${K6_DOCKER:-false}"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
@@ -105,6 +109,7 @@ test_baseline() {
     --duration 5m \
     --out json="${RESULTS_DIR}/${output_file}" \
     -e API_HOST="${API_HOST}" \
+    -e API_URL="${API_URL}" \
     -e SLEEP_DURATION="${SLEEP_DURATION}"
 
   log_test_end "$test_name" "$output_file"
@@ -123,6 +128,7 @@ test_rampup() {
     --stage 5m:0vus \
     --out json="${RESULTS_DIR}/${output_file}" \
     -e API_HOST="${API_HOST}" \
+    -e API_URL="${API_URL}" \
     -e SLEEP_DURATION="${SLEEP_DURATION}"
 
   log_test_end "$test_name" "$output_file"
@@ -139,6 +145,7 @@ test_pico() {
   $K6_CMD run "${SCRIPT_DIR}/scenarios/mixed-realistic.js" \
     --out json="${RESULTS_DIR}/${output_file}" \
     -e API_HOST="${API_HOST}" \
+    -e API_URL="${API_URL}" \
     -e SLEEP_DURATION="${SLEEP_DURATION}"
 
   log_test_end "$test_name" "$output_file"
@@ -155,6 +162,7 @@ test_stress() {
   $K6_CMD run "${SCRIPT_DIR}/scenarios/stress-test.js" \
     --out json="${RESULTS_DIR}/${output_file}" \
     -e API_HOST="${API_HOST}" \
+    -e API_URL="${API_URL}" \
     -e SLEEP_DURATION="${SLEEP_DURATION}"
 
   log_test_end "$test_name" "$output_file"
@@ -169,6 +177,7 @@ test_listar_actas() {
   $K6_CMD run "${SCRIPT_DIR}/scenarios/listar-actas.js" \
     --out json="${RESULTS_DIR}/${output_file}" \
     -e API_HOST="${API_HOST}" \
+    -e API_URL="${API_URL}" \
     -e SLEEP_DURATION="${SLEEP_DURATION}"
 
   log_test_end "$test_name" "$output_file"
@@ -183,6 +192,7 @@ test_registrar_acta() {
   $K6_CMD run "${SCRIPT_DIR}/scenarios/registrar-acta.js" \
     --out json="${RESULTS_DIR}/${output_file}" \
     -e API_HOST="${API_HOST}" \
+    -e API_URL="${API_URL}" \
     -e SLEEP_DURATION="${SLEEP_DURATION}"
 
   log_test_end "$test_name" "$output_file"
@@ -216,6 +226,7 @@ test_invitations() {
   $K6_CMD run "${SCRIPT_DIR}/scenarios/invitations.js" \
     --out json="${RESULTS_DIR}/${output_file}" \
     -e API_HOST="${API_HOST}" \
+    -e API_URL="${API_URL}" \
     -e SLEEP_DURATION="${SLEEP_DURATION}" \
     -e INVITE_VUS="${INVITE_VUS:-10}" \
     -e INVITE_DURATION="${INVITE_DURATION:-5m}" \
@@ -264,6 +275,7 @@ ${GREEN}Comandos:${NC}
 
 ${GREEN}Variables de Entorno:${NC}
   API_HOST              URL del backend (default: localhost:8080)
+  API_URL               URL completa del backend, con esquema (ej. https://api.electoral.ec)
   SLEEP_DURATION        Sleep entre requests en segundos (default: 2)
   K6_DOCKER             Usar Docker en lugar de k6 local (default: false)
   INVITE_VUS            VUs del escenario de invitaciones (default: 10)

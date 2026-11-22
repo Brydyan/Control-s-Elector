@@ -9,11 +9,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.UuidGenerator;
 
 /** Rol de usuario. Mismo schema que la entidad del backend Spring. */
 @Entity
 @Table(name = "rol")
+@BatchSize(size = 25)
 public class Rol extends PanacheEntityBase {
 
   @Id

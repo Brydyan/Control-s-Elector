@@ -225,24 +225,30 @@ export class ModificarActaPage implements OnInit, OnDestroy {
     );
 
     // Cargar candidatos para obtener nombres y partidos
-    this.cargarCandidatos(acta.cargoId);
+    this.cargarCandidatos(acta.jrvId, acta.cargoId);
   }
 
   /**
    * Carga los candidatos del cargo para mostrar nombres y partidos.
    */
-  private cargarCandidatos(cargoId: number): void {
+  private cargarCandidatos(jrvId: number, cargoId: number): void {
     this.observerService
-      .getCandidatosPorCargo(cargoId)
+      .getCatalogoDeJrv(jrvId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => {
-          this.candidatos = data;
+        next: (catalogo) => {
+          const cargo = catalogo.find((c) => c.id === cargoId);
+          this.candidatos = cargo?.candidatos ?? [];
+          if (cargo?.nombre) {
+            this.cargoNombre.set(cargo.nombre);
+          }
 
           // Enriquecer detalles con información del candidato
           const detalles = this.detalles();
           detalles.forEach((d) => {
-            const candidato = data.find((c) => c.id === d.candidatoId);
+            const candidato = this.candidatos.find(
+              (c) => c.id === d.candidatoId,
+            );
             if (candidato) {
               d.candidatoNombre = candidato.nombre;
               d.partidoSiglas = candidato.partidoSiglas;
@@ -250,7 +256,6 @@ export class ModificarActaPage implements OnInit, OnDestroy {
           });
           this.detalles.set(detalles);
 
-          this.resolverCargoNombre(cargoId, data);
           this.loading.set(false);
         },
         error: (err) => {
@@ -258,18 +263,6 @@ export class ModificarActaPage implements OnInit, OnDestroy {
           this.loading.set(false);
         },
       });
-  }
-
-  /**
-   * Intenta resolver el nombre del cargo desde el backend.
-   */
-  private resolverCargoNombre(
-    cargoId: number,
-    _candidatos: CandidatoInfo[],
-  ): void {
-    // El nombre del cargo se obtiene de la lista de cargos de la JRV.
-    // Por ahora, usamos el ID como fallback.
-    // Si se necesita el nombre real, se puede llamar a getCargosDeJrv(jrvId).
   }
 
   /**

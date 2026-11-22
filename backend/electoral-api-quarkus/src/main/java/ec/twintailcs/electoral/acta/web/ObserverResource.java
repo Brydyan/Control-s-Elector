@@ -7,6 +7,7 @@ import ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaRequestDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
 import ec.twintailcs.electoral.acta.web.dto.CargoConEstadoDto;
+import ec.twintailcs.electoral.acta.web.dto.CargosConCandidatosResponse;
 import ec.twintailcs.electoral.acta.web.dto.JrvConEstadoDto;
 import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.common.web.RateLimited;
@@ -16,6 +17,7 @@ import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
@@ -137,6 +139,23 @@ public class ObserverResource {
   public List<CargoConEstadoDto> cargosDeJrv(@PathParam("jrvId") Long jrvId) {
     autorizador.exigir("acta:read");
     return actaService.cargosDeJrv(jrvId);
+  }
+
+  /**
+   * Catalogo completo de una JRV en una sola peticion: cargos, candidatos y partidos.
+   *
+   * <p>Batch para el formulario del observador (T-PERF-OPT-01 B.2). Los endpoints sueltos siguen
+   * existiendo: este no los reemplaza para los clientes que ya los usan.
+   */
+  @GET
+  @Path("/cargos-with-candidatos")
+  @RateLimited("observer-jrvs")
+  public CargosConCandidatosResponse cargosConCandidatos(@QueryParam("jrvId") Long jrvId) {
+    autorizador.exigir("acta:read");
+    if (jrvId == null) {
+      throw new BadRequestException("jrvId es obligatorio");
+    }
+    return actaService.cargosConCandidatos(jrvId);
   }
 
   /**

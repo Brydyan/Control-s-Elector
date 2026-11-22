@@ -16,13 +16,18 @@ import ec.twintailcs.electoral.acta.web.ActaPageSpec;
 import ec.twintailcs.electoral.acta.web.dto.ActaDetalleCompletoDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaRequestDto;
 import ec.twintailcs.electoral.acta.web.dto.ActaResponseDto;
+import ec.twintailcs.electoral.acta.web.dto.CargoConCandidatosDto;
 import ec.twintailcs.electoral.acta.web.dto.CargoConEstadoDto;
+import ec.twintailcs.electoral.acta.web.dto.CargosConCandidatosResponse;
 import ec.twintailcs.electoral.acta.web.dto.HistorialActaDto;
 import ec.twintailcs.electoral.acta.web.dto.JrvConEstadoDto;
 import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
 import ec.twintailcs.electoral.auth.domain.AccesoNoPermitidoException;
 import ec.twintailcs.electoral.auth.security.CurrentUser;
+import ec.twintailcs.electoral.electoral.application.usecase.ListarPartidosUseCase;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
+import ec.twintailcs.electoral.electoral.web.dto.CandidatoResponse;
+import ec.twintailcs.electoral.electoral.web.dto.PartidoResponse;
 import ec.twintailcs.electoral.evidencia.application.ArchivoEvidencia;
 import ec.twintailcs.electoral.evidencia.application.usecase.SubirEvidenciaUseCase;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
@@ -31,8 +36,11 @@ import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Fachada del modulo de actas: logica de negocio y ciclo de vida de los actas.
@@ -54,6 +62,7 @@ public class ActaService {
   @Inject ActaRepository repository;
   @Inject ActaMapper mapper;
   @Inject ActaAuditService audit;
+  @Inject ListarPartidosUseCase listarPartidosUseCase;
 
   @Inject RegistrarActaUseCase registrarActaUseCase;
   @Inject GuardarBorradorActaUseCase guardarBorradorActaUseCase;
@@ -161,10 +170,65 @@ public class ActaService {
         .toList();
   }
 
+  /**
+   * Catalogo completo de una JRV en una sola respuesta: cargos activos, sus candidatos y los
+   * partidos (T-PERF-OPT-01 B.2).
+   *
+   * <p>Son tres consultas fijas —cargos de la JRV, candidatos de esos cargos y partidos— sin
+   * importar cuantos cargos tenga la JRV. El formulario del observador pedia antes once peticiones
+   * HTTP para cinco cargos: una de cargos, una de partidos y una de candidatos por cargo.
+   */
+  @Transactional
+  public CargosConCandidatosResponse cargosConCandidatos(Long jrvId) {
+    activarContexto();
+    List<ActaRepository.FilaCargo> cargos = repository.listarCargosDeJrv(jrvId);
+    if (cargos.isEmpty()) {
+      return new CargosConCandidatosResponse(List.of());
+    }
+
+    List<Long> cargoIds = cargos.stream().map(ActaRepository.FilaCargo::id).toList();
+    Map<Long, List<CandidatoResponse>> candidatosPorCargo =
+        repository.listarCandidatosDeCargos(cargoIds).stream()
+            .collect(
+                Collectors.groupingBy(
+                    candidato -> candidato.getCargo().getId(),
+                    LinkedHashMap::new,
+                    Collectors.mapping(
+                        candidato ->
+                            new CandidatoResponse(
+                                candidato.getId(),
+                                candidato.getNombre(),
+                                candidato.getOrden(),
+                                candidato.getCargo().getId(),
+                                candidato.getPartido().getId()),
+                        Collectors.toList())));
+
+    List<PartidoResponse> partidos =
+        listarPartidosUseCase.execute().stream()
+            .map(
+                partido ->
+                    new PartidoResponse(
+                        partido.getId(),
+                        partido.getNombre(),
+                        partido.getSiglas(),
+                        partido.getNumeroLista()))
+            .toList();
+
+    return new CargosConCandidatosResponse(
+        cargos.stream()
+            .map(
+                cargo ->
+                    new CargoConCandidatosDto(
+                        cargo.id(),
+                        cargo.nombre(),
+                        candidatosPorCargo.getOrDefault(cargo.id(), List.of()),
+                        partidos))
+            .toList());
+  }
+
   // ---------------------------------------------------------------------------------------------
   // OBSERVER — escritura
   // ---------------------------------------------------------------------------------------------
-
   /** Registra el acta y la envia (estado ENVIADA). */
   @Transactional
   public ActaResponseDto registrar(ActaRequestDto dto, String xForwardedFor) {

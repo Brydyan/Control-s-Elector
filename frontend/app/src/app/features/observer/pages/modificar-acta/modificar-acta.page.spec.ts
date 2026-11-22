@@ -69,6 +69,7 @@ describe('ModificarActaPage', () => {
     observerServiceSpy = jasmine.createSpyObj('ObserverApi', [
       'getActaParaCorregir',
       'getCandidatosPorCargo',
+      'getCatalogoDeJrv',
       'corregirActa',
       'subirImagenActa',
     ]);
@@ -80,6 +81,9 @@ describe('ModificarActaPage', () => {
     ]);
 
     observerServiceSpy.getActaParaCorregir.and.returnValue(of(mockActa));
+    observerServiceSpy.getCatalogoDeJrv.and.returnValue(
+      of([{ id: 5, nombre: 'Diputado', candidatos: mockCandidatos }]),
+    );
     observerServiceSpy.getCandidatosPorCargo.and.returnValue(
       of(mockCandidatos),
     );
@@ -118,7 +122,7 @@ describe('ModificarActaPage', () => {
     fixture.detectChanges();
 
     expect(observerServiceSpy.getActaParaCorregir).toHaveBeenCalledWith(42);
-    expect(observerServiceSpy.getCandidatosPorCargo).toHaveBeenCalledWith(5);
+    expect(observerServiceSpy.getCatalogoDeJrv).toHaveBeenCalledWith(101);
     expect(component.loading()).toBe(false);
     expect(component.error()).toBeNull();
   });
