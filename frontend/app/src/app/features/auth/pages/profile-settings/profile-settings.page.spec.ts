@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 
 import { ProfileSettingsPage } from './profile-settings.page';
@@ -51,6 +52,12 @@ describe('ProfileSettingsPage (SDD Phase D)', () => {
       providers: [
         { provide: UserApi, useValue: userApi },
         { provide: MessageService, useValue: messageService },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            queryParams: of({}),
+          },
+        },
       ],
     }).compileComponents();
 

@@ -1,26 +1,23 @@
 package ec.twintailcs.electoral.auth.infrastructure.email;
 
-import io.quarkus.arc.lookup.LookupIfProperty;
 import io.quarkus.mailer.Mail;
 import io.quarkus.mailer.Mailer;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Envio de email por SMTP, con el mailer de Quarkus.
  *
- * <p>El bean solo se activa cuando {@code app.email.provider=smtp} (decision D7 del design: el
- * proveedor es intercambiable). Si se configura otro valor, este bean no existe y la inyeccion de
- * {@link EmailService} falla al arrancar — que es lo que tiene que pasar: es preferible que el
- * despliegue no levante con un proveedor inexistente a que los correos salgan a un destino
- * equivocado en silencio.
+ * <p>Este bean es inyectado por EmailServiceProducer. Marcado con @SmtpProvider para que CDI pueda
+ * distinguirlo de otras implementaciones de EmailService. El productor selecciona la implementación
+ * correcta basado en {@code app.email.provider}.
  *
  * <p>El metodo no captura la excepcion: el reintento con backoff y la auditoria de cada intento
  * viven por encima de esta interfaz, y para poder reintentar el fallo tiene que propagarse.
  */
-@ApplicationScoped
-@LookupIfProperty(name = "app.email.provider", stringValue = "smtp")
+@ec.twintailcs.electoral.auth.infrastructure.email.SmtpProvider
+@Dependent
 public class SmtpEmailProvider implements EmailService {
 
   private final Mailer mailer;

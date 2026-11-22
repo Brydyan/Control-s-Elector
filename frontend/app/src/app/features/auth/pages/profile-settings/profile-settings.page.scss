@@ -245,4 +245,21 @@
       margin-top: 2rem;
     }
   }
+
+  // Confirmation modal
+  .confirm-modal-content {
+    padding: 1rem 0;
+
+    p {
+      color: var(--color-text-primary);
+      font-size: 1rem;
+      line-height: 1.5;
+      margin: 0;
+
+      strong {
+        font-weight: 600;
+        color: var(--color-brand-primary);
+      }
+    }
+  }
 }

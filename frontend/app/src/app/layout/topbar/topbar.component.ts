@@ -27,6 +27,7 @@ const READ_ONLY_ROLES: Role[] = ['ADMIN'];
   standalone: true,
   imports: [RouterLink, Avatar, Badge, Popover],
   templateUrl: './topbar.component.html',
+  styleUrls: ['./topbar.component.scss'],
 })
 export class TopbarComponent {
   private readonly store = inject(AuthStore);
@@ -107,9 +108,24 @@ export class TopbarComponent {
   }
 
   logout(): void {
+    this.userPanel()?.hide();
     this.auth.logout().subscribe({
       next: () => this.router.navigateByUrl('/login'),
       error: () => this.router.navigateByUrl('/login'),
+    });
+  }
+
+  goToProfile(): void {
+    this.userPanel()?.hide();
+    void this.router.navigate(['/profile-settings'], {
+      queryParams: { tab: 'profile' },
+    });
+  }
+
+  goToSettings(): void {
+    this.userPanel()?.hide();
+    void this.router.navigate(['/profile-settings'], {
+      queryParams: { tab: 'password' },
     });
   }
 }
