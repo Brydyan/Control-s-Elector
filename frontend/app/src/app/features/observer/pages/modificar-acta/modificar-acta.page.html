@@ -1,0 +1,302 @@
+<div class="modificar-acta-container" data-testid="modificar-acta">
+  <div class="page-topbar">
+    <app-button
+      variant="ghost"
+      size="sm"
+      (click)="cancelar()"
+      [disabled]="submitting()"
+      data-testid="btn-cancelar"
+    >
+      <i class="pi pi-arrow-left" aria-hidden="true"></i>
+      Volver a la Mesa
+    </app-button>
+  </div>
+
+  <header class="page-header">
+    <div class="header-titles">
+      <h1 class="page-title">Modificación de Acta de Escrutinio</h1>
+      <p class="page-subtitle">
+        JRV #{{ jrvNumero() }} · Dignidad: {{ cargoNombre() }}
+      </p>
+    </div>
+  </header>
+
+  <!-- Estado de carga -->
+  <app-loading-state
+    *ngIf="loading()"
+    message="Cargando datos del acta..."
+    data-testid="loading-state"
+  ></app-loading-state>
+
+  <!-- Banner de error -->
+  <app-error-state
+    *ngIf="error()"
+    [message]="error()!"
+    (retry)="cargarActa()"
+    data-testid="error-state"
+  ></app-error-state>
+
+  @if (!loading() && !error()) {
+  <!-- Grid principal compacto: 2 columnas superiores (Votos a la izq, Totales a la der) -->
+  <div class="form-layout-grid">
+    <!-- Columna Izquierda: Votos por Candidato -->
+    <app-card class="column-card" headerTitle="Votos por Candidato">
+      <div class="candidates-list">
+        @for (detalle of detalles(); track detalle.candidatoId) {
+        <div
+          class="candidate-row"
+          [attr.data-testid]="'candidate-' + detalle.candidatoId"
+        >
+          <div class="candidate-meta">
+            <span class="candidate-name"
+              >{{ detalle.candidatoNombre || 'Candidato ' + detalle.candidatoId
+              }}</span
+            >
+            @if (detalle.partidoSiglas) {
+            <span class="party-siglas">{{ detalle.partidoSiglas }}</span>
+            }
+          </div>
+          <input
+            [id]="'votos-' + detalle.candidatoId"
+            type="number"
+            min="0"
+            [max]="MAX_VOTOS_ABSOLUTO"
+            step="1"
+            [(ngModel)]="detalle.votos"
+            (ngModelChange)="actualizarVotoCandidato(detalle.candidatoId, $event)"
+            [disabled]="submitting()"
+            [attr.aria-label]="'Votos de ' + (detalle.candidatoNombre || 'Candidato ' + detalle.candidatoId)"
+            class="input-votos"
+            data-testid="input-votos-candidato"
+          />
+        </div>
+        }
+      </div>
+    </app-card>
+
+    <!-- Columna Derecha: Totales de Mesa y Cuadre de Votos -->
+    <app-card class="column-card" headerTitle="Totales de Mesa y Cuadre">
+      <div class="totals-compact-section">
+        @if (alertaSufragantes; as alerta) {
+        <div
+          class="alerta-banner"
+          [class.alerta-banner--error]="nivelAlertaSufragantes === 'error'"
+          [class.alerta-banner--warning]="nivelAlertaSufragantes === 'warning'"
+          role="alert"
+        >
+          <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+          <span>{{ alerta }}</span>
+        </div>
+        }
+
+        <div class="total-field">
+          <label for="total-sufragantes" class="total-label"
+            >Total Sufragantes en Padrón *</label
+          >
+          <input
+            id="total-sufragantes"
+            type="number"
+            min="0"
+            [max]="TOPE_SUFRAGANTES_CNE"
+            step="1"
+            [value]="totalSufragantes()"
+            (input)="actualizarTotalSufragantes($event.target.valueAsNumber)"
+            [disabled]="submitting()"
+            class="input-total"
+            data-testid="input-total-sufragantes"
+          />
+        </div>
+
+        <div class="totals-row-2col">
+          <div class="total-field">
+            <label for="votos-blancos" class="total-label">Votos Blancos</label>
+            <input
+              id="votos-blancos"
+              type="number"
+              min="0"
+              [max]="MAX_VOTOS_ABSOLUTO"
+              step="1"
+              [value]="votosBlancos()"
+              (input)="actualizarVotosBlancos($event.target.valueAsNumber)"
+              [disabled]="submitting()"
+              class="input-total"
+              data-testid="input-votos-blancos"
+            />
+          </div>
+
+          <div class="total-field">
+            <label for="votos-nulos" class="total-label">Votos Nulos</label>
+            <input
+              id="votos-nulos"
+              type="number"
+              min="0"
+              [max]="MAX_VOTOS_ABSOLUTO"
+              step="1"
+              [value]="votosNulos()"
+              (input)="actualizarVotosNulos($event.target.valueAsNumber)"
+              [disabled]="submitting()"
+              class="input-total"
+              data-testid="input-votos-nulos"
+            />
+          </div>
+        </div>
+
+        <!-- Tarjeta de checksum dinámico 1:1 -->
+        <div
+          class="checksum-box"
+          [class.checksum-box--valid]="checksumValido"
+          [class.checksum-box--invalid]="!checksumValido"
+          [attr.data-testid]="checksumValido ? 'checksum-valid' : 'checksum-invalid'"
+        >
+          <div class="checksum-header">
+            <span class="checksum-title">Cuadre Electoral (1:1)</span>
+            <span
+              [class]="checksumValido ? 'status-badge--valid' : 'status-badge--invalid'"
+            >
+              <i
+                [class]="checksumValido ? 'pi pi-check-circle' : 'pi pi-times-circle'"
+                aria-hidden="true"
+              ></i>
+              {{ checksumValido ? 'Cuadre Válido' : 'Descuadrada' }}
+            </span>
+          </div>
+
+          <div class="checksum-grid">
+            <div class="checksum-stat">
+              <span class="stat-label">Suma Votos</span>
+              <span class="stat-val">{{ sumaVotos }}</span>
+            </div>
+            <div class="checksum-stat">
+              <span class="stat-label">Padrón</span>
+              <span class="stat-val">{{ totalSufragantes() }}</span>
+            </div>
+            @if (!checksumValido) {
+            <div class="checksum-stat">
+              <span class="stat-label">Diferencia</span>
+              <span
+                [class]="diferenciaChecksum > 0 ? 'text-danger' : 'text-danger'"
+              >
+                {{ diferenciaChecksum > 0 ? '+' : '' }}{{ diferenciaChecksum }}
+              </span>
+            </div>
+            }
+          </div>
+
+          @if (!checksumValido) {
+          <p class="checksum-hint">{{ descripcionDiferencia }}</p>
+          }
+        </div>
+      </div>
+    </app-card>
+  </div>
+
+  <!-- Fila Inferior: Historial de Evidencias Fotográficas (Auditoría) -->
+  <app-card
+    class="full-width-card"
+    headerTitle="Evidencias Fotográficas y Auditoría"
+  >
+    <div class="evidencias-galeria">
+      <!-- Foto Original (v1) -->
+      @if (urlEvidencia(); as url) {
+      <div class="foto-card">
+        <div class="foto-tag">
+          <i class="pi pi-file-check" aria-hidden="true"></i>
+          <span>Evidencia Inicial (v1)</span>
+        </div>
+        <div class="foto-wrapper">
+          <img
+            [src]="url"
+            alt="Evidencia inicial del acta"
+            class="acta-thumb"
+            data-testid="evidence-image-current"
+          />
+        </div>
+      </div>
+      }
+
+      <!-- Nueva Foto (v2 en preparación) -->
+      @if (imagePreviewUrl) {
+      <div class="foto-card foto-card--nueva">
+        <div class="foto-tag tag-nueva">
+          <i class="pi pi-plus-circle" aria-hidden="true"></i>
+          <span>Nueva Foto (v2 - Por Subir)</span>
+        </div>
+        <div class="foto-wrapper">
+          <img
+            [src]="imagePreviewUrl"
+            alt="Nueva evidencia a guardar"
+            class="acta-thumb"
+            data-testid="evidence-image-new"
+          />
+        </div>
+      </div>
+      }
+
+      <!-- Subida de nueva evidencia / otra versión -->
+      <div class="foto-upload-box">
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          #fotoInput
+          (change)="onFileSelected($event)"
+          style="display: none"
+          data-testid="file-input-foto"
+        />
+        <div class="upload-trigger" (click)="fotoInput.click()">
+          <div class="upload-icon-circle">
+            <i class="pi pi-camera" aria-hidden="true"></i>
+          </div>
+          <span class="upload-prompt"
+            >{{ imagePreviewUrl ? 'Cambiar nueva foto' : 'Subir otra foto /
+            reconteo (v2)' }}</span
+          >
+          <span class="upload-subprompt"
+            >Conserva la foto original en historial</span
+          >
+        </div>
+      </div>
+    </div>
+  </app-card>
+
+  <!-- Barra de Acciones al Pie -->
+  <div class="bottom-actions-bar">
+    <app-button
+      variant="secondary"
+      size="md"
+      (click)="cancelar()"
+      [disabled]="submitting()"
+      data-testid="btn-cancelar-form"
+    >
+      Cancelar y Volver
+    </app-button>
+
+    <div class="primary-action-wrap">
+      <app-button
+        variant="primary"
+        size="lg"
+        (click)="guardarModificaciones()"
+        [disabled]="!checksumValido || submitting()"
+        [loading]="submitting()"
+        data-testid="btn-guardar-modificaciones"
+      >
+        <i class="pi pi-check" aria-hidden="true"></i>
+        @if (submitting()) { Guardando Modificación... } @else { Guardar
+        Modificaciones }
+      </app-button>
+      @if (!checksumValido && !submitting()) {
+      <span class="validation-warning">
+        <i class="pi pi-exclamation-triangle"></i>
+        El acta debe cuadrar 1:1 con el padrón para poder guardar.
+      </span>
+      }
+    </div>
+  </div>
+
+  @if (success(); as msg) {
+  <div class="success-message" role="status" data-testid="success-message">
+    <i class="pi pi-check-circle" aria-hidden="true"></i>
+    <span>{{ msg }}</span>
+  </div>
+  } }
+</div>

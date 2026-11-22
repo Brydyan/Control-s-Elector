@@ -50,8 +50,9 @@
               [class.connected]="metricas().realtimeStatus === 'connected'"
               [class.disconnected]="metricas().realtimeStatus === 'disconnected'"
             >
-              {{ metricas().realtimeStatus === 'connected' ? '🟢 En vivo' : '🔴
-              Desconectado' }}
+              <span class="status-indicator"></span>
+              {{ metricas().realtimeStatus === 'connected' ? 'En vivo' :
+              'Desconectado' }}
             </span>
           </div>
         </div>
@@ -90,7 +91,10 @@
             class="estado-item"
             *ngFor="let key of ['ENVIADA', 'EN_DISPUTA', 'CORREGIDA', 'APROBADA', 'ANULADA']"
           >
-            <span class="simbolo">{{ obtenerSimboloEstado(key) }}</span>
+            <i
+              [class]="obtenerIconoEstado(key)"
+              [style.color]="'var(' + obtenerColorEstado(key) + ')'"
+            ></i>
             <span class="nombre">{{ key }}</span>
             <span class="count">{{ obtenerCountEstado(key) }}</span>
             <span class="percentage">{{ obtenerPorcentajeEstado(key) }}%</span>
@@ -150,8 +154,15 @@
               <tr *ngFor="let acta of actas(); let idx = index">
                 <td>{{ acta.id }}</td>
                 <td>
-                  <span [attr.data-testid]="'estado-' + acta.id">
-                    {{ obtenerSimboloEstado(acta.estado) }} {{ acta.estado }}
+                  <span
+                    [attr.data-testid]="'estado-' + acta.id"
+                    class="estado-cell"
+                  >
+                    <i
+                      [class]="obtenerIconoEstado(acta.estado)"
+                      [style.color]="'var(' + obtenerColorEstado(acta.estado) + ')'"
+                    ></i>
+                    {{ acta.estado }}
                   </span>
                 </td>
                 <td>{{ acta.nombreCargo || '-' }}</td>
@@ -165,8 +176,14 @@
                     [attr.aria-label]="'Descargar expediente de acta ' + acta.id"
                     [attr.data-testid]="'btn-descargar-' + acta.id"
                   >
-                    {{ downloadingId() === acta.id ? 'Descargando...' : '⬇️
-                    Expediente' }}
+                    <i
+                      [class]="downloadingId() === acta.id ? 'pi pi-spin pi-spinner' : 'pi pi-download'"
+                      aria-hidden="true"
+                    ></i>
+                    <span
+                      >{{ downloadingId() === acta.id ? 'Descargando...' :
+                      'Expediente' }}</span
+                    >
                   </button>
                 </td>
               </tr>

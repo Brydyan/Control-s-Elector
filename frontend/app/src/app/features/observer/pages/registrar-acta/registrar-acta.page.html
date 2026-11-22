@@ -124,17 +124,49 @@
         </div>
         }
 
+        <input
+          id="inputFotoActa"
+          data-testid="input-foto-acta"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          #fileInput
+          (change)="onFileSelected($event)"
+          style="display: none"
+        />
+
+        @if (!imagePreviewUrl) {
+        <div
+          class="upload-dropzone"
+          role="button"
+          tabindex="0"
+          (click)="abrirCamara(fileInput)"
+          (keydown.enter)="abrirCamara(fileInput)"
+          (keydown.space)="abrirCamara(fileInput)"
+        >
+          <div class="dropzone-icon-circle">
+            <i class="pi pi-camera" aria-hidden="true"></i>
+          </div>
+          <div class="dropzone-text">
+            <span class="dropzone-title"
+              >Tomar foto o subir imagen del acta</span
+            >
+            <span class="dropzone-subtitle"
+              >Haz clic aquí para abrir la cámara o seleccionar archivo</span
+            >
+          </div>
+          <app-button
+            variant="secondary"
+            size="md"
+            data-testid="btn-capturar-foto"
+            (clicked)="abrirCamara(fileInput)"
+          >
+            <i class="pi pi-upload" aria-hidden="true"></i>
+            Seleccionar archivo
+          </app-button>
+        </div>
+        } @else {
         <div class="upload-controls">
-          <input
-            id="inputFotoActa"
-            data-testid="input-foto-acta"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            #fileInput
-            (change)="onFileSelected($event)"
-            style="display: none"
-          />
           <app-button
             variant="secondary"
             size="md"
@@ -142,31 +174,33 @@
             (clicked)="abrirCamara(fileInput)"
           >
             <i class="pi pi-camera" aria-hidden="true"></i>
-            {{ imagePreviewUrl ? 'Tomar otra fotografía' : 'Tomar foto o subir
-            archivo' }}
+            Tomar otra fotografía
           </app-button>
-          <p class="upload-tip">
-            Asegúrate de que los números y firmas sean claramente legibles.
-          </p>
-          @if (captureCancelled) {
-          <p class="form-hint" data-testid="aviso-captura-cancelada">
-            <i class="pi pi-info-circle" aria-hidden="true"></i>
-            No se seleccionó ninguna fotografía. Puedes tomarla de nuevo o
-            continuar con "Digitar votos primero".
-          </p>
-          }
         </div>
+        }
+
+        <p class="upload-tip">
+          <i class="pi pi-info-circle" aria-hidden="true"></i>
+          Asegúrate de que los números y firmas sean claramente legibles.
+        </p>
+
+        @if (captureCancelled) {
+        <p class="form-hint" data-testid="aviso-captura-cancelada">
+          <i class="pi pi-exclamation-triangle" aria-hidden="true"></i>
+          No se seleccionó ninguna fotografía. Puedes intentarlo de nuevo o
+          continuar con "Digitar votos primero".
+        </p>
+        }
       </div>
     </app-card>
 
     <div class="step-actions step-actions--between">
       <!--
         Excepción documentada en D1: sin cámara (o con la cámara ocupada) el
-        veedor digita los votos primero. Es un enlace de texto, no un botón
-        principal: la vía normal es la foto.
+        veedor digita los votos primero.
       -->
       <app-button
-        variant="ghost"
+        variant="secondary"
         size="md"
         data-testid="btn-digitar-votos-primero"
         (clicked)="digitarVotosPrimero()"

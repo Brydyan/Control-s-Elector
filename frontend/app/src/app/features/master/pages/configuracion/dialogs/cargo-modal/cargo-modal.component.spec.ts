@@ -28,7 +28,7 @@ describe('CargoModalComponent — toast (ODD 505, A.4)', () => {
     component.form.setValue({
       nombre: 'Presidente',
       nivelTerritorial: 'NACIONAL',
-      orden: 1,
+      puestos: 1,
       estado: 'ACTIVO',
     });
   };
@@ -42,7 +42,7 @@ describe('CargoModalComponent — toast (ODD 505, A.4)', () => {
           id: 1,
           nombre: 'Presidente',
           nivelTerritorial: 'NACIONAL',
-          orden: 1,
+          puestos: 1,
           estado: 'ACTIVO',
         }),
       ),

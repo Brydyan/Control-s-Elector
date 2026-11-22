@@ -61,7 +61,7 @@
     </div>
     } @default {
     <div class="state-block" data-testid="formulario">
-      <h1>🔐 Activar tu Cuenta</h1>
+      <h1>Activar tu Cuenta</h1>
       <p class="subtitle">
         Establece tu contraseña segura. Tu cuenta ya está creada: solo falta
         activarla para poder entrar.
@@ -70,11 +70,11 @@
       @if (usuarioControl(); as usuario) {
       <div class="usuario-control" data-testid="usuario-control">
         <div>
-          <span>👤 Tu Usuario (Control)</span>
+          <span><i class="pi pi-user mr-1"></i> Tu Usuario (Control)</span>
           <strong>{{ usuarioCorto() || usuario }}</strong>
         </div>
         <div>
-          <span>📧 Tu correo (Control)</span>
+          <span><i class="pi pi-envelope mr-1"></i> Tu correo (Control)</span>
           <strong>{{ usuario }}</strong>
         </div>
       </div>
@@ -177,7 +177,8 @@
 
         <p-button
           type="submit"
-          label="✓ Activar Cuenta"
+          label="Activar Cuenta"
+          icon="pi pi-check"
           [disabled]="!puedeEnviar()"
           [loading]="loading()"
           [fluid]="true"
