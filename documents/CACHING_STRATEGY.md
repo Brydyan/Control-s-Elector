@@ -164,8 +164,8 @@ helper actual, Redis degrada a "sin caché" (hit ratio 0 %), no a "caché rota".
 Con Micrometer en el classpath, `/q/metrics` publica:
 
 ```
-cache_hits_total{cache="cargos"} 42
-cache_misses_total{cache="cargos"} 3
+cache_hits_total{cache="cargos",replica="local"} 42
+cache_misses_total{cache="cargos",replica="local"} 3
 ```
 
 Los contadores son por nombre de caché. El hit ratio es

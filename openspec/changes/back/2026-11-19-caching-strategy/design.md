@@ -199,11 +199,16 @@ Lo que sigue son las **cifras medidas** contra el backend real (Postgres 16 con 
 de configuración**, no el total absoluto de consultas al servidor: el total depende del ruido
 de arranque (login, auditoría, metadatos) y no se puede comparar entre corridas.
 
-| | Sin caché | Con caché |
+| | Sin caché | Con caché (TTL 2 min) |
 |---|---|---|
 | Hit ratio | 0 % | **100 %** |
-| p95 | 3.70 ms | **0.97 ms** |
+| p95 | 3.70 ms | **0.92 ms** |
 | Consultas de configuración a la base | 374.240 | **4** (el llenado inicial) |
+| Consultas por lectura de configuración | 10,0 | **0,0000872** |
+
+El TTL de 2 min tiene un coste medido: en una corrida de 4 min 30 s (con dos
+vencimientos del TTL) fueron **33 consultas para 1.103.520 lecturas**, es decir
+29 consultas extra frente al llenado inicial.
 
 Reportes: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`.
 
