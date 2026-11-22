@@ -193,6 +193,8 @@ local-config/
 # No deben estar en el repo del proyecto
 .agents/
 **/.agents/
+skills-lock.json
+**/skills-lock.json
 
 # Local development credentials (if ever committed by accident)
 .credentials
