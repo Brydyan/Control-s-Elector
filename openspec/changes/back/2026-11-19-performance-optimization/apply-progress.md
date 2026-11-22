@@ -94,15 +94,15 @@ Ya implementada antes de esta sesión; no se reimplementó.
 
 - [x] `quarkus.http.enable-compression=true`
 - [x] `quarkus.http.compression-level=6`
-- [x] `quarkus.http.min-gzip-size=1024`
+- [x] sin umbral de bytes: Quarkus 3.40 comprime por media type, no por tamano
 - [ ] Header `content-encoding: gzip` verificado — **bloqueado, requiere app viva**
 
 ### D.2: Pool
 
-- [x] `min-size=${DB_POOL_MIN_SIZE:10}`
-- [x] `max-size=${DB_POOL_MAX_SIZE:50}`
-- [x] `acquisition-timeout=${DB_POOL_ACQUISITION_TIMEOUT:30s}`
-- [x] `idle-removal-interval=5m`, `max-lifetime=30m`
+- [x] `quarkus.datasource.jdbc.min-size=${DB_POOL_MIN_SIZE:10}`
+- [x] `quarkus.datasource.jdbc.max-size=${DB_POOL_MAX_SIZE:50}`
+- [x] `quarkus.datasource.jdbc.acquisition-timeout=${DB_POOL_ACQUISITION_TIMEOUT:30s}`
+- [x] `quarkus.datasource.jdbc.idle-removal-interval=5m`, `max-lifetime=30m`
 - [ ] Sin errores de adquisición bajo carga — **bloqueado, requiere load test**
 
 ---
@@ -137,6 +137,8 @@ Ya implementada antes de esta sesión; no se reimplementó.
 | Índices `ix_acta_*` | `idx_acta_*` | convención viva desde `044` |
 | `idx_acta_estado` | no se creó | ya existe en `044` |
 | `idx_acta_detalle_acta_id` | no se creó | redundante con `UNIQUE(acta_id, candidato_id)` |
+| `quarkus.datasource.min-size` / `max-size` | `quarkus.datasource.jdbc.*` | las claves del SDD no existen en Quarkus 3.40: sin `jdbc.` el pool se quedaba en 20 y la fase D.2 no hacía nada |
+| `quarkus.http.min-gzip-size` | no se puso | no existe en Quarkus 3.40; el filtro es por media type |
 | EAGER → LAZY sin más | LAZY + `@BatchSize(25)` | la premisa del SDD (21 queries para 20 usuarios) es falsa: EAGER genera un join, no N+1. LAZY sin batch sí habría creado N+1 |
 | Fase C reimplementar | no se tocó | ya estaba hecha y documentada |
 | `PERFORMANCE_OPTIMIZATION.md` + `CACHING_STRATEGY.md` | + `INDEXING_GUIDE.md` | el SDD pedía los tres |

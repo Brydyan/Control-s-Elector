@@ -11,7 +11,7 @@
 | Índices | 5 índices nuevos en `acta`, 1 en `acta_detalle` | `database/changelog/048-*.sql`, `049-*.sql` |
 | ORM | `Usuario.rol` pasa de EAGER a LAZY con `@BatchSize(25)` | `auth/domain/Usuario.java` |
 | API | Endpoint batch `GET /api/v1/observer/cargos-with-candidatos` | `acta/web/ObserverResource.java` |
-| Red | gzip nivel 6 desde 1 KB | `application.properties` |
+| Red | gzip nivel 6 para JSON/HTML/texto | `application.properties` |
 | Pool | 20 → 50 conexiones, mínimo 10 | `application.properties` |
 
 La caché del frontend (Fase C del SDD) ya estaba implementada; su detalle vive en
