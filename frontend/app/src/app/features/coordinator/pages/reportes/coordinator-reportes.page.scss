@@ -145,16 +145,16 @@
             }
 
             &.connected {
-              color: #4ade80;
+              color: var(--color-status-success);
 
               .status-indicator {
-                box-shadow: 0 0 8px #4ade80;
+                box-shadow: 0 0 8px var(--color-status-success);
                 animation: pulse 2s infinite;
               }
             }
 
             &.disconnected {
-              color: #f87171;
+              color: var(--color-status-danger);
             }
           }
         }

@@ -3,7 +3,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ModificarActaPage } from './modificar-acta.page';
 import { ObserverApi } from '../../data/observer.api';
-import { ActaResponse, CandidatoInfo } from '../../domain/models/observer.model';
+import {
+  ActaResponse,
+  CandidatoInfo,
+} from '../../domain/models/observer.model';
 import { ImageCompressionService } from '../../../../core/services/image-compression.service';
 
 describe('ModificarActaPage', () => {

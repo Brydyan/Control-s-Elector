@@ -98,7 +98,7 @@
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-bold);
     text-align: center;
-    background-color: var(--color-bg-primary);
+    background-color: var(--color-surface-card);
     color: var(--color-text-primary);
 
     &:focus {
@@ -135,7 +135,7 @@
     border-radius: var(--radius-sm);
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-bold);
-    background-color: var(--color-bg-primary);
+    background-color: var(--color-surface-card);
     color: var(--color-text-primary);
 
     &:focus {
@@ -278,7 +278,7 @@
   padding: var(--space-3);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-md);
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-surface-raised);
 
   &--nueva {
     border-color: var(--color-brand-primary);
@@ -302,7 +302,7 @@
     height: 160px;
     border-radius: var(--radius-sm);
     overflow: hidden;
-    background-color: var(--color-bg-primary);
+    background-color: var(--color-surface-card);
 
     .acta-thumb {
       width: 100%;
@@ -321,7 +321,7 @@
   min-height: 195px;
   border: 2px dashed var(--color-border-medium);
   border-radius: var(--radius-md);
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-surface-raised);
   cursor: pointer;
   transition: all 0.2s ease;
 

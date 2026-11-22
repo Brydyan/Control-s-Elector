@@ -126,8 +126,7 @@ export class ModificarActaPage implements OnInit, OnDestroy {
 
   get checksumValido(): boolean {
     return (
-      this.totalSufragantes() > 0 &&
-      this.sumaVotos === this.totalSufragantes()
+      this.totalSufragantes() > 0 && this.sumaVotos === this.totalSufragantes()
     );
   }
 
@@ -200,7 +199,9 @@ export class ModificarActaPage implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Error al cargar acta para modificar:', err);
-          this.error.set('No se pudo cargar el acta. Por favor intenta nuevamente.');
+          this.error.set(
+            'No se pudo cargar el acta. Por favor intenta nuevamente.',
+          );
           this.loading.set(false);
         },
       });
@@ -262,7 +263,10 @@ export class ModificarActaPage implements OnInit, OnDestroy {
   /**
    * Intenta resolver el nombre del cargo desde el backend.
    */
-  private resolverCargoNombre(cargoId: number, _candidatos: CandidatoInfo[]): void {
+  private resolverCargoNombre(
+    cargoId: number,
+    _candidatos: CandidatoInfo[],
+  ): void {
     // El nombre del cargo se obtiene de la lista de cargos de la JRV.
     // Por ahora, usamos el ID como fallback.
     // Si se necesita el nombre real, se puede llamar a getCargosDeJrv(jrvId).

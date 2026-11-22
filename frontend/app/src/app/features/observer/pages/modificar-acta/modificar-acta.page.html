@@ -48,7 +48,10 @@
           [attr.data-testid]="'candidate-' + detalle.candidatoId"
         >
           <div class="candidate-meta">
-            <span class="candidate-name">{{ detalle.candidatoNombre || 'Candidato ' + detalle.candidatoId }}</span>
+            <span class="candidate-name"
+              >{{ detalle.candidatoNombre || 'Candidato ' + detalle.candidatoId
+              }}</span
+            >
             @if (detalle.partidoSiglas) {
             <span class="party-siglas">{{ detalle.partidoSiglas }}</span>
             }
@@ -87,7 +90,9 @@
         }
 
         <div class="total-field">
-          <label for="total-sufragantes" class="total-label">Total Sufragantes en Padrón *</label>
+          <label for="total-sufragantes" class="total-label"
+            >Total Sufragantes en Padrón *</label
+          >
           <input
             id="total-sufragantes"
             type="number"
@@ -168,7 +173,9 @@
             @if (!checksumValido) {
             <div class="checksum-stat">
               <span class="stat-label">Diferencia</span>
-              <span [class]="diferenciaChecksum > 0 ? 'text-danger' : 'text-danger'">
+              <span
+                [class]="diferenciaChecksum > 0 ? 'text-danger' : 'text-danger'"
+              >
                 {{ diferenciaChecksum > 0 ? '+' : '' }}{{ diferenciaChecksum }}
               </span>
             </div>
@@ -176,9 +183,7 @@
           </div>
 
           @if (!checksumValido) {
-          <p class="checksum-hint">
-            {{ descripcionDiferencia }}
-          </p>
+          <p class="checksum-hint">{{ descripcionDiferencia }}</p>
           }
         </div>
       </div>
@@ -186,7 +191,10 @@
   </div>
 
   <!-- Fila Inferior: Historial de Evidencias Fotográficas (Auditoría) -->
-  <app-card class="full-width-card" headerTitle="Evidencias Fotográficas y Auditoría">
+  <app-card
+    class="full-width-card"
+    headerTitle="Evidencias Fotográficas y Auditoría"
+  >
     <div class="evidencias-galeria">
       <!-- Foto Original (v1) -->
       @if (urlEvidencia(); as url) {
@@ -239,8 +247,13 @@
           <div class="upload-icon-circle">
             <i class="pi pi-camera" aria-hidden="true"></i>
           </div>
-          <span class="upload-prompt">{{ imagePreviewUrl ? 'Cambiar nueva foto' : 'Subir otra foto / reconteo (v2)' }}</span>
-          <span class="upload-subprompt">Conserva la foto original en historial</span>
+          <span class="upload-prompt"
+            >{{ imagePreviewUrl ? 'Cambiar nueva foto' : 'Subir otra foto /
+            reconteo (v2)' }}</span
+          >
+          <span class="upload-subprompt"
+            >Conserva la foto original en historial</span
+          >
         </div>
       </div>
     </div>
@@ -268,7 +281,8 @@
         data-testid="btn-guardar-modificaciones"
       >
         <i class="pi pi-check" aria-hidden="true"></i>
-        @if (submitting()) { Guardando Modificación... } @else { Guardar Modificaciones }
+        @if (submitting()) { Guardando Modificación... } @else { Guardar
+        Modificaciones }
       </app-button>
       @if (!checksumValido && !submitting()) {
       <span class="validation-warning">
@@ -284,6 +298,5 @@
     <i class="pi pi-check-circle" aria-hidden="true"></i>
     <span>{{ msg }}</span>
   </div>
-  }
-  }
+  } }
 </div>

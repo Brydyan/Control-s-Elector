@@ -61,7 +61,9 @@ import { ToastService } from '../../../../../../core/services/toast.service';
           class="form-input"
           data-testid="select-nivel"
         >
-          <option value="" disabled selected hidden>Seleccionar nivel territorial</option>
+          <option value="" disabled selected hidden>
+            Seleccionar nivel territorial
+          </option>
           <option value="NACIONAL">Nacional</option>
           <option value="PROVINCIAL">Provincial</option>
           <option value="CANTONAL">Cantonal</option>
@@ -89,7 +91,8 @@ import { ToastService } from '../../../../../../core/services/toast.service';
           data-testid="input-puestos"
         />
         <span class="form-hint">
-          Número de escaños a elegir (ej: 1 para Alcalde/Prefecto, 5 para Concejales).
+          Número de escaños a elegir (ej: 1 para Alcalde/Prefecto, 5 para
+          Concejales).
         </span>
         <span
           class="error"
@@ -179,7 +182,7 @@ import { ToastService } from '../../../../../../core/services/toast.service';
 
         .form-hint {
           font-size: 0.8rem;
-          color: var(--color-text-secondary, #64748b);
+          color: var(--color-text-secondary);
           margin-top: -0.25rem;
         }
 

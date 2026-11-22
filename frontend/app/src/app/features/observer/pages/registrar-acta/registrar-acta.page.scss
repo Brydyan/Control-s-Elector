@@ -64,7 +64,7 @@
   gap: var(--space-2);
   margin-top: var(--space-2);
   padding: var(--space-3) var(--space-4);
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-surface-raised);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-lg);
 
@@ -98,7 +98,7 @@
         &.p-steps-item-active {
           .p-steps-item-number {
             background-color: var(--color-brand-primary);
-            color: #ffffff;
+            color: var(--color-text-on-brand);
             font-weight: var(--font-weight-bold);
             box-shadow: 0 0 0 4px var(--primitive-blue-100);
           }
@@ -118,7 +118,7 @@
           font-size: var(--font-size-sm);
           font-weight: var(--font-weight-semibold);
           border-radius: var(--radius-pill);
-          background-color: var(--color-bg-primary);
+          background-color: var(--color-surface-card);
           border: 2px solid var(--color-border-medium);
           color: var(--color-text-secondary);
           transition: all 0.2s ease;
@@ -447,14 +447,14 @@
   padding: var(--space-6) var(--space-4);
   border: 2px dashed var(--color-border-medium);
   border-radius: var(--radius-lg);
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-surface-raised);
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   text-align: center;
 
   &:hover {
     border-color: var(--color-brand-primary);
-    background-color: var(--color-bg-hover, var(--color-bg-secondary));
+    background-color: var(--color-table-row-hover-bg);
     transform: translateY(-1px);
   }
 

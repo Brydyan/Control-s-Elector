@@ -210,7 +210,8 @@ public class ActaService {
             .orElseThrow(() -> new ActaInvalidaException("Acta no encontrada: " + actaId));
 
     // Autoria: el OBSERVER solo ve SUS actas (MASTER y ADMIN tienen acceso global).
-    boolean esPrivilegiado = "MASTER".equals(currentUser.rol()) || "ADMIN".equals(currentUser.rol());
+    boolean esPrivilegiado =
+        "MASTER".equals(currentUser.rol()) || "ADMIN".equals(currentUser.rol());
     if (!esPrivilegiado && !acta.getRegistradaPorId().equals(observerId)) {
       throw new AccesoNoPermitidoException("Solo puedes consultar tus propias actas");
     }
