@@ -1,5 +1,15 @@
 # Tasks — Caching Strategy: Frontend + Backend Optimization
 
+> **Este es el plan original del SDD, conservado como registro.** No refleja lo que se
+> implementó. La **decisión D2 se cerró como opción A (Caffeine en memoria, TTL de 2 min)**, sin
+> Redis: el backend corre en Railway con **1 réplica**, así que el problema que Redis resolvía
+> (copias distintas entre réplicas) no existe, y en Neon una caché en proceso es mejor que una
+> remota. Las secciones de Redis quedan marcadas como sustituidas, y `@Cacheable` se implementó
+> con `CacheDeLectura` para poder medir el hit ratio.
+>
+> El estado real de lo entregado, con los commits y las mediciones, está en
+> `apply-progress.md`. El diseño vigente está en `design.md`.
+
 ---
 
 ## A. Frontend: Observer Partidos Cache (P1)
@@ -339,15 +349,15 @@
   - Cuándo usar (GET requests, datos estáticos)
   - Cuándo NO usar (mutable data, real-time updates)
 
-- [ ] Crear `REDIS_SETUP_GUIDE.md`
-  - Setup local: docker redis
-  - Setup producción: Redis on Railway
-  - TTL configuration
+- [x] Crear `CACHE_SETUP_GUIDE.md` (no hubo `REDIS_SETUP_GUIDE.md`: la decisión D2 fue opción A)
+  - Sin servicio externo: Caffeine va en la JVM
+  - Setup producción: variable `CACHE_TTL` en Railway
+  - Identificador de réplica (`RAILWAY_REPLICA_ID`) para detectar cache split
   - Monitoring con Prometheus
 
-- [ ] Crear `CACHE_INVALIDATION.md`
-  - Manual clear endpoint `/admin/cache/clear`
-  - TTL auto-invalidation (10 min default)
+- [x] Crear `CACHE_INVALIDATION.md`
+  - Manual clear endpoint `/api/v1/admin/cache/clear` (rol MASTER)
+  - TTL auto-invalidation (2 min, parametrizable con `CACHE_TTL`)
   - Fase 2: Event-driven invalidation
 
 ---
@@ -361,9 +371,9 @@
    
 2. B.1 + B.2 → Dashboard cache activation (20 min + tests 15 min)
    
-3. C.1 + C.2 → Redis setup (10 min)
+3. C.1 + C.2 → Configuracion de Caffeine (10 min)
    
-4. D.1 + D.2 + D.3 → @Cacheable en servicios (30 min + tests 30 min)
+4. D.1 + D.2 + D.3 → CacheDeLectura en los casos de uso (30 min + tests 30 min)
    
 5. E.1 + E.2 → Admin clear endpoint (15 min + tests 10 min)
    
@@ -379,7 +389,7 @@ TOTAL: ~4-5 horas
 - [ ] Todos los tests pasan (unit + integration + E2E)
 - [ ] Redis correr local sin errores
 - [ ] Load test 100 usuarios: P95 < 2s, hit ratio > 90%
-- [ ] Endpoint `/admin/cache/clear` accesible solo ADMIN
+- [x] Endpoint `/api/v1/admin/cache/clear` accesible solo MASTER
 - [ ] Zero regressions: Observer form funciona, Dashboard tabs funcionan
 - [ ] Documentación completa
 
@@ -396,9 +406,10 @@ TOTAL: ~4-5 horas
 
 | Risk | Mitigation |
 |------|-----------|
-| Redis down → app keeps working | Fallback: queries go to BD (slower but correct) |
-| Stale cache data | TTL invalidation 10 min, manual clear endpoint |
+| Cache apagada → la app sigue funcionando | Degradacion: las consultas van a la BD (mas lento, pero correcto). Lo sostiene `CacheApagadaIT` |
+| Stale cache data | Invalidacion por escritura en cada caso de uso; TTL de 2 min como red de seguridad; vaciado manual |
 | Cache hit/miss race conditions | RxJS shareReplay handles synchronization |
-| Redis memory exhaustion | Monitor Redis stats, alert if > 500MB |
-| Admin endpoint abused | @RolesAllowed({"ADMIN"}) + audit logs |
+| Memoria de la cache | Caffeine va en el heap de la JVM: `cache_size` y `cache_evictions_total` por cache en `/q/metrics` |
+| Cache split entre replicas | No hay split con 1 replica. Si se escala: TTL de 2 min acota el desfase y la etiqueta `replica` en las metricas lo hace visible |
+| Admin endpoint abused | `Autorizador.exigir("cache:clear", "MASTER")` + audit logs |
 

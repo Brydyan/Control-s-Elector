@@ -8,7 +8,7 @@
 Solo **datos estáticos de la configuración preelectoral**: cargos, partidos,
 candidatos y geografía. Son los datos que el frontend pide en cada pantalla y
 que casi no cambian durante la jornada. Ni un solo acta, ni votos, ni estados
-de registries pasan por la caché.
+de registro pasan por la caché.
 
 | Capa | Dato | Mecanismo | TTL |
 |------|------|-----------|-----|
@@ -188,8 +188,9 @@ curl -s http://localhost:8080/q/metrics | grep '^cache_'
 
 `frontend/tests/load/scenarios/cache-hit-ratio.js`: 100 VUs, ramp up de 10 s,
 10 lecturas por VU sobre los 4 endpoints cacheados. Lee el hit ratio real de
-`/q/metrics` y escribe el reporte en
-`results/cache-hit-ratio-summary.{md,json}`.
+`/q/metrics` (no lo estima) y escribe el reporte en
+`results/cache-hit-ratio-summary.{md,json}` — esa carpeta está en `.gitignore`;
+las versiones que sí se versionan están en `documents/load-test/`.
 
 ```bash
 k6 run scenarios/cache-hit-ratio.js
@@ -197,10 +198,15 @@ k6 run scenarios/cache-hit-ratio.js
 
 Objetivos del SDD: p95 < 2 s, hit ratio > 90 %.
 
-**Medido** (100 VUs contra el backend real): hit ratio **100 %**, p95 **0.97 ms**,
-y **4 consultas de configuración a la base** (el llenado inicial) frente a
-**374.240** sin caché — un ahorro del **99.999 %**, tres órdenes de magnitud
-por encima del objetivo del SDD (−90 %). Reportes en `documents/load-test/`.
+**Medido** (100 VUs contra el backend real, TTL de 2 min): hit ratio **100 %**,
+p95 **0.92 ms**, y **4 consultas de configuración a la base** (el llenado
+inicial) frente a **374.240** sin caché — un ahorro del **99.999 %**, tres
+órdenes de magnitud por encima del objetivo del SDD (−90 %).
+
+El TTL de 2 min tiene un coste medido: en una corrida de 4 min 30 s (con dos
+vencimientos del TTL) fueron **33 consultas para 1.103.520 lecturas**, es decir
+29 consultas extra frente al llenado inicial. Reportes en
+`documents/load-test/`.
 
 ### Frontend
 

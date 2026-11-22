@@ -182,6 +182,13 @@ El script lee el hit ratio real de las métricas Micrometer del backend
 (`cache_hits_total` / `cache_misses_total` en `/q/metrics`), no lo estima.
 Escribe el reporte en `results/cache-hit-ratio-summary.{md,json}`.
 
+> **Las métricas van etiquetadas por caché y por réplica:**
+> `cache_hits_total{cache="cargos",replica="local"}`. La etiqueta `replica` viene de
+> `RAILWAY_REPLICA_ID` y sirve para detectar *cache split* (una réplica desfasada respecto de
+> las otras), porque Railway **agrega** las métricas de todas sus réplicas en un solo tablero.
+> Cualquier parser tiene que tolerar etiquetas extra: uno que exija `{cache="..."}` exacto
+> lee cero contadores **en silencio** y reporta un hit ratio de 0 % sin avisar.
+
 Comparación con/sin cache (el número que justifica la cache):
 
 ```bash
@@ -191,7 +198,7 @@ k6 run scenarios/cache-hit-ratio.js
 # 2) Backend SIN caché → guardar resumen
 #    QUARKUS_CACHE_ENABLED=false es build-time: hay que RECONSTRUIR la imagen.
 #    Alternativa sin reconstruir: TTL a 1s en las 4 cachés
-#    (QUARKUS_CACHE_CAFFEINE_CARGOS_EXPIRE_AFTER_WRITE=1s, etc.)
+#    (CACHE_TTL=1s — es la variable que usa el backend desde la decisión D2)
 k6 run scenarios/cache-hit-ratio.js
 ```
 

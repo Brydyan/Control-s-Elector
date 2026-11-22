@@ -24,7 +24,7 @@
 | E.2 Test del vaciado | ✅ | `AdminCacheResourceTest` — 7 tests: matriz de roles, estado post-call, auditoria |
 | F.1/F.2 Tests unitarios | ✅ | frontend (`observer.api.spec.ts`, `dashboard.api.spec.ts`) y backend (`CacheServicioIT`, `CacheContenidoIT`, 4 caches) |
 | F.3/F.4 E2E | ✅ | `e2e/cache-datos-estaticos.spec.ts` — 2 tests, mutacion verificada |
-| F.5 Load test | ✅ | `frontend/tests/load/scenarios/cache-hit-ratio.js` — **ejecutado**: 100 VUs, p95 0.97 ms, hit ratio 100 %, 4 consultas de configuración a la base (ver "Resultado del load test") |
+| F.5 Load test | ✅ | `frontend/tests/load/scenarios/cache-hit-ratio.js` — **ejecutado**: 100 VUs, p95 0.92 ms, hit ratio 100 %, 4 consultas de configuración a la base (ver "Resultado del load test") |
 | F.6 Monitoring | ✅ | micrometer + prometheus: `cache_hits_total` / `cache_misses_total` (`CacheMetricasIT`), etiquetados por `replica` (`RAILWAY_REPLICA_ID`) + metricas estandar de Caffeine (tamaño, evictions) |
 | G Documentacion | ✅ | `CACHING_STRATEGY.md`, `CACHE_INVALIDATION.md`, `CACHE_SETUP_GUIDE.md` (duplicado de `docs/` borrado) |
 | H TTL y deteccion de split | ✅ | `CacheTTLIT` (el TTL se respeta de verdad) + `replica.id` en las metricas (`CacheMetricasIT`) |
@@ -35,13 +35,15 @@
 
 | Commit | Contenido |
 |---|---|
-| `1bf7dcb` | Cache frontend (observer + dashboard) + config Redis inicial |
+| `1bf7dcb` | Cache frontend (observer + dashboard) + config Redis inicial (sustituida despues por Caffeine: ver "Decision D2: tomada") |
 | `5f5b25b` | `@CacheResult` + config Caffeine |
 | `98f8337` | Endpoint `/api/v1/admin/cache/clear` |
 | `c790336` | `CACHING_STRATEGY.md` |
-| (rework) | Autorizacion MASTER + auditoria + vaciado real del endpoint |
-| (rework) | `@CacheInvalidateAll` en las 21 escrituras + test de invalidacion |
-| (rework) | Frontend: sin `done()` deprecado (CI rojo) + `invalidateCache()` en observer |
+| `7dc7e78` | Autorizacion MASTER + auditoria + vaciado real del endpoint |
+| `25026c7` | `@CacheInvalidateAll` en las 21 escrituras + test de invalidacion |
+| `fe444aa` | Frontend: sin `done()` deprecado (CI rojo) + `invalidateCache()` en observer |
+| `b48f635` | Estado real registrado en este documento |
+| `a94712c` | Documentacion de la estrategia de cache |
 | `7906806` | `CacheServicioIT`: contador de consultas — la 2a lectura no toca la base (mutacion verificada) |
 | `a7d7e0b` | Metricas de hit ratio (micrometer + prometheus) y lectura explicita de la cache |
 | `f1ba1b7` | E2E Playwright: formulario del observer (F.3) y tabs del dashboard (F.4) |
@@ -82,7 +84,10 @@ manejados). Resuelto con promesas y `firstValueFrom`; la suite completa sale con
 
 ---
 
-## Desviaciones del diseno (declaradas)
+## Desviaciones del diseno original (declaradas)
+
+`design.md` y `proposal.md` ya reflejan la implementacion; esta tabla deja constancia de
+como se apartaron del diseno original.
 
 | Desviacion | Diseno | Implementacion | Por que |
 |---|---|---|---|
@@ -127,9 +132,14 @@ Justificacion completa en `documents/CACHE_SETUP_GUIDE.md` (seccion 3).
       ya la declaran como tomada, con la justificacion y las condiciones de revisitarla.
 - [x] Acompanada de lo que la hace segura: TTL parametrizable (`CACHE_TTL`), metricas de cache
       etiquetadas por replica (`RAILWAY_REPLICA_ID`) y guardrail de replicas documentado.
-- [x] **F.5 (ejecucion)**: corrida con 100 VUs contra el backend real. p95 0.97 ms, hit ratio
+- [x] **F.5 (ejecucion)**: corrida con 100 VUs contra el backend real. p95 0.92 ms, hit ratio
       100 %, 4 consultas de configuracion a la base frente a 374.240 sin cache (−99.999 %).
       Reportes en `documents/load-test/`.
+- [x] **Coste del TTL de 2 min medido**: en una corrida de 4 min 30 s (con dos vencimientos del
+      TTL) fueron 33 consultas para 1.103.520 lecturas — 29 consultas extra frente al llenado
+      inicial. Es el precio de acotar el desfase a 2 min en vez de 10.
+- [x] **Detectores de split**: los contadores de cache van etiquetados por replica
+      (`RAILWAY_REPLICA_ID`). Mutacion verificada: sin la etiqueta el test cae.
 - [x] Alertas de memoria de la cache: con Caffeine el limite es el heap del contenedor de
       Railway, no la memoria de Redis. Las metricas estandar de Caffeine quedan habilitadas
       (`metrics-enabled=true`): `cache_size` y `cache_evictions_total` por cache dan el tamano
@@ -148,25 +158,30 @@ Justificacion completa en `documents/CACHE_SETUP_GUIDE.md` (seccion 3).
 
 ```
 frontend  npx vitest run --exclude '**/*.a11y.spec.ts'  → 106 files / 1092 tests, exit 0
-backend   ./mvnw -o test                                → 247 tests, BUILD SUCCESS
-k6        k6 run scenarios/cache-hit-ratio.js           → 100 VUs, p95 0.97 ms, hit ratio 100 %
+backend   ./mvnw -o test                                → 250 tests, BUILD SUCCESS
+k6        k6 run scenarios/cache-hit-ratio.js           → 100 VUs, p95 0.92 ms, hit ratio 100 %
 backend   ./mvnw -o spotless:check                      → sin violaciones
 frontend  pnpm format:check && pnpm lint                → sin observaciones
-e2e       npx playwright test e2e/cache-datos-estaticos.spec.ts
-          → 4 tests (Desktop Chrome + Mobile Chrome), exit 0
+e2e       npx playwright test e2e/cache-api-real.spec.ts e2e/cache-datos-estaticos.spec.ts
+          → 10 tests (Desktop Chrome + Mobile Chrome), exit 0
 ```
 
 ---
 
 ## Metricas de aceptacion (targets del SDD)
 
-| Metrica | Target | Medido |
-|---|---|---|
-| Cache hit ratio | > 90% | medible (`/q/metrics`); el valor real sale del k6 (F.5, sin ejecutar) |
-| Latencia formulario observer | < 1s | no medida (el E2E cuenta peticiones, no tiempos) |
-| Latencia tabs dashboard | < 0.5s | no medida (idem) |
-| P95 con 100 usuarios | < 2s | sin medicion (F.5 sin ejecutar) |
-| Redis / cache memory | < 100MB | sin monitoring (Caffeine: memoria de la JVM) |
+| Metrica | Target | Medido | Estado |
+|---|---|---|---|
+| Cache hit ratio | > 90% | **100.00 %** (k6, 100 VUs, TTL 2 min) | ✅ |
+| P95 con 100 usuarios | < 2s | **0.92 ms** | ✅ |
+| Consultas de configuracion a la base | −90 % | **−99.999 %** (374.240 → 4; 10,0 → 0,0000872 por lectura) | ✅ |
+| Latencia formulario observer | < 1s | no medida (el E2E cuenta peticiones, no tiempos) | ⚠️ |
+| Latencia tabs dashboard | < 0.5s | no medida (idem) | ⚠️ |
+| Memoria de la cache | < 100MB | con Caffeine el limite es el heap de la JVM: `cache_size` y `cache_evictions_total` por cache quedan publicados en `/q/metrics` | ⚠️ |
+
+> Las dos latencias de interfaz (observer y dashboard) siguen **sin medir**: el E2E cuenta
+> peticiones, no tiempos. El p95 de 0.92 ms es el de la API, no el de la pantalla. Medirlas
+> implica times-to-interactive en el E2E, que es trabajo de otro SDD.
 
 ---
 
