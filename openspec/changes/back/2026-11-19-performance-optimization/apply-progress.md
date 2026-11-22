@@ -1,313 +1,150 @@
-# Apply Progress — Performance Optimization: Indexing, Caching & Infrastructure
-
-```markdown
 # Apply Progress — Performance Optimization
 
-## Estado: PENDIENTE
+## Estado: IMPLEMENTADO — verificación de integración pendiente
 
-Esperando asignación a Builder (post-arquitecto review de D1-D5).
+El código de las fases A, B, D y F está aplicado y compila. La fase C ya estaba
+implementada antes de esta sesión. Los gates que necesitan PostgreSQL (fase E)
+no se pudieron ejecutar en el entorno de desarrollo: no hay Docker ni base local.
+No se declaran en verde.
 
 ## Commits aplicados
-(ninguno aún)
 
-## Notas de Implementación
-(a llenar durante build)
+| Fase | Commit | Mensaje |
+|------|--------|---------|
+| A | `063138e` | `perf(db): add missing acta and acta_detalle indexes` |
+| B.1 | `c395d69` | `perf(auth): load usuario.rol lazily with batch size` |
+| B.2 | `25527f0` | `perf(observer): add batch endpoint for JRV cargos with candidatos` |
+| D | `6fe24ac` | `perf(infra): enable gzip and raise the datasource pool` |
+| F | TBD | docs: performance optimization and indexing guide |
 
 ---
 
 ## Phase A: Database Indexing
 
-### A.1: Migration 011 - Índices Tabla `acta`
+### A.1: Índices en `acta`
 
-- [ ] Migration SQL creada (011-add-acta-indices.sql)
-- [ ] 5 índices simples creados ✓
-- [ ] 1 índice compuesto creado ✓
-- [ ] Testing local: 6 índices visibles en pg_indexes
-- [ ] No errores en BD
+- [x] Migración creada: `database/changelog/048-add-acta-indices.sql`
+- [x] `idx_acta_registrada_por`
+- [x] `idx_acta_jrv_id`
+- [x] `idx_acta_cargo_id`
+- [x] `idx_acta_fecha_registro_desc`
+- [x] `idx_acta_jrv_cargo_estado` (compuesto)
+- [x] Registrada en `db.changelog-master.yaml`
+- [ ] Testing local: índices visibles en `pg_indexes` — **bloqueado, sin BD**
 
-**Commits:** 
-- TBD
+### A.2: Índices en `acta_detalle`
 
----
+- [x] Migración creada: `database/changelog/049-add-acta-detalle-indices.sql`
+- [x] `idx_acta_detalle_candidato_id`
+- [x] Registrada en `db.changelog-master.yaml`
+- [ ] Testing local — **bloqueado, sin BD**
 
-### A.2: Migration 012 - Índices Tabla `acta_detalle`
+### A.3: EXPLAIN ANALYZE
 
-- [ ] Migration SQL creada (012-add-acta-detalle-indices.sql)
-- [ ] 2 índices creados ✓
-- [ ] Testing local: índices visibles
-- [ ] No errores
-
-**Commits:**
-- TBD
-
----
-
-### A.3: Verification - EXPLAIN ANALYZE
-
-- [ ] `EXPLAIN ANALYZE` verificado para:
-  - [ ] `SELECT * FROM acta WHERE registrada_por = ?`
-        Result: "Index Scan using ix_acta_registrada_por" ✓
-  - [ ] `SELECT * FROM acta WHERE estado = ?`
-        Result: "Index Scan using ix_acta_estado" ✓
-  - [ ] `SELECT * FROM acta WHERE jrv_id = ? AND cargo_id = ?`
-        Result: "Index Scan using ix_acta_jrv_cargo_estado" ✓
-  - [ ] Dashboard JOIN query
-        Result: "Index Scan using ix_acta_detalle_acta_id" ✓
-
-**Result:** ✓ / ✗
+- [ ] Verificado — **bloqueado, sin BD**. Las queries y el resultado esperado
+      quedan documentados en `documents/INDEXING_GUIDE.md` para correrlos en CI
+      o en una base real.
 
 ---
 
 ## Phase B: Backend ORM Optimization
 
-### B.1: Cambiar Eager → Lazy Loading
+### B.1: EAGER → LAZY
 
-- [ ] Usuario.java modificado (línea 50)
-  - From: `fetch = FetchType.EAGER`
-  - To: `fetch = FetchType.LAZY`
-- [ ] Código compilado sin errores
-- [ ] Tests verifican que NO causa LazyInitializationException ✓
+- [x] `Usuario.rol`: `FetchType.LAZY` + `@BatchSize(size = 25)`
+- [x] Compila (`mvnw -DskipTests test-compile`)
+- [x] Consumidores de `getRolNombre()` verificados uno por uno: todos corren
+      dentro de una transacción (`LoginUseCase`, `RefreshTokenUseCase`,
+      `ActivarUsuarioPorTokenUseCase`, `InvitacionService`,
+      `UserInvitationService`, `UsuarioAdminService.listar`), así que no hay
+      `LazyInitializationException`
+- [x] `UsuarioMapperTest`: 8/8 en verde
+- [ ] Test de conteo de queries — **bloqueado, sin BD**
 
-**Commits:**
-- TBD
+### B.2: Batch endpoint
 
----
-
-### B.2: Crear Batch Endpoint - Cargos with Candidatos
-
-- [ ] ObserverResource.java modificado
-  - Nuevo método: `getCargosWithCandidatos(@QueryParam jrvId)`
-  - Usa LEFT JOIN FETCH para candidatos
-  - Retorna DTOs: CargosConCandidatosResponse + CargoWithCandidatos
-- [ ] DTOs creados ✓
-- [ ] Tests: Comparar respuesta vs 3 endpoints (mismo data, 1 request)
-- [ ] Integration test pasa ✓
-
-**Commits:**
-- TBD
+- [x] `GET /api/v1/observer/cargos-with-candidatos?jrvId=`
+- [x] DTOs: `CargosConCandidatosResponse`, `CargoConCandidatosDto`
+- [x] `ActaRepository.listarCandidatosDeCargos` con
+      `join fetch c.cargo join fetch c.partido` (una query, no N+1)
+- [x] Tres queries fijas: cargos de la JRV, candidatos de esos cargos, partidos
+      cacheados
+- [x] Autorización `acta:read` + rate limit `observer-jrvs`
+- [x] `jrvId` nulo → 400
+- [x] IT `ObserverCargosConCandidatosIT` escrito (401, 400, JRV inexistente,
+      equivalencia con el endpoint suelto)
+- [ ] IT ejecutado — **bloqueado, sin BD**
 
 ---
 
 ## Phase C: Frontend Caching
 
-### C.1: Caché Partidos (observer.api.ts)
+Ya implementada antes de esta sesión; no se reimplementó.
 
-- [ ] Field `partidosCache$` agregado
-- [ ] Método `getCandidatosPorCargo()` modificado
-  - Usa `shareReplay(1)` para caché
-  - Primera llamada: HTTP request
-  - Siguientes llamadas: Cache reusado
-- [ ] Tests verifican:
-  - [ ] 1er call → HTTP request
-  - [ ] 2do call → Cache hit (1ms)
-  - [ ] Solo 1 HTTP request para partidos en ambas
-
-**Tests Passing:** 0/3
-
-**Commits:**
-- TBD
+- [x] `observer.api.ts`: `partidosCache$` con `shareReplay(1)`
+- [x] `dashboard.api.ts`: cachés con `shareReplay(1)`
+- [x] Documentada en `documents/CACHING_STRATEGY.md`
+- [x] Suite completa en verde: 1153 tests + 5 a11y, lint limpio
 
 ---
 
-### C.2: Caché Dashboard (dashboard.api.ts)
+## Phase D: Infrastructure
 
-- [ ] Fields agregados: resultadosCache$, progresoCache$, resumenCache$, novedadesCache$
-- [ ] Métodos modificados:
-  - [ ] `getResultados()` → `shareReplay(1)`
-  - [ ] `getProgreso()` → `shareReplay(1)`
-  - [ ] `getResumen()` → `shareReplay(1)`
-  - [ ] `getNovedades()` → `shareReplay(1)`
-- [ ] Tests verifican caché entre tabs ✓
+### D.1: gzip
 
-**Tests Passing:** 0/4
+- [x] `quarkus.http.enable-compression=true`
+- [x] `quarkus.http.compression-level=6`
+- [x] `quarkus.http.min-gzip-size=1024`
+- [ ] Header `content-encoding: gzip` verificado — **bloqueado, requiere app viva**
 
-**Commits:**
-- TBD
+### D.2: Pool
 
----
-
-## Phase D: Infrastructure Configuration
-
-### D.1: HTTP Compression (gzip)
-
-- [ ] application.properties modificado
-  - `quarkus.http.enable-compression=true`
-  - `quarkus.http.compression-level=6`
-  - `quarkus.http.min-gzip-size=1024`
-- [ ] Testing: Response headers muestran `content-encoding: gzip` ✓
-- [ ] Respuestas grandes comprimidas (500 KB → 50 KB) ✓
-
-**Commits:**
-- TBD
-
----
-
-### D.2: Connection Pool Configuration
-
-- [ ] application.properties modificado
-  - `quarkus.datasource.min-size=10`
-  - `quarkus.datasource.max-size=50`
-  - `quarkus.datasource.jdbc.acquisition-timeout=30s`
-  - `quarkus.datasource.jdbc.idle-removal-interval=5m`
-  - `quarkus.datasource.jdbc.max-lifetime=30m`
-- [ ] Testing: Logs NO muestran "unable to acquire connection" errors ✓
-- [ ] Pool size monitoreable en logs ✓
-
-**Commits:**
-- TBD
+- [x] `min-size=${DB_POOL_MIN_SIZE:10}`
+- [x] `max-size=${DB_POOL_MAX_SIZE:50}`
+- [x] `acquisition-timeout=${DB_POOL_ACQUISITION_TIMEOUT:30s}`
+- [x] `idle-removal-interval=5m`, `max-lifetime=30m`
+- [ ] Sin errores de adquisición bajo carga — **bloqueado, requiere load test**
 
 ---
 
 ## Phase E: Testing & Verification
 
-### E.1: Backend Unit Tests
-
-- [ ] `UsuarioRepositoryTest.testLazyLoadingNoExtraQueries()` ✓
-  - Verifica Lazy loading dispara 1 bulk query (not N)
-- [ ] `ActaRepositoryTest.testActaQueriesUseIndices()` ✓
-  - Verifica queries usan índices (not seq scan)
-- [ ] `BatchEndpointTest.testCargosWithCandidatos()` ✓
-  - Verifica endpoint retorna estructura correcta
-
-**Tests Passing:** 0/3
-
----
-
-### E.2: Frontend Unit Tests
-
-- [ ] `ObserverApiTest.testCachePpartidosAndReuse()` ✓
-- [ ] `DashboardApiTest.testCacheResultadosAcrossMultipleCalls()` ✓
-
-**Tests Passing:** 0/2
-
----
-
-### E.3: Integration Tests
-
-- [ ] Load test 50 usuarios simultáneos, 10 requests cada uno
-  - Expected P95: < 2s
-  - Expected P99: < 3s
-  - Expected timeouts: 0
-  - Result: TBD
-
-- [ ] E2E: Observer complete flow
-  - Login: TBD (target < 2s)
-  - Ver mis-jrvs: TBD (target < 1s)
-  - Registrar acta (5 cargos): TBD (target < 3s)
-
-**Result:** ✓ / ✗
-
----
-
-### E.4: Verificación SQL
-
-- [ ] EXPLAIN ANALYZE ejecutado para todas las queries críticas
-  - Todas muestran "Index Scan" (not Seq Scan) ✓
-
-**Result:** ✓ / ✗
+| Gate | Estado |
+|------|--------|
+| Compilación backend | ✅ |
+| Spotless | ✅ |
+| Unit tests backend (muestra) | ✅ 8/8 |
+| Suite frontend | ✅ 1153 + 5 |
+| IT backend (`PostgresTestResource`) | ⏳ sin Docker/PostgreSQL |
+| Load test 50 usuarios | ⏳ sin backend vivo |
+| EXPLAIN ANALYZE | ⏳ sin BD migrada |
 
 ---
 
 ## Phase F: Documentation
 
-- [ ] `PERFORMANCE_OPTIMIZATION.md` creado ✓
-  - Cambios realizados
-  - Matemática del problema
-  - Impacto esperado
-  - Monitores
-
-- [ ] `INDEXING_GUIDE.md` creado ✓
-  - Cuándo crear índices
-  - EXPLAIN ANALYZE guide
-  - Naming conventions
-
-- [ ] `CACHING_STRATEGY.md` creado ✓
-  - Patrón RxJS shareReplay(1)
-  - Cuándo usar
-  - Invalidación manual
-
-**Commits:**
-- TBD
+- [x] `documents/PERFORMANCE_OPTIMIZATION.md`
+- [x] `documents/INDEXING_GUIDE.md`
+- [x] `documents/CACHING_STRATEGY.md` (ya existía)
 
 ---
 
-## Performance Impact Summary
+## Desviaciones del SDD
 
-### Métricas Antes vs Después
+| SDD pedía | Se hizo | Motivo |
+|-----------|---------|--------|
+| Migraciones `011`/`012` | `048`/`049` | `011` y `012` ya están ocupados |
+| Índices `ix_acta_*` | `idx_acta_*` | convención viva desde `044` |
+| `idx_acta_estado` | no se creó | ya existe en `044` |
+| `idx_acta_detalle_acta_id` | no se creó | redundante con `UNIQUE(acta_id, candidato_id)` |
+| EAGER → LAZY sin más | LAZY + `@BatchSize(25)` | la premisa del SDD (21 queries para 20 usuarios) es falsa: EAGER genera un join, no N+1. LAZY sin batch sí habría creado N+1 |
+| Fase C reimplementar | no se tocó | ya estaba hecha y documentada |
+| `PERFORMANCE_OPTIMIZATION.md` + `CACHING_STRATEGY.md` | + `INDEXING_GUIDE.md` | el SDD pedía los tres |
 
-| Métrica | Antes | Después | Mejora |
-|---------|-------|---------|--------|
-| **Latencia login** | 2.73s | <1s | 63% ↓ |
-| **Latencia listar actas** | 1.5-2.7s | <0.5s | 70% ↓ |
-| **Latencia dashboard** | 3-5s | 0.5-1s | 80% ↓ |
-| **Requests (cargos form)** | 5 | 2-3 | 50% ↓ |
-| **Banda ancha (gzip)** | 500 KB | 50 KB | 90% ↓ |
-| **Pool exhaustion** | Sí (20 conn) | No (50 conn) | ✓ |
-| **P95 latencia (50 users)** | 10-15s | 1.5-2s | 87% ↓ |
-| **Throughput** | ~100 req/s | ~1000 req/s | 10× ↑ |
+## Bloqueos
 
----
-
-## Regressions & Verification
-
-| Feature | Antes | Después | Status |
-|---------|-------|---------|--------|
-| Observer login flow | ✓ | ✓ | PASS |
-| Observer registrar acta | ✓ | ✓ | PASS |
-| Admin listar usuarios | ✓ | ✓ | PASS |
-| Dashboard | ✓ | ✓ | PASS |
-| Tabs switching | ✓ | ✓ (cached) | PASS |
-| Lazy loading usuarios | N/A | ✓ | NEW |
-| Índices en BD | N/A | ✓ (8 total) | NEW |
-| Gzip compression | N/A | ✓ | NEW |
-
-**Result:** ✓ / ✗
-
----
-
-## Post-Implementation Monitoring
-
-### Métricas a Monitorear en Producción
-
-| Métrica | Target | Crítico Si |
-|---------|--------|-----------|
-| Avg query time | <100ms | >500ms |
-| P95 latencia | <2s | >3s |
-| P99 latencia | <3s | >5s |
-| Pool usage | 40-60% | >80% (aumento a 100) |
-| Active connections | <50 | >60 (bottleneck) |
-| Response size (gzipped) | <100 KB | >500 KB (check gzip) |
-| Requests per sec | >500 | <100 (degradation) |
-| Cache hit ratio | >90% | <70% (invalidate) |
-
----
-
-## Sign-Off
-
-**Builder:** _______________  
-**Date:** _______________  
-
-**QA:** _______________  
-**Date:** _______________  
-
-**Ready for Merge:** [ ] Yes [ ] No
-
-**Merge Commit:** TBD
-
----
-
-## Post-Merge Next Steps (Phase 2)
-
-- [ ] Monitor production metrics for 1 week
-- [ ] Adjust pool size if needed (target: 60-80% usage)
-- [ ] Collect feedback on performance improvement
-- [ ] Consider WebSocket for real-time notifications (future)
-- [ ] Consider additional caching: Redis (optional)
-
----
-
-## Notes & Issues
-
-(a llenar durante implementación)
-
-```
+- **Sin Docker ni PostgreSQL local**: los IT con `PostgresTestResource` no
+  corren. En CI o con `-Dtest.postgres.url=...` sí.
+- **Load test (E.3)**: requiere backend desplegado.
+- Los números de impacto del SDD (P95, throughput) son proyecciones, no
+  mediciones: no se midió nada en esta sesión.
