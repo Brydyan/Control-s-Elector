@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 
 /**
  * Request para solicitar eliminación de cuenta.
@@ -29,8 +29,9 @@ export interface DeleteAccountResponseDto {
 @Injectable({ providedIn: 'root' })
 export class DeleteAccountApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUser = `${environment.apiUrl}/user`;
-  private readonly baseAuth = `${environment.apiUrl}/auth`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUser = `${this.configService.getApiUrlSafe()}/user`;
+  private readonly baseAuth = `${this.configService.getApiUrlSafe()}/auth`;
 
   /**
    * Solicita eliminación de cuenta (soft-delete con 30d grace).

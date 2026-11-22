@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, shareReplay } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import type { OpcionesTransmision } from '../../../core/offline/sync.service';
 import {
   ActaRequest,
@@ -31,8 +31,9 @@ interface CandidatoDto {
 })
 export class ObserverApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/observer`;
-  private readonly configUrl = `${environment.apiUrl}/configuracion`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/observer`;
+  private readonly configUrl = `${this.configService.getApiUrlSafe()}/configuracion`;
   private partidosCache$: Observable<PartidoDto[]> | null = null;
 
   getMisJrvs(): Observable<JrvConEstado[]> {

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, of, catchError, shareReplay } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import {
   DashboardData,
   Novedad,
@@ -21,7 +21,8 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DashboardApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/dashboard`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/dashboard`;
 
   /** T-CACHE-STRAT-01 B.1: Cache de resultados con detalles. Nunca refetch, compartir entre suscriptores. */
   private resultadosDetalles$: Observable<ResultadoCargoDto[]> | null = null;

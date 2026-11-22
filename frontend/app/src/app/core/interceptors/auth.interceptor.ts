@@ -9,13 +9,13 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable, catchError, switchMap, throwError } from 'rxjs';
 
-import { environment } from '../../../environments/environment';
+import { ConfigService } from '../config/config.service';
 import { AuthService } from '../../features/auth/services/auth.service';
 import { AuthStore } from '../../features/auth/services/auth.store';
 
 /**
  * Attaches the in-memory access token as `Authorization: Bearer` ONLY for
- * requests destined to our backend API (environment.apiUrl), preventing
+ * requests destined to our backend API (from ConfigService), preventing
  * token leakage to third-party endpoints (S3, CDN, external APIs).
  *
  * - On 401 Unauthorized (unauthenticated/expired session):
@@ -30,12 +30,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const store = inject(AuthStore);
   const auth = inject(AuthService);
   const router = inject(Router);
+  const configService = inject(ConfigService);
 
+  const apiUrl = configService.getApiUrlSafe();
   const isApiRequest =
-    req.url.startsWith(environment.apiUrl) ||
+    req.url.startsWith(apiUrl) ||
     req.url.startsWith('/api/') ||
-    (environment.apiUrl.startsWith('http') &&
-      req.url.startsWith(new URL(environment.apiUrl).origin));
+    (apiUrl.startsWith('http') && req.url.startsWith(new URL(apiUrl).origin));
 
   const isAuthEndpoint =
     req.url.includes('/auth/login') || req.url.includes('/auth/refresh');

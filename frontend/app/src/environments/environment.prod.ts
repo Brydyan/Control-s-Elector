@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
-  // Production API URL: se inyecta desde assets/config.json en runtime (sin rebuild necesario)
-  // ConfigService carga config.json en APP_INITIALIZER (main.ts)
+  // Local development API URL (fallback when config.json is not available)
+  // In production, the actual URL is loaded from assets/config.json at runtime
   apiUrl: 'https://api.brydyan.me/api/v1',
   // Sentry error tracking and crash reporting (dev: 100% sampling, prod: 10%)
   sentryDsn: '',

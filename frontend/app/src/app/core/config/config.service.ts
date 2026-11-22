@@ -62,9 +62,21 @@ export class ConfigService {
 
   /**
    * Acceso directo a apiUrl (el valor más usado)
+   * Throws if ConfigService not initialized
    */
   getApiUrl(): string {
     return this.getConfig().apiUrl;
+  }
+
+  /**
+   * Acceso seguro a apiUrl con fallback (para tests)
+   * No throws si ConfigService no está inicializado
+   */
+  getApiUrlSafe(): string {
+    if (!this.config) {
+      return '/api/v1';
+    }
+    return this.config.apiUrl;
   }
 
   /**

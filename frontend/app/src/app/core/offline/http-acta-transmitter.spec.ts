@@ -5,9 +5,11 @@ import {
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { environment } from '../../../environments/environment';
+import { ConfigService } from '../config/config.service';
 import { HttpActaTransmitter } from './http-acta-transmitter';
 import { IDEMPOTENCY_HEADER } from './sync.service';
+
+const API_BASE_URL = '/api/v1';
 
 /**
  * Tests del transmisor HTTP de la cola offline (S3).
@@ -24,7 +26,15 @@ describe('HttpActaTransmitter', () => {
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
     httpMock = TestBed.inject(HttpTestingController);
-    transmitter = new HttpActaTransmitter(TestBed.inject(HttpClient));
+
+    const mockConfigService = {
+      getApiUrlSafe: () => API_BASE_URL,
+    } as unknown as ConfigService;
+
+    transmitter = new HttpActaTransmitter(
+      TestBed.inject(HttpClient),
+      mockConfigService,
+    );
   });
 
   afterEach(() => {
@@ -40,7 +50,7 @@ describe('HttpActaTransmitter', () => {
       )
       .subscribe((r) => (respuesta = r));
 
-    const req = httpMock.expectOne(`${environment.apiUrl}/observer/actas`);
+    const req = httpMock.expectOne(`${API_BASE_URL}/observer/actas`);
     expect(req.request.method).toBe('POST');
     expect(req.request.headers.get('Idempotency-Key')).toBe('acta-uuid-1');
     // El cuerpo es el mismo de siempre: la clave va en la cabecera.
@@ -55,9 +65,7 @@ describe('HttpActaTransmitter', () => {
       .subirImagenActa(77, new Blob(['pixeles'], { type: 'image/webp' }))
       .subscribe();
 
-    const req = httpMock.expectOne(
-      `${environment.apiUrl}/observer/actas/77/imagen`,
-    );
+    const req = httpMock.expectOne(`${API_BASE_URL}/observer/actas/77/imagen`);
     expect(req.request.method).toBe('POST');
     expect(req.request.body instanceof FormData).toBe(true);
     expect((req.request.body as FormData).get('imagen')).toBeTruthy();
