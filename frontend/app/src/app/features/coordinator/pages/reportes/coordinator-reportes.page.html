@@ -166,8 +166,8 @@
                     [attr.aria-label]="'Descargar expediente de acta ' + acta.id"
                     [attr.data-testid]="'btn-descargar-' + acta.id"
                   >
-                    {{ downloadingId() === acta.id ? 'Descargando...' : '⬇️
-                    Expediente' }}
+                    <i [class]="downloadingId() === acta.id ? 'pi pi-spin pi-spinner' : 'pi pi-download'" aria-hidden="true"></i>
+                    <span>{{ downloadingId() === acta.id ? 'Descargando...' : 'Expediente' }}</span>
                   </button>
                 </td>
               </tr>

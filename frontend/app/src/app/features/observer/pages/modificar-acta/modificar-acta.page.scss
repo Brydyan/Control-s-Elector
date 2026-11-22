@@ -1,0 +1,402 @@
+.modificar-acta-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-topbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.page-header {
+  margin-bottom: var(--space-2);
+
+  .header-titles {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .page-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+  }
+}
+
+/* Grid superior de 2 columnas: Votos a la izquierda, Totales a la derecha */
+.form-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+
+  @media (min-width: 860px) {
+    grid-template-columns: 1.2fr 1fr;
+    align-items: start;
+  }
+}
+
+.column-card {
+  width: 100%;
+}
+
+/* Columna Izquierda: Lista de Candidatos */
+.candidates-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.candidate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .candidate-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+
+    .candidate-name {
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+      color: var(--color-text-primary);
+      overflow-wrap: anywhere;
+    }
+
+    .party-siglas {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+  }
+
+  .input-votos {
+    width: 85px;
+    min-height: 2.25rem;
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    text-align: center;
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+
+    &:focus {
+      outline: 2px solid var(--color-brand-primary);
+      border-color: transparent;
+    }
+  }
+}
+
+/* Columna Derecha: Totales y Cuadre */
+.totals-compact-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.total-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+
+  .total-label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .input-total {
+    min-height: 2.5rem;
+    padding: var(--space-2);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+
+    &:focus {
+      outline: 2px solid var(--color-brand-primary);
+      border-color: transparent;
+    }
+  }
+}
+
+.totals-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.alerta-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+
+  &--error {
+    background-color: var(--color-status-danger-bg);
+    border: 1px solid var(--color-status-danger-border);
+    color: var(--color-status-danger);
+  }
+
+  &--warning {
+    background-color: var(--color-status-warning-bg);
+    border: 1px solid var(--color-status-warning-border);
+    color: var(--color-status-warning);
+  }
+}
+
+/* Checksum Box */
+.checksum-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+
+  &--valid {
+    background-color: var(--color-status-success-bg);
+    border: 1px solid var(--color-status-success-border);
+  }
+
+  &--invalid {
+    background-color: var(--color-status-danger-bg);
+    border: 1px solid var(--color-status-danger-border);
+  }
+
+  .checksum-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .checksum-title {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .status-badge--valid {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-status-success);
+    }
+
+    .status-badge--invalid {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-status-danger);
+    }
+  }
+
+  .checksum-grid {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-top: var(--space-1);
+
+    .checksum-stat {
+      display: flex;
+      flex-direction: column;
+
+      .stat-label {
+        font-size: 0.6875rem;
+        color: var(--color-text-secondary);
+        text-transform: uppercase;
+      }
+
+      .stat-val {
+        font-size: var(--font-size-base);
+        font-weight: var(--font-weight-bold);
+      }
+    }
+
+    .text-danger {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-status-danger);
+    }
+  }
+
+  .checksum-hint {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-status-danger);
+  }
+}
+
+/* Fila Inferior: Evidencias Fotográficas */
+.full-width-card {
+  width: 100%;
+}
+
+.evidencias-galeria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.foto-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 220px;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-secondary);
+
+  &--nueva {
+    border-color: var(--color-brand-primary);
+  }
+
+  .foto-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+
+    &.tag-nueva {
+      color: var(--color-brand-primary);
+    }
+  }
+
+  .foto-wrapper {
+    width: 100%;
+    height: 160px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background-color: var(--color-bg-primary);
+
+    .acta-thumb {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+}
+
+.foto-upload-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 220px;
+  min-height: 195px;
+  border: 2px dashed var(--color-border-medium);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-brand-primary);
+    transform: translateY(-1px);
+  }
+
+  .upload-trigger {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-3);
+    gap: var(--space-2);
+
+    .upload-icon-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: var(--radius-pill);
+      background-color: var(--primitive-blue-50);
+      color: var(--color-brand-primary);
+      font-size: 1.25rem;
+    }
+
+    .upload-prompt {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .upload-subprompt {
+      font-size: 0.6875rem;
+      color: var(--color-text-secondary);
+    }
+  }
+}
+
+/* Barra de Acciones al Pie */
+.bottom-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border-subtle);
+
+  .primary-action-wrap {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+
+    .validation-warning {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: var(--font-size-xs);
+      color: var(--color-status-danger);
+    }
+  }
+}
+
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--color-status-success-bg);
+  border: 1px solid var(--color-status-success-border);
+  color: var(--color-status-success);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}

@@ -63,39 +63,28 @@
       }
 
       .barra-progreso {
-        height: 12px;
+        height: 10px;
         background: var(--color-surface-raised);
-        border-radius: 6px;
+        border-radius: var(--radius-pill);
         overflow: hidden;
         margin-bottom: 1rem;
 
         .barra-fill {
           height: 100%;
+          border-radius: var(--radius-pill);
           transition: width 0.3s ease;
         }
 
         &.fill-green .barra-fill {
-          background: linear-gradient(
-            90deg,
-            var(--primitive-green-800) 0%,
-            var(--primitive-green-200) 100%
-          );
+          background-color: var(--primitive-green-800);
         }
 
         &.fill-blue .barra-fill {
-          background: linear-gradient(
-            90deg,
-            var(--primitive-blue-500) 0%,
-            var(--primitive-blue-200) 100%
-          );
+          background-color: var(--color-brand-primary);
         }
 
         &.fill-amber .barra-fill {
-          background: linear-gradient(
-            90deg,
-            var(--primitive-amber-800) 0%,
-            var(--primitive-amber-200) 100%
-          );
+          background-color: var(--primitive-amber-800);
         }
       }
 
@@ -273,11 +262,7 @@
                 // recien iniciado.
                 &.fill-green {
                   .mini-barra-fill {
-                    background: linear-gradient(
-                      90deg,
-                      var(--primitive-green-800) 0%,
-                      var(--primitive-green-200) 100%
-                    );
+                    background-color: var(--primitive-green-800);
                   }
 
                   .avance-texto {
@@ -287,25 +272,17 @@
 
                 &.fill-blue {
                   .mini-barra-fill {
-                    background: linear-gradient(
-                      90deg,
-                      var(--primitive-blue-500) 0%,
-                      var(--primitive-blue-200) 100%
-                    );
+                    background-color: var(--color-brand-primary);
                   }
 
                   .avance-texto {
-                    color: var(--primitive-blue-500);
+                    color: var(--color-brand-primary);
                   }
                 }
 
                 &.fill-amber {
                   .mini-barra-fill {
-                    background: linear-gradient(
-                      90deg,
-                      var(--primitive-amber-800) 0%,
-                      var(--primitive-amber-200) 100%
-                    );
+                    background-color: var(--primitive-amber-800);
                   }
 
                   .avance-texto {

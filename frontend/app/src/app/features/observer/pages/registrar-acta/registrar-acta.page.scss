@@ -63,6 +63,10 @@
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
 
   /*
    * S2: los cuatro pasos del `p-steps` no caben en una fila de 390px. En vez
@@ -72,6 +76,63 @@
    */
   max-width: 100%;
   overflow-x: auto;
+
+  ::ng-deep {
+    .p-steps {
+      width: 100%;
+
+      .p-steps-list {
+        display: flex;
+        justify-content: space-between;
+        gap: var(--space-2);
+      }
+
+      .p-steps-item {
+        flex: 1;
+
+        &:before {
+          top: 1.25rem;
+          border-color: var(--color-border-medium);
+        }
+
+        &.p-steps-item-active {
+          .p-steps-item-number {
+            background-color: var(--color-brand-primary);
+            color: #ffffff;
+            font-weight: var(--font-weight-bold);
+            box-shadow: 0 0 0 4px var(--primitive-blue-100);
+          }
+
+          .p-steps-item-label {
+            color: var(--color-brand-primary);
+            font-weight: var(--font-weight-bold);
+          }
+        }
+
+        .p-steps-item-number {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2.5rem;
+          height: 2.5rem;
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-semibold);
+          border-radius: var(--radius-pill);
+          background-color: var(--color-bg-primary);
+          border: 2px solid var(--color-border-medium);
+          color: var(--color-text-secondary);
+          transition: all 0.2s ease;
+        }
+
+        .p-steps-item-label {
+          margin-top: var(--space-2);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-medium);
+          color: var(--color-text-secondary);
+        }
+      }
+    }
+  }
 }
 
 .step-content {
@@ -355,12 +416,84 @@
   gap: var(--space-3);
 }
 
+/* Título y padding de la card en registrar-acta para que no pegue a los bordes */
+:host ::ng-deep {
+  .app-card__header {
+    padding: var(--space-4) var(--space-5) var(--space-2);
+  }
+
+  .p-card-body {
+    padding: var(--space-2) var(--space-5) var(--space-5);
+  }
+}
+
 .image-upload-zone {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-4);
-  padding: var(--space-6);
+  padding: var(--space-5) var(--space-4);
+}
+
+.upload-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: 520px;
+  min-height: 200px;
+  padding: var(--space-6) var(--space-4);
+  border: 2px dashed var(--color-border-medium);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  text-align: center;
+
+  &:hover {
+    border-color: var(--color-brand-primary);
+    background-color: var(--color-bg-hover, var(--color-bg-secondary));
+    transform: translateY(-1px);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-brand-primary);
+    outline-offset: 2px;
+  }
+
+  .dropzone-icon-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--primitive-blue-50);
+    color: var(--color-brand-primary);
+
+    i {
+      font-size: 1.75rem;
+    }
+  }
+
+  .dropzone-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+
+    .dropzone-title {
+      font-size: var(--font-size-base);
+      font-weight: var(--font-weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .dropzone-subtitle {
+      font-size: var(--font-size-xs);
+      color: var(--color-text-secondary);
+    }
+  }
 }
 
 .image-preview {

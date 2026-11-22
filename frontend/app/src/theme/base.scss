@@ -48,6 +48,29 @@ body {
 .p-card {
   border: 1px solid var(--color-border-on-surface) !important;
   border-radius: var(--radius-lg) !important;
+
+  .p-card-body {
+    padding: var(--space-4) !important;
+  }
+}
+
+.app-card__header {
+  padding: var(--space-4) var(--space-4) var(--space-2);
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: var(--space-3);
+
+  .app-card__title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .app-card__subtitle {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin: var(--space-1) 0 0;
+  }
 }
 
 /*

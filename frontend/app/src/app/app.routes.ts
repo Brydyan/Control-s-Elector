@@ -133,6 +133,18 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'observer/acta/:id/modificar',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/observer/pages/modificar-acta/modificar-acta.page').then(
+            (m) => m.ModificarActaPage,
+          ),
+        data: {
+          roles: ['OBSERVER', 'MASTER'],
+          title: 'Modificar Acta de Escrutinio',
+        },
+      },
+      {
         path: 'dashboard/resultados',
         canActivate: [roleGuard],
         loadComponent: () =>
