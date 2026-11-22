@@ -183,8 +183,12 @@ BYPASSRLS, 100 VUs):
 | | Sin caché | Con caché |
 |---|---|---|
 | Hit ratio | 0 % | **100 %** |
-| p95 | 2.77 ms | **0.77 ms** |
-| Consultas a la base | 391.206 | **23** |
+| p95 | 3.70 ms | **0.97 ms** |
+| Consultas de configuración a la base | 374.240 | **4** (el llenado inicial) |
+
+La métrica estable es la de **consultas de configuración**: el total absoluto
+de consultas al servidor depende del ruido de arranque (login, auditoría,
+metadatos) y no se puede comparar entre corridas.
 
 Reportes: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`.
 

@@ -188,9 +188,10 @@ k6 run scenarios/cache-hit-ratio.js
 
 Objetivos del SDD: p95 < 2 s, hit ratio > 90 %.
 
-**Medido** (100 VUs contra el backend real): hit ratio **100 %**, p95 **0.77 ms**,
-y **23 consultas a la base** frente a **391.206** sin caché — un ahorro del
-**99.99 %** de consultas de configuración (objetivo del SDD: −90 %).
+**Medido** (100 VUs contra el backend real): hit ratio **100 %**, p95 **0.97 ms**,
+y **4 consultas de configuración a la base** (el llenado inicial) frente a
+**374.240** sin caché — un ahorro del **99.999 %**, tres órdenes de magnitud
+por encima del objetivo del SDD (−90 %). Reportes en `documents/load-test/`.
 
 ### Frontend
 

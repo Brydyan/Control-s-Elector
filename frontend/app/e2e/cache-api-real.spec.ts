@@ -55,6 +55,20 @@ test.describe('Caché de datos estáticos — API real @guardian @no-intercept',
     return porCache;
   }
 
+  /**
+   * Contadores de una cache, con 0 en lo que aun no existe.
+   *
+   * <p>En un backend recién arrancado `/q/metrics` todavía no publica los
+   * contadores de una cache hasta que hay al menos una lectura: sin esto, el
+   * test reventaría con un TypeError en vez de con su propia aserción.
+   */
+  function contadoresDe(
+    contadores: Record<string, { hits: number; misses: number }>,
+    cache: string,
+  ): { hits: number; misses: number } {
+    return contadores[cache] ?? { hits: 0, misses: 0 };
+  }
+
   test('el backend cuenta los aciertos de la cache y la escritura la invalida', async ({
     request,
   }) => {
@@ -78,17 +92,18 @@ test.describe('Caché de datos estáticos — API real @guardian @no-intercept',
     // 2) Primera lectura: es un fallo (la caché está vacía).
     await request.get('/api/v1/configuracion/cargos', { headers: auth });
     const trasLaPrimera = await contadoresCache(request);
-    expect(trasLaPrimera['cargos'].hits - antes['cargos'].hits).toBe(0);
-    expect(trasLaPrimera['cargos'].misses - antes['cargos'].misses).toBeGreaterThan(
-      0,
-    );
+    const antesCargos = contadoresDe(antes, 'cargos');
+    const primeraCargos = contadoresDe(trasLaPrimera, 'cargos');
+    expect(primeraCargos.hits - antesCargos.hits).toBe(0);
+    expect(primeraCargos.misses - antesCargos.misses).toBeGreaterThan(0);
 
     // 3) Segunda lectura: es un acierto, y la base no se toca.
     await request.get('/api/v1/configuracion/cargos', { headers: auth });
     const trasLaSegunda = await contadoresCache(request);
-    expect(trasLaSegunda['cargos'].hits - trasLaPrimera['cargos'].hits).toBe(1);
+    const segundaCargos = contadoresDe(trasLaSegunda, 'cargos');
+    expect(segundaCargos.hits - primeraCargos.hits).toBe(1);
     // El acierto no suma fallos: el hit ratio no se deforma.
-    expect(trasLaSegunda['cargos'].misses).toBe(trasLaPrimera['cargos'].misses);
+    expect(segundaCargos.misses).toBe(primeraCargos.misses);
 
     // 4) Crear un cargo: la escritura invalida la caché de cargos.
     const nombre = `CARGO E2E ${Date.now()}`;
@@ -125,7 +140,7 @@ test.describe('Caché de datos estáticos — API real @guardian @no-intercept',
     await request.get('/api/v1/configuracion/partidos', { headers: auth });
     await request.get('/api/v1/configuracion/partidos', { headers: auth });
     const antes = await contadoresCache(request);
-    expect(antes['partidos']?.hits ?? 0).toBeGreaterThan(0);
+    expect(contadoresDe(antes, 'partidos').hits).toBeGreaterThan(0);
 
     // Vaciar.
     const vaciado = await request.get('/api/v1/admin/cache/clear', {
@@ -159,6 +174,8 @@ test.describe('Caché de datos estáticos — API real @guardian @no-intercept',
     expect(intento.status()).toBe(403);
 
     const despues = await contadoresCache(request);
-    expect(despues['cargos']?.hits ?? 0).toBe(antes['cargos']?.hits ?? 0);
+    expect(contadoresDe(despues, 'cargos').hits).toBe(
+      contadoresDe(antes, 'cargos').hits,
+    );
   });
 });
