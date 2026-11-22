@@ -285,9 +285,10 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
   cargarCandidatos(): void {
     this.loading.set(true);
     this.error.set(null);
-    this.observerService.getCandidatosPorCargo(this.cargoId).subscribe({
-      next: (data) => {
-        this.candidatos = data;
+    this.observerService.getCatalogoDeJrv(this.jrvId).subscribe({
+      next: (catalogo) => {
+        const cargo = catalogo.find((c) => c.id === this.cargoId);
+        this.candidatos = cargo?.candidatos ?? [];
         this.candidatos.forEach((c) => {
           if (!this.votosPorCandidato.has(c.id)) {
             this.votosPorCandidato.set(c.id, 0);

@@ -29,6 +29,17 @@ export interface CandidatoInfo {
   partidoNumeroLista?: number;
 }
 
+/**
+ * Catalog of a JRV cargo as returned by the batch endpoint:
+ * GET /observer/cargos-with-candidatos?jrvId=
+ * Candidatos arrive enriched with partido info on the client.
+ */
+export interface CargoCatalogo {
+  id: number;
+  nombre: string;
+  candidatos: CandidatoInfo[];
+}
+
 export interface ActaDetalleItem {
   candidatoId: number;
   votos: number;
