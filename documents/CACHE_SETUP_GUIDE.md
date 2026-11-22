@@ -173,8 +173,20 @@ Carga (100 VUs, reporte de hit ratio):
 
 ```bash
 cd frontend/tests/load
-k6 run scenarios/cache-hit-ratio.js
+MASTER_EMAIL=mastersolon@example.local MASTER_PASSWORD=admin12345 \
+  k6 run scenarios/cache-hit-ratio.js
 ```
+
+Resultado medido (backend real, Postgres 16 con el rol `electoral_app` sin
+BYPASSRLS, 100 VUs):
+
+| | Sin caché | Con caché |
+|---|---|---|
+| Hit ratio | 0 % | **100 %** |
+| p95 | 2.77 ms | **0.77 ms** |
+| Consultas a la base | 391.206 | **23** |
+
+Reportes: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`.
 
 ---
 

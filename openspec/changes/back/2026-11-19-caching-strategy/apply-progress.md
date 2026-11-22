@@ -24,7 +24,7 @@
 | E.2 Test del vaciado | ✅ | `AdminCacheResourceTest` — 7 tests: matriz de roles, estado post-call, auditoria |
 | F.1/F.2 Tests unitarios | ✅ | frontend (`observer.api.spec.ts`, `dashboard.api.spec.ts`) y backend (`CacheServicioIT`, `CacheContenidoIT`, 4 caches) |
 | F.3/F.4 E2E | ✅ | `e2e/cache-datos-estaticos.spec.ts` — 2 tests, mutacion verificada |
-| F.5 Load test | ✅ (script) / ⏳ (sin ejecutar) | `frontend/tests/load/scenarios/cache-hit-ratio.js` — falta correrlo con el stack arriba |
+| F.5 Load test | ✅ | `frontend/tests/load/scenarios/cache-hit-ratio.js` — **ejecutado**: 100 VUs, p95 0.77 ms, hit ratio 100 %, 23 consultas a la base (ver "Resultado del load test") |
 | F.6 Monitoring | ✅ | micrometer + prometheus: `cache_hits_total` / `cache_misses_total` (`CacheMetricasIT`) |
 | G Documentacion | ✅ | `CACHING_STRATEGY.md`, `CACHE_INVALIDATION.md`, `CACHE_SETUP_GUIDE.md` (duplicado de `docs/` borrado) |
 
@@ -100,8 +100,9 @@ contradigan al codigo.
 - [ ] Marcar en `design.md` D2 y en `proposal.md` Scope C la decision como PENDIENTE (hoy dicen
       "Elegida: B. Redis"), para que el documento de diseno no afirme una decision que nadie ha
       tomado.
-- [ ] **F.5 (ejecucion)**: correr `k6 run scenarios/cache-hit-ratio.js` con el stack arriba (no hay
-      Postgres ni Docker en este entorno) y pegar el reporte con p95 y hit ratio reales.
+- [x] **F.5 (ejecucion)**: corrida con 100 VUs contra el backend real. p95 0.77 ms, hit ratio
+      100 %, 23 consultas a la base frente a 391.206 sin cache (−99.99 %). Reportes en
+      `documents/load-test/`.
 - [ ] Alertas de memoria de la cache (parte de F.6 que no depende de D2).
 - [x] Corregir referencias `T-FE-15` → `T-CACHE-STRAT-01` en el codigo de este SDD (endpoint,
       tests de cache, `observer.api.ts`, `dashboard.api.ts`, `application.properties`). Las
@@ -118,6 +119,7 @@ contradigan al codigo.
 ```
 frontend  npx vitest run --exclude '**/*.a11y.spec.ts'  → 106 files / 1092 tests, exit 0
 backend   ./mvnw -o test                                → 247 tests, BUILD SUCCESS
+k6        k6 run scenarios/cache-hit-ratio.js           → 100 VUs, p95 0.77 ms, hit ratio 100 %
 backend   ./mvnw -o spotless:check                      → sin violaciones
 frontend  pnpm format:check && pnpm lint                → sin observaciones
 e2e       npx playwright test e2e/cache-datos-estaticos.spec.ts
