@@ -188,6 +188,12 @@ local-config/
 .env.local
 .env.*.local
 
+# ─── Agent Skills (Global) ────────────────────────────────────────────────────
+# Skills instaladas globalmente en ~/.agents/ o ~/.claude/skills/
+# No deben estar en el repo del proyecto
+.agents/
+**/.agents/
+
 # Local development credentials (if ever committed by accident)
 .credentials
 credentials.json
