@@ -128,11 +128,20 @@ quarkus.cache.caffeine.geografia.expire-after-write=10m
 
 `CacheDeLectura` usa `cache.as(CaffeineCache.class)` porque la API pública de
 Quarkus (`io.quarkus.cache.Cache`) solo expone `get(key, loader)` e
-`invalidate*`: no hay `put` ni `getIfPresent`. Consecuencia: **si se cambia a
-Redis, la caché se desactiva en silencio** (el `ClassCastException` se
-absorbe y toda lectura va a la base) y el hit ratio marca 0 % de acierto.
-Cambiar a Redis exige reescribir `CacheDeLectura`; ver la decisión pendiente
-D2 en `CACHE_SETUP_GUIDE.md`.
+`invalidate*`: no hay `put` ni `getIfPresent`.
+
+`Cache.as(Class)` lanza **`IllegalStateException`** cuando el caché no es del
+tipo pedido (no `ClassCastException`). Por eso el helper captura ese tipo
+concreto y trata "el caché no es Caffeine" como **sin caché**: se sirve
+siempre desde la base, sin contadores, y la aplicación sigue funcionando.
+Sin esa captura, con `quarkus.cache.enabled=false` (Quarkus entrega un
+`NoOpCache`) o con un backend que no sea Caffeine, **cada lectura de
+configuración devolvía 500**. Está sujetado por `CacheApagadaIT`.
+
+Consecuencia para D2: cambiar a Redis exige **reescribir `CacheDeLectura`**
+para hablar la API de Redis; con el helper actual, Redis degrada a "sin
+caché" (hit ratio 0 %), no a "caché rota". Ver la decisión pendiente D2 en
+`CACHE_SETUP_GUIDE.md`.
 
 ---
 

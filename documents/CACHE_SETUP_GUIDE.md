@@ -59,6 +59,10 @@ es la evidencia de que la caché sirve. La opción B sirve para una comparación
 rápida, pero no es una línea base limpia: la caché sigue activa y solo caduca
 antes.
 
+> Con la caché apagada la aplicación **sigue funcionando**: se sirve siempre
+> desde la base. Lo sostiene `CacheApagadaIT`, que además afirma que los
+> endpoints de configuración responden 200 en ese modo.
+
 ### Verificar que la caché está viva
 
 ```bash
@@ -106,9 +110,11 @@ de implementación: cambia el modelo de despliegue y el coste).
 - **Trabajo de código obligatorio**: `CacheDeLectura` usa
   `cache.as(CaffeineCache.class)` porque la API pública de Quarkus solo
   expone `get(key, loader)` e `invalidate*` (no hay `put` ni `getIfPresent`).
-  Con Redis, ese `as(CaffeineCache.class)` falla, el helper cae al camino "sin
-  caché" y **la caché se desactiva en silencio**, con el hit ratio en 0 %.
-  Hay que reescribir `CacheDeLectura` para hablar la API de Redis.
+  `Cache.as(Class)` lanza `IllegalStateException` si el caché no es del tipo
+  pedido; el helper captura ese tipo y **degrada a "sin caché"** (se sirve
+  desde la base, hit ratio 0 %), de modo que Redis no tiraría la aplicación
+  — pero tampoco cachearía. Para cachear de verdad hay que reescribir
+  `CacheDeLectura` para hablar la API de Redis.
 - Nota: `@CacheResult` (la opción que sí es agnóstica del backend) no sirve
   aquí, porque no permite medir el hit ratio.
 

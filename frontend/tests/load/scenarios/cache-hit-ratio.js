@@ -45,11 +45,18 @@ const HIT_RATIO_OBJETIVO = 0.9;
 /** p95 < 2s (baseline del SDD de performance). */
 const P95_OBJETIVO_MS = 2000;
 
-/** Lecturas cacheadas del backend: 4 endpoints, 10 peticiones por VU (F.5). */
+/**
+ * Lecturas cacheadas del backend: 4 endpoints, 10 peticiones por VU (F.5).
+ *
+ * `requiereToken` es true en las cuatro: `/api/v1/configuracion/*` y
+ * `/api/v1/master/*` NO son rutas publicas (el filtro de JWT solo deja pasar
+ * `/api/v1/auth/*`, `/api/v1/legal/*` y `/q`). Sin token responden 401 y el
+ * umbral `http_req_failed` reventaria por culpa del propio script.
+ */
 const ENDPOINTS = [
-  { path: '/configuracion/cargos', tag: 'cargos', requiereToken: false },
-  { path: '/configuracion/partidos', tag: 'partidos', requiereToken: false },
-  { path: '/configuracion/candidatos', tag: 'candidatos', requiereToken: false },
+  { path: '/configuracion/cargos', tag: 'cargos', requiereToken: true },
+  { path: '/configuracion/partidos', tag: 'partidos', requiereToken: true },
+  { path: '/configuracion/candidatos', tag: 'candidatos', requiereToken: true },
   { path: '/master/geografia', tag: 'geografia', requiereToken: true },
 ];
 
@@ -121,10 +128,20 @@ export function setup() {
     { headers: { 'Content-Type': 'application/json' } }
   );
 
+  if (token.status !== 200) {
+    // Sin token no hay nada que medir: las cuatro rutas de lectura lo exigen.
+    // Fallar aqui es mejor que medir 401 y reprobar el umbral de fallos por
+    // culpa del propio script.
+    throw new Error(
+      `Login fallido (status ${token.status}). Revisa MASTER_EMAIL / MASTER_PASSWORD ` +
+        `(config.master). Las lecturas de /api/v1/configuracion exigen token.`,
+    );
+  }
+
   const inicial = leerMetricasCache();
 
   return {
-    token: token.status === 200 ? token.json('accessToken') : null,
+    token: token.json('accessToken'),
     base: inicial,
   };
 }
@@ -137,8 +154,9 @@ export default function (data) {
 
   for (let i = 0; i < PETICIONES_POR_VU; i++) {
     for (const endpoint of ENDPOINTS) {
-      // La geografía exige `configuracion:read` (MASTER): si el token no
-      // está, se salta ese endpoint en vez de contar un 401 como error.
+      // Las cuatro rutas exigen token. Si el login falló (credenciales
+      // wrong), el script no tiene con que medir: se avisa y se sale, en vez
+      // de medir 401 y reprobar el umbral de fallos por culpa propia.
       if (endpoint.requiereToken && !data.token) {
         continue;
       }

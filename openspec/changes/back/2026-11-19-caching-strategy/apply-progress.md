@@ -45,6 +45,9 @@
 | `a7d7e0b` | Metricas de hit ratio (micrometer + prometheus) y lectura explicita de la cache |
 | `f1ba1b7` | E2E Playwright: formulario del observer (F.3) y tabs del dashboard (F.4) |
 | `55d1a7d` | Script k6 de hit ratio con 100 VUs (F.5) |
+| `b6835f5` | Referencias `T-FE-15` → `T-CACHE-STRAT-01` en el codigo de este SDD |
+| `4ba1ed6` | Invalidacion del frontend cableada + `CacheContenidoIT` + correcciones de doc |
+| (verif. v4) | `Cache.as()` lanza `IllegalStateException`: con la cache apagada el backend devolvia 500 |
 
 ---
 
@@ -68,6 +71,16 @@ manejados). Resuelto con promesas y `firstValueFrom`; la suite completa sale con
 
 ---
 
+## Desviaciones del diseno (declaradas)
+
+| Desviacion | Diseno | Implementacion | Por que |
+|---|---|---|---|
+| **C.2** — numero de cachés | 6 cachés (`provincias`, `cantones`, `parroquias` a TTL 1h, aparte de cargos/partidos/candidatos) | **4 cachés**: `cargos`, `partidos`, `candidatos` y `geografia` (TTL 10m) | La geografia se sirve como **un arbol** provincia → canton → parroquia → JRV en una sola consulta (`ListarGeografiaUseCase`); cachear tres listas por separado obligaria a recomponer el arbol en cada lectura y a tres TTL que pueden desincronizarse. El TTL unico de 10m tambien cierra el hueco de la invalidacion cruzada entre réplicas (D2). |
+| **D.1/D.2** — mecanismo de lectura | `@CacheResult` | Acceso explicito con `CacheDeLectura` | `@CacheResult` no deja ver si el acierto vino de la cache o de la base: el hit ratio (la metrica que dice si la cache esta sirviendo) quedaria a ciegas. |
+| **E.1** — rol del vaciado | `@RolesAllowed({"ADMIN"})` | `Autorizador.exigir("cache:clear", "MASTER")` | `@RolesAllowed` no se usa en ninguna parte del backend; ADMIN no escribe en este dominio y vaciar la cache es una escritura sobre el estado operativo. |
+
+---
+
 ## Decision D2 pendiente (decision humana)
 
 El diseno eligio **Redis** (D2, para que las 3+ replicas compartan cache). La implementacion
@@ -84,6 +97,9 @@ contradigan al codigo.
 
 - [ ] **D2 (decision humana)**: Redis compartido vs Caffeine en memoria. Sin esto, el codigo y el
       `design.md` se contradicen, y con 2 replicas la cache se parte.
+- [ ] Marcar en `design.md` D2 y en `proposal.md` Scope C la decision como PENDIENTE (hoy dicen
+      "Elegida: B. Redis"), para que el documento de diseno no afirme una decision que nadie ha
+      tomado.
 - [ ] **F.5 (ejecucion)**: correr `k6 run scenarios/cache-hit-ratio.js` con el stack arriba (no hay
       Postgres ni Docker en este entorno) y pegar el reporte con p95 y hit ratio reales.
 - [ ] Alertas de memoria de la cache (parte de F.6 que no depende de D2).
@@ -100,8 +116,8 @@ contradigan al codigo.
 ## Resultado de las suites
 
 ```
-frontend  npx vitest run --exclude '**/*.a11y.spec.ts'  → 105 files / 1090 tests, exit 0
-backend   ./mvnw -o test                                → 238 tests, BUILD SUCCESS
+frontend  npx vitest run --exclude '**/*.a11y.spec.ts'  → 106 files / 1092 tests, exit 0
+backend   ./mvnw -o test                                → 247 tests, BUILD SUCCESS
 backend   ./mvnw -o spotless:check                      → sin violaciones
 frontend  pnpm format:check && pnpm lint                → sin observaciones
 e2e       npx playwright test e2e/cache-datos-estaticos.spec.ts

@@ -47,15 +47,14 @@ public class CacheDeLectura {
       return Optional.empty();
     }
 
-    CaffeineCache caffeine;
-    try {
-      caffeine = cache.get().as(CaffeineCache.class);
-    } catch (ClassCastException e) {
-      // Cache que no es de caffeine (por ejemplo, Redis): se sirve igual, sin contadores.
+    Optional<CaffeineCache> caffeine = comoCaffeine(cache.get());
+    if (caffeine.isEmpty()) {
+      // Cache que no es de caffeine (por ejemplo, Redis) o cache apagada: se
+      // sirve siempre desde la base, sin contadores.
       return Optional.empty();
     }
 
-    CompletableFuture<Object> guardado = caffeine.getIfPresent(clave);
+    CompletableFuture<Object> guardado = caffeine.get().getIfPresent(clave);
     Object valor = guardado == null ? null : guardado.getNow(null);
     if (valor == null) {
       return Optional.empty();
@@ -82,13 +81,37 @@ public class CacheDeLectura {
       return;
     }
 
-    try {
-      cache.get().as(CaffeineCache.class).put(clave, CompletableFuture.completedFuture(valor));
-    } catch (ClassCastException e) {
+    Optional<CaffeineCache> caffeine = comoCaffeine(cache.get());
+    if (caffeine.isEmpty()) {
       contarFallo(cacheName);
       return;
     }
+    caffeine.get().put(clave, CompletableFuture.completedFuture(valor));
     contarFallo(cacheName);
+  }
+
+  /**
+   * Intenta ver el cache como {@link CaffeineCache}.
+   *
+   * <p><b>Por que este metodo existe y no un {@code catch (ClassCastException)}:</b> {@code
+   * Cache.as(Class)} lanza {@link IllegalStateException} cuando el cache no es de ese tipo — no
+   * {@code ClassCastException}. Con la cache apagada ({@code quarkus.cache.enabled=false}) Quarkus
+   * entrega un {@code NoOpCache}, que tampoco sobrescribe {@code as()}: la excepcion escapaba del
+   * helper y cada lectura de configuracion devolvia <b>500</b>. Perder la cache es una degradacion,
+   * no un error.
+   *
+   * <p>El mismo camino cubre el caso de Redis (D2 pendiente): si un dia el backend de cache cambia,
+   * este helper sigue sirviendo desde la base en vez de tirar la aplicacion.
+   *
+   * @param cache cache del que se quiere leer
+   * @return el cache como Caffeine, o vacio si no lo es
+   */
+  private Optional<CaffeineCache> comoCaffeine(Cache cache) {
+    try {
+      return Optional.of(cache.as(CaffeineCache.class));
+    } catch (IllegalStateException e) {
+      return Optional.empty();
+    }
   }
 
   private void contarFallo(String cacheName) {
