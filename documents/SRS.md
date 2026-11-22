@@ -92,7 +92,7 @@ Sección 5 — Apéndices (tablas, glosarios, diagramas)
 Control Electoral es un observatorio digital para las Elecciones Seccionales 2027-2031. Los veedores políticos registran resultados con libre selección de JRVs (entrada de datos + foto). Coordinadores revisan y corrigen. MASTER sella y puede anular por fraude. Todo queda auditado en bases de datos seguras.
 
 **Posicionamiento técnico:**  
-- **Escalable:** PostgreSQL + RLS para millones de registros, Supabase Object Storage para fotos.
+- **Escalable:** PostgreSQL (Neon) + RLS para millones de registros, Cloudflare R2 para fotos.
 - **Seguro:** JWT + sesiones revocables, audit log inmutable, locking pesimista en actas.
 - **Resiliente:** Offline-first en móvil (IndexedDB + fallback a storage privado), reintentos automáticos.
 - **Transparente:** Una sola app (sin subdominios por rol), RBAC visual en menús dinámicos.
@@ -142,17 +142,17 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
-| **Frontend** | Angular + Ionic (TypeScript) | 17.x / 7.x |
-| **Backend API** | Java Spring Boot | 4.x (Java 21) |
-| **Base de datos** | PostgreSQL | 16+ (Supabase) |
-| **Storage** | Supabase Object Storage / MinIO | — |
-| **Realtime** | Supabase Realtime / WebSocket | — |
+| **Frontend** | Angular + PrimeNG + Tailwind CSS (TypeScript) | 21.x / 21.x / 4.x |
+| **Backend API** | Java Quarkus (REST) | 3.40 (Java 25) |
+| **Base de datos** | PostgreSQL | 16+ (Neon) |
+| **Storage** | Cloudflare R2 (prod) / MinIO o RustFS (dev) | — |
+| **Realtime** | WebSocket o polling HTTP (mecanismo por definir) | — |
 | **Auth** | JWT (Nimbus JOSE+JWT, HS256) | — |
-| **ORM** | JPA/Hibernate | 7.x |
+| **ORM** | Hibernate ORM + Panache | gestionado por Quarkus 3.40 |
 | **Migrations** | Liquibase | 4.x |
 | **Dev local** | Docker Compose | v2.20+ |
-| **Deploy backend** | Railway | Pro |
-| **Deploy frontend** | Vercel | — |
+| **Deploy backend** | Railway (plan Pro, 1 réplica) | Pro |
+| **Deploy frontend** | Cloudflare Pages | — |
 | **Dominios** | brydyan.me | — |
 | **Subdominio API** | api.brydyan.me | HTTPS |
 | **Subdominio App** | control.brydyan.me | HTTPS |
@@ -161,9 +161,9 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 
 | Entorno | Host | DB | Storage | Notes |
 |---------|------|----|---------|----|
-| **Local (dev)** | localhost:4200 (FE), localhost:8081 (BE) | Docker PostgreSQL | MinIO | Hot-reload, debug |
+| **Local (dev)** | localhost:4200 (FE), localhost:8081 (BE) | Docker PostgreSQL | MinIO / RustFS | Hot-reload, debug |
 | **Staging** | — | PostgreSQL Docker + Tailscale | MinIO | Cerrado, sin puertos públicos |
-| **Producción** | Vercel (FE), Railway (BE) | Supabase PostgreSQL | Supabase Object Storage | HTTPS, logs centralizados |
+| **Producción** | Cloudflare Pages (FE), Railway (BE) | Neon PostgreSQL | Cloudflare R2 | HTTPS, logs centralizados |
 
 ### 2.5 Restricciones y Limitaciones
 
@@ -200,11 +200,11 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 
 | Dependencia | Rol | Riesgo | Mitigación |
 |-------------|-----|--------|----------|
-| **Supabase PostgreSQL** (prod) | BD principal | Downtime externo | Failover a backup; logs en Railway |
-| **Supabase Object Storage** (prod) | Almacenar fotos (WebP) | Downtime, pérdida de fotos | Backup automático S3; checksum SHA-256 |
-| **Supabase Realtime** (prod) | WebSocket para dashboard | Latencia o caída | Fallback a polling HTTP cada 5s |
-| **Vercel CDN** (prod) | Servir frontend | Downtime regional | Esperado en arquitectura; no crítico si BE está up |
-| **Railway** (prod) | Ejecutar backend | Downtime crítico | SLA 99.5%; alertas automáticas |
+| **Neon PostgreSQL** (prod) | BD principal | Downtime externo | Failover a backup; logs en Railway |
+| **Cloudflare R2** (prod) | Almacenar fotos (WebP) | Downtime, pérdida de fotos | Versionado en el bucket; checksum SHA-256 |
+| **Mecanismo realtime** (prod) | Actualización del dashboard | Latencia o caída | Fallback a polling HTTP cada 5s |
+| **Cloudflare Pages** (prod) | Servir frontend | Downtime regional | CDN global; no crítico si BE está up |
+| **Railway** (prod) | Ejecutar backend | Downtime crítico | Plan Pro; alertas automáticas |
 
 ---
 
@@ -464,7 +464,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 | **Flujo principal** | 1. Query actas con estado = APROBADA. 2. Si cargo_id: filtrar. 3. Si canton_id: filtrar (JOIN jrv → parroquia → canton). 4. Groupby candidato + SUM votos. 5. Retornar `{ cargo_id, cargo_nombre, resultados: [ { candidato_id, nombre, partido, votos, porcentaje } ], total_votos }`. |
 | **Flujo alterno** | Sin filtros → retorna consolidado global (todos los cargos, todos los cantones). |
 | **Postcondición** | Dashboard renderiza gráficos (bar, pie, mapa). |
-| **Reglas negocio** | • Excluye ANULADA. • Excluye EN_DISPUTA, CORREGIDA, BORRADOR. • Calcula porcentaje: `(votos / total) * 100`. • Realtime vía Supabase Realtime (WebSocket). Si no disponible → polling cada 5s. |
+| **Reglas negocio** | • Excluye ANULADA. • Excluye EN_DISPUTA, CORREGIDA, BORRADOR. • Calcula porcentaje: `(votos / total) * 100`. • Realtime vía WebSocket. Si no disponible → polling cada 5s. |
 
 ---
 
@@ -532,7 +532,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 | RNF-SEC-006 | HTTPS en producción |
 |---|---|
 | **Descripción** | Todos los endpoints en prod (`api.brydyan.me`, `control.brydyan.me`) sobre HTTPS. Certificado LetsEncrypt renovación automática. |
-| **Medida** | Railway + Vercel gestionan TLS. Cliente en prod: rechazar `http://`. |
+| **Medida** | Railway + Cloudflare Pages gestionan TLS. Cliente en prod: rechazar `http://`. |
 | **Validación** | Intento HTTP → redirect 301 a HTTPS. |
 
 | RNF-SEC-007 | Hash de contraseña |
@@ -558,7 +558,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 | RNF-PERF-002 | Tiempo de respuesta API |
 |---|---|
 | **Descripción** | 95% de requests < 500 ms (p95). |
-| **Medida** | Railway auto-escaling, HikariCP pool (12 conexiones def), índices en PG (jrv_id, cargo_id, usuario_id, estado). |
+| **Medida** | Railway (1 réplica), HikariCP pool (12 conexiones def), índices en PG (jrv_id, cargo_id, usuario_id, estado). |
 | **Validación** | Monitoring: New Relic / Datadog / CloudWatch. |
 
 | RNF-PERF-003 | TTL tokens |
@@ -570,7 +570,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 | RNF-PERF-004 | Presigned URL válida 15 min |
 |---|---|
 | **Descripción** | Descargas de fotos via URL presignada temporal (no long-lived token). |
-| **Medida** | S3 (Supabase o AWS) genera URL con expiración. |
+| **Medida** | S3 (Cloudflare R2) genera URL con expiración. |
 | **Validación** | URL > 15 min → `403 Forbidden` (expirada). |
 
 #### Disponibilidad y Resiliencia (RNF-AVAIL)
@@ -595,13 +595,13 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 
 | RNF-AVAIL-004 | SLA backend |
 |---|---|
-| **Descripción** | Railway Pro: 99.5% uptime SLA. |
-| **Medida** | Múltiples replicas, auto-failover, geographic redundancy (si contratado). |
+| **Descripción** | Railway plan Pro, 1 réplica. |
+| **Medida** | Despliegue con `railway.json` (builder dockerfile + `Dockerfile.native`); failover y redundancia geográfica (si contratado). |
 | **Validación** | Monitoreo de disponibilidad. Alertas si < 99.5%. |
 
 | RNF-AVAIL-005 | Backup/Recuperación de BD |
 |---|---|
-| **Descripción** | Supabase: backups automáticos diarios, retención 30 días. |
+| **Descripción** | Neon: snapshots automáticos diarios y PITR (retención según plan). |
 | **Medida** | Configurar backup policies. Test restore mensual. |
 | **Validación** | Simulacro: restaurar BD de backup. |
 
@@ -622,7 +622,7 @@ Control Electoral es un observatorio digital para las Elecciones Seccionales 202
 | RNF-USAB-003 | Notificaciones en tiempo real |
 |---|---|
 | **Descripción** | Cambios de estado (EN_DISPUTA, CORREGIDA, APROBADA) notificados al usuario. Toast o badge. |
-| **Medida** | Supabase Realtime (WebSocket) o polling HTTP. |
+| **Medida** | WebSocket o polling HTTP. |
 | **Validación** | COORDINATOR marca acta EN_DISPUTA → OBSERVER ve notificación en < 2s. |
 
 | RNF-USAB-004 | Mensajes de error descriptivos |
@@ -708,7 +708,7 @@ Endpoints principales:
 #### 3.3.3 Interfaces de Comunicación
 
 - **HTTPS:** Todos los endpoints en prod. Certificado TLS.
-- **WebSocket (Supabase Realtime):** Dashboard subscriptions a tablas (`acta`, `audit_log`). Fallback: polling HTTP cada 5s.
+- **WebSocket:** Dashboard subscriptions a tablas (`acta`, `audit_log`). Fallback: polling HTTP cada 5s.
 - **S3 API:** Upload/descarga de fotos (presigned URLs, SigV4).
 
 ---
@@ -722,10 +722,10 @@ Endpoints principales:
 | **Geografía (Provincia, Canton, Parroquia, JRV)** | ✅ Entidades, sin API | JPA entities `Provincia`, `Canton`, `Parroquia`, `Jrv` creadas. Repositories existentes. Endpoints REST (POST, GET) planeados. | `src/main/java/...geografia/domain/` |
 | **Evidencia (Upload, Descarga, Aprobar)** | ✅ Implementado | EvidenciaController: POST upload (S3 + BD), GET presigned URL, PATCH estado. Reglas: 10MB, SHA-256, recomprimir si > 500KB. | `src/main/java/...evidencia/web/EvidenciaController.java` |
 | **Acta (Registrar, Estados, Disputas, Correcciones, Anulación)** | ⏳ Planeado | Diseño completado. Máquina de estados en diagrama 07. Endpoints en diagrama 15. Entidades `Acta`, `ActaDetalle` no creadas aún. Business logic + locking pesimista pendiente. | `documents/diagram/flujos/07-estado-acta.md`, `15-api-endpoints.md` |
-| **Dashboard (Resultados consolidados)** | ⏳ Planeado | Endpoint `/resultados/consolidado` diseñado. Realtime via Supabase Realtime. Mockups disponibles. | `documents/mockups/admin/dashboard-home.png` |
+| **Dashboard (Resultados consolidados)** | ⏳ Planeado | Endpoint `/resultados/consolidado` diseñado. Realtime vía WebSocket (por definir) o polling HTTP. Mockups disponibles. | `documents/mockups/admin/dashboard-home.png` |
 | **Offline-first (IndexedDB + fallback storage privado)** | ⏳ Planeado | Lógica cliente-side en Ionic/Capacitor. Retry automático 30s, máx 3. Fallback filesystem. | `documents/diagram/flujos/02-offline-sync.md` |
 | **Configuración pre-electoral (Cargos, Partidos, Candidatos)** | ⏳ Planeado | Endpoints de registro + listado. MASTER only. Entidades planeadas. | `documents/diagram/flujos/13-configuracion-preelectoral.md` |
-| **Notificaciones en tiempo real** | ⏳ Planeado | Tipos: `CORRECCION_REQUERIDA`, `ACTA_LISTA_PARA_REVISION`, `ACTA_ANULADA`. Supabase Realtime. | `documents/diagram/05-domain-model.md` (tabla `NOTIFICACION`) |
+| **Notificaciones en tiempo real** | ⏳ Planeado | Tipos: `CORRECCION_REQUERIDA`, `ACTA_LISTA_PARA_REVISION`, `ACTA_ANULADA`. WebSocket (por definir) o polling HTTP. | `documents/diagram/05-domain-model.md` (tabla `NOTIFICACION`) |
 | **AUDIT_LOG** | ⏳ Planeado | Registrar toda acción. Tabla en PG. Service layer preparado. | `documents/diagram/flujos/` (varias referencias) |
 
 ---
@@ -800,7 +800,7 @@ ANULADA [final, irreversible]
 - Sin puertos públicos. Acceso via Tailscale.
 
 **Producción:**
-- Frontend: `https://control.brydyan.me` (Vercel)
+- Frontend: `https://control.brydyan.me` (Cloudflare Pages)
 - Backend API: `https://api.brydyan.me` (Railway)
 - OpenAPI: `https://api.brydyan.me/v3/api-docs`
 
@@ -821,16 +821,16 @@ ANULADA [final, irreversible]
 ### G. Stack Técnico Resumido
 
 ```
-Frontend:    Angular 17+ + Ionic 7+       (TypeScript, RxJS, NgRx)
-Backend:     Spring Boot 4.x (Java 21)    (Web, Security, Data JPA)
-Database:    PostgreSQL 16+               (Supabase o Docker)
-Storage:     Supabase Object Storage      (S3-compatible, .webp)
-Realtime:    Supabase Realtime            (WebSocket)
+Frontend:    Angular 21 + PrimeNG 21       (TypeScript 5.9, RxJS, Tailwind CSS 4)
+Backend:     Quarkus 3.40 (Java 25)        (REST, Security, Hibernate ORM + Panache)
+Database:    PostgreSQL 16+                (Neon en prod, Docker en dev)
+Storage:     Cloudflare R2                  (S3-compatible, .webp)
+Realtime:    WebSocket o polling HTTP       (mecanismo por definir)
 Auth:        JWT HS256 (Nimbus JOSE+JWT)
-ORM:         Hibernate 7.x (JPA)
+ORM:         Hibernate ORM + Panache
 DB Migration: Liquibase 4.x
 Compression: WebP (Canvas API, quality 0.65-0.82)
-Deployment:  Vercel (FE), Railway (BE), Supabase (DB+Storage)
+Deployment:  Cloudflare Pages (FE), Railway (BE), Neon (DB), Cloudflare R2 (Storage)
 Monitoring:  Datadog / CloudWatch / New Relic (futuro)
 ```
 

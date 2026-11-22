@@ -1,4 +1,8 @@
-# Cloudflare Pages — Configuración de Variab les de Entorno
+# Cloudflare Pages — Configuración de Variables de Entorno
+
+> Cloudflare Pages es el **destino de producción del frontend** (Angular estático) en `control.brydyan.me`.
+> El backend Quarkus se despliega por separado en Railway (`api.brydyan.me`); la base de datos es
+> Neon y las evidencias .webp viven en Cloudflare R2.
 
 ## Cómo funciona
 
@@ -76,6 +80,19 @@ npm run build
 # Edita src/assets/config.json con tu URL
 ng serve --configuration production --serve-path=/
 ```
+
+---
+
+## SPA redirect
+
+Cloudflare Pages debe servir `index.html` para las rutas de Angular. En
+`frontend/app/public/_redirects`:
+
+```
+/* /index.html 200
+```
+
+Sin esto, un refresh en una ruta interna devuelve 404.
 
 ---
 

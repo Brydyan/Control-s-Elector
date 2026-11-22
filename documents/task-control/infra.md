@@ -1,4 +1,6 @@
-# Infra Tasks — Docker, Railway, Vercel, Supabase
+# Infra Tasks — Docker, Railway, Cloudflare Pages, Neon, Cloudflare R2
+
+> Topología de producción vigente: backend en **Railway** (1 réplica), frontend en **Cloudflare Pages**, base de datos en **Neon** (PostgreSQL serverless) y evidencias en **Cloudflare R2**.
 
 ---
 
@@ -77,11 +79,13 @@ Script `infra/sql/03-seed.sql`:
 
 ---
 
-## Supabase
+## Base de datos gestionada (histórico: Supabase → Neon)
 
-### T-IN-05 — Configurar Supabase proyecto
+> Las tareas T-IN-05 y T-IN-06 describen el proveedor de base de datos y realtime usado en una etapa anterior del proyecto (Supabase). **Ya no describen producción**: la base de datos de producción es **Neon** (ver T-IN-13) y el realtime ya no depende de un proveedor administrado. Se conservan como registro histórico.
 
-**Estado:** ✅ HECHO
+### T-IN-05 — Configurar proyecto Supabase
+
+**Estado:** ⚠️ HISTÓRICO — sustituido por T-IN-13 (Neon). No describe producción.
 **Prioridad:** ALTA
 **Asignado:** Andy
 **Depende de:** —
@@ -94,9 +98,9 @@ Script `infra/sql/03-seed.sql`:
 
 ---
 
-### T-IN-06 — Supabase Realtime
+### T-IN-06 — Realtime gestionado por el proveedor
 
-**Estado:** ⏳ PARCIAL (Paso 1 ✅)
+**Estado:** ⚠️ HISTÓRICO — sustituido por T-IN-13 (Neon). No describe producción.
 **Prioridad:** MEDIA
 **Asignado:** Andy
 **Depende de:** T-IN-05
@@ -110,35 +114,34 @@ Script `infra/sql/03-seed.sql`:
 
 ## Railway (Backend)
 
-### T-IN-07 — Deploy Spring Boot en Railway
+### T-IN-07 — Deploy del backend Quarkus en Railway
 
-**Estado:** ✅ HECHO
-**Prioridad:** MEDIA
+**Estado:** ⚠️ PARCIAL — el deploy histórico apuntaba al backend Spring Boot y al dominio `api.twintailcs.xyz`. La topología vigente es backend Quarkus (GraalVM native) en `api.brydyan.me` con Neon como base de datos.
+**Prioridad:** ALTA
 **Asignado:** Andy
-**Depende de:** T-IN-05
+**Depende de:** T-IN-13
 
 - [x] Conectar repositorio GitHub a Railway
-- [x] Configurar variables de entorno en Railway:
-  - [x] `DATABASE_URL` (Supabase PostgreSQL)
-  - [x] `JWT_SECRET`
-  - [x] `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`
-  - [x] `SPRING_PROFILES_ACTIVE=prod`
-- [x] Crear `application-prod.properties` con config de producción
-  - [x] `ddl-auto=validate` (no update en prod)
-  - [x] `show-sql=false`
-- [x] Verificar health endpoint (pendiente DNS)
-- [x] Configurar dominio custom `api.twintailcs.xyz`
+- [x] `railway.json` con builder `dockerfile` → `backend/electoral-api-quarkus/Dockerfile.native`
+- [x] Plan Pro, 1 réplica
+- [ ] Configurar variables de entorno en Railway:
+  - [ ] `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (Neon PostgreSQL) — bloqueado por T-IN-13
+  - [ ] `JWT_SECRET`
+  - [ ] `AWS_S3_ENDPOINT`, `AWS_S3_REGION`, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (Cloudflare R2, S3-compatible)
+  - [ ] `AWS_S3_PATH_STYLE=false` para R2
+- [ ] Verificar health endpoint
+- [ ] Configurar dominio custom `api.brydyan.me`
 
 ---
 
-### T-IN-08 — application-prod.properties
+### T-IN-08 — Configuración de producción del backend
 
-**Estado:** ✅ HECHO
+**Estado:** ⚠️ HISTÓRICO — la configuración descrita abajo corresponde al backend Spring Boot (`application-prod.properties`). El backend vigente es Quarkus y usa `backend/electoral-api-quarkus/src/main/resources/application.properties` con variables de entorno (`DB_*`, `AWS_S3_*`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
 **Prioridad:** ALTA
 **Asignado:** Andy
 **Depende de:** T-IN-07
 
-Crear `backend/electoral-api/src/main/resources/application-prod.properties`:
+Configuración histórica en `backend/electoral-api/src/main/resources/application-prod.properties`:
 
 - [x] `spring.datasource.url=${DATABASE_URL}`
 - [x] `spring.jpa.hibernate.ddl-auto=validate`
@@ -149,39 +152,35 @@ Crear `backend/electoral-api/src/main/resources/application-prod.properties`:
 
 ---
 
-## Vercel (Frontend)
+## Cloudflare Pages (Frontend)
 
-### T-IN-09 — Deploy Angular en Vercel
+### T-IN-09 — Deploy Angular en Cloudflare Pages
 
-**Estado:** TODO
+**Estado:** ⏳ EN CURSO — Cloudflare Pages es el destino de producción del frontend (sustituye al deploy en Vercel). Ver `CLOUDFLARE_PAGES_SETUP.md`.
 **Prioridad:** MEDIA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** T-IN-07
 
-- [ ] Conectar repo GitHub a Vercel
-- [ ] Build command: `npm run build -- --configuration=production`
-- [ ] Output directory: `dist/app/browser`
-- [ ] Variable de entorno: `VITE_API_URL=https://api.twintailcs.xyz`
-- [ ] Configurar dominio custom `control.twintailcs.xyz`
-- [ ] Verificar SPA redirect: todas las rutas → `index.html` (vercel.json)
+- [x] Conectar repo GitHub a Cloudflare Pages
+- [x] Build command: `npm run build`
+- [x] Output directory: `frontend/app/dist/app`
+- [ ] Variables de entorno en Cloudflare Pages: `CF_API_URL=https://api.brydyan.me/api/v1`
+- [x] Configurar dominio custom `control.brydyan.me`
+- [x] Configuración en runtime vía `assets/config.json` (sin rebuild para cambiar la URL de la API)
 
 ---
 
-### T-IN-10 — vercel.json para SPA
+### T-IN-10 — Redirect SPA en Cloudflare Pages
 
 **Estado:** TODO
 **Prioridad:** ALTA
 **Asignado:** sin asignar
 **Depende de:** T-IN-09
 
-Crear `frontend/app/vercel.json`:
+En `frontend/app/public/_redirects` (o en la configuración de Pages):
 
-```json
-{
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
+```
+/* /index.html 200
 ```
 
 Sin esto, refresh en rutas Angular devuelve 404.
@@ -198,8 +197,28 @@ Sin esto, refresh en rutas Angular devuelve 404.
 **Depende de:** T-IN-07, T-IN-09
 
 - [x] Workflow `ci.yml`: en PR → build backend + frontend, correr tests
-- [x] Workflow `deploy.yml`: en push a `main` → Railway y Vercel despliegan automáticamente
-- [ ] Secrets en GitHub: `DATABASE_URL`, `JWT_SECRET`, `SUPABASE_SERVICE_KEY`
+- [x] Workflow `deploy.yml`: en push a `main` → Railway (backend) y Cloudflare Pages (frontend) despliegan automáticamente
+- [ ] Secrets en GitHub: credenciales de Neon y de Cloudflare R2 (nunca en el repo)
+
+---
+
+## Neon (Base de datos de producción)
+
+### T-IN-13 — Neon Database Setup
+
+**Estado:** ⏳ PENDIENTE — la especificación vive en `openspec/changes/infra/2026-11-08-t-in-13-neon-database/` y **no se ha ejecutado**: creación del proyecto, migraciones Liquibase contra Neon, VPC endpoint / IP whitelist, connection pooling, backups y health check siguen pendientes. Ver `apply-progress.md` de ese change para el detalle del estado real.
+
+**Prioridad:** CRÍTICA
+**Asignado:** sin asignar
+**Depende de:** —
+
+- [ ] Crear el proyecto Neon (`control-electoral-mvp`) y anotar la connection string
+- [ ] Ejecutar las migraciones Liquibase contra Neon
+- [ ] Verificar el esquema (tablas y FKs)
+- [ ] Configurar VPC endpoint o IP whitelist para Railway
+- [ ] Verificar el connection pooling (HikariCP)
+- [ ] Verificar backups automáticos y PITR
+- [ ] Health check de base de datos (`/api/v1/health/db`)
 
 ---
 
