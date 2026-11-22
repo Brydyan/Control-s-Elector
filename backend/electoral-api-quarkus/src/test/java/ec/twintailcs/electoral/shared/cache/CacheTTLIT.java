@@ -20,8 +20,8 @@ import org.junit.jupiter.api.Test;
  * <ul>
  *   <li>que el valor por defecto es el que se decidió (2 minutos) y no el que dejó el diseño
  *       original (10 minutos), porque un TTL de 10 minutos significa 10 minutos de dato viejo;
- *   <li> que la entrada <b>realmente</b> caduca cuando pasa el TTL: un TTL configurado pero
- *       ignorado es peor que no tener TTL, porque aparenta acotar el problema sin acotarlo.
+ *   <li>que la entrada <b>realmente</b> caduca cuando pasa el TTL: un TTL configurado pero ignorado
+ *       es peor que no tener TTL, porque aparenta acotar el problema sin acotarlo.
  * </ul>
  */
 @QuarkusTest

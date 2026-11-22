@@ -39,17 +39,23 @@ test.describe('Caché de datos estáticos — API real @guardian @no-intercept',
     const cuerpo = await res.text();
     const porCache: Record<string, { hits: number; misses: number }> = {};
     for (const linea of cuerpo.split('\n')) {
+      // La métrica va etiquetada por caché Y por réplica (`RAILWAY_REPLICA_ID`):
+      // el patrón tiene que tolerar etiquetas extra en cualquier orden, o no
+      // leería ningún contador y fallaría con 0 en vez de con su aserción.
       const m = linea.match(
-        /^(cache_hits_total|cache_misses_total)\{cache="([^"]+)"\}\s+([\d.eE+-]+)/,
+        /^(cache_hits_total|cache_misses_total)\{(.*)\}\s+([\d.eE+-]+)$/,
       );
       if (!m) continue;
       const valor = Number.parseFloat(m[3]);
       if (Number.isNaN(valor)) continue;
-      porCache[m[2]] = porCache[m[2]] ?? { hits: 0, misses: 0 };
+      const etiquetaCache = m[2].match(/cache="([^"]+)"/);
+      if (!etiquetaCache) continue;
+      const clave = etiquetaCache[1];
+      porCache[clave] = porCache[clave] ?? { hits: 0, misses: 0 };
       if (m[1] === 'cache_hits_total') {
-        porCache[m[2]].hits += valor;
+        porCache[clave].hits += valor;
       } else {
-        porCache[m[2]].misses += valor;
+        porCache[clave].misses += valor;
       }
     }
     return porCache;

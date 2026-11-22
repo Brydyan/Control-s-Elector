@@ -100,11 +100,19 @@ function leerMetricasCache() {
   }
 
   for (const linea of res.body.split('\n')) {
-    const m = linea.match(/^(cache_hits_total|cache_misses_total)\{cache="([^"]+)"\}\s+([\d.eE+-]+)/);
+    // La métrica va etiquetada por caché Y por réplica (`RAILWAY_REPLICA_ID`): el
+    // patrón tiene que tolerar etiquetas extra en cualquier orden, o el script
+    // leería cero contadores en silencio y el hit ratio saldría 0 %.
+    const m = linea.match(
+      /^(cache_hits_total|cache_misses_total)\{(.*)\}\s+([\d.eE+-]+)$/,
+    );
     if (!m) continue;
     const valor = parseFloat(m[3]);
     if (Number.isNaN(valor)) continue;
-    const clave = m[2];
+    const etiquetas = m[2];
+    const claveCache = etiquetas.match(/cache="([^"]+)"/);
+    if (!claveCache) continue;
+    const clave = claveCache[1];
     porCache[clave] = porCache[clave] || { hits: 0, misses: 0 };
     if (m[1] === 'cache_hits_total') {
       hits += valor;

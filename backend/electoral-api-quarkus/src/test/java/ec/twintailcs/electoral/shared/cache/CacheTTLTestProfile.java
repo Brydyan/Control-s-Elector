@@ -9,8 +9,8 @@ import java.util.Map;
  * Perfil del test de TTL de la caché.
  *
  * <p>Postgres real (Testcontainers) porque la aplicación lo necesita para levantar. El TTL de
- * {@code partidos} se baja a 1 segundo: esperar dos minutos dentro de un test no es una opción, y el
- * comportamiento que se quiere comprobar —"la entrada caduca"— es el mismo con cualquier TTL.
+ * {@code partidos} se baja a 1 segundo: esperar dos minutos dentro de un test no es una opción, y
+ * el comportamiento que se quiere comprobar —"la entrada caduca"— es el mismo con cualquier TTL.
  */
 public class CacheTTLTestProfile implements QuarkusTestProfile {
 
