@@ -179,6 +179,11 @@ export const NAV_CONFIG: Record<UserRole, NavSection[]> = {
           icon: 'pi pi-clock',
           route: '/admin/sesiones',
         },
+        {
+          label: 'Recintos',
+          icon: 'pi pi-map-marker',
+          route: '/admin/recintos',
+        },
       ],
     },
   ],

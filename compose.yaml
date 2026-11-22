@@ -21,14 +21,14 @@
 # el AOT no entra. Para desarrollo, `mvn quarkus:dev` sobre la JVM.
 #
 # Uso (desarrollo local):
-#   docker compose --profile dev up -d   # Postgres + Backend + RustFS
+#   docker compose --profile dev up -d   # Postgres + Backend + Redis + RustFS
 #   # en otra terminal: ng serve (frontend)
 #
 # Uso (staging):
 #   docker compose --profile dev up -d   # Auto-deploy backend via deploy.sh + GitHub Actions
 #
 # Variables configurables (ver .env.example): DB_NAME, DB_USER, DB_PASSWORD,
-# DB_PORT, APP_ENV, POSTGRES_MEM_LIMIT, RESTART_POLICY, SERVER_PORT.
+# DB_PORT, APP_ENV, POSTGRES_MEM_LIMIT, RESTART_POLICY, SERVER_PORT, REDIS_PORT.
 # =============================================================================
 
 services:
@@ -152,11 +152,18 @@ services:
       # Liquibase corre todos los changesets. Ver el aviso de seguridad en el
       # changelog 026-admin-inicial.sql.
       QUARKUS_LIQUIDASE_CONTEXTS: ${QUARKUS_LIQUIDASE_CONTEXTS:-seed,bootstrap-admin}
+      # Rate limiting: contadores compartidos en Redis, igual que en produccion.
+      # Sin Redis las politicas `on-failure=allow` (lecturas) no limitan nada.
+      REDIS_HOSTS: redis://redis:6379
     ports:
       - "8083:80"
     depends_on:
       postgres:
         condition: service_healthy
+      # `service_started`, no `service_healthy`: Redis es opcional para la API.
+      # Si no esta, el rate limiting degrada al fallback local y la API sigue.
+      redis:
+        condition: service_started
       # El rol con el que conecta la API tiene que existir antes de que arranque.
       db-app-role:
         condition: service_completed_successfully
@@ -291,6 +298,49 @@ services:
       resources:
         limits:
           memory: 256M
+
+  # ---------------------------------------------------------------------------
+  # Redis — almacen compartido del rate limiting
+  # ---------------------------------------------------------------------------
+  # Los contadores (`rl:v1:*`) viven aca para que todas las replicas cuenten
+  # juntas, como en produccion (Railway). Sin persistencia: ninguna clave dura
+  # mas que su ventana (15 min como maximo), asi que no hay nada que guardar.
+  # `volatile-ttl` es la misma politica que se pide en produccion: todas las
+  # claves tienen TTL y, si se llena, se descartan primero las que vencen antes.
+  #
+  # El puerto queda solo en 127.0.0.1: alcanza para `mvn quarkus:dev` en el host
+  # (que apunta a localhost:6379 por defecto) sin exponer Redis a la red.
+  redis:
+    image: redis:7.4-alpine
+    container_name: electoral-redis-${APP_ENV:-dev}
+    profiles: ["dev"]
+    command:
+      - redis-server
+      - --maxmemory
+      - 64mb
+      - --maxmemory-policy
+      - volatile-ttl
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: ${RESTART_POLICY:-no}
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          memory: 96M
 
   # ---------------------------------------------------------------------------
   # Frontend — Angular + Ionic servido con Nginx y reverse proxy

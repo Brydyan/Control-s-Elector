@@ -11,9 +11,8 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { TableModule } from 'primeng/table';
-import { Checkbox } from 'primeng/checkbox';
 import { Message } from 'primeng/message';
-import { ButtonComponent } from '../../../../shared/ui';
+import { ButtonModule } from 'primeng/button';
 import { RecintoResponse } from '../../data/recinto.api';
 
 interface Jrv {
@@ -31,9 +30,8 @@ interface Jrv {
     FormsModule,
     Dialog,
     TableModule,
-    Checkbox,
     Message,
-    ButtonComponent,
+    ButtonModule,
   ],
   template: `
     <p-dialog

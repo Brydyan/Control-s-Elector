@@ -19,7 +19,7 @@ import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { Message } from 'primeng/message';
-import { ButtonComponent } from '../../../../shared/ui';
+import { ButtonModule } from 'primeng/button';
 import {
   RecintoApi,
   RecintoResponse,
@@ -56,7 +56,7 @@ interface Parroquia {
     InputText,
     Select,
     Message,
-    ButtonComponent,
+    ButtonModule,
   ],
   template: `
     <p-dialog
@@ -243,7 +243,7 @@ export class RecintoFormModalComponent implements OnInit {
     this.adminApi.listarUsuarios({ page: 0, size: 1000 }).subscribe({
       next: (response) => {
         this.coordinadores =
-          response.data?.filter((u) => u.rol === 'COORDINATOR') || [];
+          response.data?.filter((u) => u.rolNombre === 'COORDINATOR') || [];
       },
       error: (err) => {
         console.error('Error loading coordinators:', err);

@@ -4,6 +4,7 @@ import ec.twintailcs.electoral.auth.application.ActivarUsuarioPorTokenUseCase;
 import ec.twintailcs.electoral.auth.security.ActivationRateLimiter;
 import ec.twintailcs.electoral.auth.web.dto.ActivarUsuarioResponse;
 import ec.twintailcs.electoral.auth.web.dto.ActivateUserRequest;
+import ec.twintailcs.electoral.common.web.ClientAddressResolver;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -11,8 +12,6 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.jboss.logging.Logger;
@@ -35,25 +34,16 @@ public class ActivacionResource {
   @Inject ActivarUsuarioPorTokenUseCase activacionUseCase;
   @Inject ActivationRateLimiter rateLimiter;
 
+  @Inject ClientAddressResolver clientAddress;
+
   /** Activa la cuenta con el token recibido y la contrasena elegida. */
   @POST
-  public Response activar(@Valid ActivateUserRequest request, @Context HttpHeaders headers) {
-    rateLimiter.registrarIntento(ipCliente(headers));
+  public Response activar(@Valid ActivateUserRequest request) {
+    // Solo con IP confiable: sobre la IP del proxy todos compartirian contador.
+    clientAddress.trustedIp().ifPresent(rateLimiter::registrarIntento);
 
     ActivarUsuarioResponse response =
         activacionUseCase.execute(request.token(), request.password(), request.passwordConfirm());
     return Response.ok(response).build();
-  }
-
-  /** Direccion del cliente, con el header del proxy como fuente principal. */
-  private String ipCliente(HttpHeaders headers) {
-    if (headers == null) {
-      return "desconocida";
-    }
-    String reenviada = headers.getHeaderString("X-Forwarded-For");
-    if (reenviada != null && !reenviada.isBlank()) {
-      return reenviada.split(",")[0].trim();
-    }
-    return "desconocida";
   }
 }

@@ -133,6 +133,12 @@
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-smallrye-health</artifactId>
 		</dependency>
+		<!-- Metricas del producto (rate limiting y, a futuro, pipeline de actas). Se publican
+		     en la interfaz de management (puerto 9000), que no sale a internet. -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+		</dependency>
 		<dependency>
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-smallrye-openapi</artifactId>

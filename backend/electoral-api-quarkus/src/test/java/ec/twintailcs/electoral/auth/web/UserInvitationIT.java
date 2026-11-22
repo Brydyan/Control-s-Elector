@@ -9,6 +9,7 @@ import ec.twintailcs.electoral.auth.domain.Rol;
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.infrastructure.email.EmailAEnviar;
 import ec.twintailcs.electoral.auth.infrastructure.email.RecordingEmailService;
+import ec.twintailcs.electoral.shared.testing.ClientIpHeaders;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -317,7 +318,7 @@ class UserInvitationIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + tokenMaster)
-            .header("X-Forwarded-For", IP_SIN_EMAIL)
+            .headers(ClientIpHeaders.from(IP_SIN_EMAIL))
             .contentType("application/json")
             .body(
                 """
@@ -359,7 +360,7 @@ class UserInvitationIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + tokenMaster)
-            .header("X-Forwarded-For", IP_CON_EMAIL)
+            .headers(ClientIpHeaders.from(IP_CON_EMAIL))
             .contentType("application/json")
             .body(
                 """
@@ -422,7 +423,7 @@ class UserInvitationIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + tokenMaster)
-            .header("X-Forwarded-For", IP_RESEND)
+            .headers(ClientIpHeaders.from(IP_RESEND))
             .contentType("application/json")
             .when()
             .post(
@@ -493,7 +494,7 @@ class UserInvitationIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + tokenMaster)
-            .header("X-Forwarded-For", IP_RESEND_ACTIVA)
+            .headers(ClientIpHeaders.from(IP_RESEND_ACTIVA))
             .contentType("application/json")
             .when()
             .post(
@@ -508,7 +509,7 @@ class UserInvitationIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + tokenMaster)
-            .header("X-Forwarded-For", IP_RESEND_INEXISTENTE)
+            .headers(ClientIpHeaders.from(IP_RESEND_INEXISTENTE))
             .contentType("application/json")
             .when()
             .post("/api/v1/users/00000000-0000-0000-0000-000000000000/resend-invitation");
@@ -542,7 +543,7 @@ class UserInvitationIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + tokenDe(observador, "OBSERVER"))
-            .header("X-Forwarded-For", IP_SIN_PERMISO)
+            .headers(ClientIpHeaders.from(IP_SIN_PERMISO))
             .contentType("application/json")
             .body(
                 """
@@ -573,7 +574,7 @@ class UserInvitationIT {
     Response segunda =
         given()
             .header("Authorization", "Bearer " + tokenMaster)
-            .header("X-Forwarded-For", IP_LIMITE)
+            .headers(ClientIpHeaders.from(IP_LIMITE))
             .contentType("application/json")
             .body(
                 """
@@ -599,7 +600,7 @@ class UserInvitationIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + tokenMaster)
-            .header("X-Forwarded-For", IP_EMAIL_INVALIDO)
+            .headers(ClientIpHeaders.from(IP_EMAIL_INVALIDO))
             .contentType("application/json")
             .body(
                 """
@@ -683,7 +684,7 @@ class UserInvitationIT {
 
     return given()
         .header("Authorization", "Bearer " + tokenMaster)
-        .header("X-Forwarded-For", ip)
+        .headers(ClientIpHeaders.from(ip))
         .header("User-Agent", "junit")
         .contentType("application/json")
         .body(

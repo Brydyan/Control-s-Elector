@@ -44,6 +44,7 @@ export const ICON_MAP: Record<string, string> = {
   'ribbon-outline': 'pi pi-bookmark',
   'flag-outline': 'pi pi-flag',
   'person-outline': 'pi pi-user',
+  'location-outline': 'pi pi-map-marker',
 
   // T-FE-19: Íconos de acciones en tabla de usuarios
   'eye-outline': 'pi pi-eye',

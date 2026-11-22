@@ -2,7 +2,6 @@ package ec.twintailcs.electoral.legal.web;
 
 import ec.twintailcs.electoral.common.web.RateLimited;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
-import ec.twintailcs.electoral.legal.application.DpoRateLimiter;
 import ec.twintailcs.electoral.legal.application.LegalService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -44,8 +43,6 @@ public class DpoResource {
 
   @Inject LegalService legalService;
 
-  @Inject DpoRateLimiter rateLimiter;
-
   @Inject ContextoSolicitud contexto;
 
   /**
@@ -54,7 +51,7 @@ public class DpoResource {
    * @param cuerpo datos del formulario
    * @param xForwardedFor IP del cliente, puesta por el proxy
    */
-  @RateLimited(limit = 1, windowSeconds = 30, identifier = "ip", endpoint = "contact-dpo")
+  @RateLimited("contact-dpo")
   @POST
   @Path("/contact-dpo")
   @Consumes(MediaType.APPLICATION_JSON)
@@ -63,7 +60,6 @@ public class DpoResource {
       @Valid ContactoDpoRequest cuerpo, @HeaderParam("X-Forwarded-For") String xForwardedFor) {
 
     String ip = contexto.ip(xForwardedFor);
-    rateLimiter.registrar(ip);
 
     legalService.registrarSolicitudDpo(
         cuerpo.name(), cuerpo.email(), cuerpo.subject(), cuerpo.message(), ip);
