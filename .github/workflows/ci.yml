@@ -288,6 +288,14 @@ jobs:
       #
       # El backend entra con el rol de APLICACION: el schema ya esta migrado y
       # el contenedor no lleva las credenciales del dueno.
+      #
+      # Los limites de rate limiting se relajan SOLO en este job. La suite de
+      # contrato es un cliente que lee mas rapido que un observador real: con los
+      # limites de produccion (60/min para /observer/jrvs) se come su propia
+      # cuota y falla con 429 sin que haya ningun defecto en la API. Los limites
+      # de produccion NO cambian (siguen en application.properties y Railway los
+      # ajusta por variable de entorno); la cobertura del 429 vive en
+      # RateLimitingIT, dentro del modulo del backend.
       - name: Run the backend
         run: |
           docker run -d --name electoral-api --network host \
@@ -309,6 +317,16 @@ jobs:
             -e AWS_S3_REGION=us-east-1 \
             -e AWS_S3_BUCKET=electoral-evidences \
             -e AWS_S3_PATH_STYLE=true \
+            -e APP_RATELIMIT_OBSERVER_JRVS_LIMIT=100000 \
+            -e APP_RATELIMIT_OBSERVER_ACTAS_LIMIT=100000 \
+            -e APP_RATELIMIT_CONFIG_READ_LIMIT=100000 \
+            -e APP_RATELIMIT_ADMIN_USUARIOS_LIMIT=100000 \
+            -e APP_RATELIMIT_USER_GLOBAL_LIMIT=1000000 \
+            -e APP_RATELIMIT_LOGIN_IP_LIMIT=100000 \
+            -e APP_RATELIMIT_LOGIN_ACCOUNT_LIMIT=100000 \
+            -e APP_RATELIMIT_LOGIN_ACCOUNT_IP_LIMIT=100000 \
+            -e APP_RATELIMIT_REAUTH_LIMIT=100000 \
+            -e APP_RATELIMIT_CONTACT_DPO_LIMIT=100000 \
             electoral-api:contract
 
       - name: Wait for the backend to be healthy

@@ -155,6 +155,11 @@ jobs:
               exit 1;
             }
 
+      # Los limites de rate limiting se relajan SOLO en este job: la suite de
+      # contrato lee mas rapido que un observador real y con los limites de
+      # produccion (60/min para /observer/jrvs) se come su propia cuota y falla
+      # con 429. Los limites de produccion no cambian; la cobertura del 429 vive
+      # en RateLimitingIT, dentro del modulo del backend.
       - name: Boot the native binary twice
         run: |
           # La primera fase migra con el DUENO de la base (el unico que puede
@@ -174,6 +179,16 @@ jobs:
               -e AWS_S3_REGION=us-east-1 \
               -e AWS_S3_BUCKET=electoral-evidences \
               -e AWS_S3_PATH_STYLE=true \
+              -e APP_RATELIMIT_OBSERVER_JRVS_LIMIT=100000 \
+              -e APP_RATELIMIT_OBSERVER_ACTAS_LIMIT=100000 \
+              -e APP_RATELIMIT_CONFIG_READ_LIMIT=100000 \
+              -e APP_RATELIMIT_ADMIN_USUARIOS_LIMIT=100000 \
+              -e APP_RATELIMIT_USER_GLOBAL_LIMIT=1000000 \
+              -e APP_RATELIMIT_LOGIN_IP_LIMIT=100000 \
+              -e APP_RATELIMIT_LOGIN_ACCOUNT_LIMIT=100000 \
+              -e APP_RATELIMIT_LOGIN_ACCOUNT_IP_LIMIT=100000 \
+              -e APP_RATELIMIT_REAUTH_LIMIT=100000 \
+              -e APP_RATELIMIT_CONTACT_DPO_LIMIT=100000 \
               "$@" electoral-api-native
           }
 
