@@ -2,7 +2,7 @@
 
 **Referencia:** T-CACHE-STRAT-01  
 **Epic:** Infra › Escalabilidad & Performance  
-**Componentes:** Frontend (Observer + Dashboard), Backend (Services + Redis), Infraestructura (Redis setup)  
+**Componentes:** Frontend (Observer + Dashboard), Backend (Services + caché en memoria), Infraestructura (métricas)  
 
 ---
 
@@ -13,13 +13,13 @@ Implementar estrategia de caching cohesiva para eliminar **requests duplicadas**
 **Hoy:**
 - Frontend: `getCandidatosPorCargo()` carga `/partidos` sin cache → 5 requests por formulario de 5 cargos
 - Frontend: Dashboard cache definido pero NO activado → `getResultados()` hace HTTP cada vez
-- Backend: NO existe Redis, NO existe `@Cacheable` → Cargos, Partidos, Candidatos se consultan siempre
+- Backend: NO existe caché de servidor → Cargos, Partidos, Candidatos se consultan siempre
 - Resultado: Latencia innecesaria + presión en BD
 
 **Después:**
 - Frontend: Partidos caché con `shareReplay(1)` → 1 request en toda la sesión
 - Frontend: Dashboard métodos usan caché definida → 0 duplicados al cambiar tabs
-- Backend: Redis con TTL + `@Cacheable` → 90% menos queries para datos estáticos
+- Backend: caché en memoria con TTL + invalidación por escritura → 90% menos queries para datos estáticos
 - Resultado: -1-2s por operación, -300 queries/min en BD
 
 **Usuarios afectados:** Observers (formularios), Dashboard users (tabs), Admin (listados), Coordinators
@@ -32,8 +32,8 @@ Implementar estrategia de caching cohesiva para eliminar **requests duplicadas**
 |----------|-------|------------|---------------------------|
 | `/partidos` sin cache | No usa `shareReplay(1)` | 5 requests × 565ms = 2.8s | Mismo (bloqueante) |
 | Dashboard cache inactiva | `getResultados()` no chequea `resultadosCache$` | 1-2s × tabs duplicados | Mismo (bloqueante) |
-| Backend sin Redis | No existe `@Cacheable` en servicios | 50 queries/min cargos | 1000 queries/min (escala) |
-| Sin TTL invalidation | Datos estáticos cached forever en Redis | N/A (nuevo) | Stale data risk |
+| Backend sin caché | No existe caché de servidor en los servicios | 50 queries/min cargos | 1000 queries/min (escala) |
+| Sin TTL invalidation | Datos estáticos cacheados sin caducidad | N/A (nuevo) | Stale data risk |
 | Sin monitoring | No hay visibilidad de cache hit ratio | N/A | Invisible if cache breaks |
 
 ---
@@ -66,30 +66,37 @@ Implementar estrategia de caching cohesiva para eliminar **requests duplicadas**
 
 ---
 
-### C. Backend: Redis Architecture
+### C. Backend: caché en memoria (Caffeine)
 
-**Archivo:** `application.properties` + servicios base
+**Archivo:** `application.properties` + casos de uso de lectura
 
-- Configurar Redis en Quarkus:
+- Configurar la caché de Quarkus (backend Caffeine, en memoria del proceso):
   ```properties
-  quarkus.redis.hosts=localhost:6379
-  quarkus.cache.type=redis
-  quarkus.cache.redis.expire-after-write=10m
+  quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
+  quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
+  quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
+  quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
   ```
-- Agregar `@Cacheable(cacheName = "cargos")` en `CargoService.findAll()`
-- Agregar `@Cacheable(cacheName = "partidos")` en `PartidoService.findAll()`
-- Agregar `@Cacheable(cacheName = "candidatos")` en `CandidatoService.findAll()`
-- Agregar `@Cacheable` en servicios de geografía (Provincias, Cantones, Parroquias)
+- Leer y guardar en la caché desde los casos de uso: `cargos`, `partidos`, `candidatos` y
+  `geografía` (un solo árbol provincia→cantón→parroquia→JRV). El acceso es explícito con
+  `CacheDeLectura`, no `@CacheResult`: la anotación no deja ver si el acierto vino de la
+  caché o de la base, y sin eso el hit ratio queda a ciegas.
+- Invalidar en cada escritura con `@CacheInvalidateAll(cacheName = …)`.
 
-**Impacto:** -90% queries para datos estáticos
+**Impacto:** -90% queries para datos estáticos (medido: -99.999% de consultas de
+configuración, hit ratio 100%)
 
 ---
 
 ### D. Infrastructure: TTL & Invalidation
 
-- TTL por default: 10 minutos (datos estáticos no cambian en sesión)
-- Invalidation manual: Endpoint `/admin/cache/clear` para limpieza forzada (admin only)
-- Monitoring: Métricas de Redis (memory, keys count, TTL)
+- TTL por default: 2 minutos, ajustable con `CACHE_TTL`. Corto a propósito: acota el
+  desfase si el backend llegara a correr en más de una réplica.
+- Invalidation manual: endpoint `/api/v1/admin/cache/clear` (rol MASTER, queda auditado).
+  Vacía la caché **del proceso que atiende la petición**.
+- Monitoring: métricas propias `cache_hits_total` / `cache_misses_total` con etiqueta
+  `replica` (Railway agrega las métricas de todas sus réplicas), más las métricas estándar
+  de Caffeine (tamaño, evictions).
 
 ---
 
@@ -131,30 +138,32 @@ Implementar estrategia de caching cohesiva para eliminar **requests duplicadas**
 - **Elegida:** B. Mejor control. Fase 2: Considerar interceptor si patrones se repiten en 50+ endpoints.
 
 **D2 — ¿Backend: Redis vs In-Memory Cache?**
-- Opción A: In-Memory con `@Cacheable` (simple, pero cada réplica = cache separada)
+- Opción A: In-Memory (Caffeine) — simple, cada réplica = caché separada
 - Opción B: Redis compartido (sincronizado entre réplicas, escalable)
-- **PENDIENTE (decisión humana).** El diseño original elegía B, pero la implementación
-  actual apunta a **Caffeine en memoria** (`quarkus-cache-caffeine`), porque `CacheDeLectura`
-  requiere Caffeine para medir el hit ratio. Con `k8s/backend.yaml` en `replicas: 2`, cada
-  réplica tendría su propia copia y el dato podría diferir entre ellas durante el TTL de 10 min.
-  El coste y el riesgo de ambas opciones están cuantificados en `apply-progress.md`
-  ("Decision D2 pendiente"). **Este documento no debe leerse como una decisión tomada:**
-  cerrarlo exige una decisión humana explícita.
+- **Decidida: A (Caffeine en memoria).** Decisión humana, con el despliegue real: backend en
+  **Railway con 1 réplica**, base en **Neon**. El problema que Redis resolvía —varias réplicas
+  con copias distintas— no está presente; y en Neon la caché en proceso es además mejor que una
+  remota, porque cada acierto evita un round-trip al PostgreSQL serverless y amortigua su
+  arranque en frío. Redis quedaría como fase 2, si el backend llegara a correr en más de una
+  réplica. Justificación completa en `documents/CACHE_SETUP_GUIDE.md` (sección 3).
 
 **D3 — ¿TTL: Fijo vs Event-driven Invalidation?**
-- Opción A: TTL fijo 10 min (simple, predecible, puede servir stale data)
+- Opción A: TTL fijo (simple, predecible, puede servir stale data)
 - Opción B: Event-driven (complicado, real-time, requiere pub/sub)
-- **Elegida:** A. Datos estáticos no cambian en sesión. Fase 2: Event-driven para mutations.
+- **Elegida:** A, con TTL de **2 minutos**. Corto a propósito: acota el desfase entre réplicas
+  si algún día las hubiera, y su coste es despreciable (un refill son 4 consultas cada 2
+  minutos). La invalidación real es por escritura (`@CacheInvalidateAll`), no por TTL.
 
 **D4 — ¿Invalidation: Automática vs Manual?**
 - Opción A: Solo TTL (sin control admin)
 - Opción B: Endpoint `/admin/cache/clear` para limpieza forzada
-- **Elegida:** B. Admin puede forzar clear si datos corruptos. TTL maneja invalidación automática.
+- **Elegida:** B. MASTER puede forzar el clear si los datos están corruptos; queda auditado.
+  Alcance: vacía la caché del proceso que atiende la petición.
 
 **D5 — ¿Monitoring: Qué métricas?**
-- Hit ratio por cacheName (cargos, partidos, candidatos, geografía)
-- Memory usage de Redis (target: <100MB)
-- Latencia pre/post cache (baseline vs optimized)
+- Hit ratio por `cacheName` (cargos, partidos, candidatos, geografía) y **por réplica**
+- Tamaño y evictions de cada caché (métricas estándar de Caffeine)
+- Latencia pre/post caché (baseline vs optimizado)
 
 ---
 

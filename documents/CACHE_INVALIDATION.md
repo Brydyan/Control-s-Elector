@@ -8,13 +8,13 @@
 | Vía | Cuándo se dispara | Alcance | Latencia para el usuario |
 |-----|-------------------|---------|--------------------------|
 | Por escritura | Crear / actualizar / eliminar un cargo, partido, candidato, provincia, cantón, parroquia o JRV | Toda la caché del backend, en esa instancia | Inmediata |
-| Por TTL | 10 minutos desde la escritura | La caché que no se volvió a escribir | Hasta 10 min |
-| Manual | Un MASTER lo pide | Todos los caches o uno | Inmediata |
+| Por TTL | 2 minutos desde la escritura | La caché que no se volvió a escribir | Hasta 2 min |
+| Manual | Un MASTER lo pide | Los cachés del proceso que atiende la petición | Inmediata |
 
 La invalidación por escritura es la que resuelve el caso normal. El TTL es la
 red de seguridad para lo que se escribió por fuera del backend (SQL manual,
 script de seed). El vaciado manual es para incidentes: "los datos están mal y
-no podemos esperar 10 minutos".
+no podemos esperar 2 minutos".
 
 ---
 
@@ -42,26 +42,33 @@ que se queden viejas: la caché entera se va.
 Cobertura: `CacheInvalidacionIT` (integración) verifica que, tras una
 escritura, la siguiente lectura vuelve a la base.
 
-> **Alcance por instancia**: con Caffeine en memoria, cada réplica del backend
-> tiene su propia caché. Un POST en la réplica A no invalida la caché de la
-> réplica B; ahí la lectura de B seguirá viendo el dato viejo hasta que pase
-> el TTL (10 min) o se vacíe la caché en B. Es el riesgo de la decisión
-> pendiente D2 (ver `CACHE_SETUP_GUIDE.md`).
+> **Alcance por instancia**: con Caffeine en memoria la caché vive en el
+> proceso, así que la invalidación es local a la instancia que atendió la
+> escritura. Hoy el backend corre en **una sola réplica** en Railway, así que no
+> hay split: la invalidación por escritura es inmediata y completa. Si algún día
+> se escala a más de una réplica, una escritura en la réplica A no invalidaría la
+> copia de la B, que seguiría viendo el dato viejo hasta que venza su TTL
+> (2 min). Ver el guardrail de réplicas en `CACHE_SETUP_GUIDE.md`.
 
 ---
 
 ## 2. TTL automático
 
 ```properties
-quarkus.cache.caffeine.cargos.expire-after-write=10m
-quarkus.cache.caffeine.partidos.expire-after-write=10m
-quarkus.cache.caffeine.candidatos.expire-after-write=10m
-quarkus.cache.caffeine.geografia.expire-after-write=10m
+quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
 ```
 
-`expire-after-write`: la entrada se va 10 minutos después de escribirse, no
+`expire-after-write`: la entrada se va 2 minutos después de escribirse, no
 después de leerse. Un caché que se lee mucho y se escribe poco se queda
-viejo 10 minutos como máximo.
+viejo 2 minutos como máximo.
+
+El TTL es corto a propósito: acota el desfase entre réplicas si el backend
+llegara a correr en más de una. Cuesta casi nada —un refill son 4 consultas
+cada 2 minutos— y `CACHE_TTL` lo ajusta por entorno sin tocar el código. Lo
+sostiene `CacheTTLIT`, que comprueba que la entrada **realmente** caduca.
 
 ---
 
@@ -115,6 +122,13 @@ Respuesta 200:
   "clearedCaches": ["candidatos", "cargos", "geografia", "partidos"]
 }
 ```
+
+> **Alcance: el proceso que atiende la petición.** Con Caffeine en memoria, el
+> vaciado manual borra la caché del proceso que recibe el request. Con una sola
+> réplica (lo actual) eso es toda la caché. Con varias réplicas sería solo una
+> de ellas: las demás seguirían con su copia hasta que venza el TTL. Vaciar
+> "todas" de golpe requiere una caché compartida (Redis), que no es el destino
+> actual.
 
 Si el caché pedido no existe, responde **404**:
 

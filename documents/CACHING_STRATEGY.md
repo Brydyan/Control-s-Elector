@@ -14,7 +14,7 @@ de registries pasan por la caché.
 |------|------|-----------|-----|
 | Frontend | partidos (formulario del observador) | RxJS `shareReplay(1)` | sesión |
 | Frontend | resumen, resultados, progreso, novedades (dashboard) | RxJS `shareReplay(1)` | sesión |
-| Backend | `cargos`, `partidos`, `candidatos`, `geografia` | Quarkus Cache (Caffeine) | 10 min |
+| Backend | `cargos`, `partidos`, `candidatos`, `geografia` | Quarkus Cache (Caffeine) | 2 min |
 
 Efecto medido en los tests:
 
@@ -107,10 +107,10 @@ no tiene inyectada su implementación
 
 | Caso de uso | Caché | Clave | TTL |
 |-------------|-------|-------|-----|
-| `ListarCargosUseCase` | `cargos` | `todos` | 10 min |
-| `ListarPartidosUseCase` | `partidos` | `todos` | 10 min |
-| `ListarCandidatosUseCase` | `candidatos` | `cargo:<cargoId>\|partido:<partidoId>` | 10 min |
-| `ListarGeografiaUseCase` | `geografia` | `todos` | 10 min |
+| `ListarCargosUseCase` | `cargos` | `todos` | 2 min |
+| `ListarPartidosUseCase` | `partidos` | `todos` | 2 min |
+| `ListarCandidatosUseCase` | `candidatos` | `cargo:<cargoId>\|partido:<partidoId>` | 2 min |
+| `ListarGeografiaUseCase` | `geografia` | `todos` | 2 min |
 
 La clave de `candidatos` lleva los filtros: el listado sin filtros y el de un
 cargo son datos distintos y no pueden compartir entrada.
@@ -138,10 +138,10 @@ Sin esa captura, con `quarkus.cache.enabled=false` (Quarkus entrega un
 `NoOpCache`) o con un backend que no sea Caffeine, **cada lectura de
 configuración devolvía 500**. Está sujetado por `CacheApagadaIT`.
 
-Consecuencia para D2: cambiar a Redis exige **reescribir `CacheDeLectura`**
-para hablar la API de Redis; con el helper actual, Redis degrada a "sin
-caché" (hit ratio 0 %), no a "caché rota". Ver la decisión pendiente D2 en
-`CACHE_SETUP_GUIDE.md`.
+D2 quedó decidida como **Caffeine en memoria** (el backend corre en una sola
+réplica en Railway; ver `CACHE_SETUP_GUIDE.md`). Si algún día se migra a Redis,
+habrá que **reescribir `CacheDeLectura`** para hablar la API de Redis; con el
+helper actual, Redis degrada a "sin caché" (hit ratio 0 %), no a "caché rota".
 
 ---
 
@@ -151,7 +151,7 @@ caché" (hit ratio 0 %), no a "caché rota". Ver la decisión pendiente D2 en
   candidatos, provincia, cantón, parroquia, JRV: crear, actualizar, eliminar)
   llevan `@CacheInvalidateAll`, así que cualquier cambio entra en caché
   deja la caché inválida en esa misma instancia.
-- **Por TTL**: 10 minutos, como red de seguridad.
+- **Por TTL**: 2 minutos, como red de seguridad.
 - **Manual**: `GET /api/v1/admin/cache/clear` (solo MASTER, queda auditado).
   Detalle en `CACHE_INVALIDATION.md`.
 
@@ -207,6 +207,7 @@ suscriptores significa que funciona.
 |---------|-------|----------|
 | Datos viejos en el frontend | caché de sesión sin invalidar | `invalidateCache()` o recargar |
 | Un observador ve datos viejos y otro no | TTL sin invalidación por escritura | comprobar `@CacheInvalidateAll` en el caso de uso |
+| Una réplica quedó desfasada respecto de las otras | backend con más de una réplica | ver la etiqueta `replica` en `/q/metrics` y el guardrail de réplicas |
 | La base sigue recibiendo consultas | clave distinta entre llamadas | revisar la clave usada en `CacheDeLectura.leer` |
 | Hit ratio 0 % en las métricas | caché no configurada o backend que no es Caffeine | ver `CACHE_SETUP_GUIDE.md` |
 | El endpoint de vaciado responde 200 pero no vacía | `invalidateAll()` sin `await` (bug ya corregido) | `cache.invalidateAll().await().indefinitely()` |

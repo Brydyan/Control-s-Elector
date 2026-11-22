@@ -4,7 +4,7 @@
 **Implementado por:** Builder (`/02-builder-sdd`) + rework de verificación (`/03-verify-sdd`)
 **Última actualización:** 2026-11-21
 
-## Estado: PARCIAL — implementacion completa y medida (backend, frontend, tests, metricas, E2E, k6 ejecutado, docs); falta la decision D2 y las alertas de memoria de la cache
+## Estado: COMPLETA — implementacion completa y medida (backend, frontend, tests, metricas, E2E, k6 ejecutado, docs). D2 decidida (Caffeine en memoria). Queda pendiente el E2E en CI y el N.9 de otro SDD
 
 ---
 
@@ -16,8 +16,8 @@
 | A.2 Test de cache de partidos | ✅ | `observer.api.spec.ts` — la mutacion (quitar `shareReplay`) cae el test |
 | B.1 Cache del dashboard (4 metodos) | ✅ | `dashboard.api.ts`: `resumen$`, `resultados$`, `progreso$`, `novedades$` |
 | B.2 Test de cache del dashboard | ✅ | `dashboard.api.spec.ts` — 4 metodos, mutacion verificada |
-| C.1 Configuracion de cache | ⚠️ | Caffeine en memoria, no Redis (ver "Decision D2 pendiente") |
-| D.1/D.2 Lectura cacheada | ✅ | 4 caches: `cargos`, `partidos`, `candidatos`, `geografia` (TTL 10m). Acceso explicito con `CacheDeLectura` (no `@CacheResult`: sin el, el hit ratio no se puede medir) |
+| C.1 Configuracion de cache | ✅ | Caffeine en memoria, TTL 2 min parametrizado con `CACHE_TTL` (D2 decidida: ver "Decision D2: tomada") |
+| D.1/D.2 Lectura cacheada | ✅ | 4 caches: `cargos`, `partidos`, `candidatos`, `geografia` (TTL 2m). Acceso explicito con `CacheDeLectura` (no `@CacheResult`: sin el, el hit ratio no se puede medir) |
 | D.3 Invalidacion en escritura | ✅ | `@CacheInvalidateAll` en los 21 casos de uso de escritura |
 | D.4 Test de invalidacion | ✅ | `CacheInvalidacionIT` — mutacion verificada (sin invalidar, el test cae) |
 | E.1 Endpoint de vaciado | ✅ | `AdminCacheResource` — exige MASTER, deja rastro en `audit_log` |
@@ -25,8 +25,9 @@
 | F.1/F.2 Tests unitarios | ✅ | frontend (`observer.api.spec.ts`, `dashboard.api.spec.ts`) y backend (`CacheServicioIT`, `CacheContenidoIT`, 4 caches) |
 | F.3/F.4 E2E | ✅ | `e2e/cache-datos-estaticos.spec.ts` — 2 tests, mutacion verificada |
 | F.5 Load test | ✅ | `frontend/tests/load/scenarios/cache-hit-ratio.js` — **ejecutado**: 100 VUs, p95 0.97 ms, hit ratio 100 %, 4 consultas de configuración a la base (ver "Resultado del load test") |
-| F.6 Monitoring | ✅ | micrometer + prometheus: `cache_hits_total` / `cache_misses_total` (`CacheMetricasIT`) |
+| F.6 Monitoring | ✅ | micrometer + prometheus: `cache_hits_total` / `cache_misses_total` (`CacheMetricasIT`), etiquetados por `replica` (`RAILWAY_REPLICA_ID`) + metricas estandar de Caffeine (tamaño, evictions) |
 | G Documentacion | ✅ | `CACHING_STRATEGY.md`, `CACHE_INVALIDATION.md`, `CACHE_SETUP_GUIDE.md` (duplicado de `docs/` borrado) |
+| H TTL y deteccion de split | ✅ | `CacheTTLIT` (el TTL se respeta de verdad) + `replica.id` en las metricas (`CacheMetricasIT`) |
 
 ---
 
@@ -48,6 +49,11 @@
 | `b6835f5` | Referencias `T-FE-15` → `T-CACHE-STRAT-01` en el codigo de este SDD |
 | `4ba1ed6` | Invalidacion del frontend cableada + `CacheContenidoIT` + correcciones de doc |
 | (verif. v4) | `Cache.as()` lanza `IllegalStateException`: con la cache apagada el backend devolvia 500 |
+| `a5a38a9` | Perder la cache es una degradacion, no un 500 (`CacheApagadaIT`, 5 tests) |
+| `c36b800` | Load test ejecutado contra el backend real + E2E contra la API real |
+| `b005300` | E2E robusto con backend frio + cifras de load test reproducibles |
+| `bce9054` | `design.md`/`proposal.md` dejan de afirmar una decision no tomada |
+| `ed65253` | D2 cerrada: TTL de 2 min parametrizado + metricas etiquetadas por replica |
 
 ---
 
@@ -63,7 +69,7 @@ Tres defectos que la verificacion encontro y que este bloque cierra:
    podia vaciar todas las caches. Ahora exige `cache:clear` o el rol `MASTER`, con el patron del
    repo (`Autorizador.exigir`), y deja rastro en `audit_log`.
 3. **La cache servia dato viejo.** Las escrituras no invalidaban: un cargo nuevo no aparecia en
-   el listado hasta que expiraba el TTL (10 min). Ahora cada escritura invalida su cache, y
+   el listado hasta que expiraba el TTL. Ahora cada escritura invalida su cache, y
    `CacheInvalidacionIT` lo comprueba leyendo, escribiendo y volviendo a leer.
 
 Ademas: el CI del frontend estaba en rojo por el `done()` deprecado de vitest 5 (6 errores no
@@ -75,35 +81,54 @@ manejados). Resuelto con promesas y `firstValueFrom`; la suite completa sale con
 
 | Desviacion | Diseno | Implementacion | Por que |
 |---|---|---|---|
-| **C.2** — numero de cachés | 6 cachés (`provincias`, `cantones`, `parroquias` a TTL 1h, aparte de cargos/partidos/candidatos) | **4 cachés**: `cargos`, `partidos`, `candidatos` y `geografia` (TTL 10m) | La geografia se sirve como **un arbol** provincia → canton → parroquia → JRV en una sola consulta (`ListarGeografiaUseCase`); cachear tres listas por separado obligaria a recomponer el arbol en cada lectura y a tres TTL que pueden desincronizarse. El TTL unico de 10m tambien cierra el hueco de la invalidacion cruzada entre réplicas (D2). |
+| **C.2** — numero de cachés | 6 cachés (`provincias`, `cantones`, `parroquias` a TTL 1h, aparte de cargos/partidos/candidatos) | **4 cachés**: `cargos`, `partidos`, `candidatos` y `geografia` (TTL 2m) | La geografia se sirve como **un arbol** provincia → canton → parroquia → JRV en una sola consulta (`ListarGeografiaUseCase`); cachear tres listas por separado obligaria a recomponer el arbol en cada lectura y a tres TTL que pueden desincronizarse. |
 | **D.1/D.2** — mecanismo de lectura | `@CacheResult` | Acceso explicito con `CacheDeLectura` | `@CacheResult` no deja ver si el acierto vino de la cache o de la base: el hit ratio (la metrica que dice si la cache esta sirviendo) quedaria a ciegas. |
 | **E.1** — rol del vaciado | `@RolesAllowed({"ADMIN"})` | `Autorizador.exigir("cache:clear", "MASTER")` | `@RolesAllowed` no se usa en ninguna parte del backend; ADMIN no escribe en este dominio y vaciar la cache es una escritura sobre el estado operativo. |
 
 ---
 
-## Decision D2 pendiente (decision humana)
+## Decision D2: tomada (decision humana)
 
-El diseno eligio **Redis** (D2, para que las 3+ replicas compartan cache). La implementacion
-apunto a **Caffeine en memoria**: `k8s/backend.yaml` tiene `replicas: 2`, asi que cada replica
-tendria su propia copia y el dato podria diferir entre ellas durante el TTL.
+**Caffeine en memoria, TTL de 2 minutos.** El despliegue real es backend en **Railway con 1
+replica**, base en **Neon** (PostgreSQL serverless) y frontend en Cloudflare Pages.
 
-Estado: el codigo usa Caffeine y `CACHING_STRATEGY.md` lo documenta como "Redis en fase 2".
-**Falta** que una persona decida y que `design.md`/`proposal.md` se actualicen para que no
-contradigan al codigo.
+Por que no Redis:
+
+- El problema que Redis resolvia —varias replicas con copias distintas— **no existe**: Railway
+  corre 1 replica. Redis anadiria un servicio, un coste y un modo de falla a cambio de nada.
+- En Neon, una cache en proceso es **mejor** que una remota: cada acierto evita un round-trip
+  al PostgreSQL serverless y amortigua su arranque en frio. Redis solo cambiaria un salto de
+  red (Neon) por otro (Redis).
+- La mitad del frontend (Cloudflare Pages, `shareReplay(1)` en el navegador) es immune a este
+  problema: la cache del navegador es por sesion.
+
+Como queda acotado el riesgo si algun dia hubiera mas de una replica:
+
+- TTL de **2 min** (parametrizado con `CACHE_TTL`): el peor desfase entre replicas es el TTL.
+- Las metricas de cache van etiquetadas con `replica` (`RAILWAY_REPLICA_ID`): Railway **agrega**
+  las metricas de todas sus replicas, asi que sin la etiqueta no se veria si una quedo
+  desfasada respecto de las otras. Con la etiqueta, se ve.
+- El vaciado manual (`/api/v1/admin/cache/clear`) es **best-effort por replica**: vacia la del
+  proceso que atiende la peticion.
+
+Redis queda como **fase 2**, condicionado a que el backend corra en mas de una replica.
+Justificacion completa en `documents/CACHE_SETUP_GUIDE.md` (seccion 3).
 
 ---
 
 ## Pendientes
 
-- [ ] **D2 (decision humana)**: Redis compartido vs Caffeine en memoria. Sin esto, el codigo y el
-      `design.md` se contradicen, y con 2 replicas la cache se parte.
-- [ ] Marcar en `design.md` D2 y en `proposal.md` Scope C la decision como PENDIENTE (hoy dicen
-      "Elegida: B. Redis"), para que el documento de diseno no afirme una decision que nadie ha
-      tomado.
+- [x] **D2 (decision humana)**: Caffeine en memoria con TTL de 2 min. `design.md` y `proposal.md`
+      ya la declaran como tomada, con la justificacion y las condiciones de revisitarla.
+- [x] Acompanada de lo que la hace segura: TTL parametrizable (`CACHE_TTL`), metricas de cache
+      etiquetadas por replica (`RAILWAY_REPLICA_ID`) y guardrail de replicas documentado.
 - [x] **F.5 (ejecucion)**: corrida con 100 VUs contra el backend real. p95 0.97 ms, hit ratio
       100 %, 4 consultas de configuracion a la base frente a 374.240 sin cache (−99.999 %).
       Reportes en `documents/load-test/`.
-- [ ] Alertas de memoria de la cache (parte de F.6 que no depende de D2).
+- [x] Alertas de memoria de la cache: con Caffeine el limite es el heap del contenedor de
+      Railway, no la memoria de Redis. Las metricas estandar de Caffeine quedan habilitadas
+      (`metrics-enabled=true`): `cache_size` y `cache_evictions_total` por cache dan el tamano
+      para alertar.
 - [x] Corregir referencias `T-FE-15` → `T-CACHE-STRAT-01` en el codigo de este SDD (endpoint,
       tests de cache, `observer.api.ts`, `dashboard.api.ts`, `application.properties`). Las
       referencias de `dashboard.model.ts` y de las paginas de resultados/progreso se dejan: esas

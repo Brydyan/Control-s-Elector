@@ -8,7 +8,7 @@
 |----------|-------------------|----------------|
 | Local / dev | Caffeine (en memoria) | Nada: no hay servicio que instalar |
 | Tests | Caffeine (en memoria) | Nada |
-| Producción (k8s) | Caffeine (en memoria), **2 réplicas** | Nada, pero ver el riesgo en "Decisión pendiente D2" |
+| Producción (Railway) | Caffeine (en memoria), **1 réplica** | Nada: ver el guardrail de réplicas de la sección 2 |
 
 La caché actual **no necesita Redis ni ningún servicio externo**: Caffeine vive
 dentro de la JVM. Lo que sí necesita es el registro de métricas (Micrometer),
@@ -20,10 +20,21 @@ que ya está en el `pom.xml` y se publica en `/q/metrics`.
 
 ```properties
 # Caché de datos estáticos (T-CACHE-STRAT-01 D)
-quarkus.cache.caffeine.cargos.expire-after-write=10m
-quarkus.cache.caffeine.partidos.expire-after-write=10m
-quarkus.cache.caffeine.candidatos.expire-after-write=10m
-quarkus.cache.caffeine.geografia.expire-after-write=10m
+# TTL corto a propósito: acota el desfase si el backend llegara a correr en más
+# de una réplica. CACHE_TTL lo ajusta por entorno sin tocar el código.
+quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
+
+# Métricas estándar de Caffeine por caché (entradas, evictions, acierto/fallo)
+quarkus.cache.caffeine.cargos.metrics-enabled=true
+quarkus.cache.caffeine.partidos.metrics-enabled=true
+quarkus.cache.caffeine.candidatos.metrics-enabled=true
+quarkus.cache.caffeine.geografia.metrics-enabled=true
+
+# Identificador de la réplica (Railway inyecta RAILWAY_REPLICA_ID por réplica)
+replica.id=${RAILWAY_REPLICA_ID:local}
 
 # Métricas (T-CACHE-STRAT-01 D.5)
 quarkus.micrometer.enabled=${QUARKUS_MICROMETER_ENABLED:true}
@@ -31,8 +42,9 @@ quarkus.micrometer.export.prometheus.enabled=${QUARKUS_MICROMETER_PROMETHEUS_ENA
 quarkus.micrometer.binder.http-server.enabled=true
 ```
 
-Todas las claves admiten variable de entorno con prefijo `QUARKUS_`, así que en
-k8s se pueden apagar sin tocar la imagen.
+Todas las claves admiten variable de entorno, así que en Railway se pueden
+ajustar sin tocar la imagen: `CACHE_TTL` para el TTL y `RAILWAY_REPLICA_ID` la
+pone la propia plataforma.
 
 ### Desactivar la caché (para medir el "antes")
 
@@ -41,16 +53,12 @@ Hay dos formas, y la diferencia importa:
 ```bash
 # A) Apagar la extensión de caché completa.
 #    OJO: `quarkus.cache.enabled` se fija en tiempo de BUILD en Quarkus:
-#    poner QUARKUS_CACHE_ENABLED=false en un pod ya construido NO la apaga;
-#    hay que reconstruir la imagen.
+#    poner QUARKUS_CACHE_ENABLED=false en un despliegue ya construido NO la
+#    apaga; hay que reconstruir la imagen.
 QUARKUS_CACHE_ENABLED=false ./mvnw quarkus:dev
 
 # B) Bajar el TTL a 1s en las cuatro cachés (no reconstruye nada).
-QUARKUS_CACHE_CAFFEINE_CARGOS_EXPIRE_AFTER_WRITE=1s \
-QUARKUS_CACHE_CAFFEINE_PARTIDOS_EXPIRE_AFTER_WRITE=1s \
-QUARKUS_CACHE_CAFFEINE_CANDIDATOS_EXPIRE_AFTER_WRITE=1s \
-QUARKUS_CACHE_CAFFEINE_GEOGRAFIA_EXPIRE_AFTER_WRITE=1s \
-  ./mvnw quarkus:dev
+CACHE_TTL=1s ./mvnw quarkus:dev
 ```
 
 Para una línea base honesta lo más simple es arrancar el backend con la caché
@@ -72,80 +80,100 @@ curl -s http://localhost:8080/q/metrics | grep '^cache_'
 Salida esperada tras un par de lecturas:
 
 ```
-cache_hits_total{cache="cargos"} 12
-cache_misses_total{cache="cargos"} 1
+cache_hits_total{cache="cargos",replica="local"} 12
+cache_misses_total{cache="cargos",replica="local"} 1
 ```
+
+La etiqueta `replica` no es adorno: Railway **agrega** las métricas de todas sus
+réplicas en un solo tablero, así que sin ella no se puede distinguir "el hit
+ratio bajó" de "una réplica quedó desfasada respecto de las otras".
 
 Si `cache_hits_total` no aparece, la caché no está sirviendo: mira los logs
 de arranque (`Cache 'cargos' initialized`) y que el TTL esté configurado.
 
 ---
 
-## 2. Despliegue en Kubernetes
+## 2. Despliegue en Railway: el guardrail de las réplicas
 
-`k8s/backend.yaml` corre **2 réplicas** del backend. Con Caffeine en memoria
-cada réplica tiene su propia caché:
+El backend corre en **Railway con 1 réplica**. Con Caffeine en memoria la
+caché vive en el proceso, así que el número de réplicas decide si el dato
+puede quedar desfasado:
 
-- Una lectura que llega a la réplica A no llena la caché de la réplica B.
-- Una escritura en A invalida la caché de A, no la de B: la réplica B puede
-  servir datos viejos hasta 10 minutos (el TTL).
+- **Con 1 réplica** (lo actual): no hay split. La invalidación es local e
+  instantánea, y el TTL de 2 min es solo la red de seguridad para lo que se
+  escribiera por un camino que no pasa por los casos de uso.
+- **Con 2 o más réplicas**: Railway reparte el tráfico **al azar** y **no hay
+  sticky sessions**. Una escritura en la réplica A no invalida la copia de la
+  réplica B, así que B puede servir datos viejos hasta que venza su TTL (2 min).
+  El tráfico tampoco se queda en la réplica que invalidó: el siguiente request
+  puede caer en la otra.
 
-Por eso, si se decide ir a Redis (D2), hay que añadir el servicio y las
-variables de entorno correspondientes al manifiesto, y ArgoCD se encarga del
-rollout. Ningún secreto se versiona: las credenciales van en `k8s/secret.yaml`
-(Secret de Kubernetes), nunca en el manifiesto.
+**Guardrail: antes de escalar el backend a más de una réplica, hay que volver
+a mirar D2.** Con el TTL de 2 min el desfase está acotado y es aceptable para
+datos de configuración electoral; si además hace falta invalidación
+instantánea entre réplicas, la respuesta es una caché compartida (Redis), que
+es un cambio de producto con su propio coste, no un ajuste de configuración.
+
+Cómo saber si hay más de una réplica sin mirar el panel de Railway: las
+métricas van etiquetadas por réplica. Si `/q/metrics` muestra más de un valor
+de `replica=`, hay más de una réplica en servicio.
+
+### El vaciado manual de caché es best-effort por réplica
+
+`GET /api/v1/admin/cache/clear` (rol MASTER) vacía la caché **del proceso que
+atiende la petición**. Con una sola réplica, vacía todo. Con varias, vacía
+una: la otra sigue con su copia hasta que venza el TTL. No hay forma de vaciar
+todas sin una caché compartida.
 
 ---
 
-## 3. Decisión pendiente D2: Caffeine compartido o Redis
+## 3. Decisión D2: Caffeine en memoria (tomada)
 
-**Estado: sin decidir. Requiere decisión humana explícita** (no es un detalle
-de implementación: cambia el modelo de despliegue y el coste).
+**Estado: decidida.** El diseño original (`proposal.md`, `design.md`) elegía
+Redis; la decisión se cerró con el despliegue real en Railway y Neon.
 
-### Opción A — Redis compartido
+**Decisión: Opción A — Caffeine en memoria, TTL de 2 minutos.**
 
-- Una sola caché para todas las réplicas: sin divergencia de datos, invalidación
-  efectiva al instante en todas las réplicas.
-- Coste: un servicio más en el cluster, secret, backup y monitoreo.
-- **Trabajo de código obligatorio**: `CacheDeLectura` usa
-  `cache.as(CaffeineCache.class)` porque la API pública de Quarkus solo
-  expone `get(key, loader)` e `invalidate*` (no hay `put` ni `getIfPresent`).
-  `Cache.as(Class)` lanza `IllegalStateException` si el caché no es del tipo
-  pedido; el helper captura ese tipo y **degrada a "sin caché"** (se sirve
-  desde la base, hit ratio 0 %), de modo que Redis no tiraría la aplicación
-  — pero tampoco cachearía. Para cachear de verdad hay que reescribir
-  `CacheDeLectura` para hablar la API de Redis.
+Por qué, en el stack real:
+
+- **El problema que Redis resolvía no existe.** Redis se eligió para que varias
+  réplicas compartieran caché. Railway corre **1 réplica**, y sin sticky
+  sessions el reparto aleatorio es lo que hace aparecer el split.
+- **En Neon, una caché en proceso es mejor que una remota.** Neon es
+  PostgreSQL serverless: cada acierto de caché es un round-trip a la red
+  (y un posible arranque en frío del compute). Caffeine responde desde el heap;
+  Redis solo cambiaría un salto de red (Neon) por otro (Redis). La caché en
+  proceso además **amortigua el arranque en frío de Neon**, cosa que Redis no
+  hace.
+- **Redis sería un servicio nuevo**: coste, un modo de falla más y un
+  despliegue más, para un problema que no está presente.
+- **Lo que Redis sí daría** —invalidación instantánea entre réplicas— solo
+  importa si se escala a más de una réplica, y el TTL de 2 min acota el daño
+  mientras tanto.
+
+Qué quedaría para migrar a Redis, si algún día hace falta:
+
+- `CacheDeLectura` usa `cache.as(CaffeineCache.class)` porque la API pública
+  de Quarkus solo expone `get(key, loader)` e `invalidate*` (no hay `put` ni
+  `getIfPresent`). `Cache.as(Class)` lanza `IllegalStateException` si el caché
+  no es del tipo pedido; el helper captura ese tipo y **degrada a "sin caché"**
+  (se sirve desde la base, hit ratio 0 %), de modo que Redis no tiraría la
+  aplicación — pero tampoco cachearía. Para cachear de verdad hay que
+  reescribir `CacheDeLectura` para hablar la API de Redis.
 - Nota: `@CacheResult` (la opción que sí es agnóstica del backend) no sirve
   aquí, porque no permite medir el hit ratio.
 
-### Opción B — Caffeine en memoria con el riesgo documentado
-
-- Cero infraestructura nueva, cero coste.
-- Cada réplica cachea por su cuenta: hasta 10 minutos de datos viejos tras una
-  escritura, y hasta un 100 % de acierto en la réplica que más recibe tráfico.
-- Mitigación posible: bajar el TTL (por ejemplo, 60 s) a cambio de más
-  consultas a la base.
-
-### Qué hace falta para decidir
-
-- ¿Cuántas réplicas y qué carga espera en el pico?
-- ¿El proceso electoral admite datos de configuración viejos por hasta 10
-  minutos tras un cambio (por ejemplo, un partido nuevo que no aparece en el
-  formulario del observador)?- ¿Hay presupuesto para un Redis gestionado?
-
-**Recomendación del equipo técnico**: con 2 réplicas y una jornada electoral
-donde los cambios de configuración son raros, Redis compartido es lo más
-simple de razonar (una sola verdad), pero no se aplica sin la decisión
-explícita de la persona responsable.
-
 ---
 
-## 4. Alternativa temporal: caché compartida en el frontend
+## 4. La caché del frontend cubre el desfase
 
-Mientras D2 no esté decidida, el frontend ya cachea los partidos por sesión
-(`shareReplay(1)`), así que el efecto de la caché es visible para el usuario
-aunque la réplica del backend sirva datos viejos: el navegador no vuelve a
-pedirlos hasta que recargue la página.
+El frontend ya cachea los partidos por sesión (`shareReplay(1)`), así que el
+efecto de la caché es visible para el usuario aunque el backend sirva datos
+viejos: el navegador no vuelve a pedirlos hasta que recargue la página.
+
+Ojo: esto **no** protege al observador que acaba de recargar la página en el
+momento exacto en que el backend sirve una copia desfasada. Acota el problema,
+no lo elimina.
 
 ---
 

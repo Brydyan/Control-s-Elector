@@ -127,105 +127,85 @@ DESPUÉS:
 
 ---
 
-## C. Backend Caching: Redis Architecture
+## C. Backend Caching: Caffeine en memoria
 
-> **⚠️ Sección C describe la opción NO implementada.** La implementación real usa
-> **Caffeine en memoria** (`quarkus-cache-caffeine`), no Redis. Lo que sigue queda como
-> referencia del diseño original y **no describe el código vigente**. La decisión
-> Redis-vs-Caffeine (D2) está **PENDIENTE de decisión humana**: ver
-> "Decision D2 pendiente" en `apply-progress.md`. La sección C.3 (impacto en consultas)
-> sí se midió con la implementación real, pero con la métrica reproducible de
-> "consultas de configuración" (ver `documents/load-test/`).
+> **Decisión D2 (tomada): Caffeine en memoria, no Redis.** El diseño original elegía Redis
+> para que varias réplicas compartieran caché. Con el despliegue real —backend en **Railway
+> con 1 réplica**, base en **Neon**— el problema que Redis resolvía no existe, y Redis
+> añadiría un servicio, un coste y un modo de falla. Justificación completa en
+> `documents/CACHE_SETUP_GUIDE.md` (sección 3) y en `apply-progress.md`.
+>
+> Redis queda como **fase 2**, condicionado a que el backend corra en más de una réplica.
 
 ### C.1 Configuration
 
 **Archivo:** `/backend/electoral-api-quarkus/src/main/resources/application.properties`
 
 ```properties
-# Redis Caching Setup
-quarkus.redis.hosts=localhost:6379
-quarkus.cache.type=redis
-quarkus.cache.redis.expire-after-write=10m
+# Caché de datos estáticos: Caffeine (en memoria del proceso).
+# TTL corto a propósito: acota el desfase si algún día hubiera más de una réplica.
+quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
 
-# Optional: Redis cluster (production)
-# quarkus.redis.cluster-hosts=redis-node1:6379,redis-node2:6379,redis-node3:6379
+# Métricas estándar de Caffeine por caché (entradas, evictions, acierto/fallo)
+quarkus.cache.caffeine.cargos.metrics-enabled=true
+quarkus.cache.caffeine.partidos.metrics-enabled=true
+quarkus.cache.caffeine.candidatos.metrics-enabled=true
+quarkus.cache.caffeine.geografia.metrics-enabled=true
 
-# Optional: Redis sentinel (HA)
-# quarkus.redis.sentinel-master-name=mymaster
+# Identificador de la réplica (Railway inyecta RAILWAY_REPLICA_ID por réplica)
+replica.id=${RAILWAY_REPLICA_ID:local}
 ```
+
+`CACHE_TTL` ajusta el TTL por entorno sin tocar el código. `quarkus.cache.enabled` apaga la
+extensión completa (se fija en tiempo de build).
 
 ### C.2 Service-level Caching
 
-**Archivo:** `/backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/configuracion/application/CargoService.java`
+La lectura cacheada no usa `@CacheResult` sino un acceso explícito con
+`CacheDeLectura` (`shared/cache/CacheDeLectura.java`): la anotación de Quarkus no deja ver
+si el acierto vino de la caché o de la base, y sin esa visibility el hit ratio —la métrica
+que dice si la caché está sirviendo— queda a ciegas.
 
 ```java
-@ApplicationScoped
-public class CargoService {
-  
-  @Inject
-  CargoRepository repository;
-  
-  // Cache para findAll: 10 minutos (datos estáticos)
-  @Cacheable(cacheName = "cargos")
-  public List<CargoDto> findAll() {
-    return repository.findAll()
-        .stream()
-        .map(this::toDto)
-        .collect(toList());
-  }
-  
-  // NO cachear: findById (puede cambiar)
-  public CargoDto findById(Long id) {
-    return repository.findById(id)
-        .map(this::toDto)
-        .orElseThrow(() -> new NotFoundException("Cargo not found"));
-  }
+// Patrón real (casos de uso ListarCargosUseCase, ListarPartidosUseCase,
+// ListarCandidatosUseCase y ListarGeografiaUseCase):
+Optional<CargoDto> enCache = cache.leer("cargos", "todos");
+if (enCache.isPresent()) {
+  return enCache.get();
 }
+List<CargoDto> cargos = repository.listAll().stream().map(this::toDto).toList();
+cache.guardar("cargos", "todos", cargos);
+return cargos;
 ```
 
-**Archivos a modificar (mismo patrón):**
+**Cachés, claves y TTL:**
 
-| Clase | Método | Cache Name | TTL | Razón |
-|-------|--------|-----------|-----|-------|
-| `CargoService` | `findAll()` | `cargos` | 10m | Estático, cambia raro |
-| `PartidoService` | `findAll()` | `partidos` | 10m | Estático, nunca cambia |
-| `CandidatoService` | `findAll()`, `findByCargoId(id)` | `candidatos` | 10m | Estático por ciclo electoral |
-| `ProvinciaService` | `findAll()` | `provincias` | 1h | Estático, geográfico |
-| `CantonService` | `findAll()`, `findByProvinciaId(id)` | `cantones` | 1h | Estático, geográfico |
-| `ParroquiaService` | `findAll()`, `findByCantonId(id)` | `parroquias` | 1h | Estático, geográfico |
+| Caso de uso | Caché | Clave | TTL | Razón |
+|-------------|-------|-------|-----|-------|
+| `ListarCargosUseCase` | `cargos` | `todos` | 2 min | Configuración, cambia en Setup |
+| `ListarPartidosUseCase` | `partidos` | `todos` | 2 min | Configuración, cambia en Setup |
+| `ListarCandidatosUseCase` | `candidatos` | `cargo:<cargoId>\|partido:<partidoId>` | 2 min | Configuración, cambia en Setup |
+| `ListarGeografiaUseCase` | `geografia` | `todos` | 2 min | Un solo árbol provincia→canton→parroquia→JRV |
+
+**No se cachea** nada del pipeline de actas: cambia en vivo y no es un dato estático.
 
 ### C.3 Query Impact
 
-**Before Redis:**
-```
-Observer form load (5 cargos):
-  GET /cargos?jrvId=1 → CargoService.findByJrv() → Repository query
-  GET /candidatos → CandidatoService.findAll() → Repository query × 5
-  GET /partidos → PartidoService.findAll() → Repository query × 5
-  Total: 11 BD queries
+Lo que sigue son las **cifras medidas** contra el backend real (Postgres 16 con el rol
+`electoral_app` sin BYPASSRLS, 100 VUs). La métrica comparable es el **desglose de consultas
+de configuración**, no el total absoluto de consultas al servidor: el total depende del ruido
+de arranque (login, auditoría, metadatos) y no se puede comparar entre corridas.
 
-Backend under 100 users load:
-  Cada usuario hace 2-3 formularios
-  100 × 3 × 11 = 3,300 queries/min
-```
+| | Sin caché | Con caché |
+|---|---|---|
+| Hit ratio | 0 % | **100 %** |
+| p95 | 3.70 ms | **0.97 ms** |
+| Consultas de configuración a la base | 374.240 | **4** (el llenado inicial) |
 
-**After Redis (hit ratio > 90%):**
-```
-Observer form load (5 cargos):
-  GET /cargos?jrvId=1 → Cache miss (1st time) → 1 BD query
-  GET /candidatos → Cache miss (1st time) → 1 BD query
-  GET /partidos → Cache miss (1st time) → 1 BD query
-  Total: 3 BD queries (first user)
-  
-  User 2 onwards:
-  All cargos/candidatos/partidos from Redis (0 BD queries)
-
-Backend under 100 users load:
-  First user: 11 queries
-  Users 2-100: 0 queries (cache hits)
-  Total: 11 queries/min (instead of 3,300)
-  Savings: 99.6%
-```
+Reportes: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`.
 
 ---
 
@@ -233,44 +213,54 @@ Backend under 100 users load:
 
 ### D.1 Manual Invalidation Endpoint
 
-**Archivo:** `/backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/admin/AdminResource.java`
+**Archivo:** `/backend/electoral-api-quarkus/src/main/java/ec/twintailcs/electoral/auth/web/AdminCacheResource.java`
+
+La autorización usa el patrón real del repo —`Autorizador.exigir("cache:clear", "MASTER")`— y
+no `@RolesAllowed`, que no se usa en ninguna parte del backend. ADMIN no escribe en este
+dominio y vaciar la caché es una escritura sobre el estado operativo.
 
 ```java
 @GET
-@Path("/cache/clear")
-@RolesAllowed({"ADMIN"})
-public Response clearCache(@QueryParam("cacheName") String cacheName) {
-  if (cacheName == null || cacheName.isEmpty()) {
-    // Clear all caches
-    cacheManager.getCacheNames().forEach(cacheManager::getCache);
-    return Response.ok("All caches cleared").build();
-  } else {
-    // Clear specific cache
-    cacheManager.getCache(cacheName).ifPresent(Cache::invalidateAll);
-    return Response.ok("Cache '" + cacheName + "' cleared").build();
-  }
+@Path("/clear")
+public Response clearCache(@QueryParam("cacheName") String cacheName, ...) {
+  autorizador.exigir("cache:clear", "MASTER");
+  // ... invalida todos los cachés o solo el pedido, y deja rastro en audit_log
 }
 ```
 
+> **Alcance: el proceso que atiende la petición.** Con Caffeine en memoria, vaciar la caché
+> borra la del proceso que recibe el request. Con una sola réplica (lo actual) eso es toda la
+> caché; con varias sería solo una de ellas.
+
 ### D.2 Monitoring
 
-**Métricas a exponer (via Micrometer + Prometheus):**
+**Métricas a exponer (via Micrometer + Prometheus), en `/q/metrics`:**
 
 ```properties
 quarkus.micrometer.enabled=true
 quarkus.micrometer.export.prometheus.enabled=true
 
-# Metrics exposed:
-# - cache_entries_total (by cache name)
-# - cache_hits_total (by cache name)
-# - cache_misses_total (by cache name)
-# - redis_memory_used_bytes
+# Métricas propias, publicadas por CacheDeLectura:
+# - cache_hits_total{cache="...",replica="..."}
+# - cache_misses_total{cache="...",replica="..."}
+#
+# Métricas estándar de Caffeine (metrics-enabled=true):
+# - cache_size{cache="..."}
+# - cache_gets_total{cache="...",result="hit|miss"}
+# - cache_evictions_total{cache="..."}
 ```
 
+La etiqueta `replica` no es adorno: Railway **agrega** las métricas de todas sus réplicas en
+un solo tablero, así que sin ella no se puede distinguir "el hit ratio bajó" de "una réplica
+quedó desfasada respecto de las otras".
+
 **Alertas recomendadas:**
-- Redis memory > 500MB → scale up
-- Cache hit ratio < 70% → check invalidation logic
-- TTL expiration lag > 1s → check Redis performance
+- Hit ratio < 70 % → revisar la lógica de invalidación
+- `cache_evictions_total` en ascenso → la caché está más pequeña de lo que el tráfico necesita
+- Si aparecen **más de un valor** de `replica=` → hay más de una réplica en servicio: revisar
+  el guardrail de réplicas de `documents/CACHE_SETUP_GUIDE.md`
+- Memoria del proceso cerca del límite de Railway → el límite es el heap del contenedor, no
+  la memoria de Redis
 
 ---
 
@@ -342,7 +332,7 @@ describe('DashboardApiService - Cache Activation', () => {
 });
 ```
 
-### E.3 Backend Unit Tests (Redis Caching)
+### E.3 Backend Unit Tests (Caffeine Caching)
 
 ```java
 @QuarkusTest
@@ -360,7 +350,7 @@ public class CargoServiceCachingTest {
     List<CargoDto> cargos1 = service.findAll();
     assertNotNull(cargos1);
     
-    // 2nd call: should come from Redis (spy on repository)
+    // 2nd call: should come from the cache (spy on repository)
     List<CargoDto> cargos2 = service.findAll();
     assertEquals(cargos1, cargos2);
     
@@ -390,10 +380,11 @@ Expected:
 1. **Revert frontend cache:** Remove `shareReplay(1)` from observer.api.ts + dashboard.api.ts
    - Risk: None. Code returns to making duplicate requests (slower but correct)
 
-2. **Revert Redis:** Remove `@Cacheable` annotations, disable Redis in application.properties
+2. **Revert backend cache:** quitar la llamada a `CacheDeLectura` en los casos de uso, o
+   apagar la extensión con `QUARKUS_CACHE_ENABLED=false` (reconstruyendo la imagen)
    - Risk: None. Queries go back to BD directly
 
-3. **Clear Redis cache:** `GET /admin/cache/clear` endpoint
+3. **Clear the cache:** `GET /api/v1/admin/cache/clear` endpoint
    - Risk: None. TTL will auto-invalidate anyway
 
 **Zero data loss. Todo reversible en 5 minutos.**
@@ -402,13 +393,14 @@ Expected:
 
 ## G. Files Changed Summary
 
-| Archivo | Cambio | Líneas | Prioridad |
-|---------|--------|--------|-----------|
-| `observer.api.ts` | Agregar `partidosCache$` + `shareReplay(1)` | 15 | P1 |
-| `dashboard.api.ts` | Activar cache en 4 métodos | 30 | P3 |
-| `CargoService.java` | Agregar `@Cacheable("cargos")` | 2 | P2 |
-| `PartidoService.java` | Agregar `@Cacheable("partidos")` | 2 | P2 |
-| `CandidatoService.java` | Agregar `@Cacheable("candidatos")` | 2 | P2 |
-| `Provincia/Canton/Parroquia.java` | Agregar `@Cacheable` geo | 6 | P2 |
-| `application.properties` | Redis config | 5 | P2 |
-| `AdminResource.java` | Agregar `/cache/clear` endpoint | 15 | P2 |
+| Archivo | Cambio | Prioridad |
+|---------|--------|-----------|
+| `observer.api.ts` | Agregar `partidosCache$` + `shareReplay(1)` | P1 |
+| `dashboard.api.ts` | Activar cache en 4 métodos | P3 |
+| `ListarCargosUseCase` | Leer y guardar en la caché `cargos` | P2 |
+| `ListarPartidosUseCase` | Leer y guardar en la caché `partidos` | P2 |
+| `ListarCandidatosUseCase` | Leer y guardar en la caché `candidatos` | P2 |
+| `ListarGeografiaUseCase` | Leer y guardar en la caché `geografia` | P2 |
+| `CacheDeLectura.java` | Helper de lectura cacheada con hit ratio medido | P2 |
+| `application.properties` | Config Caffeine, TTL, métricas y `replica.id` | P2 |
+| `AdminCacheResource.java` | Endpoint `/cache/clear` con auditoría | P2 |
