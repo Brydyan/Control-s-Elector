@@ -11,6 +11,10 @@ import { InputText } from 'primeng/inputtext';
 import { Message } from 'primeng/message';
 import { finalize } from 'rxjs';
 
+import {
+  esRateLimit,
+  esperaDeRateLimit,
+} from '../../../../core/http/rate-limit';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -72,6 +76,9 @@ export class LoginPage {
     }
     if (err.status === 401) {
       return err.error?.message ?? 'Correo o contraseña incorrectos.';
+    }
+    if (esRateLimit(err)) {
+      return `Demasiados intentos de inicio de sesión. Intenta de nuevo ${esperaDeRateLimit(err)}.`;
     }
     return 'Ocurrió un error al iniciar sesión. Intenta nuevamente.';
   }

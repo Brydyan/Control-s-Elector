@@ -1,3 +1,4 @@
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { of, throwError } from 'rxjs';
@@ -255,6 +256,27 @@ describe('MasterConfiguracionPage', () => {
       '[data-testid="error-state"]',
     );
     expect(errorState).toBeTruthy();
+  });
+
+  it('con 429 dice que hay que esperar y cuánto, según Retry-After', async () => {
+    (api.getCargos as jasmine.Spy).and.returnValue(
+      throwError(
+        () =>
+          new HttpErrorResponse({
+            status: 429,
+            headers: new HttpHeaders({ 'Retry-After': '37' }),
+          }),
+      ),
+    );
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(component.error()).toBe(
+      'Demasiadas consultas en poco tiempo. Intenta de nuevo en 37 segundos.',
+    );
+    expect(component.loading()).toBe(false);
   });
 
   it('should retry loading on error', async () => {
