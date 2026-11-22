@@ -168,7 +168,32 @@
   quarkus.datasource.jdbc.metrics.enabled=true
   ```
 - [x] Testing CONFIRMADO: 0 eventos de adquisicion fallida en 5000 requests
-- [x] Monitoring: metricas `agroal_*` publicadas; uso medio 5-18 %, pico 100 % del pool. El 60-80 % no se alcanza con esta carga; hay que medirlo contra Neon
+- [x] Monitoring: metricas `agroal_*` publicadas; uso medio 5-18 %, pico 100 % del pool (Postgres local, sin PgBouncer)
+
+#### Criterio de aceptacion de D.2 (redefinido para la topologia real)
+
+El criterio original ("pool al 60-80 % de ocupacion") **no aplica** en produccion:
+Neon pone un **PgBouncer delante de cada compute** (`pool_mode=transaction`), que
+multiplexa muchas conexiones del cliente sobre pocas conexiones reales del
+compute. El "80 % de ocupacion" del pool de PgBouncer es un numero de PgBouncer,
+no del backend, y el backend no lo observa.
+
+El criterio que si aplica y si se puede medir es:
+
+| # | Criterio | Como se mide | Estado |
+|---|----------|--------------|--------|
+| D.2-a | **0 conexiones esperando** | `agroal_active_count` == `agroal_max_size` sostenido, sin crecimiento; `agroal_blocking_time_max_milliseconds` estable | medido local (max 49 ms) |
+| D.2-b | **0 errores de adquisicion** | 0 ocurrencias de "unable to acquire connection" en el log del backend bajo carga | medido local (5000 requests, 0) |
+| D.2-c | **Pool cliente chico respecto del compute** | `max-size` x replicas < conexiones utiles del compute, con margen para PgBouncer | **sin medir: requiere Neon** |
+| D.2-d | **Cero errores de coneccion tras cold start de Neon** | 0 fallos de `SQLException: connection closed` en la primera hora tras reanudar el compute | **sin medir: post-deploy** |
+
+D.2-a y D.2-b quedan **CONFIRMADOS** contra Postgres local (sin PgBouncer).
+D.2-c y D.2-d **exigen Neon** y quedan **PENDIENTES post-deploy**: son la
+medicion fina que decide si el pool calibrado en D.2 sirve en produccion.
+
+> Decision del humano: el criterio de D.2 se redefine en vez de dejar el
+> "60-80 %" original, que en esta topologia no es observable. No se recalibra
+> el pool a ciegas: ver "Riesgo abierto: pool sin calibrar" mas abajo.
 
 ---
 
@@ -254,7 +279,7 @@
   - Expected: Connection pool usage ~40 (< 50 max)
   ```
 
-- [ ] E2E test: Observer complete flow — NO ejecutado (fuera de alcance por instruccion del usuario)
+- [x] E2E test: Observer complete flow — **EJECUTADO** contra la API real (ver "Evidencia del E2E" en `verification-report.md`)
   ```
   1. Login → debe ser < 2s
   2. Ver mis-jrvs → debe ser < 1s
@@ -323,7 +348,8 @@ TOTAL: ~3 horas
 
 ### Pre-Deployment Checklist
 
-- [x] Unit + integration pasan (298 backend, 1153 frontend + 5 a11y, 152 contract, CI real 9/9 jobs) — E2E no ejecutado
+- [x] Unit + integration pasan (298 backend, 1153 frontend + 5 a11y, 152 contract, CI real 9/9 jobs)
+- [x] E2E del flujo Observer ejecutado contra la API real (3 proyectos de navegador)
 - [x] EXPLAIN ANALYZE verifica indices en uso
 - [x] Load test 100 usuarios: P95 36 ms, 0 timeouts
 - [x] Connection pool: NO "unable to acquire connection" errors
@@ -332,10 +358,17 @@ TOTAL: ~3 horas
 
 ### Post-Deployment Monitoring
 
+Los objetivos son los que **se pueden observar** en esta topologia. El
+"60-80 % de ocupacion del pool" no se puede medir en produccion: PgBouncer
+multiplexa las conexiones y ese porcentaje es de PgBouncer, no del backend.
+Ver el criterio D.2 redefinido en la seccion D.2.
+
 - [ ] Latencia avg: < 1s (target)
 - [ ] Latencia P95: < 2s (target)
-- [ ] Pool usage: 40-60% (target)
-- [ ] Connections waiting: 0 (target)
+- [ ] Conexiones esperando: 0 sostenido (target) — `agroal_active_count` < `max-size` sin growth
+- [ ] Errores de adquisicion: 0 (target) — 0 "unable to acquire connection"
+- [ ] Conexiones abiertas del backend: por debajo de los slots utiles del compute
+- [ ] Errores de conexion tras reanudar el compute de Neon: 0 en la primera hora
 - [ ] Database query time avg: < 100ms per query (target)
 
 ---
@@ -349,4 +382,66 @@ TOTAL: ~3 horas
 | Batch endpoint rompe existing clients | Mantener endpoints viejos (3 separados) para compatibilidad |
 | Caché stale data | Monitorear con tests, manual clear si es necesario |
 | Pool exhaustion bajo pico | Aumentar a 100 si P95 latency indica espera |
+
+### Riesgo abierto: pool sin calibrar para Neon
+
+> Decision del humano: **el pool se deja como esta** (no se recalibra a ciegas sin
+> medir contra Neon) y el riesgo queda **documentado**. El cambio de valores es
+> post-deploy, con metricas en la mano.
+
+**Riesgo 1 — `max-size=50` esinnecesario con PgBouncer delante.**
+Neon coloca un PgBouncer (`pool_mode=transaction`) delante de cada compute. Con
+multiplexacion, 50 conexiones del backend se translated en un puñado de conexiones
+reales al compute. Un pool de 50 no compra concurrencia: compra 50 sockets TCP
+abiertos y 50 reserves de memoria del pool. El limite real lo pone
+`default_pool_size` de PgBouncer (`0.9 x max_connections` del compute), no el
+`max-size` del backend.
+
+**Riesgo 2 — `min-size=10` mantiene 10 sockets abiertos justo cuando Neon
+suspende.** En los planes Free/Launch, Neon **suspende el compute tras ~5 min de
+inactividad**. `idle-removal-interval=5m` cierra las conexiones del pool
+*exactamente* en esa ventana: el backend queda con sockets que apuntan a un
+compute que se acaba de despertar (o se acaba de morir). El sintoma no es "el pool
+se agota" sino errores transitorios de conexion en la primera transaccion
+despues del cold start, mientras el backend reintenta.
+
+**Riesgo 3 — la reanudacion de Neon puede(findar "connection slots").** El
+compute de 0.25 CU expone `max_connections=112` (105 utiles segun la
+documentacion de Neon). Con `min-size=10` el backend reserva 10 de esos slots
+permanentemente, y PgBouncer mantiene su propio pool de conexiones al compute
+(`default_pool_size`). Si el compute se reanuda con slots ya reservados, el
+backend puede fallar al abrir conexiones nuevas con un error de slots
+reservados, no de carga.
+
+**Compatibilidad verificada (sin accion requerida).** El backend es compatible
+con PgBouncer: el RLS usa `set_config('app.current_user_id', ..., true)` —que es
+`SET LOCAL` y PgBouncer lo soporta en transaction mode—, y el codigo **no** usa
+advisory locks, `LISTEN`/`NOTIFY`, tablas temporales ni `SET` de sesion. Los
+prepared statements del protocolo de pgjdbc funcionan con
+`max_prepared_statements=1000`.
+
+**Valores recomendados (para el ajuste post-deploy, NO aplicados en este
+commit):**
+
+| Parametro | Valor actual | Valor recomendado | Por que |
+|-----------|--------------|-------------------|---------|
+| `quarkus.datasource.jdbc.max-size` | 50 | **10–15** | Con PgBouncer el pool del backend no es el cuello de botella; 50 sockets solo agregan memoria y riesgo de agotar slots del compute |
+| `quarkus.datasource.jdbc.min-size` | 10 | **1–2** | Evita que el backend retenga slots del compute mientras la base esta suspendida |
+| `quarkus.datasource.jdbc.idle-removal-interval` | 5m | **2m** | Cierra sockets antes de la ventana de suspension de Neon (~5 min), en vez de justo en ella |
+| `quarkus.datasource.jdbc.max-lifetime` | 30m | **10m** | Rotacion por debajo de la ventana de suspension: el socket nunca llega a la edad de la Suspension |
+| `quarkus.datasource.jdbc.acquisition-timeout` | 30s | **5s** | Con el pool chico, esperar 30 s por una conexion es una latencia invisible para el usuario; 5 s falla antes y el reintento con conexion nueva es mas barato |
+
+**Como decidir sin adivinar.** El ajuste se hace con las metricas de Neon
+(`/q/metrics` de Quarkus + el pool de PgBouncer) durante la primera ventana de
+escrutinio real:
+
+1. Si `agroal_active_count` se queda por debajo de `max-size` y
+   `agroal_blocking_time_max_milliseconds` es 0, el pool esta sobredimensionado:
+   bajarlo.
+2. Si `agroal_active_count` == `max-size` sostenido y grows el blocking time, el
+   pool esta corto: subirlo, con el techo en los slots utiles del compute.
+3. Si aparecen `SQLException: connection closed` justo despues de reanudar el
+   compute, el problema es `min-size` + `idle-removal-interval` contra la
+   ventana de suspension, no el tamano del pool.
+
 

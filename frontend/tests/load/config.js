@@ -4,8 +4,18 @@
  */
 
 export const config = {
-  // Backend API
-  BASE_URL: `http://${__ENV.API_HOST || 'localhost:8080'}`,
+  /**
+   * Backend API.
+   *
+   * `API_URL` manda si viene: es la URL COMPLETA (esquema incluido). Con el
+   * `http://` hardcodeado de antes no se podia apuntar a un backend remoto
+   * (Railway/Neon exponen https), y ese prefijo era la razon de que el load
+   * test solo funcionara contra `localhost`.
+   *
+   * `API_HOST` se mantiene como atajo para desarrollo local: es host:puerto
+   * sin esquema, y se asume http.
+   */
+  BASE_URL: __ENV.API_URL || `http://${__ENV.API_HOST || 'localhost:8080'}`,
   API_PATH: '/api/v1',
 
   // Timeout defaults (ms)

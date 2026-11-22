@@ -1,12 +1,14 @@
 # Apply Progress — Performance Optimization
 
-## Estado: IMPLEMENTADO — verificación de integración ejecutada
+## Estado: IMPLEMENTADO — verificado, con E2E ejecutado
 
 El código de las fases A, B, D y F está aplicado y compila. La fase C ya estaba
 implementada antes de esta sesión. Los gates que necesitan PostgreSQL se
-ejecutaron contra un Postgres local en Docker (`ci-pg`, Postgres 16), no contra
-Neon. La verificación no incluye E2E del flujo Observer (fuera de alcance por
-instrucción del usuario) ni un load test contra Neon.
+ejecutaron contra un Postgres local en Docker (Postgres 16), no contra Neon.
+
+**El E2E del flujo Observer sí se ejecutó** (contra la API real, 3 proyectos de
+navegador, 53 tests en verde). Lo que sigue pendiente es solo medición contra
+Neon, que es post-deploy por definición.
 
 ## Commits aplicados
 
@@ -22,6 +24,9 @@ instrucción del usuario) ni un load test contra Neon.
 | Fix | `3331637` | fix(auth): move BatchSize from Usuario.rol to Rol entity |
 | Fix | `285d807` | fix(api): preserve WebApplicationException status in GenericMapper |
 | Gates | `32eb3f2` | test(perf): cerrar los gates B.1, B.2 y D.2 con evidencia medida |
+| Gates | `5935684` | test(perf): afirmar en el catalogo los indices de acta y acta_detalle |
+| Docs | `40f6f29` | docs(perf): marcar el estado real de las tareas del SDD de performance |
+| Docs | `65f891a` | docs(perf): agregar el reporte de verificacion del SDD de performance |
 
 ---
 
@@ -157,6 +162,52 @@ Ya implementada antes de esta sesión; no se reimplementó.
 - [x] `agroal_blocking_time_max_milliseconds` = 49 ms: espera máxima por
       conexión, sin timeouts.
 
+#### Criterio de D.2 redefinido para la topología real
+
+El criterio original del SDD ("pool al 60-80 % de ocupación") **no es observable**
+en producción: Neon pone un PgBouncer (`pool_mode=transaction`) delante de cada
+compute, que multiplexa las conexiones del cliente sobre pocas conexiones
+reales. Ese porcentaje es de PgBouncer, no del backend.
+
+El criterio que aplica y que sí se puede medir:
+
+| # | Criterio | Estado |
+|---|----------|--------|
+| D.2-a | 0 conexiones esperando (`agroal_active_count` < `max-size`, blocking time estable) | ✅ medido local |
+| D.2-b | 0 errores de adquisición ("unable to acquire connection") | ✅ medido local (5000 requests) |
+| D.2-c | Pool cliente chico respecto de los slots del compute | ⏸ post-deploy (requiere Neon) |
+| D.2-d | 0 errores de conexión tras el cold start de Neon | ⏸ post-deploy (requiere Neon) |
+
+D.2-a y D.2-b quedaron CONFIRMADOS contra Postgres local (sin PgBouncer).
+D.2-c y D.2-d exigen Neon y quedan PENDIENTES: son la medición fina que decide
+si el pool calibrado en D.2 sirve en producción. La medición fina no se simula:
+se hace con el compute real.
+
+> Decisión del humano: **redefinir el criterio**, no simular la medición.
+
+#### Riesgo abierto: pool sin calibrar para Neon
+
+El pool **se deja como está** (no se recalibra a ciegas sin medir contra Neon) y
+el riesgo queda documentado en `tasks.md` ("Riesgo abierto: pool sin calibrar").
+Resumen de los tres riesgos:
+
+1. **`max-size=50` es innecesario con PgBouncer delante**: el límite real lo pone
+   `default_pool_size` de PgBouncer (`0.9 × max_connections` del compute), no el
+   pool del backend. 50 sockets no compran concurrencia; compran slots del
+   compute.
+2. **`min-size=10` + `idle-removal-interval=5m` chocan con la suspensión de
+   Neon** (~5 min de inactividad en los planes Free/Launch): las conexiones se
+   cierran justo en la ventana en que el compute se duerme, y el síntoma son
+   errores transitorios de conexión tras el cold start, no saturación del pool.
+3. **La reanudación puede findar slots del compute**: 0.25 CU expone
+   `max_connections=112`; con `min-size=10` el backend retiene slots
+   permanentemente.
+
+Compatibilidad del backend con PgBouncer **verificada**: el RLS usa
+`set_config('app.current_user_id', ..., true)` (= `SET LOCAL`, soportado en
+transaction mode) y el código no usa advisory locks, `LISTEN`/`NOTIFY`, tablas
+temporales ni `SET` de sesión.
+
 ---
 
 ## Phase E: Testing & Verification
@@ -166,13 +217,44 @@ Ya implementada antes de esta sesión; no se reimplementó.
 | Compilación backend | ✅ | `mvnw clean verify` |
 | Spotless | ✅ | `spotless:check` en verde |
 | Unit tests backend | ✅ | suite completa |
-| IT backend (`PostgresTestResource`) | ✅ | **296 tests, 0 fallos, 0 errores**, base limpia (`electoral_db_v3`) |
+| IT backend (`PostgresTestResource`) | ✅ | **298 tests, 0 fallos, 0 errores**, base limpia (`electoral_db_v4`) |
 | Observabilidad del pool | ✅ | `agroal_*` en `/q/metrics` |
 | gzip en vivo | ✅ | `content-encoding: gzip` |
 | EXPLAIN ANALYZE | ✅ | Index Scan / Bitmap Index Scan con 50K filas |
 | Load test local | ✅ parcial | 100×50 contra Postgres local; **no** se corrió el escenario de 50×10 de JMeter ni contra Neon |
-| E2E flujo Observer | ⏸ | fuera de alcance por instrucción del usuario |
-| CI real (push) | ⏸ | pendiente de push |
+| E2E flujo Observer | ✅ | **53 tests en verde** contra la API real, 3 proyectos de navegador |
+| CI real (push) | ✅ | 9/9 jobs verdes en `5935684` |
+
+### E2E del flujo Observer: cómo se ejecutó
+
+El montaje (lo que faltaba):
+
+| Pieza | Cómo |
+|---|---|
+| Postgres 16 + Redis 7.4 + RustFS | `docker compose --profile dev --profile s3 up -d` |
+| Rol `electoral_app` | `docker compose --profile dev run --rm db-app-role` — sin superusuario ni BYPASSRLS, para que el RLS sea real |
+| Migraciones | jar local con `APP_MIGRATE_ONLY=true` y contextos `seed,bootstrap-admin`, corriendo como owner |
+| Backend | `java -jar target/quarkus-app/quarkus-run.jar` en :8080, con `DB_USER=electoral_app` |
+| Frontend | `pnpm start` en :4200 |
+
+**Resultado:** `E2E_REQUIRE_BACKEND=1 pnpm test:e2e --grep "@guardian"` →
+**53 passed, 0 failed, 4 skipped** (Desktop Chrome, Mobile Chrome Pixel 7,
+Mobile Safari iPhone 12).
+
+Dos cosas que la corrida destapó y que quedaron resueltas:
+
+1. **El rate limit de `observer-jrvs` (60/min por usuario) no aguanta la suite
+   completa.** La primera corrida dio 18 fallos, todos "jrvs is not iterable":
+   era el 429 deserializado como si fuera el array. El defecto era el
+   diagnóstico, no el rate limit: ahora el spec valida el status de la respuesta
+   y explica el 429. Para la corrida, el backend va con
+   `APP_RATELIMIT_OBSERVER_JRVS_LIMIT=100000` (variable de entorno ya
+   soportada).
+2. **WebKit no manda cookies `Secure` por `http://`.** La cookie de refresh se
+   emite con `Secure`; Chromium la acepta en `http://localhost` (contexto
+   confiable) y WebKit no. Se resolvió en el entorno con un proxy TLS local
+   (certificado autofirmado) para replicar la condición de producción, donde
+   el backend ya está detrás de https. Sin tocar el código del producto.
 
 ### Nota sobre la suite completa
 
@@ -180,7 +262,7 @@ La primera ejecución de la suite completa contra una base compartida
 (`electoral_db_ci`, con datos residuales del contract suite) dio 2 fallos y 25
 errores, todos por la FK `incidencia_jrv_jrv_id_fkey` al limpiar `jrv`: es
 contaminación de datos entre suites, no un defecto del código. Contra una base
-limpia la suite da **296/296 verde**.
+limpia la suite da **298/298 verde**.
 
 ---
 
@@ -223,10 +305,18 @@ en verde.
 
 ## Lo que queda fuera
 
-- **E2E del flujo Observer**: no se ejecutó (instrucción explícita del usuario).
+- **Medición del pool contra Neon**: es lo único que queda. El criterio de D.2
+  se redefinió a lo que sí es observable con PgBouncer delante (0 conexiones
+  esperando, 0 errores de adquisición, pool cliente chico, 0 errores tras el
+  cold start). Los dos primeros están medidos en local; los dos últimos son
+  post-deploy, porque PgBouncer y la suspensión del compute solo existen en
+  Neon.
+- **Recalibración del pool**: por decisión del humano, el pool se deja como está
+  y el riesgo queda documentado en `tasks.md` ("Riesgo abierto: pool sin
+  calibrar"), con los valores recomendados y el procedimiento para decidir con
+  dato.
 - **Load test contra Neon**: las cifras de pool y latencia son contra Postgres
-  local. La red es el factor dominante en producción; el 60-80 % de uso de pool
-  que pide el SDD hay que medirlo con la base real.
+  local. La red es el factor dominante en producción.
 - **JMeter con el escenario exacto de 50×10**: se usó un script propio con
   100×50, que es más exigente que el del SDD.
 - **Los números de impacto del SDD (P95, throughput) son proyecciones**: lo

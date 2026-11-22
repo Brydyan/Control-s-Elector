@@ -1,8 +1,9 @@
 # Optimización de Performance — T-PERF-OPT-01
 
 > Spec: `openspec/changes/back/2026-11-19-performance-optimization/`
-> Estado: implementado en código. Verificación de integración pendiente de un
-> entorno con PostgreSQL (ver "Qué falta verificar").
+> Estado: implementado y verificado contra PostgreSQL local (Docker, Postgres 16).
+> Lo que depende de Neon queda pendiente post-deploy: ver "Monitoreo en
+> producción".
 
 ## Qué cambió
 
@@ -47,37 +48,80 @@ problemas que se atacan:
 
 | Gate | Estado | Evidencia |
 |------|--------|-----------|
-| Compilación backend | ✅ | `mvnw -DskipTests test-compile` |
+| Compilación backend | ✅ | `mvnw clean verify` |
 | Formato (spotless) | ✅ | `mvnw spotless:apply` sin cambios pendientes |
-| Unit tests backend | ✅ | `UsuarioMapperTest`: 8/8 |
+| Suite backend completa | ✅ | **298 tests, 0 fallos, 0 errores** contra base limpia |
 | Suite frontend | ✅ | 1153 tests + 5 a11y, lint limpio |
-| IT del endpoint batch | ⏳ | `ObserverCargosConCandidatosIT` escrito; requiere PostgreSQL |
-| EXPLAIN ANALYZE | ⏳ | requiere base migrada |
-| Load test 50 usuarios | ⏳ | requiere backend vivo |
+| IT del endpoint batch | ✅ | `ObserverCargosConCandidatosIT`: 4/4 verde, dataset propio |
+| Índices en `pg_indexes` | ✅ | `IndicesActaIT`: 8 índices `idx_acta*` con las columnas esperadas |
+| EXPLAIN ANALYZE | ✅ | Index Scan / Bitmap Index Scan con 50K filas sintéticas |
+| Lazy sin N+1 | ✅ | `UsuarioLazyBatchIT`: el conteo de sentencias no escala con el número de usuarios |
+| gzip en vivo | ✅ | `content-encoding: gzip` en `/menus/me`, `/admin/usuarios`, `/dashboard/resultados` |
+| Load test local | ✅ | 100 usuarios × 50 requests (5000): 0 errores, p95 36 ms, 2383 req/s |
+| Pool sin errores de adquisición | ✅ | 0 "unable to acquire connection" en 5000 requests |
+| E2E del flujo Observer | ✅ | Playwright contra la API real, 3 proyectos de navegador |
+| Medición del pool contra Neon | ⏸ | requiere el compute real: post-deploy |
 
-### Qué falta verificar
+El detalle de cada gate, con los comandos y las cifras, vive en
+`openspec/changes/back/2026-11-19-performance-optimization/verification-report.md`.
 
-El entorno de desarrollo de esta sesión no tiene Docker ni PostgreSQL, así que
-los tests que levantan un contenedor (`PostgresTestResource`) no se pueden
-ejecutar aquí. No se declaran en verde: se ejecutan en CI o contra una base real
-con `-Dtest.postgres.url=...`.
+### Qué queda pendiente de medir
+
+Lo único que falta es la medición **contra Neon**, y no es simulable: el
+comportamiento del pool con PgBouncer delante y el cold start tras la suspensión
+del compute solo se ven en el entorno real. Los criterios que se van a medir
+están definidos en `tasks.md` (D.2-a a D.2-d) y en la tabla de monitoreo de más
+abajo.
 
 ## Monitoreo en producción
 
-| Métrica | Objetivo | Alerta si |
-|---------|----------|-----------|
-| Latencia P95 | < 2 s | > 3 s |
-| Latencia P99 | < 3 s | > 5 s |
-| Uso del pool | 40–60 % | > 80 % |
-| Conexiones en espera | 0 | > 0 sostenido |
-| Tiempo de query promedio | < 100 ms | > 500 ms |
-| Tamaño de respuesta gzip | < 100 KB | > 500 KB |
+La topología real es **Railway (backend) + Neon (PostgreSQL) + Cloudflare R2**, y
+Neon pone un **PgBouncer (`pool_mode=transaction`) delante de cada compute**. Eso
+cambia qué se puede medir: el "80 % de ocupación del pool" del SDD es un número
+de PgBouncer, no del backend, y el backend no lo observa.
 
-Si el pool llega a 80 % sostenido, subir `DB_POOL_MAX_SIZE` **solo** hasta el
-límite de conexiones del plan de Neon: por encima, las conexiones nuevas fallan
-en vez de esperar.
+| Métrica | Objetivo | Alerta si | Dónde se ve |
+|---------|----------|-----------|-------------|
+| Latencia P95 | < 2 s | > 3 s | `/q/metrics` (http) |
+| Latencia P99 | < 3 s | > 5 s | `/q/metrics` (http) |
+| Conexiones esperando | 0 | > 0 sostenido | `agroal_active_count` vs `max-size` |
+| Errores de adquisición | 0 | > 0 | log: "unable to acquire connection" |
+| Espera por conexión | ~0 ms | blocking time creciente | `agroal_blocking_time_max_milliseconds` |
+| Tiempo de query promedio | < 100 ms | > 500 ms | APM / logs |
+| Tamaño de respuesta gzip | < 100 KB | > 500 KB | logs HTTP |
+| Errores de conexión tras reanudar Neon | 0 | > 0 en la primera hora | logs: `SQLException: connection closed` |
 
-## Rollback
+### Riesgo abierto: el pool no está calibrado para Neon
+
+Los valores actuales (`min-size=10`, `max-size=50`, `idle-removal-interval=5m`)
+son razonables contra Postgres directo, pero **no** contra Neon con PgBouncer:
+
+- **`max-size=50` sobra.** Con multiplexación, el techo lo impone
+  `default_pool_size` de PgBouncer (`0.9 × max_connections` del compute), no el
+  pool del backend. 50 sockets no compran concurrencia: compran slots del
+  compute y memoria.
+- **`min-size=10` + `idle-removal-interval=5m` chocan con la suspensión de
+  Neon.** Los planes Free/Launch suspenden el compute tras ~5 min de inactividad;
+  el pool cierra sus sockets justo en esa ventana. El síntoma esperado son
+  errores transitorios de conexión después del cold start, no saturación.
+- **Slots del compute.** Con 0.25 CU, `max_connections=112` (105 útiles). Un
+  `min-size=10` retiene 10 slots permanentemente, y PgBouncer mantiene su
+  propio pool hacia el compute.
+
+El backend **es compatible con PgBouncer**: el RLS usa
+`set_config('app.current_user_id', ..., true)` (= `SET LOCAL`, soportado en
+transaction mode) y el código no usa advisory locks, `LISTEN`/`NOTIFY`, tablas
+temporales ni `SET` de sesión.
+
+**Ajuste recomendado, una vez haya métricas del compute real:** `max-size` 10-15,
+`min-size` 1-2, `idle-removal-interval` 2m, `max-lifetime` 10m,
+`acquisition-timeout` 5s. La tabla completa con el porqué de cada valor está en
+`openspec/changes/back/2026-11-19-performance-optimization/tasks.md`
+("Riesgo abierto: pool sin calibrar"). **Ese cambio no se aplica en este
+commit**: recalibrar a ciegas, sin medir contra Neon, sería cambiar el pool a
+ciegas.
+
+### Rollback
 
 Todo es reversible sin pérdida de datos:
 

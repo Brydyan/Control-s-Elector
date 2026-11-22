@@ -3,9 +3,10 @@
 **SDD:** `openspec/changes/back/2026-11-19-performance-optimization/`
 **Rama:** `brydyan/sc-519/feat-performance-optimization` → PR #207 (base `develop`)
 **Fecha:** 2026-11-22
-**Veredicto: ⚠️ PARTIAL** — implementa lo que el SDD pedía y la evidencia está medida; quedan dos
-cosas fuera del alcance pedido (E2E del flujo Observer y medición contra Neon) y un incumplimiento
-menor de la convención de commits que arrastra el repo, no este SDD.
+**Veredicto: ✅ CONFORM** — implementa lo que el SDD pedía, con la evidencia medida. Los dos huecos
+que la verificación anterior dejó abiertos (E2E del flujo Observer y criterio del pool) están
+cerrados; lo que queda es medición contra Neon, que es post-deploy por definición y no se simula.
+Queda un incumplimiento menor de la convención de commits que arrastra el repo, no este SDD.
 
 ---
 
@@ -27,7 +28,7 @@ menor de la convención de commits que arrastra el repo, no este SDD.
 | E. Tests backend | ✅ | 298 tests backend, 1153 frontend + 5 a11y, 152 contract |
 | E. EXPLAIN ANALYZE | ✅ | 4 queries verificadas con 50 000 filas sintéticas |
 | E. Load test | ⚠️ parcial | 100 usuarios × 50 requests contra Postgres local. **No** contra Neon, que es la topología de producción |
-| E. E2E flujo Observer | ❌ no ejecutado | Fuera de alcance por instrucción explícita del usuario |
+| E. E2E flujo Observer | ✅ ejecutado | Playwright contra la API real, 3 proyectos de navegador — ver §4.1 |
 | F. Documentación | ✅ | `PERFORMANCE_OPTIMIZATION.md`, `INDEXING_GUIDE.md`, `CACHING_STRATEGY.md` |
 
 **Desviación de D4 sin consequences**: el SDD decía "mantener los 3 endpoints viejos para
@@ -48,13 +49,14 @@ Las cinco decisiones se aplicaron tal como se decidieron.
 
 ### 1.3 GIVEN/WHEN/THEN
 
-El SDD no usa formato GIVEN/WHEN/THEN; usa checkboxes de tareas. Las 55 casillas se auditaron una
-por una: **48 marcadas** (cada una con su evidencia en `apply-progress.md` y en `tasks.md`), **7 sin
+El SDD no usa formato GIVEN/WHEN/THEN; usa checkboxes de tareas. Las casillas se auditaron una
+por una: **51 marcadas** (cada una con su evidencia en `apply-progress.md` y en `tasks.md`), **7 sin
 marcar** y todas justificadas:
 
-- E2E del flujo Observer (no ejecutado por instrucción del usuario)
-- 5 metas de monitoreo post-despliegue (no verificables antes de desplegar)
-- `min-gzip-size=1024` (la clave no existe en Quarkus 3.40; el filtro es por media type)
+- 7 metas de monitoreo post-despliegue (no verificables antes de desplegar)
+
+El E2E del flujo Observer, que estaba sin marcar, se ejecutó en esta sesión (§4.1): 53 tests en
+verde contra la API real, en los 3 proyectos de navegador.
 
 ---
 
@@ -105,7 +107,7 @@ distintos**, que es lo que hace visible el N+1.
 | Flakiness | ⚠️ **riesgo real, mitigado**: la suite contra base *compartida* dio 2 fallos + 25 errores (FK `incidencia_jrv_jrv_id_fkey` al limpiar `jrv` — contaminación entre suites). Contra base **limpia**: 298/298 verde. El CI usa base limpia. |
 | Timeouts hardcodeados | ✅ ninguno en los tests nuevos |
 | Aislamiento | ✅ los tests nuevos crean y borran su propio dataset |
-| E2E de flujo crítico | ❌ no hay E2E del flujo Observer (fuera de alcance) |
+| E2E de flujo crítico | ✅ el flujo Observer corre contra la API real, 3 proyectos de navegador (§4.1) |
 | Cobertura | ✅ umbral de JaCoCo superado ("All coverage checks have been met") |
 
 **Debilidad real**: el IT del batch pasó en verde sobre una base con datos residuales de otro
@@ -157,13 +159,128 @@ suite completa (298 tests) pasa sin `LazyInitializationException`: todos los con
   5-18 %, pico 100 %**.
 - `agroal_blocking_time_max_milliseconds` = 49 ms: espera máxima por conexión, sin timeouts.
 
-> ⚠️ **El "pool al 60-80 %" que pedía el SDD no se alcanza con esta carga.** La carga es de una sola
-> tabla y el pool no se satura. La cifra real en producción depende de la latencia de Neon, que
-> aquí no existe. **Este número hay que medirlo en producción**, no deducirlo de un Postgres local.
+> ⚠️ **El "pool al 60-80 %" que pedía el SDD no se alcanza con esta carga — y en producción ese
+> criterio no es observable.** La carga es de una sola tabla y el pool no se satura. Pero el punto
+> de fondo es otro: Neon pone un **PgBouncer (`pool_mode=transaction`) delante de cada compute**, que
+> multiplexa las conexiones del cliente sobre pocas conexiones reales. El "80 % de ocupación" es un
+> número de PgBouncer, no del backend. **Por decisión del humano, el criterio de D.2 se redefinió**
+> a lo que sí se puede medir contra la topología real: 0 conexiones esperando, 0 errores de
+> adquisición, pool cliente chico respecto de los slots del compute, y 0 errores de conexión tras
+> el cold start de Neon. Los dos primeros quedan CONFIRMADOS en local; los dos últimos son
+> medición post-deploy. Ver §4, "D.2 — Pool".
 
 ### E.3 — Load test
 ⚠️ **PARCIAL**: se usó un script propio (100×50) en lugar del escenario exacto de JMeter (50×10) del
 SDD — **más exigente**, no menos. Contra Neon: no ejecutado.
+
+### 4.1 E.3 — E2E del flujo Observer contra la API real
+✅ **CONFIRMADO**. Ejecutado local con el stack completo en pie.
+
+**Montaje** (el que faltaba en el intento anterior):
+
+| Pieza | Cómo se levantó | Por qué así |
+|---|---|---|
+| Postgres 16 | `docker compose --profile dev up -d postgres` | Puerto 5432 liberado (el `ci-pg` previo se paró y renombró) |
+| Redis 7.4 | `docker compose --profile dev up -d redis` | El rate limiting usa contadores compartidos en Redis |
+| RustFS | `docker compose --profile dev --profile s3 up -d rustfs` | Storage de las evidencias |
+| Rol `electoral_app` | `docker compose --profile dev run --rm db-app-role` | **Sin superusuario y sin BYPASSRLS**: con el dueño, Postgres ignora el RLS y ninguna prueba puede afirmar que filtra |
+| Migraciones | jar local, `APP_MIGRATE_ONLY=true`, contextos `seed,bootstrap-admin` | Liquibase corre como owner (`electoral_user`); el backend corre con `electoral_app` |
+| Backend | `java -jar target/quarkus-app/quarkus-run.jar` en :8080 | El binario nativo de GraalVM no entra en la RAM de la máquina; la JVM sí |
+| Frontend | `pnpm start` en :4200 | Proxy `/api` → :8080 |
+
+**Resultado** (`E2E_REQUIRE_BACKEND=1 pnpm test:e2e --grep "@guardian"`):
+
+| Proyecto | Resultado |
+|---|---|
+| Desktop Chrome | ✅ 19/19 |
+| Mobile Chrome — Pixel 7 | ✅ 17/17 (2 skipped por viewport) |
+| Mobile Safari — iPhone 12 | ✅ 17/17 (2 skipped por viewport) |
+| **Total** | **✅ 53 passed, 0 failed, 4 skipped** |
+
+**Qué cubre el flujo (J1, `@guardian @no-intercept`)** — todos contra la API real, sin mocks:
+
+- El observer entra y ve sus JRVs asignadas
+- Selecciona una JRV y navega a la lista de cargos
+- Llega al wizard de registro en el paso IMAGEN
+- Adjunta la foto (compresión a `.webp` en el cliente, subida a RustFS)
+- Llena los votos y **el checksum cuadra en el servidor**
+- **Registra el acta y ve el estado de éxito**
+- El checksum inválido **bloquea** el avance a REVISIÓN
+- Los nombres de los candidatos se muestran en el paso VOTOS
+- **Idempotencia: 409 Conflict en el duplicado**
+
+El caso de idempotencia es el que importa aquí: es la ruta cuyo contrato de red
+cambió con el batch endpoint (`cargos-with-candidatos`), y el 409 confirma que el
+bloqueo por clave de negocio (`jrv_id` + `cargo_id`) sigue intacto contra la API
+real.
+
+### 4.2 Hallazgo del E2E: el rate limit de `observer-jrvs` lo rebasa la suite
+
+⚠️ **H-3 — el rate limit de producción (60/min por usuario) no aguanta la suite E2E completa.**
+
+La primera corrida dio **18 fallos**, todos de la misma familia:
+
+```
+TypeError: jrvs is not iterable
+TypeError: cargos is not iterable
+```
+
+No era un defecto de la API: era el **HTTP 429** del policy `observer-jrvs`
+(`limit=60`, `window=1m`, `key=user`). La suite corre 3 proyectos de navegador
+contra el **mismo** usuario del seed, y cada test llama varias veces a
+`/observer/jrvs` y `/observer/jrv/{id}/cargos`: la cuota se agota en el segundo
+proyecto. Confirmado de forma independiente con 65 llamadas seguidas a
+`/api/v1/observer/jrvs`: los primeros 60 responden 200 y los siguientes 5
+responden 429.
+
+**El defecto real era el diagnóstico, no el rate limit.** El test deserializaba la
+respuesta de error como si fuera el array esperado, y el fallo aparecía como
+"jrvs is not iterable" — un síntoma que no dice nada del motivo. Corregido: el
+spec ahora usa un helper `pedirJson()` que valida el status y, ante un 429, dice
+exactamente qué policy se rebasó y cómo evitarlo.
+
+**Con el límite relajado** (`APP_RATELIMIT_OBSERVER_JRVS_LIMIT=100000`, que es
+una variable de entorno ya soportada, no un cambio de código), la suite pasa
+completa en los 3 proyectos.
+
+> El rate limit **no se toca**: 60/min por usuario es una decisión de producto
+> razonable contra abuso. Lo que se corrige es que el E2E —que es una
+> herramienta— necesita poder correr sin pelearse con la política de producción.
+
+### 4.3 Hallazgo del E2E: WebKit exige un contexto seguro (https)
+
+⚠️ **H-4 — la cookie `refresh_token` se emite con `Secure`, y WebKit (Safari) no
+manda cookies `Secure` por `http://`.**
+
+El proyecto *Mobile Safari — iPhone 12* fallaba entero (13 de 14) mientras
+Chromium pasaba. Diagnóstico, por capas:
+
+| Capa | Evidencia | Lectura |
+|---|---|---|
+| ¿Llega la cookie al navegador? | `ctx.cookies()` devuelve `refresh_token` con `secure=true` en **ambos** navegadores | La cookie sí se guarda |
+| ¿La manda el navegador? | `fetch('/api/v1/auth/refresh')` desde la página: Chromium **200**, WebKit **401** | **WebKit no la envía por http://** |
+| ¿Es un problema del navegador? | `curl -k` a `http://localhost:8080` funciona; el 401 es del backend ante una cookie ausente | No es del backend |
+| ¿Afecta a producción? | En producción el backend está detrás de https (Railway) | **No**: es una limitación del entorno local, no del producto |
+
+Chromium trata `http://localhost` como *contexto potencialmente confiable* y sí
+envía cookies `Secure` ahí. WebKit no. La diferencia es del navegador, no del
+código: la cookie `Secure` es lo correcto para producción.
+
+**Cómo se corrió igual, sin tocar el código del producto:** un proxy TLS local
+(certificado autofirmado) delante de Vite y del backend, para que el navegador
+vea `https://localhost:8443` — la misma condición de producción. Con eso, WebKit
+pasa los 17 tests.
+
+Dos ajustes de entorno que hizo falta (nada de esto es código del producto):
+
+- El backend necesita `CORS_ALLOWED_ORIGINS` con `https://localhost:8443`: con el
+  proxy, el `Origin` que ve la API cambia y la lista fail-closed lo rechaza.
+- El proxy debe rutear **solo** `/api` al backend. `/terms` y `/privacy` son
+  rutas del frontend, y cualquier prefijo más amplio se traga los chunks lazy de
+  Vite (`terms-acceptance.page-*.js` devolvía 401 y rompía la app).
+
+> El proxy TLS y el global setup alterno fueron **temporales y no se versionaron**:
+> son andamiaje de esta máquina, no del repo.
 
 ---
 
@@ -197,7 +314,7 @@ este cambio.
 | Sin secretos versionados | ✅ ninguna variable sensible en los cambios |
 | Sin BYTEA para evidencias | ✅ no aplica |
 | Cada transición del acta necesita cobertura de integración | ✅ el flujo de registro se cubre con el IT del catálogo batch |
-| E2E contra la misma API de producción, sin mocks | ⚠️ no se ejecutó E2E (fuera de alcance) |
+| E2E contra la misma API de producción, sin mocks | ✅ el E2E del flujo Observer corre contra la API real (rol de aplicación, RLS activo), sin mocks en la ruta de registro de acta |
 | Push a Railway / CF Pages / Neon / R2, `k8s/` legado | ✅ no se toca infraestructura de despliegue |
 
 ---
@@ -206,10 +323,11 @@ este cambio.
 
 | # | Falta | Impacto | Por qué |
 |---|---|---|---|
-| 1 | **E2E del flujo Observer** | Alto | No ejecutado por instrucción explícita del usuario. Es el gate que valida el flujo de registro de punta a punta, que es justamente donde el batch endpoint cambió el contrato de red. |
-| 2 | **Load test contra Neon** | Medio | Los números de pool y latencia son contra Postgres local. La red es el factor dominante en producción; el "60-80 % de pool" solo se puede medir con la base real. |
+| 1 | **Medición del pool contra Neon** (D.2-c y D.2-d) | Medio | El criterio de D.2 quedó redefinido a lo observable en esta topología (0 conexiones esperando, 0 errores de adquisición, pool cliente chico, 0 errores tras el cold start). Los dos primeros están medidos en local; los dos últimos **exigen el compute real** y son medición post-deploy. No es simulable: PgBouncer y la suspensión del compute solo existen en Neon. |
+| 2 | **Recalibrar el pool** (`max-size=50`, `min-size=10`, `idle-removal-interval=5m`) | Medio | Con PgBouncer delante, `max-size=50` no compra concurrencia y `min-size=10` + `idle-removal-interval=5m` chocan con la suspensión de Neon (~5 min). Por decisión del humano **el pool se deja como está y el riesgo queda documentado** (ver `tasks.md`, "Riesgo abierto: pool sin calibrar"), con los valores recomendados y el procedimiento para decidir con dato. |
 | 3 | **Métricas del pool: re-verificar tras el deploy** | Bajo | Las claves son de tiempo de build. Hay que confirmar que el rebuild de la imagen de Railway las lleva. |
-| 4 | **Deuda de co-author IA en el repo** | Bajo | Heredada, no introducida aquí. AGENTS.md la prohíbe; se corrige en un barrido aparte, sin reescribir historia. |
+| 4 | **E2E contra la API desplegada** | Bajo | El E2E se ejecutó y pasó contra la API real local (§4.1). Repetirlo contra el despliegue de Railway cierra el círculo con la latencia real. |
+| 5 | **Deuda de co-author IA en el repo** | Bajo | Heredada, no introducida aquí. AGENTS.md la prohíbe; se corrige en un barrido aparte, sin reescribir historia. |
 
 ---
 
@@ -217,34 +335,66 @@ este cambio.
 
 No hay rework que bloquee el merge. Antes de producción:
 
-1. **Medir el pool contra Neon** y ajustar `max-size` con dato, no con la proyección del SDD.
-   El SDD decidió 50 sin medir; la decisión sigue siendo razonable, pero ahora es verificable.
-2. **Ejecutar el E2E del flujo Observer** contra la API desplegada, para cerrar el gate que esta
-   verificación dejó abierto.
+1. **Medir el pool contra Neon** con los criterios D.2-c y D.2-d, y ajustar `max-size` con dato, no
+   con la proyección del SDD. La tabla de valores recomendados y el procedimiento de decisión están
+   en `tasks.md` ("Riesgo abierto: pool sin calibrar").
+2. **Repetir el E2E del flujo Observer contra la API desplegada** en Railway, para cerrar el círculo
+   con la latencia real y el pool calibrado.
 3. **Revisar el `acta_detalle` en producción con datos reales**: el seq scan observado a escala de
    laboratorio no dice qué pasará con 50 000 actas y sus detalles.
+4. **Revisar la suite E2E contra el rate limit de producción**: la suite de 3 proyectos rebasa los
+   60/min de `observer-jrvs`. Para CI con backend real, hay que correr el backend con
+   `APP_RATELIMIT_OBSERVER_JRVS_LIMIT` relajado (ya soportado por variable de entorno).
+5. **El E2E sobre WebKit necesita https local**: Safari no manda cookies `Secure` por `http://`.
+   En CI con el backend detrás de https no hay problema; contra un backend local por http, el
+   proyecto *Mobile Safari* no puede autenticarse. Es una limitación del entorno, no del producto.
 
 Después del merge:
 
-4. Barrido de los commits con co-author IA en todo el repo (sin reescribir historia: `git filter-repo`
+5. Barrido de los commits con co-author IA en todo el repo (sin reescribir historia: `git filter-repo`
    sobre ramas lineages, o nota de política).
 
 ---
 
 ## 9. Veredicto
 
-# ⚠️ PARTIAL
+# ✅ CONFORM
 
-**Listo para merge con notas.** Todo lo que el SDD pedía implementar está implementado, con la
-arquitectura del proyecto respetada, la suite en verde (298 backend + 1153 frontend + 152 contract),
-CI real en verde (9/9 jobs en `5935684`) y los gates de base de datos verificados con evidencia
-medida —incluidos dos que estaban bloqueados por falta de PostgreSQL y que esta sesión cerró.
+**Listo para merge.** Todo lo que el SDD pedía implementar está implementado, con la arquitectura
+del proyecto respetada, la suite en verde (298 backend + 1153 frontend + 152 contract), CI real en
+verde y los gates verificados con evidencia medida. Los dos huecos que la verificación anterior
+dejó abiertos (⚠️ PARTIAL) están cerrados:
 
-Las dos desviaciones que justifican PARTIAL y no CONFORM:
-- **E2E del flujo Observer no ejecutado** (instrucción del usuario).
-- **Load test y uso del pool medidos contra Postgres local, no contra Neon**: el "60-80 % de pool"
-  que pedía el SDD no se reproduce en local, así que esa cifra sigue sin verificarse en la
-  topología de producción.
+| Hueco anterior | Cómo se cerró |
+|---|---|
+| **E2E del flujo Observer no ejecutado** | Ejecutado contra la API real, 3 proyectos de navegador, 0 fallos. El flujo completo —incluido el 409 de idempotencia— pasa contra el backend con el rol de aplicación (RLS activo). (§4.1) |
+| **Criterio D.2 medido contra Postgres local y no contra Neon** | El criterio "60-80 % de ocupación" **no es observable** en esta topología: con PgBouncer delante, ese porcentaje es de PgBouncer. Por decisión del humano se **redefinió** a lo que sí se puede medir (0 conexiones esperando, 0 errores de adquisición, pool cliente chico, 0 errores tras el cold start). Los dos primeros quedan CONFIRMADOS; los dos últimos son medición post-deploy, que es donde corresponde. |
 
-Ninguna de las dos es un defecto de la implementación. Ambas son límites del alcance de la
-verificación, y quedan registradas como tales.
+Lo que queda pendiente **no es un defecto de implementación**: es medición contra la base real, que
+no se puede simular, y está documentado con su criterio, su procedimiento y sus valores
+recomendados.
+
+### Hallazgos de esta verificación (4)
+
+| # | Hallazgo | Estado |
+|---|---|---|
+| H-1 | El IT del catálogo dependía de datos que otros IT borran (falso verde posible) | ✅ corregido — el IT arma su propio dataset |
+| H-2 | El test de conteo de queries no distinguía EAGER de LAZY (`getQueryExecutionCount()` solo ve JPQL) | ✅ corregido — `getPrepareStatementCount()` y dataset de roles distintos |
+| H-3 | El E2E fallaba con "jrvs is not iterable": era el 429 del rate limit `observer-jrvs`, y el test no distinguía un error de un array | ✅ corregido — helper `pedirJson()` que valida el status y explica el 429 |
+| H-4 | WebKit no manda cookies `Secure` por http://, así que el proyecto iPhone 12 no podía autenticarse contra el backend local por http | ✅ resuelto en el entorno — proxy TLS local; en producción el backend ya está detrás de https |
+
+### Nota sobre el pool (sin cambiar configuración)
+
+El pool **se deja como está** (`min-size=10`, `max-size=50`), por decisión del humano: recalibrar a
+ciegas, sin medir contra Neon, sería adivinar. El riesgo queda documentado con valores
+recomendados concretos y el procedimiento para decidir con dato:
+
+- `max-size=50` es innecesario con PgBouncer delante (el techo real lo impone
+  `default_pool_size` de PgBouncer).
+- `min-size=10` + `idle-removal-interval=5m` chocan con la suspensión de Neon a los ~5 min: el
+  síntoma esperado son errores transitorios de conexión tras el cold start, no saturación.
+- Con 0.25 CU, `max_connections=112`: un `min-size=10` retiene slots del compute permanentemente.
+
+La compatibilidad del backend con PgBouncer está **verificada**: el RLS usa
+`set_config('app.current_user_id', ..., true)` (= `SET LOCAL`, soportado en transaction mode) y el
+código no usa advisory locks, `LISTEN`/`NOTIFY`, tablas temporales ni `SET` de sesión.
