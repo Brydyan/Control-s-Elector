@@ -306,6 +306,21 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'admin/recintos',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/admin/pages/recintos/recintos-list.page').then(
+            (m) => m.RecintosListPage,
+          ),
+        data: {
+          roles: ['MASTER', 'ADMIN'],
+          title: 'Gestión de Recintos',
+          description:
+            'Administración de centros de recepción de votos y zonas electorales.',
+          icon: 'location-outline',
+        },
+      },
+      {
         path: 'master/configuracion',
         canActivate: [roleGuard],
         loadComponent: () =>
