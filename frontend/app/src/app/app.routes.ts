@@ -313,7 +313,7 @@ export const routes: Routes = [
             (m) => m.RecintosListPage,
           ),
         data: {
-          roles: ['MASTER', 'ADMIN'],
+          roles: ['MASTER'],
           title: 'Gestión de Recintos',
           description:
             'Administración de centros de recepción de votos y zonas electorales.',
