@@ -54,6 +54,11 @@
 | `b005300` | E2E robusto con backend frio + cifras de load test reproducibles |
 | `bce9054` | `design.md`/`proposal.md` dejan de afirmar una decision no tomada |
 | `ed65253` | D2 cerrada: TTL de 2 min parametrizado + metricas etiquetadas por replica |
+| `fbf5a67` | `design.md`/`proposal.md` con D2 como decision tomada + doc de la cache alineada |
+| `aa2595d` | Topologia de produccion alineada a Railway + Cloudflare Pages + Neon + R2 |
+| `7c6cd81` | Los parsers de metricas (k6 y E2E) toleran la etiqueta `replica` |
+| `c6af093` | Mediciones del load test actualizadas con el TTL de 2 min |
+| `595f0d9` | `tasks.md` con la seccion de Redis sustituida por la opcion A |
 
 ---
 
