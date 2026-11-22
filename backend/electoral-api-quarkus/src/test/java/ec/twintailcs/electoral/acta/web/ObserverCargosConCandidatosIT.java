@@ -18,6 +18,7 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +34,12 @@ import org.junit.jupiter.api.Test;
  *   <li>sin token responde 401 y sin {@code jrvId} responde 400;
  *   <li>una JRV sin cargos devuelve la lista vacia, no un error.
  * </ul>
+ *
+ * <p><b>El test arma su propio dataset.</b> No depende del seed de {@code jrv}/{@code jrv_cargo}:
+ * otros IT de la suite limpian esas tablas ({@code delete from jrv}) y con eso dejaban esta prueba
+ * sin datos, fallando o —peor— pasando por el {@code jrv} que otro test acababa de insertar. Aqui
+ * se crean la JRV, el cargo, el partido y el candidato propios, y se borran al terminar. La
+ * geometria (parroquia) si viene del seed: nadie la borra y hace falta para colgar la JRV.
  *
  * <p>Necesita un Postgres real (el perfil levanta uno con Testcontainers o se conecta al que diga
  * {@code -Dtest.postgres.url=...}), porque el endpoint lee {@code jrv_cargo} y las tablas de
@@ -51,11 +58,37 @@ class ObserverCargosConCandidatosIT {
 
   private String tokenObservador;
   private Long jrvId;
+  private Long cargoId;
+  private Long partidoId;
+  private Long candidatoId;
 
   @BeforeEach
   void preparar() {
     tokenObservador = tokenDe(crearUsuario("OBSERVER"));
-    jrvId = primerJrvConCargos();
+    armarDataset();
+  }
+
+  @AfterEach
+  void limpiar() {
+    QuarkusTransaction.requiringNew()
+        .run(
+            () -> {
+              em.createNativeQuery("delete from candidato where id = :id")
+                  .setParameter("id", candidatoId)
+                  .executeUpdate();
+              em.createNativeQuery("delete from jrv_cargo where jrv_id = :id")
+                  .setParameter("id", jrvId)
+                  .executeUpdate();
+              em.createNativeQuery("delete from jrv where id = :id")
+                  .setParameter("id", jrvId)
+                  .executeUpdate();
+              em.createNativeQuery("delete from cargo where id = :id")
+                  .setParameter("id", cargoId)
+                  .executeUpdate();
+              em.createNativeQuery("delete from partido where id = :id")
+                  .setParameter("id", partidoId)
+                  .executeUpdate();
+            });
   }
 
   @Test
@@ -73,6 +106,7 @@ class ObserverCargosConCandidatosIT {
             .body("cargos", hasSize(greaterThan(0)))
             .body("cargos[0].partidos", notNullValue())
             .body("cargos[0].candidatos", notNullValue())
+            .body("cargos[0].candidatos[0].nombre", notNullValue())
             .extract()
             .jsonPath()
             .getList("cargos.id", Integer.class);
@@ -156,15 +190,69 @@ class ObserverCargosConCandidatosIT {
         .access();
   }
 
-  /** Primera JRV del seed que tenga al menos un cargo habilitado. */
-  private Long primerJrvConCargos() {
-    return QuarkusTransaction.requiringNew()
-        .call(
-            () ->
-                ((Number)
-                        em.createNativeQuery(
-                                "select jc.jrv_id from jrv_cargo jc where jc.activo order by jc.jrv_id limit 1")
-                            .getSingleResult())
-                    .longValue());
+  /**
+   * Arma el dataset minimo que el endpoint lee: una JRV colgada de una parroquia del seed, un
+   * cargo, un partido, un candidato y la habilitacion del cargo en esa JRV.
+   *
+   * <p>Se hace con SQL nativo porque {@code jrv_cargo} no tiene entidad mapeada: la consulta que
+   * hace el endpoint tambien es nativa.
+   */
+  private void armarDataset() {
+    String sufijo = UUID.randomUUID().toString().substring(0, 8);
+    // `partido.numero_lista` es UNIQUE: se deriva del mismo sufijo para no chocar con el seed
+    // (1..4) ni con los partidos que crean otros IT.
+    int numeroLista = 100_000 + Math.abs(UUID.randomUUID().hashCode() % 899_999);
+
+    QuarkusTransaction.requiringNew()
+        .run(
+            () -> {
+              partidoId =
+                  ((Number)
+                          em.createNativeQuery(
+                                  "insert into partido (nombre, siglas, numero_lista)"
+                                      + " values (:nombre, :siglas, :numero) returning id")
+                              .setParameter("nombre", "Lista de prueba " + sufijo)
+                              .setParameter("siglas", "LPR-" + sufijo)
+                              .setParameter("numero", numeroLista)
+                              .getSingleResult())
+                      .longValue();
+
+              cargoId =
+                  ((Number)
+                          em.createNativeQuery(
+                                  "insert into cargo (nombre, nivel, puestos)"
+                                      + " values (:nombre, 'CANTON', 1) returning id")
+                              .setParameter("nombre", "Cargo de prueba " + sufijo)
+                              .getSingleResult())
+                      .longValue();
+
+              candidatoId =
+                  ((Number)
+                          em.createNativeQuery(
+                                  "insert into candidato (nombre, orden, cargo_id, partido_id)"
+                                      + " values (:nombre, 1, :cargo, :partido) returning id")
+                              .setParameter("nombre", "Candidato de prueba " + sufijo)
+                              .setParameter("cargo", cargoId)
+                              .setParameter("partido", partidoId)
+                              .getSingleResult())
+                      .longValue();
+
+              jrvId =
+                  ((Number)
+                          em.createNativeQuery(
+                                  "insert into jrv (numero, recinto, total_electores, parroquia_id)"
+                                      + " select :numero, :recinto, 100, p.id"
+                                      + " from parroquia p order by p.id limit 1 returning id")
+                              .setParameter("numero", "JRV-TEST-" + sufijo)
+                              .setParameter("recinto", "Recinto de prueba " + sufijo)
+                              .getSingleResult())
+                      .longValue();
+
+              em.createNativeQuery(
+                      "insert into jrv_cargo (jrv_id, cargo_id, activo) values (:jrv, :cargo, true)")
+                  .setParameter("jrv", jrvId)
+                  .setParameter("cargo", cargoId)
+                  .executeUpdate();
+            });
   }
 }
