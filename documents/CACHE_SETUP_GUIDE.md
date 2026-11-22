@@ -211,12 +211,18 @@ BYPASSRLS, 100 VUs):
 | | Sin caché | Con caché |
 |---|---|---|
 | Hit ratio | 0 % | **100 %** |
-| p95 | 3.70 ms | **0.97 ms** |
+| p95 | 3.70 ms | **0.92 ms** |
 | Consultas de configuración a la base | 374.240 | **4** (el llenado inicial) |
 
 La métrica estable es la de **consultas de configuración**: el total absoluto
 de consultas al servidor depende del ruido de arranque (login, auditoría,
 metadatos) y no se puede comparar entre corridas.
+
+El **tamaño de la caché** es lo que más se vigila: con las cuatro cachés calientes
+hay **4 entradas** en total (una por caché) y ~2,3 KB de payload JSON. El límite
+real de memoria es el heap de la JVM del contenedor de Railway, no un servicio
+aparte: `cache_size` y `cache_evictions_total` por caché quedan publicados en
+`/q/metrics` para alertar sobre eso.
 
 Reportes: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`.
 

@@ -51,7 +51,9 @@ Ver https://grafana.com/products/cloud/k6/download/
 Antes de correr tests, crear usuarios y datos de prueba:
 
 ```sql
--- Script: backend/src/main/resources/db/test-data.sql
+-- Script de ejemplo. NO existe en el repo: los datos de prueba se crean con los
+-- changelogs de Liquibase (backend/electoral-api-quarkus/src/main/resources/database/)
+-- y con las cuentas de bootstrap del contexto `bootstrap-admin`.
 -- Usuarios para tests
 INSERT INTO usuario (email, password, rol)
 VALUES
@@ -81,10 +83,12 @@ FROM generate_series(1, 5);
 -- (Repetir para cada cargo)
 ```
 
-Luego ejecutar:
+Si necesitas datos extra, agrégalos como un changelog de Liquibase en
+`backend/electoral-api-quarkus/src/main/resources/database/changelog/` (Liquibase es el único
+dueño del esquema) y aplícalos con:
 ```bash
 cd backend/electoral-api-quarkus
-psql -h localhost -U electoral_user -d electoral_db -f ../src/main/resources/db/test-data.sql
+./mvnw -o quarkus:dev -Dquarkus.liquibase.contexts=seed,bootstrap-admin
 ```
 
 ---
@@ -324,8 +328,8 @@ K6_DOCKER=true ./run.sh baseline
 
 ### Error: "Connection refused" (localhost:8080)
 ```bash
-# Verificar que backend está corriendo
-curl http://localhost:8080/api/v1/health
+# Verificar que backend está corriendo (health de Quarkus)
+curl http://localhost:8080/q/health
 
 # O especificar URL correcta
 API_HOST=your-api-host:port ./run.sh baseline
@@ -399,20 +403,19 @@ API_HOST=your-api-host:port ./run.sh baseline
 
 ## 📚 Documentación Completa
 
-Análisis detallado en: `/INFRASTRUCTURE_RESILIENCE_PLAN.md`
-- Endpoints críticos analizados
-- Escenarios de carga realistas
-- Capacidad actual del sistema
-- Recomendaciones por prioridad
+- Reportes de la medición de caché: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`
+- Estrategia de caché: `documents/CACHING_STRATEGY.md`
+- Setup y variables: `documents/CACHE_SETUP_GUIDE.md`
+- Topología de despliegue: `documents/diagram/02-deployment.md`
 
 ---
 
 ## 📞 Support
 
 Para issues o preguntas:
-1. Revisar `INFRASTRUCTURE_RESILIENCE_PLAN.md` (análisis profundo)
-2. Verificar `config.js` para ajustar SLAs/VUs
-3. Consultar logs en `results/` (JSON)
+1. Revisar `config.js` para ajustar SLAs/VUs
+2. Consultar logs en `results/` (JSON)
+3. Revisar `documents/load-test/` para los reportes ya medidos
 
 ---
 

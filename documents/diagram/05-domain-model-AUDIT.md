@@ -99,7 +99,7 @@ public class Menu {
     Long parentId                    // FK (self-reference) — NULL si raiz
     String codigo                    // UNIQUE: i18n key (ej: "actas.aprobar")
     String label                     // Nombre visible
-    String icono                     // Ionic/Material icon name (nullable)
+    String icono                     // PrimeNG/Material icon name (nullable)
     String ruta                      // Angular route (ej: "/actas/nueva")
     Integer orden                    // Sort order
     Boolean activo                   // Flag para excluir del sidebar

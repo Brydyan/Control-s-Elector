@@ -107,9 +107,16 @@ configuración, hit ratio 100%)
 - Dashboard cache: cambiar tabs → 0 HTTP nuevas
 - Regresión: Datos correctos post-cache (no stale data)
 
-**Backend Unit Tests:**
-- CargoService.findAll() cached: 2 calls → 1 BD query
-- PartidoService.findAll() cached: múltiples usuarios, hit ratio > 90%
+**Backend (sobre los casos de uso reales, no sobre un `CargoService` que no existe):**
+- `ListarCargosUseCase` / `ListarPartidosUseCase` / `ListarCandidatosUseCase` /
+  `ListarGeografiaUseCase`: 2 llamadas → 1 sola consulta a la base (`CacheServicioIT`,
+  `CacheContenidoIT`)
+- Invalidación por escritura: leer → escribir → leer devuelve el dato nuevo
+  (`CacheInvalidacionIT`)
+- El TTL expira de verdad (`CacheTTLIT`) y las métricas van etiquetadas por réplica
+  (`CacheMetricasIT`)
+- Con la caché apagada la API sigue en 200: perder la caché es una degradación, no un 500
+  (`CacheApagadaIT`)
 
 **Integration Tests:**
 - E2E: Observer form 5 cargos → <1s (antes: 2-3s)
@@ -125,7 +132,8 @@ configuración, hit ratio 100%)
 ### F. Documentation
 
 - `CACHING_STRATEGY.md` — Patrón RxJS `shareReplay(1)`, cuándo usar
-- `REDIS_SETUP_GUIDE.md` — Configuración local/producción, TTL, monitoring
+- `CACHE_SETUP_GUIDE.md` — Configuración local/producción, TTL, monitoring (no hay
+  `REDIS_SETUP_GUIDE.md`: la decisión D2 fue opción A, sin Redis)
 - `CACHE_INVALIDATION.md` — Manual clear endpoint, event-driven future (Phase 2)
 
 ---
@@ -171,15 +179,18 @@ configuración, hit ratio 100%)
 
 ✅ **Documento SDD listo en:** `/openspec/changes/back/2026-11-19-caching-strategy/`
 
-→ **Pasar a Arquitecto para feedback** en D1-D5:
-- D1: ¿Service-level shareReplay o interceptor global?
-- D2: ¿Redis compartido o in-memory por réplica?
-- D3: ¿TTL fijo o event-driven desde el inicio?
-- D4: ¿Endpoint de clear manual o solo TTL?
-- D5: ¿Qué alertas para Redis memory?
+**Estado de las decisiones:** D1, D3, D4 y D5 están elegidas en este documento. **D2 fue una
+decisión humana** y quedó tomada como **opción A (Caffeine en memoria, TTL de 2 min)**, con el
+despliegue real como argumento (backend en Railway con 1 réplica, base en Neon). Justificación
+en `apply-progress.md` ("Decision D2: tomada") y en `documents/CACHE_SETUP_GUIDE.md`.
+
+**Lo que queda abierto (no bloquea el release):**
+- Levantar el E2E de caché como job de CI (hoy corre local, contra la API real).
+- Ejecutar la migración de Neon (T-IN-13) en el entorno de producción.
+- Redis queda como **fase 2**, condicionado a que el backend corra en más de una réplica.
 
 **Impacto estimado post-implementación:**
 - Frontend: -1-2s por operación (formularios observer, dashboard tabs)
-- Backend: -90% queries para datos estáticos
+- Backend: -90% queries para datos estáticos (medido: −99.999 % de consultas de configuración)
 - Latencia P95: 2.5s → 1.5s (40% mejora sobre Performance SDD baseline)
 - Throughput: +20% (menos presión en BD)

@@ -7,10 +7,10 @@ Escenario nominal: observador con conexión activa registra su acta correctament
 ```mermaid
 sequenceDiagram
     actor OBS as Observador
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant SVC as ActaService
-    participant STG as Supabase Storage
+    participant STG as Cloudflare R2
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 

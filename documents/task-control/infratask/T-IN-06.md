@@ -5,6 +5,11 @@
 **Tiempo estimado:** 1.5 horas
 **Depende de:** T-IN-05 ✅
 
+
+> **⚠️ HISTÓRICO — ya no describe producción.** El realtime de este proyecto **no depende de
+> Supabase**: el mecanismo (WebSocket) está **por definir** y no se ha implementado. El contenido
+> de abajo se conserva como registro; lo vigente está en `documents/task-control/infra.md`.
+
 ---
 
 ## ¿Qué vas a construir?

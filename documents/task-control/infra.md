@@ -18,7 +18,7 @@ PostgreSQL 16 corriendo en Docker local en `localhost:5432`.
 - [x] `docker-compose.yml` con postgres:16
 - [x] Volumen persistente `postgres_data`
 - [x] Credenciales: `electoral_db / electoral_user / electoral_pass`
-- [x] Spring Boot conectado y arrancando correctamente
+- [x] Backend Quarkus conectado y arrancando correctamente
 
 ---
 
@@ -31,7 +31,7 @@ PostgreSQL 16 corriendo en Docker local en `localhost:5432`.
 
 Crear script `infra/sql/01-schema.sql` con:
 
-- [x] Tablas del dominio (Hibernate ddl-auto=update lo genera, pero tener script manual)
+- [x] Tablas del dominio (Liquibase es el dueño del esquema; el script manual queda como referencia)
 - [x] Índices: `acta(jrv_id, cargo_id)`, `observer_jrv_asignacion(observer_id)`, `refresh_token(token)`
 - [x] Constraints: unicidad `acta(jrv_id, cargo_id)` donde estado != ANULADA
 - [x] Extensiones: `uuid-ossp` si se usan UUIDs como PK
@@ -50,7 +50,7 @@ Script `infra/sql/02-rls.sql` + RlsInterceptor.java:
 - [x] Habilitar RLS en tabla `acta`, `acta_detalle`, `evidencia`, `audit_log`, `notificacion`
 - [x] Policy OBSERVER: `jrv_id IN (SELECT jrv_id FROM observer_jrv_asignacion WHERE observer_id = get_current_user_id())`
 - [x] Policy COORDINATOR / ADMIN / MASTER: sin restricción de fila
-- [x] RlsInterceptor Spring filter: convierte publicId (UUID) a internal id (Long) y ejecuta `SET LOCAL app.current_user_id`
+- [x] Filtro de RLS en la capa Quarkus: convierte publicId (UUID) a internal id (Long) y ejecuta `SET LOCAL app.current_user_id`
 - [x] SecurityConfig: wiring RlsInterceptor después de JwtAuthFilter
 - [x] Función `get_current_user_id()` que lee session variable (vía `app.current_user_id` setting)
 - [x] Verificar que API pasa `SET LOCAL app.current_user_id = ?` antes de queries
@@ -128,7 +128,7 @@ Script `infra/sql/03-seed.sql`:
   - [ ] `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (Neon PostgreSQL) — bloqueado por T-IN-13
   - [ ] `JWT_SECRET`
   - [ ] `AWS_S3_ENDPOINT`, `AWS_S3_REGION`, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (Cloudflare R2, S3-compatible)
-  - [ ] `AWS_S3_PATH_STYLE=false` para R2
+  - [ ] `AWS_S3_PATH_STYLE=true` para R2 (R2 usa endpoint con path-style)
 - [ ] Verificar health endpoint
 - [ ] Configurar dominio custom `api.brydyan.me`
 
@@ -141,14 +141,16 @@ Script `infra/sql/03-seed.sql`:
 **Asignado:** Andy
 **Depende de:** T-IN-07
 
-Configuración histórica en `backend/electoral-api/src/main/resources/application-prod.properties`:
+El backend **no tiene** un `application-prod.properties`: Quarkus resuelve la configuración por
+precedencia y en producción eso son **variables de entorno en el dashboard de Railway**
+(plantilla canónica: `.env.example`).
 
-- [x] `spring.datasource.url=${DATABASE_URL}`
-- [x] `spring.jpa.hibernate.ddl-auto=validate`
-- [x] `spring.jpa.show-sql=false`
-- [x] `spring.jpa.open-in-view=false`
-- [x] `server.port=${PORT:8080}`
-- [x] JWT secret desde variable de entorno (nunca hardcodeado)
+- [x] `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (Neon) — el backend usa `DB_*`, no `DATABASE_URL`
+- [x] `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_ENDPOINT`, `AWS_S3_REGION`, `AWS_S3_BUCKET`, `AWS_S3_PATH_STYLE=true` (Cloudflare R2)
+- [x] `APP_JWT_SECRET`, `APP_JWT_REFRESH_PEPPER` (HS256, 32+ chars, nunca hardcodeados)
+- [x] `QUARKUS_LIQUIDASE_CONTEXTS=seed` (sin `bootstrap-admin` en producción)
+- [x] `QUARKUS_HIBERNATE_GENERATION=validate` y `QUARKUS_LOG_LEVEL=INFO`
+- [x] `CACHE_TTL=2m` (ver `documents/CACHE_SETUP_GUIDE.md`)
 
 ---
 
@@ -163,7 +165,7 @@ Configuración histórica en `backend/electoral-api/src/main/resources/applicati
 
 - [x] Conectar repo GitHub a Cloudflare Pages
 - [x] Build command: `npm run build`
-- [x] Output directory: `frontend/app/dist/app`
+- [x] Output directory: `frontend/app/www` (`angular.json` → `outputPath.base`)
 - [ ] Variables de entorno en Cloudflare Pages: `CF_API_URL=https://api.brydyan.me/api/v1`
 - [x] Configurar dominio custom `control.brydyan.me`
 - [x] Configuración en runtime vía `assets/config.json` (sin rebuild para cambiar la URL de la API)
@@ -196,8 +198,12 @@ Sin esto, refresh en rutas Angular devuelve 404.
 **Asignado:** Andy
 **Depende de:** T-IN-07, T-IN-09
 
-- [x] Workflow `ci.yml`: en PR → build backend + frontend, correr tests
-- [x] Workflow `deploy.yml`: en push a `main` → Railway (backend) y Cloudflare Pages (frontend) despliegan automáticamente
+- [x] Workflow `ci.yml`: checks requeridos (tests backend + cobertura, `spotless:check`, ESLint, format check, build de producción, tests unitarios frontend)
+- [x] Workflow `ci-native.yml`: build de la imagen nativa del backend (solo cuando cambia el módulo Quarkus)
+- [x] Workflow `load-test-baseline.yml`: corrida del load test de referencia
+- [x] Workflow `deploy.yml`: build de imágenes + rollout a **staging k3s** (no es producción)
+- [x] Producción: el deploy lo hacen Railway y Cloudflare Pages con su propia integración de GitHub (sin tokens de despliegue en GitHub)
+- [ ] Job de Playwright para los E2E de caché (hoy solo corren en local)
 - [ ] Secrets en GitHub: credenciales de Neon y de Cloudflare R2 (nunca en el repo)
 
 ---
@@ -216,7 +222,7 @@ Sin esto, refresh en rutas Angular devuelve 404.
 - [ ] Ejecutar las migraciones Liquibase contra Neon
 - [ ] Verificar el esquema (tablas y FKs)
 - [ ] Configurar VPC endpoint o IP whitelist para Railway
-- [ ] Verificar el connection pooling (HikariCP)
+- [ ] Verificar el connection pooling (el pool de Agroal de Quarkus)
 - [ ] Verificar backups automáticos y PITR
 - [ ] Health check de base de datos (`/api/v1/health/db`)
 

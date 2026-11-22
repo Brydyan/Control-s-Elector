@@ -1,4 +1,10 @@
-# T-FE-11 — Dashboard en Tiempo Real con Supabase Realtime
+# T-FE-11 — Dashboard en Tiempo Real (mecanismo por definir)
+
+> **⚠️ HISTÓRICO — ya no describe producción.** Esta tarea se resolvió usando Supabase Realtime.
+> El proyecto **no usa Supabase**: el realtime ya no depende de un proveedor administrado y el
+> mecanismo (**WebSocket**, en el backend) está **por definir** — ver `documents/diagram/README.md`
+> (pendiente "Suscripción WebSocket (mecanismo por definir)"). El contenido de abajo se conserva
+> como registro del diseño original con Supabase Realtime.
 
 **Dificultad:** Intermedio-Avanzado
 **Tiempo estimado:** 3-4 horas

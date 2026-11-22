@@ -4,7 +4,7 @@
 **Implementado por:** Builder (`/02-builder-sdd`) + rework de verificación (`/03-verify-sdd`)
 **Última actualización:** 2026-11-21
 
-## Estado: COMPLETA — implementacion completa y medida (backend, frontend, tests, metricas, E2E, k6 ejecutado, docs). D2 decidida (Caffeine en memoria). Queda pendiente el E2E en CI y el N.9 de otro SDD
+## Estado: COMPLETA — implementacion completa y medida (backend, frontend, tests, metricas, E2E, k6 ejecutado, docs). D2 decidida (Caffeine en memoria). Quedan pendientes: el job de E2E en CI, la migracion a Neon (T-IN-13) y el N.9 de otro SDD
 
 ---
 
@@ -61,6 +61,8 @@
 | `7c6cd81` | Los parsers de metricas (k6 y E2E) toleran la etiqueta `replica` |
 | `c6af093` | Mediciones del load test actualizadas con el TTL de 2 min |
 | `595f0d9` | `tasks.md` con la seccion de Redis sustituida por la opcion A |
+| `27eda74` | `apply-progress.md` con los commits reales de la decision D2 |
+| `04d81ed` | `.env.example` a Neon/R2/Railway + purga de restos del diseno viejo |
 
 ---
 
@@ -91,9 +93,10 @@ como se apartaron del diseno original.
 
 | Desviacion | Diseno | Implementacion | Por que |
 |---|---|---|---|
+| **D2** — backend de cache | Redis compartido (`quarkus.cache.type=redis`, TTL 10 min) | **Caffeine en memoria**, TTL 2 min (`CACHE_TTL`) | Decision humana: el backend corre en Railway con **1 replica**, asi que el problema que Redis resolvia (copias distintas entre replicas) no existe; en Neon una cache en proceso evita un round-trip al PostgreSQL serverless. Redis queda como fase 2. |
 | **C.2** — numero de cachés | 6 cachés (`provincias`, `cantones`, `parroquias` a TTL 1h, aparte de cargos/partidos/candidatos) | **4 cachés**: `cargos`, `partidos`, `candidatos` y `geografia` (TTL 2m) | La geografia se sirve como **un arbol** provincia → canton → parroquia → JRV en una sola consulta (`ListarGeografiaUseCase`); cachear tres listas por separado obligaria a recomponer el arbol en cada lectura y a tres TTL que pueden desincronizarse. |
 | **D.1/D.2** — mecanismo de lectura | `@CacheResult` | Acceso explicito con `CacheDeLectura` | `@CacheResult` no deja ver si el acierto vino de la cache o de la base: el hit ratio (la metrica que dice si la cache esta sirviendo) quedaria a ciegas. |
-| **E.1** — rol del vaciado | `@RolesAllowed({"ADMIN"})` | `Autorizador.exigir("cache:clear", "MASTER")` | `@RolesAllowed` no se usa en ninguna parte del backend; ADMIN no escribe en este dominio y vaciar la cache es una escritura sobre el estado operativo. |
+| **E.1** — rol del vaciado | `@RolesAllowed({"ADMIN"})` en `AdminResource` | `Autorizador.exigir("cache:clear", "MASTER")` en `AdminCacheResource` | `@RolesAllowed` no se usa en ninguna parte del backend; ADMIN no escribe en este dominio y vaciar la cache es una escritura sobre el estado operativo. El resource se separo del de administracion general para que la matriz de roles sea explicita. |
 
 ---
 
@@ -151,6 +154,13 @@ Justificacion completa en `documents/CACHE_SETUP_GUIDE.md` (seccion 3).
 - [ ] Sacar `odd/tasks/invitacion-duplicada-race-condition.md` del commit de cache (`1bf7dcb`): no
       es de este SDD. No se puede deshacer sin reescribir historia (excluido por decision); el
       archivo esta en su carpeta correcta (`odd/tasks/`) y queda en el commit equivocado.
+- [ ] **E2E de cache en CI**: los specs `e2e/cache-api-real.spec.ts` y
+      `e2e/cache-datos-estaticos.spec.ts` corren hoy en local contra la API real, pero no hay job
+      de Playwright en `.github/workflows/` que los ejecute en cada push.
+- [ ] **T-IN-13 (Neon)**: la migracion de la base a Neon esta documentada pero no ejecutada
+      (`openspec/changes/infra/2026-11-08-t-in-13-neon-database/apply-progress.md`).
+- [ ] **WebKit** en la suite E2E: no es ejecutable en esta maquina; solo se corrio Chromium
+      (Desktop Chrome y Mobile Chrome — Pixel 7).
 
 ---
 
@@ -177,7 +187,7 @@ e2e       npx playwright test e2e/cache-api-real.spec.ts e2e/cache-datos-estatic
 | Consultas de configuracion a la base | −90 % | **−99.999 %** (374.240 → 4; 10,0 → 0,0000872 por lectura) | ✅ |
 | Latencia formulario observer | < 1s | no medida (el E2E cuenta peticiones, no tiempos) | ⚠️ |
 | Latencia tabs dashboard | < 0.5s | no medida (idem) | ⚠️ |
-| Memoria de la cache | < 100MB | con Caffeine el limite es el heap de la JVM: `cache_size` y `cache_evictions_total` por cache quedan publicados en `/q/metrics` | ⚠️ |
+| Memoria de la cache | < 100MB | **medida**: 4 entradas (una por cache), ~2,3 KB de payload JSON; el limite real es el heap de la JVM (`cache_size` y `cache_evictions_total` en `/q/metrics`) | ✅ |
 
 > Las dos latencias de interfaz (observer y dashboard) siguen **sin medir**: el E2E cuenta
 > peticiones, no tiempos. El p95 de 0.92 ms es el de la API, no el de la pantalla. Medirlas

@@ -11,8 +11,8 @@ Escenario: COORDINATOR detecta inconsistencia entre foto y datos digitados; noti
 sequenceDiagram
     actor COORD as Coordinator
     actor OBS as Observador
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant SVC as ActaService
     participant AUDIT as AuditLogService
     participant NOTIF as NotificacionService
@@ -57,8 +57,8 @@ Escenario: OBSERVER recibe notificación, abre el apartado de correcciones pendi
 ```mermaid
 sequenceDiagram
     actor OBS as Observador
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant SVC as ActaService
     participant AUDIT as AuditLogService
     participant NOTIF as NotificacionService
@@ -104,7 +104,7 @@ Escenario: OBSERVER no puede corregir en ese momento; COORDINATOR edita directam
 ```mermaid
 sequenceDiagram
     actor COORD as Coordinator
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant SVC as ActaService
     participant AUDIT as AuditLogService
     participant JPA as JPA Repository
@@ -134,7 +134,7 @@ Escenario: COORDINATOR revisa corrección (de OBSERVER o propia) y aprueba el ac
 ```mermaid
 sequenceDiagram
     actor COORD as Coordinator
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant SVC as ActaService
     participant AUDIT as AuditLogService
     participant JPA as JPA Repository

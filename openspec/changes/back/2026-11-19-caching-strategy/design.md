@@ -210,6 +210,11 @@ El TTL de 2 min tiene un coste medido: en una corrida de 4 min 30 s (con dos
 vencimientos del TTL) fueron **33 consultas para 1.103.520 lecturas**, es decir
 29 consultas extra frente al llenado inicial.
 
+**Tamaño de la caché, medido:** con las cuatro cachés calientes hay **4 entradas** en total
+(una por caché) y ~2,3 KB de payload JSON. El límite de memoria no es un servicio aparte
+sino el heap de la JVM del contenedor: `cache_size` y `cache_evictions_total` por caché
+quedan publicados en `/q/metrics` para vigilarlo.
+
 Reportes: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`.
 
 ---
@@ -337,33 +342,25 @@ describe('DashboardApiService - Cache Activation', () => {
 });
 ```
 
-### E.3 Backend Unit Tests (Caffeine Caching)
+### E.3 Backend Integration Tests (Caffeine Caching)
+
+> El diseño original proponía un `CargoServiceCachingTest` con `findAll()`. Ese servicio no
+> existe en el repo: el patrón real son **casos de uso** que llaman a repos Panache. Los tests
+> se escribieron contra lo que hay.
 
 ```java
-@QuarkusTest
-public class CargoServiceCachingTest {
-  
-  @Inject
-  CargoService service;
-  
-  @Inject
-  CargoRepository repository;
-  
-  @Test
-  void testFindAllCached() {
-    // 1st call: should hit repository
-    List<CargoDto> cargos1 = service.findAll();
-    assertNotNull(cargos1);
-    
-    // 2nd call: should come from the cache (spy on repository)
-    List<CargoDto> cargos2 = service.findAll();
-    assertEquals(cargos1, cargos2);
-    
-    // Verify repository was called only once
-    // (Using Mockito spy or query counter)
-  }
-}
+// shared/cache/... y electoral/application/...
+// CacheServicioIT      : 2 llamadas al caso de uso -> 1 sola consulta a la base
+// CacheContenidoIT     : las 4 cachés sirven el contenido esperado
+// CacheInvalidacionIT  : leer -> escribir -> leer devuelve el dato nuevo
+// CacheTTLIT           : la entrada expira de verdad (TTL de 1 s + espera)
+// CacheMetricasIT      : cache_hits_total / cache_misses_total etiquetados por replica
+// CacheApagadaIT       : con la cache apagada la API responde 200 (degradacion, no 500)
 ```
+
+La comprobación de "no se fue a la base" no usa un spy de Mockito sobre el repositorio, sino un
+contador de consultas de PostgreSQL (`pg_stat_statements`): es lo que de verdad mide el
+impacto en la base.
 
 ### E.4 Integration Test: E2E Flow
 
@@ -400,12 +397,19 @@ Expected:
 
 | Archivo | Cambio | Prioridad |
 |---------|--------|-----------|
-| `observer.api.ts` | Agregar `partidosCache$` + `shareReplay(1)` | P1 |
+| `observer.api.ts` | Agregar `partidosCache$` + `shareReplay(1)` + `invalidateCache()` | P1 |
 | `dashboard.api.ts` | Activar cache en 4 métodos | P3 |
+| `configuracion.api.ts` | `shareReplay(1)` en las lecturas de configuración | P3 |
 | `ListarCargosUseCase` | Leer y guardar en la caché `cargos` | P2 |
 | `ListarPartidosUseCase` | Leer y guardar en la caché `partidos` | P2 |
 | `ListarCandidatosUseCase` | Leer y guardar en la caché `candidatos` | P2 |
 | `ListarGeografiaUseCase` | Leer y guardar en la caché `geografia` | P2 |
-| `CacheDeLectura.java` | Helper de lectura cacheada con hit ratio medido | P2 |
+| `CacheDeLectura.java` | Helper de lectura cacheada con hit ratio medido y etiqueta `replica` | P2 |
 | `application.properties` | Config Caffeine, TTL, métricas y `replica.id` | P2 |
-| `AdminCacheResource.java` | Endpoint `/cache/clear` con auditoría | P2 |
+| `AdminCacheResource.java` | Endpoint `/cache/clear` con `Autorizador.exigir("cache:clear","MASTER")` y auditoría | P2 |
+| `CacheServicioIT`, `CacheContenidoIT`, `CacheInvalidacionIT`, `CacheTTLIT`, `CacheMetricasIT`, `CacheApagadaIT` | Cobertura backend (unit + integración) | P1 |
+| `observer.api.spec.ts`, `dashboard.api.spec.ts` | Cobertura frontend (specs, no `.test.ts`) | P1 |
+| `e2e/cache-api-real.spec.ts`, `e2e/cache-datos-estaticos.spec.ts` | E2E contra la API real | P1 |
+| `frontend/tests/load/scenarios/cache-hit-ratio.js` | Load test k6 (100 VUs) | P1 |
+| `documents/CACHING_STRATEGY.md`, `CACHE_INVALIDATION.md`, `CACHE_SETUP_GUIDE.md` | Documentación | P2 |
+| `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md` | Reportes de la medición | P2 |

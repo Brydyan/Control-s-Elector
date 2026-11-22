@@ -27,7 +27,7 @@ En **Settings → Builds & deployments → Build output settings** → Post-buil
 
 ```bash
 # Reemplaza config.json después del build
-cat > dist/app/assets/config.json << 'EOF'
+cat > frontend/app/www/assets/config.json << 'EOF'
 {
   "apiUrl": "https://api.brydyan.me/api/v1",
   "sentryDsn": ""
@@ -37,7 +37,7 @@ EOF
 
 Puedes inyectar variables de Cloudflare:
 ```bash
-cat > dist/app/assets/config.json << 'EOF'
+cat > frontend/app/www/assets/config.json << 'EOF'
 {
   "apiUrl": "$CF_API_URL",
   "sentryDsn": "$CF_SENTRY_DSN"
@@ -47,11 +47,14 @@ EOF
 
 ### 2. Build command (si no está automático)
 
+> El `outputPath` real del proyecto Angular es `frontend/app/www` (`angular.json` → `outputPath.base`),
+> no `dist/app`: el build de Cloudflare debe apuntar a esa carpeta.
+
 En **Settings → Builds & deployments → Build settings**:
 
 ```
 Build command:    npm run build
-Build output:     frontend/app/dist/app
+Build output:     frontend/app/www
 ```
 
 ### 3. Environment variables en Cloudflare

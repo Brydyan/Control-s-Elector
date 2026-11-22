@@ -404,8 +404,8 @@ AND      se muestra mensaje de error: "Verificación electoral inválida: los vo
 ## Garantías
 
 - **G1:** Invariante matemático verificado antes del envío final.
-- **G2:** Contrato JSON idéntico a `ActaRequestDto` del backend Spring Boot.
-- **G3:** Subida de evidencia encadenada usando `@RequestPart("imagen")`.
+- **G2:** Contrato JSON idéntico a `ActaRequestDto` del backend Quarkus.
+- **G3:** Subida de evidencia encadenada usando el multipart `@RestForm("imagen")`.
 
 ---
 
@@ -448,7 +448,7 @@ GIVEN    Blob WebP listo para subida
 WHEN     se invoca ObserverService.subirImagenActa(actaId, file)
 THEN     se construye un FormData con la clave exacta 'imagen' (formData.append('imagen', blob, 'acta.webp'))
 AND      se envía vía HTTP POST a /api/v1/observer/actas/:id/imagen
-AND      el backend Spring Boot acepta la petición sin MissingServletRequestPartException
+AND      el backend Quarkus acepta la petición sin error de parte multipart faltante
 ```
 
 ### S5 — Manejo de permisos o cancelación de cámara
@@ -464,7 +464,7 @@ AND      permite al usuario seleccionar un archivo desde el almacenamiento del d
 
 - **G1:** Formato de salida estricto `image/webp`.
 - **G2:** Tamaño acotado (< 500 KB) para permitir transmisión rápida en redes 2G/3G.
-- **G3:** Clave multipart obligatoria `'imagen'` compatible con `@RequestPart("imagen")` de Spring Boot.
+- **G3:** Clave multipart obligatoria `'imagen'` compatible con `@RestForm("imagen")` de Quarkus.
 
 ---
 
@@ -624,9 +624,9 @@ AND      despliega las tarjetas de métricas, barras cantonales y novedades
 ### S2 — Evento Realtime dispara invalidación reactiva debounced
 
 ```gherkin
-GIVEN    dashboard cargado y canal WebSocket de Supabase suscrito a tabla acta
+GIVEN    dashboard cargado y canal WebSocket (mecanismo por definir) suscrito a los cambios de acta
 WHEN     un veedor envía una nueva acta o un coordinador aprueba un acta
-THEN     Supabase Realtime emite evento INSERT o UPDATE
+THEN     el canal emite el evento de cambio
 AND      el frontend amortigua eventos mediante debounceTime(500)
 AND      ejecuta una recarga limpia de los endpoints REST del backend
 AND      los gráficos y números se actualizan reflejando los nuevos totales calculados por el servidor
@@ -646,14 +646,14 @@ AND      el frontend refleja la disminución de votos sin alterar la consistenci
 ```gherkin
 GIVEN    usuario en /dashboard con suscripción activa a WebSocket
 WHEN     navega a otra sección del sistema
-THEN     ngOnDestroy remueve los canales de Supabase y cancela las subscripciones
+THEN     ngOnDestroy remueve el canal WebSocket y cancela las subscripciones
 AND      no quedan procesos huérfanos ni fugas de memoria
 ```
 
 ## Garantías (T-FE-11)
 
 - **G1:** Autoridad absoluta del backend sobre la suma de votos y porcentajes.
-- **G2:** Uso de Supabase Realtime como gatillo reactivo de invalidación de caché.
+- **G2:** Uso del canal WebSocket (mecanismo por definir) como gatillo reactivo de invalidación de caché.
 - **G3:** Rutas canónicas `/api/v1/dashboard/*`.
 
 ---

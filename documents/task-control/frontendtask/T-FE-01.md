@@ -460,9 +460,10 @@ export const APP_ROUTES: Routes = [
 // src/environments/environment.ts
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:8080/api/v1',
-  supabaseUrl: 'https://tuproyecto.supabase.co',
-  supabaseAnonKey: 'tu-anon-key'
+  // Ruta relativa: el proxy de dev la manda al backend y deja traveling
+  // la cookie httpOnly del refresh token.
+  apiUrl: '/api/v1',
+  sentryDsn: ''
 };
 ```
 
@@ -470,11 +471,15 @@ export const environment = {
 // src/environments/environment.prod.ts
 export const environment = {
   production: true,
+  // Fallback: en produccion la URL real se carga en runtime desde
+  // assets/config.json (ver CLOUDFLARE_PAGES_SETUP.md).
   apiUrl: 'https://api.brydyan.me/api/v1',
-  supabaseUrl: 'https://tuproyecto.supabase.co',
-  supabaseAnonKey: 'tu-anon-key'
+  sentryDsn: ''
 };
 ```
+
+> No hay `supabaseUrl` ni `supabaseAnonKey`: el proyecto **no usa Supabase**. La base es Neon y el
+> storage de evidencias es Cloudflare R2, ambos accesados por el backend, no por el navegador.
 
 ---
 

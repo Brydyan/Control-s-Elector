@@ -55,7 +55,7 @@ Visit https://grafana.com/products/cloud/k6/download/ and download the appropria
 
 ```bash
 # Test health endpoint
-curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/q/health
 
 # Expected response (200 OK):
 # {"status": "UP", ...}
@@ -199,7 +199,7 @@ k6 version
 ### Connection refused (localhost:8080)
 ```bash
 # Check if backend is running
-curl http://localhost:8080/api/v1/health
+curl http://localhost:8080/q/health
 
 # If not, start backend
 cd backend/electoral-api-quarkus
@@ -250,7 +250,7 @@ sudo docker pull grafana/k6:latest
 
 - [ ] k6 installed and verified (`k6 version`)
 - [ ] Backend running on localhost:8080 (or configured API_HOST)
-- [ ] Backend health check passes (`curl http://localhost:8080/api/v1/health`)
+- [ ] Backend health check passes (`curl http://localhost:8080/q/health`)
 - [ ] Test data seeded in database
 - [ ] Test credentials exist (`obs1@electoral.ec`, etc.)
 - [ ] Baseline test runs successfully
@@ -302,7 +302,7 @@ Once setup is complete:
 
 1. **Beginner:** Read README.md (this directory)
 2. **Intermediate:** Examine scenarios/ (study real test cases)
-3. **Advanced:** Read INFRASTRUCTURE_RESILIENCE_PLAN.md (context & strategy)
+3. **Advanced:** Read `documents/CACHING_STRATEGY.md` and `documents/diagram/02-deployment.md` (context & strategy)
 
 ---
 

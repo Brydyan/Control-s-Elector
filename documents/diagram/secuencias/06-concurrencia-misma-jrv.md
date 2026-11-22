@@ -7,7 +7,7 @@ Escenario: dos dispositivos intentan registrar el acta del mismo cargo en la mis
 sequenceDiagram
     participant APP_A as App Dispositivo A<br/>(Observador Titular)
     participant APP_B as App Dispositivo B<br/>(Observador Suplente)
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 

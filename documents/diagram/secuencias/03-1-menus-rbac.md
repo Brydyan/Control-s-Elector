@@ -5,8 +5,8 @@ Escenario: Post-login, FE obtiene arbol de menus visibles según los permisos de
 ```mermaid
 sequenceDiagram
     actor USER as Usuario Autenticado
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant MENUSVC as MenuService
     participant PG as PostgreSQL
 
