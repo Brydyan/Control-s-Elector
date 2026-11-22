@@ -1,4 +1,4 @@
-# T-IN-09 — Deploy Angular en Vercel
+# T-IN-09 — Deploy Angular en Cloudflare Pages
 
 **Estado:** TODO
 **Dificultad:** Intermedio
@@ -9,68 +9,92 @@
 
 ## ¿Qué vas a construir?
 
-Deploy del frontend Angular en **Vercel**: plataforma global de CDN que sirve tu app desde edge locations cercanas a usuarios, con SPA routing automático.
+Deploy del frontend Angular en **Cloudflare Pages**: CDN global que sirve la app estática desde
+edge locations cercanas a los usuarios, con SPA routing y **0 $ de egress**.
+
+> La versión anterior de esta tarea describía el deploy en **Vercel**. Cloudflare Pages es el
+> destino vigente del frontend. Se conserva el procedimiento (cuenta, import, build, dominio,
+> verificación) con los valores reales.
 
 ---
 
 ## Pasos
 
-### Paso 1 — Crear cuenta Vercel
+### Paso 1 — Crear cuenta Cloudflare
 
-1. Ve a https://vercel.com
-2. Regístrate con GitHub
+1. Ve a https://dash.cloudflare.com
+2. Regístrate (o entra con GitHub)
 3. Autoriza acceso a repos
 
-### Paso 2 — Importar proyecto
+### Paso 2 — Crear proyecto Pages
 
-1. Dashboard → **Import Project**
-2. Selecciona `Control-s-Elector` repo
-3. Vercel detecta Angular automáticamente
+1. Dashboard → **Workers & Pages** → **Create** → **Pages** → **Connect to Git**
+2. Selecciona el repo `Control-s-Elector`
+3. Build settings:
+   - **Framework preset**: Angular
+   - **Build command**: `cd frontend/app && npm run build`
+   - **Build output directory**: `frontend/app/www`
+   - **Root directory**: *(vacío — el repo es la raíz)*
 
-### Paso 3 — Configurar build
+> El `outputPath` real del proyecto es `frontend/app/www` (`angular.json` → `outputPath.base`).
 
-1. **Framework Preset**: Angular
-2. **Build Command**: `npm run build -- --configuration=production`
-3. **Output Directory**: `dist/app/browser`
-4. **Environment Variables**:
-   ```
-   VITE_API_URL=https://api.brydyan.me
-   ```
+### Paso 3 — Configuración en runtime
 
-### Paso 4 — Crear vercel.json
-
-Archivo `frontend/app/vercel.json` (para SPA routing):
+El frontend carga su configuración desde **`assets/config.json`** en runtime, no en build time
+(ver `CLOUDFLARE_PAGES_SETUP.md`). El archivo ya versionado trae:
 
 ```json
 {
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "apiUrl": "https://api.brydyan.me/api/v1",
+  "sentryDsn": ""
 }
 ```
 
-Sin esto, refresh en ruta Angular devuelve 404.
+Si se necesita cambiar la URL sin rebuild, se usa el post-build command de Cloudflare:
+
+```bash
+cat > frontend/app/www/assets/config.json << 'EOF'
+{
+  "apiUrl": "$CF_API_URL",
+  "sentryDsn": "$CF_SENTRY_DSN"
+}
+EOF
+```
+
+### Paso 4 — SPA routing
+
+Angular Router necesita que toda ruta interna sirva `index.html`. En Cloudflare Pages eso lo
+resuelve el archivo `frontend/app/public/_redirects` (ver T-IN-10):
+
+```
+/* /index.html 200
+```
 
 ### Paso 5 — Conectar dominio
 
-1. Vercel Dashboard → **Settings** → **Domains**
+1. Cloudflare Pages → **Custom domains**
 2. Agrega: `control.brydyan.me`
-3. Vercel retorna CNAME; actualiza tu DNS
+3. Cloudflare actualiza el DNS si el dominio ya está en la misma cuenta
 
 ### Paso 6 — Verificar
 
 ```bash
-https://control.brydyan.me
-# Debería cargar la app Angular
+curl -I https://control.brydyan.me
+# Esperado: 200
+
+# Una ruta interna también debe devolver 200 (no 404)
+curl -I https://control.brydyan.me/observer/mis-actas
+# Esperado: 200
 ```
 
 ---
 
 ## Checklist
 
-- [ ] Cuenta Vercel creada
-- [ ] Repo importado
-- [ ] Build config correcto (dist/app/browser)
-- [ ] vercel.json existe
+- [ ] Cuenta Cloudflare creada
+- [ ] Repo conectado a Pages
+- [ ] Build config correcto (`frontend/app/www`)
+- [ ] `public/_redirects` existe
 - [ ] Dominio custom apuntando
-- [ ] App carga sin 404 en rutas
+- [ ] App carga sin 404 en rutas internas
+- [ ] La API se alcanza por `https://api.brydyan.me/api/v1` (config.json)

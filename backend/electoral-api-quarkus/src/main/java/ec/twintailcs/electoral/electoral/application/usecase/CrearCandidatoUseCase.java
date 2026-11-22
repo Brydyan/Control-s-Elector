@@ -6,6 +6,7 @@ import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.web.dto.CandidatoRequest;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -20,6 +21,7 @@ public class CrearCandidatoUseCase {
    * Crea el candidato. El cargo y el partido tienen que existir: si no, la operacion se rechaza con
    * 404.
    */
+  @CacheInvalidateAll(cacheName = "candidatos")
   @Transactional
   public Candidato execute(CandidatoRequest dto, Long masterId, String ipAddress) {
     Cargo cargo = Cargo.findById(dto.cargoId());

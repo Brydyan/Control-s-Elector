@@ -59,7 +59,7 @@ diagram/
 
 | # | Archivo | Escenario |
 |---|---------|-----------|
-| 09 | [09-dashboard-realtime.md](secuencias/09-dashboard-realtime.md) | Supabase Realtime → WebSocket → update reactivo por cargo y cantón |
+| 09 | [09-dashboard-realtime.md](secuencias/09-dashboard-realtime.md) | WebSocket (mecanismo por definir) → update reactivo por cargo y cantón |
 | 14 | [14-notificaciones.md](secuencias/14-notificaciones.md) | Ciclo push: EN_DISPUTA → OBSERVER · corrección → COORDINATOR · anulación → COORDINATOR |
 
 ---

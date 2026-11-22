@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.geografia.application.usecase;
 
 import ec.twintailcs.electoral.geografia.web.dto.GeografiaTreeDto;
+import ec.twintailcs.electoral.shared.cache.CacheDeLectura;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -9,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Lectura del arbol geografico completo (provincia → canton → parroquia → JRV).
@@ -21,10 +23,30 @@ import java.util.Map;
 public class ListarGeografiaUseCase {
 
   @Inject EntityManager entityManager;
+  @Inject CacheDeLectura cache;
 
-  /** Devuelve el arbol completo, con listas vacias en los niveles sin hijos. */
+  /**
+   * Devuelve el arbol completo, con listas vacias en los niveles sin hijos. Cacheado con TTL de 10
+   * minutos.
+   */
   @Transactional
   public GeografiaTreeDto execute() {
+    Optional<GeografiaTreeDto> cacheado = cache.leer("geografia", "todos");
+    if (cacheado.isPresent()) {
+      return cacheado.get();
+    }
+    GeografiaTreeDto arbol = armarArbol();
+    cache.guardar("geografia", "todos", arbol);
+    return arbol;
+  }
+
+  /**
+   * Arma el arbol con una sola consulta.
+   *
+   * <p>El acceso a la cache va explicito (y no con {@code @CacheResult}) para que el hit ratio
+   * quede medido: ver {@link CacheDeLectura}.
+   */
+  private GeografiaTreeDto armarArbol() {
     List<Object[]> filas =
         entityManager
             .createNativeQuery(

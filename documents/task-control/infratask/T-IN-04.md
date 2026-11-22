@@ -165,7 +165,7 @@ END $$;
 -- "Admin" + "Sistema" + "MASTER" = admsismas@control.ttcs
 
 -- La contraseña es admin12345 (solo dev, cambiar en prod)
--- Hash BCrypt creado localmente (usa Spring Security PasswordEncoder)
+-- Hash BCrypt creado localmente (usa BCrypt)
 -- Para generar el hash, ejecuta en Java:
 -- new BCryptPasswordEncoder().encode("admin12345")
 -- Resultado típico: $2a$10$7Rg5fRhQrDVpMvgBxvXJYOCCWqKj1mDMqKKKV1...
@@ -176,7 +176,7 @@ SELECT
   'Admin',
   'Sistema',
   'admsismas@control.ttcs',
-  -- ⚠️ COPIA ESTO: Hash BCrypt de "admin12345" generado con Spring
+  -- ⚠️ COPIA ESTO: Hash BCrypt de "admin12345" generado con BCrypt
   -- Necesitas ejecutar esto en tu app Java y obtener el hash:
   -- PasswordEncoder encoder = new BCryptPasswordEncoder();
   -- String hash = encoder.encode("admin12345");
@@ -294,15 +294,16 @@ ON CONFLICT DO NOTHING;
 
 Para generar el hash:
 
-**Opción A: Desde Spring Boot Java**
+**Opción A: Desde Java (Quarkus)**
 ```java
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import io.quarkus.runtime.Startup;
+import io.quarkus.runtime.configuration.Config;
+import org.mindrot.jbcrypt.BCrypt;
 
 public class GenerateHash {
     public static void main(String[] args) {
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         String plainPassword = "admin12345";
-        String hash = encoder.encode(plainPassword);
+        String hash = BCrypt.hashpw(plainPassword, BCrypt.gensalt());
         System.out.println("Hash: " + hash);
         // Copia este hash y reemplaza el placeholder en 03-seed.sql
     }
@@ -375,7 +376,7 @@ psql -h localhost -U electoral_user -d electoral_db -c "
    curl -X POST http://localhost:8081/api/v1/auth/login \
      -H "Content-Type: application/json" \
      -d '{"email":"admsismas@control.ttcs","password":"admin12345"}'
-   # Esperado: JWT token si Spring está levantado
+   # Esperado: JWT token si el backend está levantado
    ```
 
 ---

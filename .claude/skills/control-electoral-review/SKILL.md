@@ -122,7 +122,7 @@ equivalente), es hallazgo crítico, no da igual que el frontend "lo oculte".
 - DTO de respuesta que expone `passwordHash` u otro campo interno sensible.
 - Mismo DTO usado para request y response — separar (`CreateUsuarioDto` vs `UsuarioResponseDto`).
 
-## 7. Storage (Supabase Object Storage / `StorageService`)
+## 7. Storage (Cloudflare R2 / `StorageService`)
 
 - Llamadas de upload sin timeout explícito.
 - Sin retry/backoff para fallos transitorios.

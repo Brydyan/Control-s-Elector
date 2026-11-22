@@ -70,7 +70,7 @@ El archivo actual contiene **dos servicios**:
 
 ```bash
 # .env (raíz del proyecto)
-SERVER_PORT=8081           # Backend (Spring Boot) en el host, no Docker
+SERVER_PORT=8081           # Backend (Quarkus) en el host, no Docker
 DB_HOST=localhost
 DB_PORT=5432               # PostgreSQL dentro de Docker
 DB_NAME=electoral_db
@@ -104,30 +104,29 @@ psql -h localhost -U electoral_user -d electoral_db
 # Si entra, funciona ✅
 ```
 
-### Paso 4 — Configurar Spring Boot para conectar
+### Paso 4 — Configurar Quarkus para conectar
 
-En `backend/electoral-api/src/main/resources/application.properties`:
+En `backend/electoral-api-quarkus/src/main/resources/application.properties`:
 
 ```properties
 # Postgres en localhost:5432 (vía Docker)
-spring.datasource.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:electoral_db}
-spring.datasource.username=${DB_USER:electoral_user}
-spring.datasource.password=${DB_PASSWORD:electoral_pass}
-spring.datasource.driver-class-name=org.postgresql.Driver
+quarkus.datasource.db-kind=postgresql
+quarkus.datasource.jdbc.url=jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:electoral_db}
+quarkus.datasource.username=${DB_USER:electoral_user}
+quarkus.datasource.password=${DB_PASSWORD:electoral_pass}
 
-# JPA / Hibernate
-spring.jpa.database-platform=org.hibernate.dialect.PostgreSQL10Dialect
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.show-sql=true
+# Liquibase es el único dueño del esquema: el mapeo ORM es explícito en cada entidad
+quarkus.liquibase.migrate-at-start=${QUARKUS_LIQUIDASE_MIGRATE_AT_START:true}
+quarkus.liquibase.change-log=database/db.changelog-master.yaml
 ```
 
 Luego arranca el backend:
 ```bash
-cd backend/electoral-api
-./mvnw spring-boot:run
+cd backend/electoral-api-quarkus
+./mvnw quarkus:dev
 ```
 
-Spring Boot se conectará al Postgres en Docker automáticamente.
+Quarkus se conectará al Postgres en Docker automáticamente.
 
 ---
 
@@ -158,7 +157,7 @@ Spring Boot se conectará al Postgres en Docker automáticamente.
    docker compose up -d
    ```
 
-4. **Spring Boot conecta:**
+4. **Quarkus conecta:**
    ```bash
    cd backend/electoral-api && ./mvnw spring-boot:run
    # En los logs buscar: "HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection"
@@ -203,4 +202,4 @@ docker compose down -v && docker compose up -d
 - [x] `docker-compose.yml` con postgres:16
 - [x] Volumen persistente `postgres_data`
 - [x] Credenciales: `electoral_db / electoral_user / electoral_pass`
-- [x] Spring Boot conectado y arrancando correctamente
+- [x] Backend Quarkus conectado y arrancando correctamente

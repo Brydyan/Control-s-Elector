@@ -6,6 +6,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.web.dto.ParroquiaRequest;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -19,6 +20,7 @@ public class ActualizarParroquiaUseCase {
   @Inject EntityManager entityManager;
 
   /** Actualiza la parroquia y deja rastro en la auditoria. */
+  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public Parroquia execute(Long id, ParroquiaRequest dto, Long masterId, String ipAddress) {
     Parroquia parroquia = entityManager.find(Parroquia.class, id);

@@ -157,6 +157,29 @@
 			<artifactId>quarkus-mailer</artifactId>
 		</dependency>
 
+		<!-- Caching: T-FE-15 B.1. Cache de datos estáticos (cargos, partidos, geografia)
+		     con backend en memoria. Los datos se cachean por 10 minutos (configurable).
+		     Utiliza @CacheResult en los UseCase que cargan datos de referencia. -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-cache</artifactId>
+		</dependency>
+
+		<!-- Métricas: T-CACHE-STRAT-01 D.5. Sin esto el hit ratio de la cache es
+		     invisible: no hay forma de saber si la cache está sirviendo o si
+		     cada pedido vuelve a la base. El initializer de métricas de la cache
+		     de Quarkus solo se activa si hay micrometer en el classpath.
+
+		     Expone /q/metrics en formato Prometheus para el scrape. -->
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-micrometer</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-micrometer-registry-prometheus</artifactId>
+		</dependency>
+
 		<!-- Resend: cliente HTTP para Resend.com (alternativa a SMTP). -->
 		<dependency>
 			<groupId>com.resend</groupId>

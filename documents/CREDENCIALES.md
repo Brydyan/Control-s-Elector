@@ -110,8 +110,9 @@ token viaja en cookie httpOnly (`refresh_token`) o en el body del request.
 | Secret key | `rustfsadmin123`        | `AWS_SECRET_ACCESS_KEY` |
 | Path-style | `true`                  | `AWS_S3_PATH_STYLE`     |
 
-`path-style=true` es necesario para RustFS/MinIO local. En AWS real o
-Supabase S3, cambiar a `false` (virtual-hosted style).
+`path-style=true` es necesario para RustFS/MinIO local y también para **Cloudflare R2**, que
+usa el endpoint `https://<account>.r2.cloudflarestorage.com/<bucket>`. Solo AWS S3 real usa
+virtual-hosted style (`false`).
 
 El contenedor `electoral-rustfs` levanta la consola en `http://localhost:9001`.
 

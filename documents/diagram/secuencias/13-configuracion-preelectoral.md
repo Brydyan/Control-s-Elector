@@ -10,7 +10,7 @@ Escenario: MASTER registra toda la información necesaria antes del día de vota
 ```mermaid
 sequenceDiagram
     actor MASTER as Master
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 
@@ -52,7 +52,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor MASTER as Master
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant SVC as ConfiguracionService
     participant JPA as JPA Repository
     participant PG as PostgreSQL
@@ -79,7 +79,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor MASTER as Master
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant SVC as UsuarioService
     participant JPA as JPA Repository
     participant PG as PostgreSQL

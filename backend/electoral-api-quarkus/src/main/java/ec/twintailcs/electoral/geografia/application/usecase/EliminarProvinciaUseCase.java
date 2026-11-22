@@ -4,6 +4,7 @@ import ec.twintailcs.electoral.electoral.application.ConfiguracionAuditService;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Provincia;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -23,6 +24,7 @@ public class EliminarProvinciaUseCase {
   @Inject EntityManager entityManager;
 
   /** Elimina la provincia y deja rastro en la auditoria. */
+  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public void execute(Long id, Long masterId, String ipAddress) {
     Provincia provincia = entityManager.find(Provincia.class, id);

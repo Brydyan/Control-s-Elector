@@ -20,6 +20,11 @@ export async function mockAdminUsuarios(
   usuarios: unknown[] = [],
 ): Promise<void> {
   await page.route(`${API}/admin/usuarios*`, async (route) => {
+    // Solo la lista: el POST de crear usuario lo intercepta `mockCrearUsuario`.
+    if (route.request().method() !== 'GET') {
+      await route.fallback();
+      return;
+    }
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -63,46 +68,51 @@ export async function mockResendInvitation(
 }
 
 /**
- * Invitacion de una persona.
+ * Creacion de una persona con invitacion (ODD #504).
  *
- * @returns el numero de veces que se llamo al endpoint
+ * <p>El flujo ya no tiene un boton "Enviar invitacion" aparte: el modal de
+ * usuario tiene un unico boton, "Guardar", que crea la cuenta y decide si
+ * manda la invitacion por email segun el toggle. Por eso la mock intercepta
+ * `POST /admin/usuarios` y mira `sendInvitation` en el cuerpo.
+ *
+ * @returns el numero de llamadas y el ultimo cuerpo enviado
  */
-export async function mockInvitarUsuario(
+export async function mockCrearUsuario(
   page: Page,
-  respuesta?: {
-    usuarioId?: string;
+  opciones?: {
+    publicId?: string;
     username?: string;
-    emailPersonal?: string;
-    status?: string;
   },
-): Promise<{ calls: () => number }> {
+): Promise<{ calls: () => number; body: () => Record<string, unknown> | null }> {
   let calls = 0;
-  await page.route(`${API}/users/invite`, async (route) => {
+  let ultimo: Record<string, unknown> | null = null;
+  await page.route(`${API}/admin/usuarios`, async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback();
+      return;
+    }
     calls += 1;
-    const cuerpo = route.request().postDataJSON() ?? {};
-    // El toggle decide que responde el backend: con el correo apagado la cuenta
-    // queda CREATED y sin invitacion que vencer.
-    const sendEmail = cuerpo.sendEmail !== false;
-    const emailPersonal =
-      respuesta?.emailPersonal ?? cuerpo.emailPersonal ?? 'juan@example.com';
-    const status = respuesta?.status ?? (sendEmail ? 'INVITED' : 'CREATED');
+    const cuerpo = (route.request().postDataJSON() ?? {}) as Record<
+      string,
+      unknown
+    >;
+    ultimo = cuerpo;
+    const sendInvitation = cuerpo['sendInvitation'] !== false;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        usuarioId: respuesta?.usuarioId ?? 'e2e-invitado-uuid',
-        username: respuesta?.username ?? 'juagarobs@control.ttcs',
-        emailPersonal,
-        status,
-        expiraEn: sendEmail
-          ? new Date(Date.now() + 24 * 3600 * 1000).toISOString()
-          : null,
-        success: true,
-        mensaje: sendEmail
-          ? `Invitación enviada a ${emailPersonal}`
-          : 'Usuario creado. Puedes enviar invitación después.',
+        publicId: opciones?.publicId ?? 'e2e-invitado-uuid',
+        email: opciones?.username ?? 'juagarobs@control.ttcs',
+        nombre: cuerpo['nombre'] ?? 'Juan',
+        apellido: cuerpo['apellido'] ?? 'García',
+        rolNombre: cuerpo['rolNombre'] ?? 'OBSERVER',
+        habilitado: true,
+        creadoEn: '2026-11-22T00:00:00Z',
+        estadoUsuario: sendInvitation ? 'PENDIENTE_INVITACION' : 'ACTIVO',
+        passwordTemporal: null,
       }),
     });
   });
-  return { calls: () => calls };
+  return { calls: () => calls, body: () => ultimo };
 }

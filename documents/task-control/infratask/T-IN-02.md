@@ -10,11 +10,11 @@
 ⚠️ **Nota sobre integración con Liquibase:**
 El archivo `backend/electoral-api/src/main/resources/database/infra/sql/01-schema.sql` que se crea en esta tarea es un **script de referencia** — contiene todas las tablas (Acta, JrvCargo, Cargo, Partido, Candidato, Notificacion, AuditLog, etc.) para documentación y staging local.
 
-**IMPORTANTE:** Este script **NO está conectado a la cadena real de Liquibase** que usa Hibernate (`db.changelog-master.yaml` solo referencia `changelog/001-007-*.sql`). Por eso las tablas de Acta y amigos NO se crean automáticamente al arrancar la app.
+**IMPORTANTE:** Este script **NO está conectado a la cadena real de Liquibase** (`db.changelog-master.yaml` solo referencia `changelog/001-007-*.sql`). Por eso las tablas de Acta y amigos NO se crean automáticamente al arrancar la app.
 
 **Decisión pendiente:** Cuando se implemente Acta/Notificacion (T-BE-03 en adelante), decidir si:
 1. Fusionar este script a `changelog/008-actas.sql`, `changelog/009-cargos.sql`, etc., para que Liquibase las gestione
-2. Mantener solo como documentación (y que Hibernate + JPA manejen la creación vía `ddl-auto=update`)
+2. Mantener solo como documentación (Liquibase es el único dueño del esquema; el mapeo ORM es explícito en cada entidad)
 
 Por ahora, úsalo para testing manual en staging. El código Java de Acta/Notificacion, cuando se implemente, creará sus propias tablas.
 
@@ -22,12 +22,12 @@ Por ahora, úsalo para testing manual en staging. El código Java de Acta/Notifi
 
 ## ¿Qué vas a construir?
 
-Vas a crear un script SQL con todas las tablas, índices y constraints del sistema. Aunque Hibernate + Liquibase generan la BD automáticamente, es buena práctica tener un script manual como referencia y para documentación.
+Vas a crear un script SQL con todas las tablas, índices y constraints del sistema. Aunque Liquibase genera la BD automáticamente, es buena práctica tener un script manual como referencia y para documentación.
 
 **Por qué es importante:** 
 - Documentación viva del schema
 - Reproducibilidad en staging/prod
-- Control explícito de índices y constraints (Hibernate no siempre genera los óptimos)
+- Control explícito de índices y constraints (Liquibase no siempre genera los óptimos)
 - Facilita troubleshooting si la BD queda corrupta
 
 ---
@@ -47,7 +47,7 @@ Una regla que la BD valida automáticamente. Ej: `UNIQUE` no permite duplicados,
 **¿Qué es `SERIAL` vs `BIGSERIAL`?**
 - `SERIAL`: entero 32-bit auto-increment (0 a 2,147,483,647)
 - `BIGSERIAL`: entero 64-bit auto-increment (mucho más rango)
-**Regla:** usa `BIGSERIAL` para tablas que crecen mucho (Hibernate lo hace por default).
+**Regla:** usa `BIGSERIAL` para tablas que crecen mucho (el mapeo ORM lo hace por default).
 
 **¿Qué es una `FOREIGN KEY`?**
 Referencia a otra tabla. `acta.usuario_id` → `usuario.id`. Si intentas eliminar un usuario que tiene actas, la BD lo rechaza automáticamente.
@@ -378,7 +378,7 @@ Deberías ver ~20+ índices creados automáticamente.
 
 ## Cómo verificar que funciona
 
-1. **Spring Boot levanta sin errores:**
+1. **Quarkus levanta sin errores:**
    ```bash
    cd backend/electoral-api && ./mvnw spring-boot:run
    ```
@@ -392,8 +392,8 @@ Deberías ver ~20+ índices creados automáticamente.
    # SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';
    ```
 
-3. **Hibernate genera Liquibase changelog:**
-   Una vez Spring Boot está corriendo, Liquibase comparará el schema en DB con las entidades JPA. Si todo coincide, no hace cambios. Si hay diferencias (porque ejecutaste SQL a mano), Liquibase las registra.
+3. **Liquibase aplica los changelogs pendientes:**
+   Una vez Quarkus está corriendo, Liquibase aplica sobre el schema de la BD los changelogs pendientes. Si el schema ya coincide, no hace cambios. Si hay diferencias (porque ejecutaste SQL a mano), Liquibase las registra.
 
 ---
 
@@ -422,7 +422,7 @@ Solución: Ejecuta `ANALYZE;` en la BD.
 
 ## Checklist original (de infra.md)
 
-- [ ] Tablas del dominio (Hibernate ddl-auto=update lo genera, pero tener script manual)
+- [ ] Tablas del dominio (Liquibase genera la BD, pero tener script manual como referencia)
 - [ ] Índices: `acta(jrv_id, cargo_id)`, `observer_jrv_asignacion(observer_id)`, `refresh_token(token)`
 - [ ] Constraints: unicidad `acta(jrv_id, cargo_id)` donde estado != ANULADA
 - [ ] Extensiones: `uuid-ossp` si se usan UUIDs como PK

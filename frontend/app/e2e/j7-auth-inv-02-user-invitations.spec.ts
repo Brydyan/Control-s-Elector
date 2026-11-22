@@ -2,7 +2,7 @@ import { test, expect } from './fixtures/auth.fixture';
 import { Page } from '@playwright/test';
 import {
   mockAdminUsuarios,
-  mockInvitarUsuario,
+  mockCrearUsuario,
   mockResendInvitation,
 } from './support/invitation-mocks';
 
@@ -23,17 +23,21 @@ const esMovil = (page: Page): boolean => {
  *
  * Cubre el recorrido del MASTER en el panel de usuarios:
  *
- *   1. Abre "Crear usuario", completa nombre, apellido, email personal y rol.
- *   2. Con el email inválido el botón de invitar está bloqueado.
- *   3. Con un email válido, "Enviar invitación" llama al backend y muestra
- *      "Invitación enviada a …" con el usuario generado.
+ *   1. Abre "Crear usuario" y completa nombre, apellido, email personal y rol.
+ *   2. Un email personal con formato invalido se señala como error.
+ *   3. Con los datos completos, "Guardar" crea la cuenta y el toggle decide si
+ *      se manda la invitación por email: el backend responde con el usuario
+ *      generado y el panel muestra "Invitación enviada a …".
+ *
+ * Ojo: desde ODD #504 el modal tiene un UNICO boton de envio ("Guardar"): el
+ * antiguo "Enviar invitación" ya no existe en la interfaz.
  *
  * API mocks:
  *   GET  /api/v1/admin/usuarios              → lista vacía
- *   POST /api/v1/users/invite                 → 200 { username, emailPersonal, status }
+ *   POST /api/v1/admin/usuarios              → 200 { publicId, email, ... }
  */
 test.describe('J7 — Invitación de usuario (T-AUTH-INV-02)', () => {
-  test('el MASTER invita a una persona y ve la confirmación', async ({
+  test('el MASTER crea la persona y ve la confirmación de la invitación', async ({
     masterPage,
   }) => {
     // En el viewport de movil el boton "Crear usuario" queda DEBAJO de la
@@ -45,7 +49,7 @@ test.describe('J7 — Invitación de usuario (T-AUTH-INV-02)', () => {
 
     const page = masterPage;
     await mockAdminUsuarios(page);
-    const invitacion = await mockInvitarUsuario(page);
+    const creacion = await mockCrearUsuario(page);
 
     await page.goto('/admin/usuarios');
 
@@ -56,25 +60,22 @@ test.describe('J7 — Invitación de usuario (T-AUTH-INV-02)', () => {
 
     await page.getByTestId('email-personal').waitFor();
 
-    // Sin email personal el botón de invitar no se habilita. El `disabled` vive en
-    // el <button> de PrimeNG dentro del <app-button>, no en el host.
-    const botonInvitar = page.getByTestId('btn-invitar').locator('button');
-    await expect(botonInvitar).toBeDisabled();
-
-    // Con un email que no es correo, tampoco.
+    // Un email que no es correo se marca como error (ODD #504: el boton no se
+    // bloquea, el backend es el que valida).
     await page.getByTestId('email-personal').fill('no-es-un-email');
-    await expect(botonInvitar).toBeDisabled();
     await expect(page.getByTestId('email-personal-error')).toBeVisible();
 
-    // Con los datos completos, sí. Los campos se buscan DENTRO del dialogo: la
-    // pagina tiene tambien un buscador de texto que colaria el primer match.
+    // Con los datos completos, se guarda. Los campos se buscan DENTRO del
+    // dialogo: la pagina tiene tambien un buscador de texto que colaria el
+    // primer match.
     const dialogo = page.getByRole('dialog');
     await dialogo.locator('input[type="text"]').first().fill('Juan');
     await dialogo.locator('input[type="text"]').nth(1).fill('García');
     await page.getByTestId('email-personal').fill('juan@example.com');
-    await expect(botonInvitar).toBeEnabled();
 
-    await botonInvitar.click();
+    const botonGuardar = dialogo.getByRole('button', { name: /^guardar$/i });
+    await expect(botonGuardar).toBeEnabled();
+    await botonGuardar.click();
 
     // La respuesta del backend se muestra con el usuario generado.
     await expect(page.getByTestId('invitacion-enviada')).toBeVisible();
@@ -82,7 +83,14 @@ test.describe('J7 — Invitación de usuario (T-AUTH-INV-02)', () => {
       page.getByText('Invitación enviada a juan@example.com'),
     ).toBeVisible();
     await expect(page.getByText('juagarobs@control.ttcs')).toBeVisible();
-    expect(invitacion.calls()).toBe(1);
+
+    expect(creacion.calls()).toBe(1);
+    // Con el toggle encendido (por defecto) se pide la invitación por email.
+    expect(creacion.body()).toMatchObject({
+      nombre: 'Juan',
+      apellido: 'García',
+      sendInvitation: true,
+    });
   });
 
   test('con el toggle apagado se crea la cuenta sin enviar el email', async ({
@@ -97,7 +105,7 @@ test.describe('J7 — Invitación de usuario (T-AUTH-INV-02)', () => {
 
     const page = masterPage;
     await mockAdminUsuarios(page);
-    const invitacion = await mockInvitarUsuario(page);
+    const creacion = await mockCrearUsuario(page);
 
     await page.goto('/admin/usuarios');
     await page.getByRole('button', { name: /crear usuario/i }).click();
@@ -111,13 +119,14 @@ test.describe('J7 — Invitación de usuario (T-AUTH-INV-02)', () => {
     await expect(page.getByTestId('toggle-enviar-invitacion')).toBeChecked();
     await page.getByTestId('toggle-enviar-invitacion').uncheck();
 
-    await page.getByTestId('btn-invitar').click();
+    await dialogo.getByRole('button', { name: /^guardar$/i }).click();
 
     await expect(page.getByTestId('invitacion-enviada')).toBeVisible();
     await expect(
       page.getByTestId('invitacion-enviada').getByText(/Usuario creado/),
     ).toBeVisible();
-    expect(invitacion.calls()).toBe(1);
+    expect(creacion.calls()).toBe(1);
+    expect(creacion.body()).toMatchObject({ sendInvitation: false });
   });
 
   test('la tabla muestra el estado de la invitacion y deja reenviarla', async ({

@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, of, catchError, shareReplay } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import {
   DashboardData,
   Novedad,
@@ -21,20 +21,43 @@ import {
 @Injectable({ providedIn: 'root' })
 export class DashboardApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/dashboard`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/dashboard`;
 
-  /** T-FE-15 A.2: Cache de resultados con detalles. Nunca refetch, compartir entre suscriptores. */
+  /** T-CACHE-STRAT-01 B.1: Cache de resultados con detalles. Nunca refetch, compartir entre suscriptores. */
   private resultadosDetalles$: Observable<ResultadoCargoDto[]> | null = null;
 
-  /** T-FE-15 A.2: Cache de progreso con desglose de parroquias. */
+  /** T-CACHE-STRAT-01 B.1: Cache de progreso con desglose de parroquias. */
   private progresoDetalles$: Observable<ProgresoCantonDto[]> | null = null;
 
+  /** T-CACHE-STRAT-01 B.1: Cache de resumen. */
+  private resumen$: Observable<ResumenActas> | null = null;
+
+  /** T-CACHE-STRAT-01 B.1: Cache de resultados base. */
+  private resultados$: Observable<ResultadoCargo[]> | null = null;
+
+  /** T-CACHE-STRAT-01 B.1: Cache de progreso base. */
+  private progreso$: Observable<ProgresoCantonDto[]> | null = null;
+
+  /** T-CACHE-STRAT-01 B.1: Cache de novedades. */
+  private novedades$: Observable<Novedad[]> | null = null;
+
   getResumen(): Observable<ResumenActas> {
-    return this.http.get<ResumenActas>(`${this.baseUrl}/resumen`);
+    if (!this.resumen$) {
+      this.resumen$ = this.http
+        .get<ResumenActas>(`${this.baseUrl}/resumen`)
+        .pipe(shareReplay(1));
+    }
+    return this.resumen$;
   }
 
   getResultados(): Observable<ResultadoCargo[]> {
-    return this.http.get<ResultadoCargo[]>(`${this.baseUrl}/resultados`);
+    if (!this.resultados$) {
+      this.resultados$ = this.http
+        .get<ResultadoCargo[]>(`${this.baseUrl}/resultados`)
+        .pipe(shareReplay(1));
+    }
+    return this.resultados$;
   }
 
   /**
@@ -44,11 +67,21 @@ export class DashboardApi {
    * el tipo de la respuesta es el DTO completo y no la base `ProgresoCanton`.
    */
   getProgreso(): Observable<ProgresoCantonDto[]> {
-    return this.http.get<ProgresoCantonDto[]>(`${this.baseUrl}/progreso`);
+    if (!this.progreso$) {
+      this.progreso$ = this.http
+        .get<ProgresoCantonDto[]>(`${this.baseUrl}/progreso`)
+        .pipe(shareReplay(1));
+    }
+    return this.progreso$;
   }
 
   getNovedades(): Observable<Novedad[]> {
-    return this.http.get<Novedad[]>(`${this.baseUrl}/novedades`);
+    if (!this.novedades$) {
+      this.novedades$ = this.http
+        .get<Novedad[]>(`${this.baseUrl}/novedades`)
+        .pipe(shareReplay(1));
+    }
+    return this.novedades$;
   }
 
   /**
@@ -75,7 +108,7 @@ export class DashboardApi {
   }
 
   /**
-   * T-FE-15 A.2: Obtener resultados detallados por cargo con estado, foto, porcentaje.
+   * T-CACHE-STRAT-01 B.1: Obtener resultados detallados por cargo con estado, foto, porcentaje.
    * Cachea en memoria via shareReplay(1) — una sola llamada HTTP incluso con múltiples suscriptores.
    * Consume el endpoint canónico `/resultados` y enriquece los datos calculando votos válidos,
    * porcentajes y estados provisionales.
@@ -124,7 +157,7 @@ export class DashboardApi {
   }
 
   /**
-   * T-FE-15 A.2: Obtener progreso por cantón con desglose de parroquias.
+   * T-CACHE-STRAT-01 B.1: Obtener progreso por cantón con desglose de parroquias.
    * Cachea en memoria via shareReplay(1).
    * Consume el endpoint canónico `/progreso`, que ya devuelve el desglose anidado.
    *
@@ -140,10 +173,14 @@ export class DashboardApi {
   }
 
   /**
-   * T-FE-15: Invalidar caché (útil para refresh manual en UI).
+   * T-CACHE-STRAT-01: Invalidar caché (útil para refresh manual en UI).
    * Llamar en caso de que el usuario dispare un "Actualizar" explícito.
    */
   invalidateCache(): void {
+    this.resumen$ = null;
+    this.resultados$ = null;
+    this.progreso$ = null;
+    this.novedades$ = null;
     this.resultadosDetalles$ = null;
     this.progresoDetalles$ = null;
   }

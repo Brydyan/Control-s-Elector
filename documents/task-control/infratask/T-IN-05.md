@@ -5,6 +5,13 @@
 **Tiempo estimado:** 1.5 horas
 **Depende de:** ninguna (paralelo a T-IN-01 a T-IN-04)
 
+
+> **⚠️ HISTÓRICO — ya no describe producción.** Esta tarea planteaba usar Supabase como
+> base de datos *gestionada*. **La base de producción es Neon** (PostgreSQL serverless) y el
+> storage de evidencias es **Cloudflare R2**. El contenido de abajo se conserva como registro del
+> procedimiento con Supabase; lo vigente está en `documents/task-control/infra.md` y en
+> `openspec/changes/infra/2026-11-08-t-in-13-neon-database/`.
+
 ---
 
 ## ¿Qué vas a construir?

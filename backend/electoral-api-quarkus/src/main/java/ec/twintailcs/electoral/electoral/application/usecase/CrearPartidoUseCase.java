@@ -4,6 +4,7 @@ import ec.twintailcs.electoral.electoral.application.ConfiguracionAuditService;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.web.dto.PartidoRequest;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -18,6 +19,7 @@ public class CrearPartidoUseCase {
    * Crea el partido. El numero de lista es unico: si ya existe uno con el mismo numero, la
    * operacion se rechaza con 409.
    */
+  @CacheInvalidateAll(cacheName = "partidos")
   @Transactional
   public Partido execute(PartidoRequest dto, Long masterId, String ipAddress) {
     if (Partido.find("numeroLista", dto.numeroLista()).firstResult() != null) {

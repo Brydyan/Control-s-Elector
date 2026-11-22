@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import type { PagedResponse } from '../../../shared/models/page.model';
 import {
   ActaDetalleCompleto,
@@ -74,14 +74,15 @@ interface JrvConEstadoDto {
 })
 export class CoordinatorApi {
   private readonly http = inject(HttpClient);
+  private readonly configService = inject(ConfigService);
   private readonly logger = {
     info: console.log,
     error: console.error,
     warn: console.warn,
   };
-  private readonly baseUrl = `${environment.apiUrl}/coordinator`;
-  private readonly configUrl = `${environment.apiUrl}/configuracion`;
-  private readonly observerUrl = `${environment.apiUrl}/observer`;
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/coordinator`;
+  private readonly configUrl = `${this.configService.getApiUrlSafe()}/configuracion`;
+  private readonly observerUrl = `${this.configService.getApiUrlSafe()}/observer`;
 
   getActas(filtros?: ActaFiltros): Observable<PagedResponse<ActaItem>> {
     let params = new HttpParams();

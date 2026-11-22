@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import { EstadoActa } from '../domain/models/observer.model';
 
 /**
@@ -61,7 +61,8 @@ export interface ActaFilters {
 })
 export class MisActasService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/observer/mis-actas`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/observer/mis-actas`;
 
   getMisActas(filters: ActaFilters): Observable<PageResult<ActaDTO>> {
     let params = new HttpParams()

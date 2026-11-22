@@ -1,117 +1,60 @@
-# T-IN-11 — GitHub Actions (CI/CD básico)
+# T-IN-11 — CI/CD (GitHub Actions)
 
-**Estado:** TODO
+**Estado:** PARCIAL — CI y workflows de build existen; falta el job de E2E
 **Dificultad:** Intermedio
-**Tiempo estimado:** 1 hora
-**Depende de:** T-IN-07, T-IN-09 ✅
+**Depende de:** T-IN-07 (backend en Railway), T-IN-09 (frontend en Cloudflare Pages)
 
 ---
 
 ## ¿Qué vas a construir?
 
-Workflows GitHub Actions: automatización que corre tests en PRs y depliega en `main` (Railway + Vercel).
+Automatización: **tests en cada PR** y **despliegue en `main`/staging**.
+
+> La versión anterior de esta tarea describía un `ci.yml` y un `deploy.yml` mínimos, con deploy a
+> Railway y Vercel por token. La realidad del repo es otra: los workflows ya existen y son más
+> ricos. Este documento describe **lo que hay** y lo que falta.
 
 ---
 
-## Archivos a crear
+## Workflows que ya existen
 
-```
-.github/workflows/
-  ci.yml       ← Build + tests en PR
-  deploy.yml   ← Deploy en push a main
-```
+| Workflow | Qué hace |
+|---|---|
+| `.github/workflows/ci.yml` | Checks requeridos por el ruleset de `develop`: tests backend + cobertura, `spotless:check`, ESLint, format check, build de producción y tests unitarios del frontend |
+| `.github/workflows/ci-native.yml` | Build de la imagen nativa del backend (tarda ~19 min). Corre solo cuando cambia el módulo Quarkus |
+| `.github/workflows/load-test-baseline.yml` | Corrida del load test de referencia |
+| `.github/workflows/deploy.yml` | Build de imágenes Docker + rollout a **staging k3s** (`twintailserver`). **No es el despliegue de producción** |
 
----
+### Cómo llega a producción
 
-## Paso 1 — `ci.yml` (Continuous Integration)
+Producción **no se despliega desde GitHub Actions**:
 
-`.github/workflows/ci.yml`:
+- **Backend**: Railway tiene su propia integración con GitHub y construye desde `railway.json` →
+  `backend/electoral-api-quarkus/Dockerfile.native`.
+- **Frontend**: Cloudflare Pages tiene su propia integración con GitHub y construye
+  `frontend/app/www` (ver T-IN-09).
 
-```yaml
-name: CI
-
-on:
-  pull_request:
-    branches: [main, develop]
-
-jobs:
-  backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-      - run: cd backend/electoral-api && ./mvnw clean test
-
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '20'
-      - run: cd frontend/app && npm install && npm run build
-```
+Ventaja: no hay tokens de despliegue en GitHub Secrets, y el secreto no puede filtrarse desde
+un workflow. Lo que sí vive en GitHub Secrets son credenciales de servicios (Docker Hub, Neon,
+Cloudflare) para los jobs de CI.
 
 ---
 
-## Paso 2 — `deploy.yml` (Continuous Deployment)
+## Lo que falta
 
-`.github/workflows/deploy.yml`:
-
-```yaml
-name: Deploy
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy-backend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: |
-          curl -L https://railway.app/install.sh | bash
-          railway deploy --service electoral-api
-
-  deploy-frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        run: |
-          npm install -g vercel
-          cd frontend/app
-          vercel deploy --prod --token $VERCEL_TOKEN --yes
-```
-
----
-
-## Paso 3 — Configurar secrets
-
-En GitHub Repo → **Settings** → **Secrets and variables** → **Actions**:
-
-Agregá:
-- `RAILWAY_TOKEN`: obtén de Railway Dashboard → Account → API Token
-- `VERCEL_TOKEN`: obtén de Vercel Dashboard → Settings → Tokens
-- `VERCEL_PROJECT_ID`: obtén de Vercel Project → Settings
-- `VERCEL_ORG_ID`: obtén de Vercel Account → Settings
+- [ ] **Job de Playwright** para los E2E de caché (`e2e/cache-api-real.spec.ts` y
+      `e2e/cache-datos-estaticos.spec.ts`). Hoy corren solo en local, contra la API real.
+      El job necesita el backend arriba (mismo esquema que producción, sin mocks en la ruta de
+      registro de acta) y las credenciales de prueba como secrets del repositorio.
+- [ ] **Job de WebKit**: en esta máquina no es ejecutable; en CI sí debería estar.
 
 ---
 
 ## Checklist
 
-- [ ] Workflows creados en `.github/workflows/`
-- [ ] Secrets configurados en GitHub
-- [ ] Push a main dispara deploy automático
-- [ ] PR a main corre tests antes de merge
+- [x] `ci.yml` con los checks requeridos
+- [x] `ci-native.yml` para la imagen nativa
+- [x] `load-test-baseline.yml`
+- [x] `deploy.yml` para staging
+- [ ] Job de Playwright (E2E) en CI
+- [ ] Job de Playwright en WebKit

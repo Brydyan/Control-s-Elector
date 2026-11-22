@@ -14,9 +14,9 @@ Five critical infrastructure tasks, sequentially ordered by dependency. Total es
 Directory: `2026-11-08-odd-503-domain-setup/`
 
 Establishes DNS infrastructure and environment variables for staging/production.
-- Cloudflare DNS (A records → Railway, CNAME → Vercel)
+- Cloudflare DNS (A records → Railway, CNAME → Cloudflare Pages)
 - Wildcard SSL certificates
-- Railway + Vercel env vars injection
+- Railway + Cloudflare Pages env vars injection
 - Health check endpoints
 
 **Files**:

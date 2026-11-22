@@ -13,12 +13,12 @@ Escenario: COORDINATOR marca acta EN_DISPUTA → OBSERVER recibe push en su disp
 sequenceDiagram
     actor COORD as Coordinator
     actor OBS as Observador
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant NOTIF as NotificacionService
     participant JPA as JPA Repository
     participant PG as PostgreSQL
-    participant WS as Supabase Realtime
-    participant APP as App Angular/Ionic
+    participant WS as WebSocket (mecanismo por definir)
+    participant APP as App Angular
 
     COORD->>API: PATCH /api/actas/{acta_id}/estado {estado: EN_DISPUTA, motivo}
     API->>NOTIF: notificarObserver(observer_id, acta_id, motivo)
@@ -51,11 +51,11 @@ Escenario: OBSERVER corrige acta → COORDINATOR es notificado para revisar y ap
 sequenceDiagram
     actor OBS as Observador
     actor COORD as Coordinator
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant NOTIF as NotificacionService
     participant JPA as JPA Repository
     participant PG as PostgreSQL
-    participant WS as Supabase Realtime
+    participant WS as WebSocket (mecanismo por definir)
     participant DASH as Dashboard Angular
 
     OBS->>API: PATCH /api/actas/{acta_id} {campos_corregidos}
@@ -81,11 +81,11 @@ Escenario: MASTER anula acta APROBADA → COORDINATOR es notificado.
 sequenceDiagram
     actor MASTER as Master
     actor COORD as Coordinator
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant NOTIF as NotificacionService
     participant JPA as JPA Repository
     participant PG as PostgreSQL
-    participant WS as Supabase Realtime
+    participant WS as WebSocket (mecanismo por definir)
     participant DASH as Dashboard Angular
 
     MASTER->>API: PATCH /api/actas/{acta_id}/estado {estado: ANULADA, motivo}
@@ -106,9 +106,9 @@ sequenceDiagram
 
 | Tipo | Receptor | Origen | Canal |
 |------|----------|--------|-------|
-| `CORRECCION_REQUERIDA` | OBSERVER | COORDINATOR marca EN_DISPUTA | Supabase Realtime → App móvil |
-| `ACTA_LISTA_PARA_REVISION` | COORDINATOR | OBSERVER corrige acta | Supabase Realtime → Dashboard |
-| `ACTA_ANULADA` | COORDINATOR | MASTER anula acta | Supabase Realtime → Dashboard |
+| `CORRECCION_REQUERIDA` | OBSERVER | COORDINATOR marca EN_DISPUTA | WebSocket (mecanismo por definir) → App móvil |
+| `ACTA_LISTA_PARA_REVISION` | COORDINATOR | OBSERVER corrige acta | WebSocket (mecanismo por definir) → Dashboard |
+| `ACTA_ANULADA` | COORDINATOR | MASTER anula acta | WebSocket (mecanismo por definir) → Dashboard |
 
 ---
 
@@ -116,8 +116,8 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 

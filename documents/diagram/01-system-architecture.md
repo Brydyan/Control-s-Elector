@@ -10,7 +10,7 @@ graph TB
         ADMIN_U[📊 Admin\nNavegador]
     end
 
-    subgraph APP["🟩 App — control.brydyan.me\n(Angular + Ionic / Vercel)"]
+    subgraph APP["🟩 App — control.brydyan.me\n(Angular / Cloudflare Pages)"]
         AUTH_GUARD[Route Guards\nRBAC por rol JWT]
 
         subgraph VIEW_OBS["Vista OBSERVER"]
@@ -36,17 +36,17 @@ graph TB
         AUTH_GUARD --> VIEW_DASH
     end
 
-    subgraph API["🟦 API Backend — api.brydyan.me\n(Spring Boot / Railway)"]
+    subgraph API["🟦 API Backend — api.brydyan.me\n(Quarkus / Railway)"]
         REST[REST Controllers]
-        SECURITY[Spring Security\nRBAC + JWT]
+        SECURITY[Quarkus Security\nRBAC + JWT]
         SERVICE[Business Services\nActaService · AuditLogService\nNotificacionService]
-        JPA[Spring Data JPA\nLocking Optimista / Pesimista]
+        JPA["Hibernate ORM + Panache\nLocking pesimista (jrv_id + cargo_id)"]
     end
 
-    subgraph PERSIST["🗄️ Capa de Persistencia (Supabase)"]
+    subgraph PERSIST["🗄️ Capa de Persistencia (Neon + R2)"]
         PG[(PostgreSQL\n+ RLS Policies\naudit_log · notificaciones)]
         STORAGE[(Object Storage\n.webp evidencias)]
-        RT[Supabase Realtime\nWebSocket]
+        RT[WebSocket\nmecanismo por definir]
     end
 
     OBS --> APP

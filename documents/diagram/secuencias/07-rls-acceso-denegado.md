@@ -8,9 +8,9 @@ Escenario: un OBSERVER intenta acceder a acta registrada por otro OBSERVER.
 sequenceDiagram
     actor OBS1 as Observador Juan (registró: 5 actas)
     actor OBS2 as Observador María (registró: 3 actas)
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
-    participant SEC as Spring Security
+    participant APP as App Angular
+    participant API as Quarkus API
+    participant SEC as Quarkus Security
     participant PG as PostgreSQL (RLS activo)
 
     OBS1->>APP: Intenta ver acta registrada por María

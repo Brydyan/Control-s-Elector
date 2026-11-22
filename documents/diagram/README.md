@@ -42,7 +42,7 @@ Documentación visual de la arquitectura, flujos, y modelo de datos del sistema 
 | **06-concurrencia-misma-jrv.md** | ⏳ | Dos OBSERVER mismo JRV → locking pesimista |
 | **07-rls-acceso-denegado.md** | ⏳ | OBSERVER intenta acta fuera su JRV → RLS rechaza |
 | **08-compresion-imagen.md** | ⏳ | WebP compression en cliente (Canvas API) |
-| **09-dashboard-realtime.md** | ⏳ | Supabase Realtime → actualización WebSocket |
+| **09-dashboard-realtime.md** | ⏳ | WebSocket (mecanismo por definir) → actualización reactiva |
 | **10-error-storage.md** | ⏳ | Manejo de reintentos S3 + fallback offline |
 | **11-disputa-acta.md** | ⏳ | COORDINATOR marca acta EN_DISPUTA |
 | **12-anulacion-acta.md** | ⏳ | MASTER anula acta APROBADA |
@@ -93,7 +93,7 @@ Documentación visual de la arquitectura, flujos, y modelo de datos del sistema 
 
 ### Fase 3: Dashboard
 - [ ] ResultadosService (consolidado por cargo/cantón)
-- [ ] Supabase Realtime subscribe
+- [ ] Suscripción WebSocket (mecanismo por definir)
 - [ ] Actualizar diagramas: 09, 15
 
 ---

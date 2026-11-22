@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.electoral.application.usecase;
 import ec.twintailcs.electoral.electoral.application.ConfiguracionAuditService;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -14,6 +15,7 @@ public class EliminarCargoUseCase {
   @Inject ConfiguracionAuditService audit;
 
   /** Elimina el cargo. Si no existe, la operacion se rechaza con 404. */
+  @CacheInvalidateAll(cacheName = "cargos")
   @Transactional
   public void execute(Long id, Long masterId, String ipAddress) {
     Cargo cargo = Cargo.findById(id);

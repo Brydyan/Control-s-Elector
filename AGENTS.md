@@ -54,13 +54,13 @@ Guardrails para la IA (restricciones vinculantes):
 - Los E2E de flujo crítico corren contra la misma API que producción: nada de mocks en la ruta de registro de acta.
 
 ## Infrastructure and deployment
-- Answer: Kubernetes / cloud-native (AWS ECS, GKE, etc.).
+- Answer: Railway (backend) + Cloudflare Pages (frontend), con Neon (PostgreSQL serverless) y Cloudflare R2 (object storage).
 - Confirmed by the human against the repository.
-- Evidence: k8s/: kubernetes manifest directory
+- Evidence: railway.json, backend/electoral-api-quarkus/Dockerfile.native, k8s/ (manifiestos de referencia/legado, no es destino de producción)
 
 Guardrails para la IA (restricciones vinculantes):
-- Ningún secreto se versiona: todo va por Secret de Kubernetes y .env.example es la única plantilla compartida.
-- El despliegue de producción es ArgoCD sobre k8s/: un kubectl apply manual rompe la trazabilidad del rollout.
+- Ningún secreto se versiona: las variables de entorno de producción se configuran en Railway y en Cloudflare Pages, y .env.example es la única plantilla compartida.
+- El despliegue de producción es Railway (backend, 1 réplica) + Cloudflare Pages (frontend); los manifiestos de k8s/ son de referencia y no son una vía de rollout.
 
 ## Observability and monitoring
 - Answer: Full observability: logs + metrics + traces (OpenTelemetry).
