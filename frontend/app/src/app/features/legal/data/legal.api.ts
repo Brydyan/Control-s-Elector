@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import {
   AcceptTermsResponseDto,
   DpoContactRequestDto,
@@ -15,13 +15,14 @@ import {
  * Capa HTTP del bloque legal.
  *
  * Sin estado y sin efectos: solo habla con el backend. Los endpoints cuelgan
- * de `environment.apiUrl` (`/api/v1`), asi que el interceptor de auth les
+ * de ConfigService.getApiUrl() (`/api/v1`), asi que el interceptor de auth les
  * pega el token en memoria cuando hace falta y no lo manda a terceros.
  */
 @Injectable({ providedIn: 'root' })
 export class LegalApi {
   private readonly http = inject(HttpClient);
-  private readonly base = environment.apiUrl;
+  private readonly configService = inject(ConfigService);
+  private readonly base = this.configService.getApiUrlSafe();
 
   /**
    * Version vigente de los documentos legales.

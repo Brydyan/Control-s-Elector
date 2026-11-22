@@ -6,9 +6,9 @@ Escenario: access token vence cada 15 min; el interceptor lo renueva transparent
 ```mermaid
 sequenceDiagram
     actor OBS as Observador
-    participant APP as App Angular/Ionic
+    participant APP as App Angular
     participant INT as HTTP Interceptor
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant PG as PostgreSQL
 
     OBS->>APP: Intenta enviar acta
@@ -49,7 +49,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor MASTER as Master
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant PG as PostgreSQL
     participant APP as App Observador
 

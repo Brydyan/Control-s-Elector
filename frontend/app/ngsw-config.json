@@ -24,6 +24,9 @@
         "files": [
           "/assets/**",
           "/*.(svg|png|jpg|jpeg|webp|ico|woff2)"
+        ],
+        "excludeFiles": [
+          "/assets/config.json"
         ]
       }
     }

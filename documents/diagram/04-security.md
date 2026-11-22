@@ -17,7 +17,7 @@ graph TD
         GUARD -->|ADMIN · MASTER · COORDINATOR| V_DASH
     end
 
-    subgraph API_SEC["Capa API — Spring Security RBAC"]
+    subgraph API_SEC["Capa API — Quarkus Security RBAC"]
         JWT[JWT Filter<br/>Validación de Token]
         ROLES{Roles}
         R_MASTER[ROLE_MASTER<br/>Acceso total + anulación]

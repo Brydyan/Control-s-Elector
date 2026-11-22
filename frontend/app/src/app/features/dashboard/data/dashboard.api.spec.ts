@@ -4,6 +4,7 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { DashboardApi } from './dashboard.api';
 
@@ -296,5 +297,156 @@ describe('DashboardApi — endpoints canonicos y cache sin errores', () => {
     );
     req.flush([]);
     expect(segundoError).toBeNull();
+  });
+});
+
+describe('DashboardApi — B.1 cache for base methods (T-CACHE-STRAT-01)', () => {
+  let service: DashboardApi;
+  let httpTesting: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        DashboardApi,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
+    });
+    service = TestBed.inject(DashboardApi);
+    httpTesting = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpTesting.verify();
+  });
+
+  /**
+   * Cachear no es "responder igual": es no volver a pedir. La asercion mira si queda
+   * alguna peticion HTTP abierta: una segunda llamada con la cache activa no deja
+   * ninguna, y con la cache rota deja una — y el test cae.
+   */
+  it('should cache resumen and reuse on second call', async () => {
+    const mockResumen = {
+      enviadas: 1,
+      enDisputa: 1,
+      corregidas: 1,
+      aprobadas: 2,
+      totalActivas: 5,
+    };
+
+    const primera = firstValueFrom(service.getResumen());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resumen`)
+      .flush(mockResumen);
+    await primera;
+
+    const segunda = firstValueFrom(service.getResumen());
+    await segunda;
+
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/resumen`),
+    ).toHaveLength(0);
+  });
+
+  it('should cache resultados and reuse on second call', async () => {
+    const mockResultados = [
+      { cargoId: 1, cargoNombre: 'Prefecto/a', candidatos: [] },
+    ];
+
+    const primera = firstValueFrom(service.getResultados());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resultados`)
+      .flush(mockResultados);
+    await primera;
+
+    const segunda = firstValueFrom(service.getResultados());
+    await segunda;
+
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/resultados`),
+    ).toHaveLength(0);
+  });
+
+  it('should cache progreso and reuse on second call', async () => {
+    const mockProgreso = [
+      {
+        cantonId: 1,
+        cantonNombre: 'Santa Elena',
+        totalJrvs: 200,
+        jrvsConActa: 150,
+        porcentaje: 75,
+      },
+    ];
+
+    const primera = firstValueFrom(service.getProgreso());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/progreso`)
+      .flush(mockProgreso);
+    await primera;
+
+    const segunda = firstValueFrom(service.getProgreso());
+    await segunda;
+
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/progreso`),
+    ).toHaveLength(0);
+  });
+
+  it('should cache novedades and reuse on second call', async () => {
+    const mockNovedades = [
+      {
+        actaPublicId: '11111111-1111-1111-1111-111111111111',
+        tipo: 'ACTA_EN_DISPUTA',
+        jrvId: 1,
+        jrvNumero: '0023',
+        cargoId: 1,
+        cargoNombre: 'Alcalde/sa',
+        observerPublicId: '22222222-2222-2222-2222-222222222222',
+        observerNombre: 'Juan Pérez',
+        motivo: null,
+        minutosTranscurridos: 35,
+      },
+    ];
+
+    const primera = firstValueFrom(service.getNovedades());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/novedades`)
+      .flush(mockNovedades);
+    await primera;
+
+    const segunda = firstValueFrom(service.getNovedades());
+    await segunda;
+
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/novedades`),
+    ).toHaveLength(0);
+  });
+
+  it('invalidateCache should clear all base and detail caches', async () => {
+    const mockResumen = {
+      enviadas: 1,
+      enDisputa: 1,
+      corregidas: 1,
+      aprobadas: 2,
+      totalActivas: 5,
+    };
+
+    const primera = firstValueFrom(service.getResumen());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resumen`)
+      .flush(mockResumen);
+    await primera;
+
+    service.invalidateCache();
+
+    const segunda = firstValueFrom(service.getResumen());
+    httpTesting
+      .expectOne(`${environment.apiUrl}/dashboard/resumen`)
+      .flush(mockResumen);
+    await segunda;
+
+    expect(
+      httpTesting.match(`${environment.apiUrl}/dashboard/resumen`),
+    ).toHaveLength(0);
   });
 });

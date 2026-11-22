@@ -5,8 +5,8 @@ Escenario: FE obtiene información del usuario autenticado (parseado desde JWT e
 ```mermaid
 sequenceDiagram
     actor USER as Usuario
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant PG as PostgreSQL
 
     USER->>APP: Necesita info del usuario actual

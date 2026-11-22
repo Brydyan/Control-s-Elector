@@ -7,8 +7,8 @@ Escenario: COORDINATOR revisa actas subidas por OBSERVERS, filtra por usuario y 
 ```mermaid
 sequenceDiagram
     actor COORD as Coordinador
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant PG as PostgreSQL
     participant AUDIT as AuditLogService
 

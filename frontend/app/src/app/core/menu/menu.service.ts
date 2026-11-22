@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Observable, map, tap } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { ConfigService } from '../config/config.service';
 import { MenuNode, MenuResponse } from './menu.model';
 
 @Injectable({
@@ -9,7 +9,8 @@ import { MenuNode, MenuResponse } from './menu.model';
 })
 export class MenuService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/menus`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/menus`;
 
   private readonly _menus = signal<MenuNode[]>([]);
   private readonly _loading = signal<boolean>(false);

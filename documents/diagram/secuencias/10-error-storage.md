@@ -9,10 +9,10 @@ Escenario: el upload de la evidencia falla; el sistema compensa para no dejar da
 
 ```mermaid
 sequenceDiagram
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant SVC as ActaService
-    participant STG as Supabase Storage
+    participant STG as Cloudflare R2
     participant AUDIT as AuditLogService
     participant IDB as IndexedDB (Cola Local)
     participant FS as App Private Storage<br/>/data/data/com.app/files/evidencias/
@@ -63,12 +63,12 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant APP as App Angular/Ionic
+    participant APP as App Angular
     participant IDB as IndexedDB (Cola Local)
     participant FS as App Private Storage
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant SVC as ActaService
-    participant STG as Supabase Storage
+    participant STG as Cloudflare R2
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 
@@ -102,12 +102,12 @@ Escenario: reintento automático nunca logró conectar (corte prolongado). OBSER
 ```mermaid
 sequenceDiagram
     actor OBS as Observador
-    participant APP as App Angular/Ionic
+    participant APP as App Angular
     participant IDB as IndexedDB (Cola Local)
     participant FS as App Private Storage
     participant NET as Monitor de Red
-    participant API as Spring Boot API
-    participant STG as Supabase Storage
+    participant API as Quarkus API
+    participant STG as Cloudflare R2
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 

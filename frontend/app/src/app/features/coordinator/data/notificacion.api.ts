@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import { mapError } from '../../../shared/errors/error-handler';
 
 export interface Notificacion {
@@ -26,7 +26,8 @@ export interface NotificacionResponse {
 @Injectable({ providedIn: 'root' })
 export class NotificacionApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/notifications`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/notifications`;
 
   obtenerPendientes(limit: number = 10): Observable<NotificacionResponse> {
     return this.http

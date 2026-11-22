@@ -1,0 +1,238 @@
+# Estrategia de Caché — T-CACHE-STRAT-01
+
+> Estado: implementado en backend y frontend. Última actualización: 2026-11-21.
+> Spec: `openspec/changes/back/2026-11-19-caching-strategy/`.
+
+## Qué cachea y por qué
+
+Solo **datos estáticos de la configuración preelectoral**: cargos, partidos,
+candidatos y geografía. Son los datos que el frontend pide en cada pantalla y
+que casi no cambian durante la jornada. Ni un solo acta, ni votos, ni estados
+de registro pasan por la caché.
+
+| Capa | Dato | Mecanismo | TTL |
+|------|------|-----------|-----|
+| Frontend | partidos (formulario del observador) | RxJS `shareReplay(1)` | sesión |
+| Frontend | resumen, resultados, progreso, novedades (dashboard) | RxJS `shareReplay(1)` | sesión |
+| Backend | `cargos`, `partidos`, `candidatos`, `geografia` | Quarkus Cache (Caffeine) | 2 min |
+
+Efecto medido en los tests:
+
+- Formulario del observador con 5 cargos: **6 peticiones HTTP** (1 de partidos +
+  5 de candidatos) en vez de 11.
+- Dashboard: **4 peticiones** en vez de 5 al saltar entre secciones, porque la
+  caché vive en el servicio, no en el componente.
+- Backend: la 2ª lectura de cargos/partidos/candidatos/geografía **no toca la
+  base** (`CacheServicioIT` cuenta consultas con `SessionFactory.getStatistics()`).
+
+---
+
+## Frontend: RxJS `shareReplay(1)`
+
+### Patrón
+
+```typescript
+private partidosCache$: Observable<PartidoDto[]> | null = null;
+
+getCandidatosPorCargo(cargoId: number): Observable<CandidatoInfo[]> {
+  if (!this.partidosCache$) {
+    this.partidosCache$ = this.http
+      .get<PartidoDto[]>(`${this.configUrl}/partidos`)
+      .pipe(shareReplay(1));
+  }
+  return forkJoin({
+    candidatos: this.http.get<CandidatoDto[]>(`${this.configUrl}/candidatos?cargoId=${cargoId}`),
+    partidos: this.partidosCache$,
+  }).pipe(map(...));
+}
+```
+
+### Comportamiento
+
+- **Primera suscripción**: sale la petición HTTP.
+- **Suscripciones siguientes**: reciben la misma respuesta (multicast).
+- **Error**: no queda cacheado; el siguiente suscriptor reintenta.
+- **Limpieza**: manual con `invalidateCache()`.
+
+### Dónde vive la caché
+
+En un servicio `@Injectable({ providedIn: 'root' })`, no en el componente. Por
+eso sobrevive a la navegación dentro de la SPA: el servicio raíz no se
+destruye al cambiar de ruta. Por eso el E2E navega con `routerLink` y **no**
+con `page.goto()`: un `goto` recarga la aplicación entera y borra la caché.
+
+### Cuándo usar `shareReplay(1)`
+
+✅ **Sí**
+- GET a datos que no cambian durante la sesión (configuración preelectoral).
+- Varios suscriptores al mismo dato.
+
+❌ **No**
+- Datos que cambian (actas, votos, estados, progreso en vivo).
+- Mutaciones (POST/PUT/DELETE).
+- Cuando se necesita TTL: eso es la caché del backend.
+
+---
+
+## Backend: Quarkus Cache (Caffeine)
+
+### Por qué no `@CacheResult`
+
+La anotación `@CacheResult` de Quarkus no deja ver si el acierto vino de la
+caché o de la base: el hit ratio —la métrica que dice si la caché está
+sirviendo o si cada pedido sigue yendo a la base— queda a ciegas. Por eso la
+lectura es explícita, con un helper que cuenta:
+
+- `shared/cache/CacheDeLectura.leer(cacheName, clave)` → acierto (`cache.hits`)
+- `shared/cache/CacheDeLectura.guardar(cacheName, clave, valor)` → fallo (`cache.misses`)
+
+El patrón en un caso de uso:
+
+```java
+Optional<List<Cargo>> enCache = cache.leer("cargos", "todos");
+if (enCache.isPresent()) {
+  return enCache.get();
+}
+List<Cargo> cargos = Cargo.listAll();   // la consulta se queda en el caso de uso
+cache.guardar("cargos", "todos", cargos);
+return cargos;
+```
+
+La consulta a la base **no** va dentro del helper: una lambda que llama a un
+método estático de Panache se ejecuta en otra clase sintética, y ahí Panache ya
+no tiene inyectada su implementación
+(`IllegalStateException: implementationInjectionMissing`).
+
+### Implementación
+
+| Caso de uso | Caché | Clave | TTL |
+|-------------|-------|-------|-----|
+| `ListarCargosUseCase` | `cargos` | `todos` | 2 min |
+| `ListarPartidosUseCase` | `partidos` | `todos` | 2 min |
+| `ListarCandidatosUseCase` | `candidatos` | `cargo:<cargoId>\|partido:<partidoId>` | 2 min |
+| `ListarGeografiaUseCase` | `geografia` | `todos` | 2 min |
+
+La clave de `candidatos` lleva los filtros: el listado sin filtros y el de un
+cargo son datos distintos y no pueden compartir entrada.
+
+### Configuración (`application.properties`)
+
+```properties
+quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
+
+# Métricas estándar de Caffeine por caché (tamaño, evictions)
+quarkus.cache.caffeine.cargos.metrics-enabled=true
+quarkus.cache.caffeine.partidos.metrics-enabled=true
+quarkus.cache.caffeine.candidatos.metrics-enabled=true
+quarkus.cache.caffeine.geografia.metrics-enabled=true
+
+# Réplica (Railway inyecta RAILWAY_REPLICA_ID): etiqueta en las métricas de caché
+replica.id=${RAILWAY_REPLICA_ID:local}
+```
+
+### Advertencia: Caffeine está acoplado en el helper
+
+`CacheDeLectura` usa `cache.as(CaffeineCache.class)` porque la API pública de
+Quarkus (`io.quarkus.cache.Cache`) solo expone `get(key, loader)` e
+`invalidate*`: no hay `put` ni `getIfPresent`.
+
+`Cache.as(Class)` lanza **`IllegalStateException`** cuando el caché no es del
+tipo pedido (no `ClassCastException`). Por eso el helper captura ese tipo
+concreto y trata "el caché no es Caffeine" como **sin caché**: se sirve
+siempre desde la base, sin contadores, y la aplicación sigue funcionando.
+Sin esa captura, con `quarkus.cache.enabled=false` (Quarkus entrega un
+`NoOpCache`) o con un backend que no sea Caffeine, **cada lectura de
+configuración devolvía 500**. Está sujetado por `CacheApagadaIT`.
+
+D2 quedó decidida como **Caffeine en memoria** (el backend corre en una sola
+réplica en Railway; ver `CACHE_SETUP_GUIDE.md`). Si algún día se migra a Redis,
+habrá que **reescribir `CacheDeLectura`** para hablar la API de Redis; con el
+helper actual, Redis degrada a "sin caché" (hit ratio 0 %), no a "caché rota".
+
+---
+
+## Invalidación
+
+- **Por escritura**: los 21 casos de uso de escritura (cargos, partidos,
+  candidatos, provincia, cantón, parroquia, JRV: crear, actualizar, eliminar)
+  llevan `@CacheInvalidateAll`, así que cualquier cambio entra en caché
+  deja la caché inválida en esa misma instancia.
+- **Por TTL**: 2 minutos, como red de seguridad.
+- **Manual**: `GET /api/v1/admin/cache/clear` (solo MASTER, queda auditado).
+  Detalle en `CACHE_INVALIDATION.md`.
+
+---
+
+## Monitoreo
+
+### Métricas del backend
+
+Con Micrometer en el classpath, `/q/metrics` publica:
+
+```
+cache_hits_total{cache="cargos",replica="local"} 42
+cache_misses_total{cache="cargos",replica="local"} 3
+```
+
+Los contadores son por nombre de caché. El hit ratio es
+`hits / (hits + misses)`.
+
+```bash
+curl -s http://localhost:8080/q/metrics | grep '^cache_'
+```
+
+### Carga
+
+`frontend/tests/load/scenarios/cache-hit-ratio.js`: 100 VUs, ramp up de 10 s,
+10 lecturas por VU sobre los 4 endpoints cacheados. Lee el hit ratio real de
+`/q/metrics` (no lo estima) y escribe el reporte en
+`results/cache-hit-ratio-summary.{md,json}` — esa carpeta está en `.gitignore`;
+las versiones que sí se versionan están en `documents/load-test/`.
+
+```bash
+k6 run scenarios/cache-hit-ratio.js
+```
+
+Objetivos del SDD: p95 < 2 s, hit ratio > 90 %.
+
+**Medido** (100 VUs contra el backend real, TTL de 2 min): hit ratio **100 %**,
+p95 **0.92 ms**, y **4 consultas de configuración a la base** (el llenado
+inicial) frente a **374.240** sin caché — un ahorro del **99.999 %**, tres
+órdenes de magnitud por encima del objetivo del SDD (−90 %).
+
+El TTL de 2 min tiene un coste medido: en una corrida de 4 min 30 s (con dos
+vencimientos del TTL) fueron **33 consultas para 1.103.520 lecturas**, es decir
+29 consultas extra frente al llenado inicial. Reportes en
+`documents/load-test/`.
+
+### Frontend
+
+DevTools → Network → filtrar `/partidos`, `/dashboard/resultados`. Varias
+peticiones al mismo recurso significan caché rota; una sola para N
+suscriptores significa que funciona.
+
+---
+
+## Problemas frecuentes
+
+| Síntoma | Causa | Solución |
+|---------|-------|----------|
+| Datos viejos en el frontend | caché de sesión sin invalidar | `invalidateCache()` o recargar |
+| Un observador ve datos viejos y otro no | TTL sin invalidación por escritura | comprobar `@CacheInvalidateAll` en el caso de uso |
+| Una réplica quedó desfasada respecto de las otras | backend con más de una réplica | ver la etiqueta `replica` en `/q/metrics` y el guardrail de réplicas |
+| La base sigue recibiendo consultas | clave distinta entre llamadas | revisar la clave usada en `CacheDeLectura.leer` |
+| Hit ratio 0 % en las métricas | caché no configurada o backend que no es Caffeine | ver `CACHE_SETUP_GUIDE.md` |
+| El endpoint de vaciado responde 200 pero no vacía | `invalidateAll()` sin `await` (bug ya corregido) | `cache.invalidateAll().await().indefinitely()` |
+
+---
+
+## Referencias
+
+- [RxJS shareReplay](https://rxjs.dev/api/operators/shareReplay)
+- [Quarkus Cache](https://quarkus.io/guides/cache)
+- [Caffeine](https://github.com/ben-manes/caffeine)
+- `documents/CACHE_INVALIDATION.md`
+- `documents/CACHE_SETUP_GUIDE.md`

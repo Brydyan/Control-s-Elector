@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { Observable, forkJoin, map, shareReplay } from 'rxjs';
+import { ConfigService } from '../../../core/config/config.service';
 import type { OpcionesTransmision } from '../../../core/offline/sync.service';
 import {
   ActaRequest,
@@ -31,8 +31,10 @@ interface CandidatoDto {
 })
 export class ObserverApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/observer`;
-  private readonly configUrl = `${environment.apiUrl}/configuracion`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/observer`;
+  private readonly configUrl = `${this.configService.getApiUrlSafe()}/configuracion`;
+  private partidosCache$: Observable<PartidoDto[]> | null = null;
 
   getMisJrvs(): Observable<JrvConEstado[]> {
     return this.http.get<any[]>(`${this.baseUrl}/jrvs`).pipe(
@@ -64,11 +66,17 @@ export class ObserverApi {
   }
 
   getCandidatosPorCargo(cargoId: number): Observable<CandidatoInfo[]> {
+    if (!this.partidosCache$) {
+      this.partidosCache$ = this.http
+        .get<PartidoDto[]>(`${this.configUrl}/partidos`)
+        .pipe(shareReplay(1));
+    }
+
     return forkJoin({
       candidatos: this.http.get<CandidatoDto[]>(
         `${this.configUrl}/candidatos?cargoId=${cargoId}`,
       ),
-      partidos: this.http.get<PartidoDto[]>(`${this.configUrl}/partidos`),
+      partidos: this.partidosCache$,
     }).pipe(
       map(({ candidatos, partidos }) => {
         const partidosMap = new Map(partidos.map((p) => [p.id, p]));
@@ -158,5 +166,16 @@ export class ObserverApi {
       `${this.baseUrl}/actas/${actaId}/corregir`,
       payload,
     );
+  }
+
+  /**
+   * T-CACHE-STRAT-01: invalida la cache de partidos.
+   *
+   * <p>Los partidos se cachean para toda la sesion con `shareReplay(1)`: sin esto, un MASTER que
+   * actualiza un partido no lo veria aqui hasta que la persona recargara la pagina. Es el
+   * equivalente frontend del vaciado manual del backend.
+   */
+  invalidateCache(): void {
+    this.partidosCache$ = null;
   }
 }

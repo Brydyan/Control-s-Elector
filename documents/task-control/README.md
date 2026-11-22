@@ -8,9 +8,9 @@ Gestión de tareas del proyecto. Una tarea por módulo.
 
 | Archivo | Área |
 |---------|------|
-| `backend.md` | Spring Boot — entidades, repositorios, servicios, API REST, seguridad |
-| `frontend.md` | Angular + Ionic — componentes, guards, vistas por rol |
-| `infra.md` | Docker, Railway, Vercel, Supabase, CI/CD |
+| `backend.md` | Quarkus — entidades, repositorios, casos de uso, API REST, seguridad |
+| `frontend.md` | Angular — componentes, guards, vistas por rol |
+| `infra.md` | Docker, Railway, Cloudflare Pages, Neon, R2, CI/CD |
 
 ---
 

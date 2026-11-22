@@ -51,7 +51,9 @@ Ver https://grafana.com/products/cloud/k6/download/
 Antes de correr tests, crear usuarios y datos de prueba:
 
 ```sql
--- Script: backend/src/main/resources/db/test-data.sql
+-- Script de ejemplo. NO existe en el repo: los datos de prueba se crean con los
+-- changelogs de Liquibase (backend/electoral-api-quarkus/src/main/resources/database/)
+-- y con las cuentas de bootstrap del contexto `bootstrap-admin`.
 -- Usuarios para tests
 INSERT INTO usuario (email, password, rol)
 VALUES
@@ -81,10 +83,12 @@ FROM generate_series(1, 5);
 -- (Repetir para cada cargo)
 ```
 
-Luego ejecutar:
+Si necesitas datos extra, agrégalos como un changelog de Liquibase en
+`backend/electoral-api-quarkus/src/main/resources/database/changelog/` (Liquibase es el único
+dueño del esquema) y aplícalos con:
 ```bash
 cd backend/electoral-api-quarkus
-psql -h localhost -U electoral_user -d electoral_db -f ../src/main/resources/db/test-data.sql
+./mvnw -o quarkus:dev -Dquarkus.liquibase.contexts=seed,bootstrap-admin
 ```
 
 ---
@@ -168,6 +172,38 @@ API_HOST=api.electoral.ec:8080 ./run.sh pico
 ### Con Docker
 ```bash
 K6_DOCKER=true ./run.sh pico
+```
+
+### Cache Hit Ratio (T-CACHE-STRAT-01 F.5)
+```bash
+# 100 VUs, ramp up 10s, 10 lecturas por VU sobre los 4 endpoints cacheados
+k6 run scenarios/cache-hit-ratio.js
+
+# Con credenciales del MASTER (la geografía exige `configuracion:read`)
+MASTER_EMAIL=... MASTER_PASSWORD=... k6 run scenarios/cache-hit-ratio.js
+```
+El script lee el hit ratio real de las métricas Micrometer del backend
+(`cache_hits_total` / `cache_misses_total` en `/q/metrics`), no lo estima.
+Escribe el reporte en `results/cache-hit-ratio-summary.{md,json}`.
+
+> **Las métricas van etiquetadas por caché y por réplica:**
+> `cache_hits_total{cache="cargos",replica="local"}`. La etiqueta `replica` viene de
+> `RAILWAY_REPLICA_ID` y sirve para detectar *cache split* (una réplica desfasada respecto de
+> las otras), porque Railway **agrega** las métricas de todas sus réplicas en un solo tablero.
+> Cualquier parser tiene que tolerar etiquetas extra: uno que exija `{cache="..."}` exacto
+> lee cero contadores **en silencio** y reporta un hit ratio de 0 % sin avisar.
+
+Comparación con/sin cache (el número que justifica la cache):
+
+```bash
+# 1) Backend con la cache activa → guardar resumen
+k6 run scenarios/cache-hit-ratio.js
+
+# 2) Backend SIN caché → guardar resumen
+#    QUARKUS_CACHE_ENABLED=false es build-time: hay que RECONSTRUIR la imagen.
+#    Alternativa sin reconstruir: TTL a 1s en las 4 cachés
+#    (CACHE_TTL=1s — es la variable que usa el backend desde la decisión D2)
+k6 run scenarios/cache-hit-ratio.js
 ```
 
 ---
@@ -292,8 +328,8 @@ K6_DOCKER=true ./run.sh baseline
 
 ### Error: "Connection refused" (localhost:8080)
 ```bash
-# Verificar que backend está corriendo
-curl http://localhost:8080/api/v1/health
+# Verificar que backend está corriendo (health de Quarkus)
+curl http://localhost:8080/q/health
 
 # O especificar URL correcta
 API_HOST=your-api-host:port ./run.sh baseline
@@ -367,20 +403,19 @@ API_HOST=your-api-host:port ./run.sh baseline
 
 ## 📚 Documentación Completa
 
-Análisis detallado en: `/INFRASTRUCTURE_RESILIENCE_PLAN.md`
-- Endpoints críticos analizados
-- Escenarios de carga realistas
-- Capacidad actual del sistema
-- Recomendaciones por prioridad
+- Reportes de la medición de caché: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`
+- Estrategia de caché: `documents/CACHING_STRATEGY.md`
+- Setup y variables: `documents/CACHE_SETUP_GUIDE.md`
+- Topología de despliegue: `documents/diagram/02-deployment.md`
 
 ---
 
 ## 📞 Support
 
 Para issues o preguntas:
-1. Revisar `INFRASTRUCTURE_RESILIENCE_PLAN.md` (análisis profundo)
-2. Verificar `config.js` para ajustar SLAs/VUs
-3. Consultar logs en `results/` (JSON)
+1. Revisar `config.js` para ajustar SLAs/VUs
+2. Consultar logs en `results/` (JSON)
+3. Revisar `documents/load-test/` para los reportes ya medidos
 
 ---
 

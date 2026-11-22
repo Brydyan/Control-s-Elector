@@ -8,9 +8,9 @@ Refresh token: largo plazo (8h — duración del proceso electoral), opaco, pers
 ```mermaid
 sequenceDiagram
     actor OBS as Observador
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
-    participant SEC as Spring Security
+    participant APP as App Angular
+    participant API as Quarkus API
+    participant SEC as Quarkus Security
     participant PG as PostgreSQL
 
     OBS->>APP: Ingresa email + contraseña

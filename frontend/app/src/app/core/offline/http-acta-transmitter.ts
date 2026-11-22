@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { ConfigService } from '../config/config.service';
 import { ActaTransmitter, OpcionesTransmision } from './sync.service';
 
 /**
@@ -13,9 +13,14 @@ import { ActaTransmitter, OpcionesTransmision } from './sync.service';
  * transmisor propio, éste no se usa.
  */
 export class HttpActaTransmitter implements ActaTransmitter {
-  private readonly baseUrl = `${environment.apiUrl}/observer`;
+  private readonly baseUrl: string;
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    configService: ConfigService,
+  ) {
+    this.baseUrl = `${configService.getApiUrlSafe()}/observer`;
+  }
 
   /**
    * Paso 1: `POST /observer/actas`.

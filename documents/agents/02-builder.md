@@ -317,7 +317,7 @@ WHERE tablename IN ('acta', 'evidencia', 'rol_permiso', 'audit_log');
 ```java
 // ✅ CORRECTO — try-catch + log + rethrow con contexto
 try {
-    supabaseClient.uploadFile("acta-123.webp", fileBytes);
+    s3StorageService.guardarEvidencia("acta-123.webp", fileBytes);
 } catch (IOException e) {
     logger.error("Storage upload failed for JRV {}: {}", jrvId, e.getMessage(), e);
     throw new StorageException("Cannot upload evidence: " + e.getMessage(), e);
@@ -326,7 +326,7 @@ try {
 // ✅ CORRECTO — compensación transaccional
 TransactionSynchronization.afterCompletion((status) -> {
     if (status == STATUS_ROLLED_BACK) {
-        supabaseClient.deleteFile(uploadedKey);
+        s3StorageService.eliminarEvidencia(uploadedKey);
     }
 });
 

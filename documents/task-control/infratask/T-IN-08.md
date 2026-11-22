@@ -1,4 +1,4 @@
-# T-IN-08 — application-prod.properties
+# T-IN-08 — Variables de producción en Railway
 
 **Estado:** TODO
 **Dificultad:** Principiante
@@ -9,138 +9,93 @@
 
 ## ¿Qué vas a construir?
 
-Archivo `application-prod.properties`: configuración de Spring Boot específica para producción (Railway). Desactiva logs verbose, activa validación de schema, y configura seguridad.
+La configuración específica de producción, pero **no como un segundo archivo de properties**.
+
+> La versión anterior de esta tarea pedía crear `application-prod.properties` con sintaxis de
+> Spring Boot. **El backend de este proyecto es Quarkus y tiene un solo
+> `application.properties`**: la configuración de producción son **variables de entorno en el
+> dashboard de Railway**, no un archivo. Este archivo se conserva como registro del procedimiento.
 
 ---
 
-## Archivo a crear
+## Por qué no un `application-prod.properties`
 
-```
-backend/electoral-api/src/main/resources/
-  application-prod.properties   ← Crear
-```
+Quarkus resuelve la configuración por orden de precedencia:
 
----
+1. `application.properties` (en el repo): valores por defecto con `${VAR:default}`
+2. Variables de entorno: **pisan** los defaults
+3. Archivos de properties fuera del repo: no se usan
 
-## Contenido completo
-
-```properties
-# ============================================================================
-# SPRING BOOT — PRODUCCIÓN
-# ============================================================================
-
-# Puerto asignado por Railway via $PORT
-server.port=${PORT:8080}
-
-# ============================================================================
-# BASE DE DATOS — SUPABASE
-# ============================================================================
-
-# Conexión a Supabase (variable de Railway)
-spring.datasource.url=${DATABASE_URL}
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.datasource.hikari.maximum-pool-size=10
-spring.datasource.hikari.minimum-idle=2
-spring.datasource.hikari.idle-timeout=600000
-spring.datasource.hikari.connection-timeout=30000
-
-# ============================================================================
-# JPA / HIBERNATE
-# ============================================================================
-
-# validate: falla si schema BD no coincide con entidades
-spring.jpa.hibernate.ddl-auto=validate
-
-# No mostrar SQL en prod (seguridad, rendimiento)
-spring.jpa.show-sql=false
-spring.jpa.properties.hibernate.format_sql=false
-
-# Dialect para PostgreSQL
-spring.jpa.database-platform=org.hibernate.dialect.PostgreSQL10Dialect
-
-# Batch inserts para mejor rendimiento
-spring.jpa.properties.hibernate.jdbc.batch_size=20
-spring.jpa.properties.hibernate.order_inserts=true
-spring.jpa.properties.hibernate.order_updates=true
-
-# ============================================================================
-# LOGGING
-# ============================================================================
-
-# Root logger: WARNING en prod (no debug)
-logging.level.root=WARN
-
-# Spring Boot: WARNING
-logging.level.org.springframework=WARN
-
-# Hibernate: WARNING (no "Dialect" info)
-logging.level.org.hibernate=WARN
-
-# Aplicación: INFO (ej: "Server started")
-logging.level.ec.twintailcs=INFO
-
-# ============================================================================
-# JWT / SEGURIDAD
-# ============================================================================
-
-app.jwt.issuer=${JWT_ISSUER:control-elector}
-app.jwt.secret=${JWT_SECRET:placeholder-change-in-prod}
-app.jwt.access-ttl=PT15M
-app.jwt.refresh-ttl=PT8H
-app.jwt.refresh-pepper=${JWT_REFRESH_PEPPER:placeholder-change-in-prod}
-
-# ============================================================================
-# SUPABASE / STORAGE
-# ============================================================================
-
-app.supabase.url=${SUPABASE_URL}
-app.supabase.service-key=${SUPABASE_SERVICE_KEY}
-app.supabase.bucket=actas-images
-
-# ============================================================================
-# SERVER CONFIG
-# ============================================================================
-
-# Timeout para requests largos (ej: upload foto)
-server.tomcat.connection-timeout=20000
-server.tomcat.max-http-post-size=10485760
-
-# Gzip compression (reduce ancho de banda)
-server.compression.enabled=true
-server.compression.min-response-size=1024
-server.compression.mime-types=application/json,application/xml,text/html,text/xml,text/plain
-
-# Charset UTF-8 para respuestas
-server.servlet.encoding.charset=UTF-8
-server.servlet.encoding.force=true
-```
+Consecuencia práctica: si `DB_PASSWORD`, `APP_JWT_SECRET` o `APP_JWT_REFRESH_PEPPER` no están
+setadas en Railway, **el backend arranca igual con los valores de dev** en vez de fallar. Por eso
+el checklist de esta tarea es explícito sobre cuáles no pueden faltar.
 
 ---
 
-## Cómo crear el archivo
+## Variables obligatorias en Railway
 
-1. Abre editor
-2. Copia el contenido anterior
-3. Guarda en: `backend/electoral-api/src/main/resources/application-prod.properties`
-4. Comitea: `git add application-prod.properties && git commit -m "Add prod config"`
+```
+# Base de datos (Neon)
+DB_HOST=ep-xxxx-pooler.us-east-1.aws.neon.tech
+DB_PORT=5432
+DB_NAME=postgres
+DB_USER=
+DB_PASSWORD=
+
+# Storage de evidencias (Cloudflare R2)
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com
+AWS_S3_REGION=us-east-1
+AWS_S3_BUCKET=electoral-evidences
+AWS_S3_PATH_STYLE=true
+
+# JWT (HS256)
+APP_JWT_SECRET=            # openssl rand -base64 48
+APP_JWT_REFRESH_PEPPER=    # openssl rand -base64 48
+APP_JWT_ISSUER=control-elector
+
+# Comportamiento de la app en producción
+APP_ENV=prod
+QUARKUS_LIQUIDASE_CONTEXTS=seed
+QUARKUS_LIQUIDASE_MIGRATE_AT_START=true
+QUARKUS_HIBERNATE_GENERATION=validate
+QUARKUS_LOG_LEVEL=INFO
+APP_LOG_LEVEL=INFO
+
+# Caché
+CACHE_TTL=2m
+```
+
+Los defaults que ya viven en `application.properties` (pool de conexiones, TTL de los tokens,
+CORS, límites de upload) se pueden dejar como están salvo que production requiera cambiarlos.
 
 ---
 
 ## Verificación
 
-Railway automáticamente activa este perfil porque la variable `SPRING_PROFILES_ACTIVE=prod` lo hace:
-- Spring carga `application.properties` (base)
-- Luego carga `application-prod.properties` (sobreescribe)
-
-Logs en Railway Dashboard:
-```
-2026-01-15 10:00:00 INFO Started ElectoralApiApplication in 3.5 seconds
-```
+1. En Railway Dashboard → **Variables** debe aparecer cada variable de la lista.
+2. Tras el deploy, en los logs:
+   ```
+   INFO  [org.acme] ... Installed features: [cdi, resteasy-reactive, hibernate-orm, ...]
+   INFO  [io.quarkus] ... Profile prod activated  (si se define quarkus.profile)
+   ```
+3. Comprobación funcional:
+   ```bash
+   curl https://api.brydyan.me/q/health
+   curl -X POST https://api.brydyan.me/api/v1/auth/login \
+     -H 'Content-Type: application/json' \
+     -d '{"email":"<cuenta real>","password":"<contrasena real>"}'
+   ```
 
 ---
 
 ## Checklist
 
-- [ ] Archivo creado en ubicación correcta
-- [ ] DATABASE_URL, JWT_SECRET, SUPABASE_* variables existen en Railway
-- [ ] Rails build log muestra `Starting ... with profile [prod]`
+- [ ] `DB_*` configuradas en Railway (Neon)
+- [ ] `AWS_*` configuradas en Railway (Cloudflare R2)
+- [ ] `APP_JWT_SECRET` y `APP_JWT_REFRESH_PEPPER` configuradas (32+ chars)
+- [ ] `QUARKUS_LIQUIDASE_CONTEXTS=seed` (sin `bootstrap-admin` en producción)
+- [ ] `CACHE_TTL` definida
+- [ ] Login real funciona contra la base de producción
+- [ ] Ningún secreto quedó en el repo

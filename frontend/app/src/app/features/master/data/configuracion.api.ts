@@ -12,6 +12,8 @@ import {
   CandidatoRequest,
 } from '../domain/models/configuracion.model';
 import { ConfigService } from '../../../core/config/config.service';
+import { ObserverApi } from '../../observer/data/observer.api';
+import { DashboardApi } from '../../dashboard/data/dashboard.api';
 
 /**
  * T-FE-16 Fase A.2: Servicio de API para Configuración Electoral
@@ -24,6 +26,8 @@ import { ConfigService } from '../../../core/config/config.service';
 export class ConfiguracionApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
+  private readonly observerApi = inject(ObserverApi);
+  private readonly dashboardApi = inject(DashboardApi);
   private baseUrl: string;
 
   constructor() {
@@ -322,6 +326,12 @@ export class ConfiguracionApi {
    * Invalida el caché de una o todas las entidades.
    * Llamar después de crear/actualizar/eliminar para refrescar datos en próxima carga.
    *
+   * <p>Además de la caché de este panel, invalida la de los <b>otros</b>
+   * servicios que sirven los mismos datos: `ObserverApi` cachea los partidos
+   * (el formulario del observador) y `DashboardApi` cachea resumen, resultados,
+   * progreso y novedades. Sin esto, un MASTER que crea un partido lo seguiría
+   * sin ver en el formulario del observador hasta recargar la página.
+   *
    * @param entity 'cargos' | 'partidos' | 'candidatos' | 'all' — Qué caché invalidar
    *
    * @example
@@ -335,9 +345,15 @@ export class ConfiguracionApi {
     }
     if (entity === 'partidos' || entity === 'all') {
       this.partidos$ = null;
+      // El formulario del observador cachea los partidos: sin esto, el partido
+      // nuevo no aparece en el formulario hasta que se recarga la pagina.
+      this.observerApi.invalidateCache();
     }
     if (entity === 'candidatos' || entity === 'all') {
       this.candidatos$ = null;
     }
+    // El dashboard agrega datos de configuracion (candidatos y partidos por
+    // cargo): sus caches quedan viejas con el mismo cambio.
+    this.dashboardApi.invalidateCache();
   }
 }

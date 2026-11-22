@@ -1,4 +1,6 @@
-# Infra Tasks — Docker, Railway, Vercel, Supabase
+# Infra Tasks — Docker, Railway, Cloudflare Pages, Neon, Cloudflare R2
+
+> Topología de producción vigente: backend en **Railway** (1 réplica), frontend en **Cloudflare Pages**, base de datos en **Neon** (PostgreSQL serverless) y evidencias en **Cloudflare R2**.
 
 ---
 
@@ -16,7 +18,7 @@ PostgreSQL 16 corriendo en Docker local en `localhost:5432`.
 - [x] `docker-compose.yml` con postgres:16
 - [x] Volumen persistente `postgres_data`
 - [x] Credenciales: `electoral_db / electoral_user / electoral_pass`
-- [x] Spring Boot conectado y arrancando correctamente
+- [x] Backend Quarkus conectado y arrancando correctamente
 
 ---
 
@@ -29,7 +31,7 @@ PostgreSQL 16 corriendo en Docker local en `localhost:5432`.
 
 Crear script `infra/sql/01-schema.sql` con:
 
-- [x] Tablas del dominio (Hibernate ddl-auto=update lo genera, pero tener script manual)
+- [x] Tablas del dominio (Liquibase es el dueño del esquema; el script manual queda como referencia)
 - [x] Índices: `acta(jrv_id, cargo_id)`, `observer_jrv_asignacion(observer_id)`, `refresh_token(token)`
 - [x] Constraints: unicidad `acta(jrv_id, cargo_id)` donde estado != ANULADA
 - [x] Extensiones: `uuid-ossp` si se usan UUIDs como PK
@@ -48,7 +50,7 @@ Script `infra/sql/02-rls.sql` + RlsInterceptor.java:
 - [x] Habilitar RLS en tabla `acta`, `acta_detalle`, `evidencia`, `audit_log`, `notificacion`
 - [x] Policy OBSERVER: `jrv_id IN (SELECT jrv_id FROM observer_jrv_asignacion WHERE observer_id = get_current_user_id())`
 - [x] Policy COORDINATOR / ADMIN / MASTER: sin restricción de fila
-- [x] RlsInterceptor Spring filter: convierte publicId (UUID) a internal id (Long) y ejecuta `SET LOCAL app.current_user_id`
+- [x] Filtro de RLS en la capa Quarkus: convierte publicId (UUID) a internal id (Long) y ejecuta `SET LOCAL app.current_user_id`
 - [x] SecurityConfig: wiring RlsInterceptor después de JwtAuthFilter
 - [x] Función `get_current_user_id()` que lee session variable (vía `app.current_user_id` setting)
 - [x] Verificar que API pasa `SET LOCAL app.current_user_id = ?` antes de queries
@@ -77,11 +79,13 @@ Script `infra/sql/03-seed.sql`:
 
 ---
 
-## Supabase
+## Base de datos gestionada (histórico: Supabase → Neon)
 
-### T-IN-05 — Configurar Supabase proyecto
+> Las tareas T-IN-05 y T-IN-06 describen el proveedor de base de datos y realtime usado en una etapa anterior del proyecto (Supabase). **Ya no describen producción**: la base de datos de producción es **Neon** (ver T-IN-13) y el realtime ya no depende de un proveedor administrado. Se conservan como registro histórico.
 
-**Estado:** ✅ HECHO
+### T-IN-05 — Configurar proyecto Supabase
+
+**Estado:** ⚠️ HISTÓRICO — sustituido por T-IN-13 (Neon). No describe producción.
 **Prioridad:** ALTA
 **Asignado:** Andy
 **Depende de:** —
@@ -94,9 +98,9 @@ Script `infra/sql/03-seed.sql`:
 
 ---
 
-### T-IN-06 — Supabase Realtime
+### T-IN-06 — Realtime gestionado por el proveedor
 
-**Estado:** ⏳ PARCIAL (Paso 1 ✅)
+**Estado:** ⚠️ HISTÓRICO — sustituido por T-IN-13 (Neon). No describe producción.
 **Prioridad:** MEDIA
 **Asignado:** Andy
 **Depende de:** T-IN-05
@@ -110,78 +114,75 @@ Script `infra/sql/03-seed.sql`:
 
 ## Railway (Backend)
 
-### T-IN-07 — Deploy Spring Boot en Railway
+### T-IN-07 — Deploy del backend Quarkus en Railway
 
-**Estado:** ✅ HECHO
-**Prioridad:** MEDIA
+**Estado:** ⚠️ PARCIAL — el deploy histórico apuntaba al backend Spring Boot y al dominio `api.twintailcs.xyz`. La topología vigente es backend Quarkus (GraalVM native) en `api.brydyan.me` con Neon como base de datos.
+**Prioridad:** ALTA
 **Asignado:** Andy
-**Depende de:** T-IN-05
+**Depende de:** T-IN-13
 
 - [x] Conectar repositorio GitHub a Railway
-- [x] Configurar variables de entorno en Railway:
-  - [x] `DATABASE_URL` (Supabase PostgreSQL)
-  - [x] `JWT_SECRET`
-  - [x] `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`
-  - [x] `SPRING_PROFILES_ACTIVE=prod`
-- [x] Crear `application-prod.properties` con config de producción
-  - [x] `ddl-auto=validate` (no update en prod)
-  - [x] `show-sql=false`
-- [x] Verificar health endpoint (pendiente DNS)
-- [x] Configurar dominio custom `api.twintailcs.xyz`
+- [x] `railway.json` con builder `dockerfile` → `backend/electoral-api-quarkus/Dockerfile.native`
+- [x] Plan Pro, 1 réplica
+- [ ] Configurar variables de entorno en Railway:
+  - [ ] `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (Neon PostgreSQL) — bloqueado por T-IN-13
+  - [ ] `JWT_SECRET`
+  - [ ] `AWS_S3_ENDPOINT`, `AWS_S3_REGION`, `AWS_S3_BUCKET`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (Cloudflare R2, S3-compatible)
+  - [ ] `AWS_S3_PATH_STYLE=true` para R2 (R2 usa endpoint con path-style)
+- [ ] Verificar health endpoint
+- [ ] Configurar dominio custom `api.brydyan.me`
 
 ---
 
-### T-IN-08 — application-prod.properties
+### T-IN-08 — Configuración de producción del backend
 
-**Estado:** ✅ HECHO
+**Estado:** ⚠️ HISTÓRICO — la configuración descrita abajo corresponde al backend Spring Boot (`application-prod.properties`). El backend vigente es Quarkus y usa `backend/electoral-api-quarkus/src/main/resources/application.properties` con variables de entorno (`DB_*`, `AWS_S3_*`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`).
 **Prioridad:** ALTA
 **Asignado:** Andy
 **Depende de:** T-IN-07
 
-Crear `backend/electoral-api/src/main/resources/application-prod.properties`:
+El backend **no tiene** un `application-prod.properties`: Quarkus resuelve la configuración por
+precedencia y en producción eso son **variables de entorno en el dashboard de Railway**
+(plantilla canónica: `.env.example`).
 
-- [x] `spring.datasource.url=${DATABASE_URL}`
-- [x] `spring.jpa.hibernate.ddl-auto=validate`
-- [x] `spring.jpa.show-sql=false`
-- [x] `spring.jpa.open-in-view=false`
-- [x] `server.port=${PORT:8080}`
-- [x] JWT secret desde variable de entorno (nunca hardcodeado)
+- [x] `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` (Neon) — el backend usa `DB_*`, no `DATABASE_URL`
+- [x] `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_S3_ENDPOINT`, `AWS_S3_REGION`, `AWS_S3_BUCKET`, `AWS_S3_PATH_STYLE=true` (Cloudflare R2)
+- [x] `APP_JWT_SECRET`, `APP_JWT_REFRESH_PEPPER` (HS256, 32+ chars, nunca hardcodeados)
+- [x] `QUARKUS_LIQUIDASE_CONTEXTS=seed` (sin `bootstrap-admin` en producción)
+- [x] `QUARKUS_HIBERNATE_GENERATION=validate` y `QUARKUS_LOG_LEVEL=INFO`
+- [x] `CACHE_TTL=2m` (ver `documents/CACHE_SETUP_GUIDE.md`)
 
 ---
 
-## Vercel (Frontend)
+## Cloudflare Pages (Frontend)
 
-### T-IN-09 — Deploy Angular en Vercel
+### T-IN-09 — Deploy Angular en Cloudflare Pages
 
-**Estado:** TODO
+**Estado:** ⏳ EN CURSO — Cloudflare Pages es el destino de producción del frontend (sustituye al deploy en Vercel). Ver `CLOUDFLARE_PAGES_SETUP.md`.
 **Prioridad:** MEDIA
-**Asignado:** sin asignar
+**Asignado:** Andy
 **Depende de:** T-IN-07
 
-- [ ] Conectar repo GitHub a Vercel
-- [ ] Build command: `npm run build -- --configuration=production`
-- [ ] Output directory: `dist/app/browser`
-- [ ] Variable de entorno: `VITE_API_URL=https://api.twintailcs.xyz`
-- [ ] Configurar dominio custom `control.twintailcs.xyz`
-- [ ] Verificar SPA redirect: todas las rutas → `index.html` (vercel.json)
+- [x] Conectar repo GitHub a Cloudflare Pages
+- [x] Build command: `npm run build`
+- [x] Output directory: `frontend/app/www` (`angular.json` → `outputPath.base`)
+- [ ] Variables de entorno en Cloudflare Pages: `CF_API_URL=https://api.brydyan.me/api/v1`
+- [x] Configurar dominio custom `control.brydyan.me`
+- [x] Configuración en runtime vía `assets/config.json` (sin rebuild para cambiar la URL de la API)
 
 ---
 
-### T-IN-10 — vercel.json para SPA
+### T-IN-10 — Redirect SPA en Cloudflare Pages
 
 **Estado:** TODO
 **Prioridad:** ALTA
 **Asignado:** sin asignar
 **Depende de:** T-IN-09
 
-Crear `frontend/app/vercel.json`:
+En `frontend/app/public/_redirects` (o en la configuración de Pages):
 
-```json
-{
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
+```
+/* /index.html 200
 ```
 
 Sin esto, refresh en rutas Angular devuelve 404.
@@ -197,9 +198,33 @@ Sin esto, refresh en rutas Angular devuelve 404.
 **Asignado:** Andy
 **Depende de:** T-IN-07, T-IN-09
 
-- [x] Workflow `ci.yml`: en PR → build backend + frontend, correr tests
-- [x] Workflow `deploy.yml`: en push a `main` → Railway y Vercel despliegan automáticamente
-- [ ] Secrets en GitHub: `DATABASE_URL`, `JWT_SECRET`, `SUPABASE_SERVICE_KEY`
+- [x] Workflow `ci.yml`: checks requeridos (tests backend + cobertura, `spotless:check`, ESLint, format check, build de producción, tests unitarios frontend)
+- [x] Workflow `ci-native.yml`: build de la imagen nativa del backend (solo cuando cambia el módulo Quarkus)
+- [x] Workflow `load-test-baseline.yml`: corrida del load test de referencia
+- [x] Workflow `deploy.yml`: build de imágenes + rollout a **staging k3s** (no es producción)
+- [x] Producción: el deploy lo hacen Railway y Cloudflare Pages con su propia integración de GitHub (sin tokens de despliegue en GitHub)
+- [ ] Job de Playwright para los E2E de caché (hoy solo corren en local)
+- [ ] Secrets en GitHub: credenciales de Neon y de Cloudflare R2 (nunca en el repo)
+
+---
+
+## Neon (Base de datos de producción)
+
+### T-IN-13 — Neon Database Setup
+
+**Estado:** ⏳ PENDIENTE — la especificación vive en `openspec/changes/infra/2026-11-08-t-in-13-neon-database/` y **no se ha ejecutado**: creación del proyecto, migraciones Liquibase contra Neon, VPC endpoint / IP whitelist, connection pooling, backups y health check siguen pendientes. Ver `apply-progress.md` de ese change para el detalle del estado real.
+
+**Prioridad:** CRÍTICA
+**Asignado:** sin asignar
+**Depende de:** —
+
+- [ ] Crear el proyecto Neon (`control-electoral-mvp`) y anotar la connection string
+- [ ] Ejecutar las migraciones Liquibase contra Neon
+- [ ] Verificar el esquema (tablas y FKs)
+- [ ] Configurar VPC endpoint o IP whitelist para Railway
+- [ ] Verificar el connection pooling (el pool de Agroal de Quarkus)
+- [ ] Verificar backups automáticos y PITR
+- [ ] Health check de base de datos (`/api/v1/health/db`)
 
 ---
 

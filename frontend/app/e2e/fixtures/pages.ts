@@ -51,6 +51,16 @@ export class ActasListaPage {
     // El paginador de PrimeNG no pone texto en el boton: la clase es lo unico
     // estable.
     const nextButton = this.page.locator('.p-paginator-next').first();
+    // Con una sola pagina el paginador ni se renderiza (totalPages <= 1); con
+    // varias, el boton de "siguiente" esta deshabilitado en la ultima. En los
+    // dos casos no hay a donde ir: se avisa de inmediato, en vez de esperar al
+    // timeout del test (45 s) por un clic que no va a poder hacerse.
+    const hayBoton = await nextButton
+      .isVisible({ timeout: 2_000 })
+      .catch(() => false);
+    if (!hayBoton || (await nextButton.isDisabled())) {
+      throw new Error('No hay pagina siguiente');
+    }
     await nextButton.click();
     await this.page.waitForTimeout(500);
   }

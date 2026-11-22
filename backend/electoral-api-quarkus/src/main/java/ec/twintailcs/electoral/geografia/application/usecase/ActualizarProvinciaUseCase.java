@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Provincia;
 import ec.twintailcs.electoral.geografia.web.dto.ProvinciaRequest;
+import io.quarkus.cache.CacheInvalidateAll;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -18,6 +19,7 @@ public class ActualizarProvinciaUseCase {
   @Inject EntityManager entityManager;
 
   /** Actualiza la provincia y deja rastro en la auditoria. */
+  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public Provincia execute(Long id, ProvinciaRequest dto, Long masterId, String ipAddress) {
     Provincia provincia = entityManager.find(Provincia.class, id);

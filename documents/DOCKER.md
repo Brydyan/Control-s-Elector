@@ -1,19 +1,19 @@
 # Docker — Guía de Desarrollo Local
 
-Sistema de Control Electoral — Docker en este proyecto se usa **solo para los servicios de infraestructura** (PostgreSQL y RustFS/S3). El backend y el frontend corren nativos en el host.
+Sistema de Control Electoral — en **desarrollo local** Docker se usa **solo para los servicios de infraestructura** (PostgreSQL y RustFS/S3). El backend y el frontend corren nativos en el host.
 
 ## Filosofía dev/prod
 
-| Capa | Dev local | Producción (Railway) |
-|------|-----------|----------------------|
-| PostgreSQL | Docker (`compose.yaml`) | Supabase (managed) |
-| RustFS / S3 | Docker (`compose.yaml`) | Supabase Object Storage |
-| Backend Quarkus | `mvn quarkus:dev` en el host | Docker (imagen `quarkus-app` sobre JRE 21) |
-| Frontend Angular | `ng serve` en el host | Vercel (build de Node 20) |
+| Capa | Dev local | Producción |
+|------|-----------|------------|
+| PostgreSQL | Docker (`compose.yaml`) | Neon (managed, serverless) |
+| RustFS / S3 | Docker (`compose.yaml`) | Cloudflare R2 (S3-compatible) |
+| Backend Quarkus | `mvn quarkus:dev` en el host | Docker GraalVM native (`backend/electoral-api-quarkus/Dockerfile.native`) en Railway |
+| Frontend Angular | `ng serve` en el host | Cloudflare Pages (build de Node 20) |
 
-**¿Por qué?** Buildar GraalVM Native Image consume ~3-4 GB heap durante AOT, lo cual satura Docker Desktop con el límite por defecto. Correr JVM y dev server en el host da hot-reload instantáneo y deja RAM del VM Docker libre para las DBs.
+**¿Por qué en dev?** Buildar GraalVM Native Image consume ~3-4 GB heap durante AOT, lo cual satura Docker Desktop con el límite por defecto. Correr JVM y dev server en el host da hot-reload instantáneo y deja RAM del VM Docker libre para las DBs.
 
-> **Para prod (Railway)**: existe `backend/electoral-api-quarkus/Dockerfile` que arma una imagen con JRE Alpine + JAR ejecutable. Para GraalVM nativo en prod, hay un approach documentado pero no aplicado por ahora (su RAM de build lo permite).
+> **Para prod (Railway)**: el build de producción es GraalVM native con `backend/electoral-api-quarkus/Dockerfile.native`, invocado por `railway.json` (builder `dockerfile`). El frontend se publica como estático en Cloudflare Pages (`control.brydyan.me`) y la API responde en `api.brydyan.me` (Railway).
 
 ---
 
@@ -237,13 +237,30 @@ docker build -t electoral-api:latest .
 
 Resultado: imagen ~250 MB con `eclipse-turin:21-jre-alpine` y el JAR ejecutable.
 
+### Build nativo (el que usa Railway)
+
+La imagen de producción es GraalVM native y se construye con
+`backend/electoral-api-quarkus/Dockerfile.native`, que es el builder declarado en
+`railway.json`:
+
+```bash
+cd backend/electoral-api-quarkus
+docker build -f Dockerfile.native -t electoral-api:native .
+```
+
 ### Variables de entorno para prod
+
+En producción las variables se configuran en Railway (backend) y en Cloudflare Pages
+(frontend); `.env.example` es la única plantilla compartida.
 
 ```bash
 docker run -e DB_HOST=... \
            -e DB_USER=... \
            -e DB_PASSWORD=... \
-           -e SPRING_PROFILES_ACTIVE=prod \
+           -e AWS_S3_ENDPOINT=... \
+           -e AWS_S3_BUCKET=... \
+           -e AWS_ACCESS_KEY_ID=... \
+           -e AWS_SECRET_ACCESS_KEY=... \
            -p 8081:8081 \
            electoral-api:latest
 ```

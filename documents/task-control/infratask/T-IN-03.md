@@ -16,7 +16,7 @@
 Vas a implementar **Row Level Security (RLS)** en PostgreSQL: reglas automáticas que filtran filas según el usuario conectado. Sin RLS, un COORDINATOR vería TODAS las actas; con RLS, un OBSERVER solo verá las suyas (según `observer_jrv_asignacion`).
 
 **Por qué es crítico:**
-- Segunda línea de defensa (la primera es Spring Security en el API)
+- Segunda línea de defensa (la primera es la seguridad del API: JWT + `Autorizador.exigir`)
 - Si el API falla autorizando, la BD rechaza igualmente
 - Previene acceso indebido si alguien bypasea el API
 
@@ -258,7 +258,7 @@ CREATE POLICY rls_notificacion_mark_read ON notificacion
 
 ### Paso 2 — Crear `RlsInterceptor.java`
 
-Este archivo hace que ANTES de cada query, Spring ponga la session variable.
+Este archivo hace que ANTES de cada query, la app ponga la session variable.
 
 Ubicación: `backend/electoral-api/src/main/java/ec/twintailcs/electoral/shared/security/RlsInterceptor.java`
 
@@ -280,7 +280,7 @@ import java.io.IOException;
  *
  * El flujo:
  * 1. Usuario hace request con JWT
- * 2. Spring Security extrae el user_id del JWT
+ * 2. El filtro de seguridad extrae el user_id del JWT
  * 3. Este filter lo establece en PostgreSQL: SET LOCAL app.current_user_id = '123'
  * 4. Todas las queries de este request usan esa variable
  * 5. RLS policies usan GET_CURRENT_USER_ID() para filtrar filas
@@ -292,7 +292,7 @@ public class RlsInterceptor extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        // Obtener el usuario autenticado del JWT (vía Spring Security)
+        // Obtener el usuario autenticado del JWT (vía el token verificado)
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
             CustomUserDetails details = (CustomUserDetails) auth.getPrincipal();

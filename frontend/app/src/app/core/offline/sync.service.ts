@@ -9,6 +9,7 @@ import {
 import { Observable, firstValueFrom } from 'rxjs';
 import { OfflineStorageService, PendingActa } from './offline-storage.service';
 import { HttpActaTransmitter } from './http-acta-transmitter';
+import { ConfigService } from '../config/config.service';
 import { calcularBackoffMs, clasificarFallo, mensajeFallo } from './fallos';
 
 /**
@@ -76,6 +77,7 @@ export const IDEMPOTENCY_HEADER = 'Idempotency-Key';
 @Injectable({ providedIn: 'root' })
 export class SyncService {
   private readonly storage = inject(OfflineStorageService);
+  private readonly configService = inject(ConfigService);
 
   /**
    * Transmisor enlazado por la aplicación (token `ACTA_TRANSMITTER`). Si
@@ -88,7 +90,7 @@ export class SyncService {
   private readonly http = inject(HttpClient, { optional: true });
   private readonly transmitter: ActaTransmitter | null =
     this.transmitterEnyectado ??
-    (this.http ? new HttpActaTransmitter(this.http) : null);
+    (this.http ? new HttpActaTransmitter(this.http, this.configService) : null);
 
   private timerHandle: ReturnType<typeof setInterval> | null = null;
   private onlineListenerBound = false;
