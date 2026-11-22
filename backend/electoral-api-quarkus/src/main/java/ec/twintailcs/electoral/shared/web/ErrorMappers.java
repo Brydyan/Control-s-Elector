@@ -5,6 +5,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotAllowedException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -92,6 +93,19 @@ public final class ErrorMappers {
 
     @Override
     public Response toResponse(Throwable ex) {
+      if (ex instanceof WebApplicationException wae) {
+        Response original = wae.getResponse();
+        int status = original != null ? original.getStatus() : 500;
+        String reason =
+            original != null && original.getStatusInfo() != null
+                ? original.getStatusInfo().getReasonPhrase()
+                : "Error";
+        String message = ex.getMessage() != null ? ex.getMessage() : reason;
+        return Response.status(status)
+            .type("application/json")
+            .entity(ApiErrorResponse.body(status, reason, message))
+            .build();
+      }
       log.error("Unhandled exception", ex);
       return Response.status(500)
           .type("application/json")
