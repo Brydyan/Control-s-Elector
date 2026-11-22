@@ -118,10 +118,19 @@ cargo son datos distintos y no pueden compartir entrada.
 ### Configuración (`application.properties`)
 
 ```properties
-quarkus.cache.caffeine.cargos.expire-after-write=10m
-quarkus.cache.caffeine.partidos.expire-after-write=10m
-quarkus.cache.caffeine.candidatos.expire-after-write=10m
-quarkus.cache.caffeine.geografia.expire-after-write=10m
+quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
+
+# Métricas estándar de Caffeine por caché (tamaño, evictions)
+quarkus.cache.caffeine.cargos.metrics-enabled=true
+quarkus.cache.caffeine.partidos.metrics-enabled=true
+quarkus.cache.caffeine.candidatos.metrics-enabled=true
+quarkus.cache.caffeine.geografia.metrics-enabled=true
+
+# Réplica (Railway inyecta RAILWAY_REPLICA_ID): etiqueta en las métricas de caché
+replica.id=${RAILWAY_REPLICA_ID:local}
 ```
 
 ### Advertencia: Caffeine está acoplado en el helper

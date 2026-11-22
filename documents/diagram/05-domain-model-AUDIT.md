@@ -313,7 +313,7 @@ NOTIFICACION {
 **Falta en diagrama:**
 - Cómo se genera (después de ACTA → EN_DISPUTA o APROBADA)
 - Push notifications vs pull (polling vs WebSocket)
-- Integración con Supabase Realtime
+- Integración de WebSocket (mecanismo por definir)
 
 ---
 

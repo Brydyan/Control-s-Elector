@@ -99,6 +99,14 @@
 
 ## C. Backend: Redis Configuration (P2)
 
+> **SUSTITUIDO por la decisión D2 (opción A: Caffeine en memoria).** Esta sección describe el
+> diseño original con Redis. Con el despliegue real —backend en Railway con **1 réplica**, base
+> en Neon— Redis no aporta: el problema que resolvía (copias distintas entre réplicas) no
+> existe, y añadiría un servicio, un coste y un modo de falla. **No se ejecuta.** Lo que sí se
+> implementó está en la sección D' y en `apply-progress.md` ("Decision D2: tomada").
+>
+> Redis queda como fase 2, condicionado a que el backend corra en más de una réplica.
+
 ### C.1 Configurar Redis en application.properties
 
 - [ ] Archivo: `/backend/electoral-api-quarkus/src/main/resources/application.properties`
@@ -121,7 +129,45 @@
 
 ---
 
+## D'. Backend: caché en memoria (Caffeine) — lo implementado (P2)
+
+### D'.1 Configurar Caffeine en application.properties
+
+- [x] Archivo: `backend/electoral-api-quarkus/src/main/resources/application.properties`
+- [x] Agregar líneas:
+  ```properties
+  quarkus.cache.enabled=${QUARKUS_CACHE_ENABLED:true}
+  quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
+  quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
+  quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
+  quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
+  quarkus.cache.caffeine.cargos.metrics-enabled=true
+  quarkus.cache.caffeine.partidos.metrics-enabled=true
+  quarkus.cache.caffeine.candidatos.metrics-enabled=true
+  quarkus.cache.caffeine.geografia.metrics-enabled=true
+  replica.id=${RAILWAY_REPLICA_ID:local}
+  ```
+- [x] Sin servicio externo: Caffeine va en la JVM
+- [x] TTL parametrizable por entorno con `CACHE_TTL`
+- [x] Métricas etiquetadas por réplica para detectar cache split
+
+### D'.2 Verificar que la caché sirve
+
+- [x] `GET /q/metrics` publica `cache_hits_total{cache="...",replica="..."}` y
+      `cache_misses_total{...}`
+- [x] `GET /q/metrics` publica `cache_size{cache="..."}` (métricas estándar de Caffeine)
+- [x] Con `QUARKUS_CACHE_ENABLED=false` la app sigue sirviendo 200 (degradación, no 500)
+
+---
+
 ## D. Backend: Service-level Caching with @Cacheable (P2)
+
+> **Implementado con `CacheDeLectura` en vez de `@Cacheable`** (desviación D.1/D.2, registrada en
+> `apply-progress.md`). Motivo: la API pública de Quarkus solo expone `get(key, loader)` e
+> `invalidate*`, así que `@Cacheable` no deja distinguir si el acierto vino de la caché o de la
+> base; sin esa visibility el hit ratio —la métrica que demuestra que la caché sirve— no se
+> puede medir. El helper centraliza además la degradación cuando la caché está apagada.
+> La sección D' de arriba describe la configuración realmente implementada.
 
 ### D.1 Agregar @Cacheable a CargoService
 
