@@ -306,17 +306,24 @@ export class CoordinatorReportesPage implements OnInit, OnDestroy {
   }
 
   /**
-   * Retorna símbolo de estado.
+   * Retorna clase de icono PrimeIcon para el estado.
+   */
+  obtenerIconoEstado(estado: string): string {
+    const iconos: Record<string, string> = {
+      ENVIADA: 'pi pi-send',
+      EN_DISPUTA: 'pi pi-exclamation-triangle',
+      CORREGIDA: 'pi pi-file-edit',
+      APROBADA: 'pi pi-check-circle',
+      ANULADA: 'pi pi-times-circle',
+    };
+    return iconos[estado] || 'pi pi-circle';
+  }
+
+  /**
+   * Retorna clase o símbolo de estado (mantenido por compatibilidad).
    */
   obtenerSimboloEstado(estado: string): string {
-    const simbolos: Record<string, string> = {
-      ENVIADA: '📤',
-      EN_DISPUTA: '⚠️',
-      CORREGIDA: '✏️',
-      APROBADA: '✅',
-      ANULADA: '❌',
-    };
-    return simbolos[estado] || '•';
+    return this.obtenerIconoEstado(estado);
   }
 
   /**

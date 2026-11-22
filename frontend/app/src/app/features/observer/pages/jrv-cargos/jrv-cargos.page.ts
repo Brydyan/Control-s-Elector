@@ -103,6 +103,9 @@ export class JrvCargosPage implements OnInit, OnDestroy {
       this.router.navigate(route, {
         queryParams: { actaId: cargo.actaId, modo: 'disputa' },
       });
+    } else if (cargo.registrado && cargo.actaId) {
+      // Navegar a la pantalla dedicada de modificación de acta
+      this.router.navigate(['/observer/acta', cargo.actaId, 'modificar']);
     } else {
       this.router.navigate(route);
     }
