@@ -109,8 +109,11 @@ no tiene inyectada su implementación
 |-------------|-------|-------|-----|
 | `ListarCargosUseCase` | `cargos` | `todos` | 10 min |
 | `ListarPartidosUseCase` | `partidos` | `todos` | 10 min |
-| `ListarCandidatosUseCase` | `candidatos` | `todos` | 10 min |
+| `ListarCandidatosUseCase` | `candidatos` | `cargo:<cargoId>\|partido:<partidoId>` | 10 min |
 | `ListarGeografiaUseCase` | `geografia` | `todos` | 10 min |
+
+La clave de `candidatos` lleva los filtros: el listado sin filtros y el de un
+cargo son datos distintos y no pueden compartir entrada.
 
 ### Configuración (`application.properties`)
 

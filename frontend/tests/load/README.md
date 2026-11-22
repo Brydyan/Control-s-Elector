@@ -188,7 +188,10 @@ Comparación con/sin cache (el número que justifica la cache):
 # 1) Backend con la cache activa → guardar resumen
 k6 run scenarios/cache-hit-ratio.js
 
-# 2) Backend con QUARKUS_CACHE_ENABLED=false → guardar resumen
+# 2) Backend SIN caché → guardar resumen
+#    QUARKUS_CACHE_ENABLED=false es build-time: hay que RECONSTRUIR la imagen.
+#    Alternativa sin reconstruir: TTL a 1s en las 4 cachés
+#    (QUARKUS_CACHE_CAFFEINE_CARGOS_EXPIRE_AFTER_WRITE=1s, etc.)
 k6 run scenarios/cache-hit-ratio.js
 ```
 

@@ -28,14 +28,16 @@ Los 21 casos de uso de escritura llevan `@CacheInvalidateAll`:
 | Geografía | Crear / Actualizar / Eliminar de Provincia, Cantón, Parroquia y JRV (12) |
 
 ```java
-@CacheInvalidateAll(cacheNames = "cargos")
+@CacheInvalidateAll(cacheName = "cargos")
 @Transactional
 public Cargo crearCargo(CargoRequest dto, Long usuarioId, String ip) { ... }
 ```
 
-`@CacheInvalidateAll` borra **todas** las entradas de la caché nombrada. Como
-las listas de cargos/partidos/candidatos/geografía se cachean con una sola
-clave (`todos`), no hay entradas parciales que se queden viejas.
+`@CacheInvalidateAll` borra **todas** las entradas de la caché nombrada, sin
+importar cuántas claves tenga: cargos, partidos y geografía usan la clave
+`todos`, y candidatos usa una clave por combinación de filtros
+(`cargo:<cargoId>|partido:<partidoId>`). Por eso no quedan entradas parciales
+que se queden viejas: la caché entera se va.
 
 Cobertura: `CacheInvalidacionIT` (integración) verifica que, tras una
 escritura, la siguiente lectura vuelve a la base.
@@ -165,9 +167,14 @@ this.observerApi.invalidateCache();
 this.dashboardApi.invalidateCache();
 ```
 
-Cuando un dato cambia y el usuario está en la misma sesión, la invalidación
-del frontend la dispara la acción que rompió el dato (por ejemplo, el MASTER
-que crea un partido y vuelve al dashboard).
+La invalidación del frontend la dispara la acción que rompió el dato: el panel
+de configuración del MASTER llama a `ConfiguracionApi.invalidateCache(...)`
+después de cada alta, edición o baja, y ese método invalida además las cachés
+de los otros servicios (`ObserverApi` para los partidos del formulario del
+observador y `DashboardApi` para resumen, resultados, progreso y novedades).
+
+Sin ese cableado, un MASTER que crea un partido lo seguiría sin ver en el
+formulario del observador hasta recargar la página.
 
 ---
 
@@ -182,8 +189,9 @@ cd backend/electoral-api-quarkus && ./mvnw -o test -Dtest='CacheInvalidacionIT,C
 2. **A mano, contra el backend corriendo**:
 
 ```bash
-# Calentar la caché
-curl -s http://localhost:8080/api/v1/configuracion/cargos > /dev/null
+# Calentar la caché (esta ruta exige token: sin el devuelve 401)
+curl -s http://localhost:8080/api/v1/configuracion/cargos \
+  -H "Authorization: Bearer $TOKEN" > /dev/null
 
 # Ver los contadores
 curl -s http://localhost:8080/q/metrics | grep '^cache_'
@@ -195,7 +203,8 @@ curl -s -X POST http://localhost:8080/api/v1/configuracion/cargos \
 
 # Volver a leer: los contadores muestran un acierto nuevo y la lista ya trae
 # el cargo nuevo (la escritura invalidó la caché).
-curl -s http://localhost:8080/api/v1/configuracion/cargos
+curl -s http://localhost:8080/api/v1/configuracion/cargos \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
 ---

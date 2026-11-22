@@ -36,15 +36,28 @@ k8s se pueden apagar sin tocar la imagen.
 
 ### Desactivar la caché (para medir el "antes")
 
+Hay dos formas, y la diferencia importa:
+
 ```bash
-QUARKUS_MICROMETER_ENABLED=true \
+# A) Apagar la extensión de caché completa.
+#    OJO: `quarkus.cache.enabled` se fija en tiempo de BUILD en Quarkus:
+#    poner QUARKUS_CACHE_ENABLED=false en un pod ya construido NO la apaga;
+#    hay que reconstruir la imagen.
+QUARKUS_CACHE_ENABLED=false ./mvnw quarkus:dev
+
+# B) Bajar el TTL a 1s en las cuatro cachés (no reconstruye nada).
 QUARKUS_CACHE_CAFFEINE_CARGOS_EXPIRE_AFTER_WRITE=1s \
+QUARKUS_CACHE_CAFFEINE_PARTIDOS_EXPIRE_AFTER_WRITE=1s \
+QUARKUS_CACHE_CAFFEINE_CANDIDATOS_EXPIRE_AFTER_WRITE=1s \
+QUARKUS_CACHE_CAFFEINE_GEOGRAFIA_EXPIRE_AFTER_WRITE=1s \
   ./mvnw quarkus:dev
 ```
 
 Para una línea base honesta lo más simple es arrancar el backend con la caché
-fuera y correr el mismo k6; el contraste de hit ratio y de latencia es la
-evidencia de que la caché sirve.
+fuera (opción A) y correr el mismo k6; el contraste de hit ratio y de latencia
+es la evidencia de que la caché sirve. La opción B sirve para una comparación
+rápida, pero no es una línea base limpia: la caché sigue activa y solo caduca
+antes.
 
 ### Verificar que la caché está viva
 
@@ -137,8 +150,16 @@ pedirlos hasta que recargue la página.
 cd backend/electoral-api-quarkus && ./mvnw -o quarkus:dev
 
 # En otra terminal: calentar la caché y mirar los contadores
-curl -s http://localhost:8080/api/v1/configuracion/cargos > /dev/null
-curl -s http://localhost:8080/api/v1/configuracion/partidos > /dev/null
+# Las lecturas de /api/v1/configuracion exigen token (401 sin el).
+TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"<master@...>","password":"<password>"}' \
+  | sed -n 's/.*"accessToken":"\([^"]*\)".*/\1/p')
+
+curl -s http://localhost:8080/api/v1/configuracion/cargos \
+  -H "Authorization: Bearer $TOKEN" > /dev/null
+curl -s http://localhost:8080/api/v1/configuracion/partidos \
+  -H "Authorization: Bearer $TOKEN" > /dev/null
 curl -s http://localhost:8080/q/metrics | grep '^cache_'
 ```
 

@@ -17,10 +17,16 @@
  *   MASTER_EMAIL=... MASTER_PASSWORD=... k6 run scenarios/cache-hit-ratio.js
  *   CACHE_ENABLED=false k6 run scenarios/cache-hit-ratio.js   # baseline sin cache
  *
- * El backend se levanta con la cache activada o desactivada
- * (`QUARKUS_CACHE_ENABLED=false` en el contenedor) y se corre el MISMO
+ * El backend se levanta con la cache activada o desactivada y se corre el MISMO
  * script dos veces: la diferencia de hit ratio y de latencia es la mejora
  * atribuible a la cache.
+ *
+ * Como apagarla: `quarkus.cache.enabled=false` (variable de entorno
+ * `QUARKUS_CACHE_ENABLED=false`). OJO: en Quarkus esa propiedad se fija en
+ * tiempo de build, asi que hay que RECONSTRUIR la imagen del backend; poner la
+ * variable en un pod ya construido no la apaga. La alternativa sin tocar la
+ * imagen es bajar el TTL a 1s por cache:
+ * `QUARKUS_CACHE_CAFFEINE_CARGOS_EXPIRE_AFTER_WRITE=1s` (y las otras tres).
  */
 
 import http from 'k6/http';

@@ -17,12 +17,12 @@
 | B.1 Cache del dashboard (4 metodos) | ✅ | `dashboard.api.ts`: `resumen$`, `resultados$`, `progreso$`, `novedades$` |
 | B.2 Test de cache del dashboard | ✅ | `dashboard.api.spec.ts` — 4 metodos, mutacion verificada |
 | C.1 Configuracion de cache | ⚠️ | Caffeine en memoria, no Redis (ver "Decision D2 pendiente") |
-| D.1/D.2 `@CacheResult` en lectura | ✅ | 4 caches: `cargos`, `partidos`, `candidatos`, `geografia` (TTL 10m) |
+| D.1/D.2 Lectura cacheada | ✅ | 4 caches: `cargos`, `partidos`, `candidatos`, `geografia` (TTL 10m). Acceso explicito con `CacheDeLectura` (no `@CacheResult`: sin el, el hit ratio no se puede medir) |
 | D.3 Invalidacion en escritura | ✅ | `@CacheInvalidateAll` en los 21 casos de uso de escritura |
 | D.4 Test de invalidacion | ✅ | `CacheInvalidacionIT` — mutacion verificada (sin invalidar, el test cae) |
 | E.1 Endpoint de vaciado | ✅ | `AdminCacheResource` — exige MASTER, deja rastro en `audit_log` |
 | E.2 Test del vaciado | ✅ | `AdminCacheResourceTest` — 7 tests: matriz de roles, estado post-call, auditoria |
-| F.1/F.2 Tests unitarios | ✅ | frontend (`observer.api.spec.ts`, `dashboard.api.spec.ts`) y backend (`CacheServicioIT`, 4 caches) |
+| F.1/F.2 Tests unitarios | ✅ | frontend (`observer.api.spec.ts`, `dashboard.api.spec.ts`) y backend (`CacheServicioIT`, `CacheContenidoIT`, 4 caches) |
 | F.3/F.4 E2E | ✅ | `e2e/cache-datos-estaticos.spec.ts` — 2 tests, mutacion verificada |
 | F.5 Load test | ✅ (script) / ⏳ (sin ejecutar) | `frontend/tests/load/scenarios/cache-hit-ratio.js` — falta correrlo con el stack arriba |
 | F.6 Monitoring | ✅ | micrometer + prometheus: `cache_hits_total` / `cache_misses_total` (`CacheMetricasIT`) |
