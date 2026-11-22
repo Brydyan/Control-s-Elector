@@ -4,7 +4,7 @@
 **Implementado por:** Builder (`/02-builder-sdd`) + rework de verificación (`/03-verify-sdd`)
 **Última actualización:** 2026-11-21
 
-## Estado: PARCIAL — implementacion completa (backend, frontend, tests, metricas, E2E, k6, docs); falta la decision D2 y ejecutar el load test
+## Estado: PARCIAL — implementacion completa y medida (backend, frontend, tests, metricas, E2E, k6 ejecutado, docs); falta la decision D2 y las alertas de memoria de la cache
 
 ---
 

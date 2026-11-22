@@ -129,6 +129,14 @@ DESPUÉS:
 
 ## C. Backend Caching: Redis Architecture
 
+> **⚠️ Sección C describe la opción NO implementada.** La implementación real usa
+> **Caffeine en memoria** (`quarkus-cache-caffeine`), no Redis. Lo que sigue queda como
+> referencia del diseño original y **no describe el código vigente**. La decisión
+> Redis-vs-Caffeine (D2) está **PENDIENTE de decisión humana**: ver
+> "Decision D2 pendiente" en `apply-progress.md`. La sección C.3 (impacto en consultas)
+> sí se midió con la implementación real, pero con la métrica reproducible de
+> "consultas de configuración" (ver `documents/load-test/`).
+
 ### C.1 Configuration
 
 **Archivo:** `/backend/electoral-api-quarkus/src/main/resources/application.properties`

@@ -133,7 +133,13 @@ Implementar estrategia de caching cohesiva para eliminar **requests duplicadas**
 **D2 — ¿Backend: Redis vs In-Memory Cache?**
 - Opción A: In-Memory con `@Cacheable` (simple, pero cada réplica = cache separada)
 - Opción B: Redis compartido (sincronizado entre réplicas, escalable)
-- **Elegida:** B. Con 3+ réplicas de backend, Redis evita cache splits y stale data.
+- **PENDIENTE (decisión humana).** El diseño original elegía B, pero la implementación
+  actual apunta a **Caffeine en memoria** (`quarkus-cache-caffeine`), porque `CacheDeLectura`
+  requiere Caffeine para medir el hit ratio. Con `k8s/backend.yaml` en `replicas: 2`, cada
+  réplica tendría su propia copia y el dato podría diferir entre ellas durante el TTL de 10 min.
+  El coste y el riesgo de ambas opciones están cuantificados en `apply-progress.md`
+  ("Decision D2 pendiente"). **Este documento no debe leerse como una decisión tomada:**
+  cerrarlo exige una decisión humana explícita.
 
 **D3 — ¿TTL: Fijo vs Event-driven Invalidation?**
 - Opción A: TTL fijo 10 min (simple, predecible, puede servir stale data)
