@@ -63,6 +63,12 @@
 | `595f0d9` | `tasks.md` con la seccion de Redis sustituida por la opcion A |
 | `27eda74` | `apply-progress.md` con los commits reales de la decision D2 |
 | `04d81ed` | `.env.example` a Neon/R2/Railway + purga de restos del diseno viejo |
+| `c899a92` | Auditoria del SDD (proposal/design/tasks/apply-progress) + doc de despliegue alineada a Railway/Pages/Neon/R2 |
+| `1212e29` | `ConfigService`: en dev la app usa la ruta del proxy y no la API de produccion |
+| `5e62220` | Spec J7 alineado al flujo consolidado de invitacion (ODD #504) + paginador sin espera |
+
+> `80c9ba0` (guia de Cloudflare Pages) y `99f97c2` (URL de API unificada) son del trabajo en
+> paralelo del frontend, no de este SDD.
 
 ---
 
@@ -167,14 +173,33 @@ Justificacion completa en `documents/CACHE_SETUP_GUIDE.md` (seccion 3).
 ## Resultado de las suites
 
 ```
-frontend  npx vitest run --exclude '**/*.a11y.spec.ts'  → 106 files / 1092 tests, exit 0
+frontend  npx vitest run --exclude '**/*.a11y.spec.ts'  → 107 files / 1097 tests, exit 0
 backend   ./mvnw -o test                                → 250 tests, BUILD SUCCESS
 k6        k6 run scenarios/cache-hit-ratio.js           → 100 VUs, p95 0.92 ms, hit ratio 100 %
 backend   ./mvnw -o spotless:check                      → sin violaciones
 frontend  pnpm format:check && pnpm lint                → sin observaciones
-e2e       npx playwright test e2e/cache-api-real.spec.ts e2e/cache-datos-estaticos.spec.ts
-          → 10 tests (Desktop Chrome + Mobile Chrome), exit 0
+e2e       npx playwright test --project="Desktop Chrome" --project="Mobile Chrome — Pixel 7"
+          → 114 passed, 44 skipped (viewport-gated: journeys de escritorio en movil),
+            0 failed, exit 0
 ```
+
+### Lo que hubo que arreglar para que el E2E pasara
+
+Ninguno de los dos fallos era de este SDD, pero ambos impedian correr la suite:
+
+1. **La app en dev apuntaba a la API de produccion** (`1212e29`). El commit `99f97c2`
+   unifico la URL de la API en `ConfigService` para los 15 servicios; en desarrollo eso
+   hacia que la app leyera `assets/config.json` (que trae la URL de produccion) y llamara
+   al backend real. Los E2E veian datos de otra base. En dev ahora se usa
+   `environment.apiUrl` (relativa, via `proxy.conf.json`); en produccion sigue mandando
+   `config.json`. Cubierto por `config.service.spec.ts` (5 casos).
+2. **El spec J7 estaba obsoleto** (`5e62220`): ODD #504 (`709b2ee`) consolidationo el
+   flujo de invitacion y borro el boton `btn-invitar`; el spec seguia buscandolo.
+
+Ademas, el **seed local** necesita el contexto `bootstrap-admin` (ademas de `seed`) para que
+exista la cuenta MASTER que usa el E2E (`admin@control-elector.local`): sin el, el login
+devuelve 401 y los specs que necesitan MASTER fallan. El `.env` local ya lo trae; en
+produccion NO: ahi la cuenta se provisiona a mano y el contexto es `seed` a secas.
 
 ---
 
