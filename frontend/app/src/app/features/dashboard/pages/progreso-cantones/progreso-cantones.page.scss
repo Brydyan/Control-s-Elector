@@ -5,18 +5,18 @@
 }
 
 .page-header {
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 
   .header-titles {
     .page-title {
-      font-size: 2rem;
+      font-size: 1.5rem;
       font-weight: 700;
       margin: 0;
       color: var(--color-text-primary);
     }
 
     .page-subtitle {
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       color: var(--color-text-secondary);
       margin: 0.25rem 0 0 0;
     }
@@ -111,14 +111,14 @@
           align-items: center;
 
           .stat-value {
-            font-size: 1.5rem;
+            font-size: 1.125rem;
             font-weight: 700;
             color: var(--color-text-primary);
             line-height: 1;
           }
 
           .stat-label {
-            font-size: 0.7rem;
+            font-size: 0.6875rem;
             font-weight: 600;
             color: var(--color-text-secondary);
             text-transform: uppercase;
@@ -129,7 +129,7 @@
 
           &.stat-porcentaje {
             .stat-value {
-              font-size: 1.75rem;
+              font-size: 1.25rem;
               color: var(--primitive-green-800);
             }
           }

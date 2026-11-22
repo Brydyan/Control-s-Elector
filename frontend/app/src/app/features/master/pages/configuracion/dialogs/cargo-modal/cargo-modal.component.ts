@@ -61,7 +61,7 @@ import { ToastService } from '../../../../../../core/services/toast.service';
           class="form-input"
           data-testid="select-nivel"
         >
-          <option value="">-- Selecciona --</option>
+          <option value="" disabled selected hidden>Seleccionar nivel territorial</option>
           <option value="NACIONAL">Nacional</option>
           <option value="PROVINCIAL">Provincial</option>
           <option value="CANTONAL">Cantonal</option>
@@ -78,19 +78,23 @@ import { ToastService } from '../../../../../../core/services/toast.service';
       </div>
 
       <div class="form-group">
-        <label for="orden">Orden *</label>
+        <label for="puestos">Puestos a Elegir *</label>
         <input
-          id="orden"
+          id="puestos"
           type="number"
-          formControlName="orden"
+          formControlName="puestos"
           class="form-input"
+          min="1"
           placeholder="1"
-          data-testid="input-orden"
+          data-testid="input-puestos"
         />
+        <span class="form-hint">
+          Número de escaños a elegir (ej: 1 para Alcalde/Prefecto, 5 para Concejales).
+        </span>
         <span
           class="error"
-          *ngIf="form.get('orden')?.invalid && form.get('orden')?.touched"
-          >Orden es requerido</span
+          *ngIf="form.get('puestos')?.invalid && form.get('puestos')?.touched"
+          >Puestos es requerido (mínimo 1)</span
         >
       </div>
 
@@ -173,6 +177,12 @@ import { ToastService } from '../../../../../../core/services/toast.service';
           }
         }
 
+        .form-hint {
+          font-size: 0.8rem;
+          color: var(--color-text-secondary, #64748b);
+          margin-top: -0.25rem;
+        }
+
         .error {
           font-size: 0.85rem;
           color: var(--color-status-danger);
@@ -244,12 +254,18 @@ export class CargoModalComponent implements OnInit {
     this.form = new FormGroup({
       nombre: new FormControl('', Validators.required),
       nivelTerritorial: new FormControl('', Validators.required),
-      orden: new FormControl('', Validators.required),
+      puestos: new FormControl(1, [Validators.required, Validators.min(1)]),
       estado: new FormControl('ACTIVO', Validators.required),
     });
 
     if (this.data?.mode === 'edit' && this.data?.cargo) {
-      this.form.patchValue(this.data.cargo);
+      this.form.patchValue({
+        nombre: this.data.cargo.nombre,
+        nivelTerritorial:
+          this.data.cargo.nivelTerritorial || this.data.cargo.nivel,
+        puestos: this.data.cargo.puestos ?? 1,
+        estado: this.data.cargo.estado ?? 'ACTIVO',
+      });
     }
   }
 
@@ -259,7 +275,12 @@ export class CargoModalComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    const payload: CargoRequest = this.form.value;
+    const val = this.form.value;
+    const payload: CargoRequest = {
+      nombre: val.nombre,
+      nivel: val.nivelTerritorial,
+      puestos: Number(val.puestos),
+    };
 
     const request$ =
       this.data?.mode === 'edit' && this.data?.cargo

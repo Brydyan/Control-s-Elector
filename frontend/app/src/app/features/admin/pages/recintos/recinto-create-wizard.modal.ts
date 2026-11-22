@@ -214,7 +214,8 @@ import { UsuarioResponseDto } from '../../domain/models/admin.model';
                   "
                   class="text-red-500 block mt-2"
                 >
-                  ⚠ Mínimo 5 observadores requeridos (actual:
+                  <i class="pi pi-exclamation-triangle mr-1"></i>
+                  Mínimo 5 observadores requeridos (actual:
                   {{ observadoresCount }})
                 </small>
               </div>
@@ -258,7 +259,8 @@ import { UsuarioResponseDto } from '../../domain/models/admin.model';
                   *ngIf="coordinadoresCount > 5 && activeStepIndex === 1"
                   class="text-red-500 block mt-2"
                 >
-                  ⚠ Máximo 5 coordinadores permitidos (actual:
+                  <i class="pi pi-exclamation-triangle mr-1"></i>
+                  Máximo 5 coordinadores permitidos (actual:
                   {{ coordinadoresCount }})
                 </small>
               </div>

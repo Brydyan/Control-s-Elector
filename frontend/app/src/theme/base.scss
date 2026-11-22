@@ -145,14 +145,8 @@ app-card:hover {
   box-shadow: var(--shadow-elevated);
 }
 
-/* Modales: la máscara entra y el diálogo sube. */
-.p-dialog-mask {
-  animation: fadeIn var(--duration-normal) var(--ease-out);
-}
-
-.p-dialog {
-  animation: slideUp var(--duration-normal) var(--ease-out);
-}
+/* Modales: delegados a PrimeNG para evitar colisión de animaciones dobles */
+/* (PrimeNG 21 maneja su propia transición de entrada/salida para dialog y mask) */
 
 /* Inputs: cambian color, no geometría. */
 .p-inputtext,

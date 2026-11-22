@@ -11,29 +11,29 @@
     @if (cuenta(); as datos) {
     <dl class="resumen" data-testid="resumen-cuenta">
       <div>
-        <dt>👤 Usuario (Control)</dt>
+        <dt><i class="pi pi-user mr-1"></i> Usuario (Control)</dt>
         <dd>{{ usuarioCorto() || datos.email }}</dd>
       </div>
       <div>
-        <dt>📧 Correo Control</dt>
+        <dt><i class="pi pi-envelope mr-1"></i> Correo Control</dt>
         <dd>{{ datos.email }}</dd>
       </div>
       <div>
-        <dt>💬 Correo Personal</dt>
+        <dt><i class="pi pi-at mr-1"></i> Correo Personal</dt>
         <dd>{{ datos.emailPersonal || '—' }}</dd>
       </div>
       <div>
-        <dt>🎭 Rol de Control</dt>
+        <dt><i class="pi pi-shield mr-1"></i> Rol de Control</dt>
         <dd>{{ rolLegible() }}</dd>
       </div>
     </dl>
     }
 
     <p class="aviso">
-      ℹ️ Tu contraseña ha sido establecida correctamente. Ahora puedes iniciar
+      Tu contraseña ha sido establecida correctamente. Ahora puedes iniciar
       sesión en Control's Elector.
     </p>
 
-    <p-button label="→ Ir a Login" [fluid]="true" (onClick)="irAlLogin()" />
+    <p-button label="Ir a Login" icon="pi pi-arrow-right" iconPos="right" [fluid]="true" (onClick)="irAlLogin()" />
   </section>
 </div>
