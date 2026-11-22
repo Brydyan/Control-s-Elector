@@ -143,6 +143,20 @@ Ya implementada antes de esta sesión; no se reimplementó.
 | Fase C reimplementar | no se tocó | ya estaba hecha y documentada |
 | `PERFORMANCE_OPTIMIZATION.md` + `CACHING_STRATEGY.md` | + `INDEXING_GUIDE.md` | el SDD pedía los tres |
 
+## Brecha conocida: el endpoint batch no tiene consumidor
+
+`GET /observer/cargos-with-candidatos` existe, compila y tiene IT, pero **ningun
+cliente lo llama**. `observer.api.ts` sigue pidiendo candidatos por cargo
+(`/configuracion/candidatos?cargoId=`), y `registrar-acta.page.ts` /
+`modificar-acta.page.ts` lo invocan al abrir cada cargo. Con cinco cargos son
+cinco peticiones (mas partidos, ya cacheado), no una.
+
+Es decir: el backend esta listo, pero el ahorro de red que promete la propuesta
+(11 peticiones -> 1) no ocurre hasta que el formulario del observador use el
+endpoint. El SDD (B.2) solo pide el endpoint y su test; migrar las paginas es
+una tarea nueva y toca el flujo critico de registro de acta, asi que no se hizo
+sin plantearlo.
+
 ## Bloqueos
 
 - **Sin Docker ni PostgreSQL local**: los IT con `PostgresTestResource` no
