@@ -52,6 +52,22 @@ class CacheMetricasIT {
         .containsPattern("cache_hits_total\\{[^}]*cache=\"cargos\"[^}]*\\}\\s+[\\d.]+");
   }
 
+  @Test
+  @DisplayName("la metrica va etiquetada con la replica que la sirvio")
+  void laMetricaVaEtiquetadaConLaReplica() {
+    String metricas = metricas();
+
+    // Railway AGREGA las metricas de todas sus replicas en un solo tablero. Sin esta
+    // etiqueta no se puede distinguir "el hit ratio bajo" de "una replica quedo
+    // desfasada respecto de las otras".
+    assertThat(metricas)
+        .as("la metrica de cache identifica la replica que la sirvio")
+        .contains("replica=\"replica-de-prueba\"");
+    assertThat(metricas)
+        .as("la metrica de cache conserva el nombre de la cache")
+        .containsPattern("cache_hits_total\\{[^}]*cache=\"cargos\"[^}]*\\}");
+  }
+
   /** Cuerpo de /q/metrics en formato Prometheus. */
   private String metricas() {
     var res = given().when().get("/q/metrics");

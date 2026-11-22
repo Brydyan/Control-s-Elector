@@ -25,6 +25,9 @@ public class CacheMetricasTestProfile implements QuarkusTestProfile {
         "quarkus.liquibase.migrate-at-start", "true",
         "quarkus.liquibase.contexts", "seed",
         "quarkus.hibernate-orm.database.generation", "validate",
-        "quarkus.hibernate-orm.log.statistics", "true");
+        "quarkus.hibernate-orm.log.statistics", "true",
+        // Railway inyecta RAILWAY_REPLICA_ID por replica. Aqui se fija a mano para poder
+        // comprobar que la etiqueta llega a las metricas.
+        "replica.id", "replica-de-prueba");
   }
 }

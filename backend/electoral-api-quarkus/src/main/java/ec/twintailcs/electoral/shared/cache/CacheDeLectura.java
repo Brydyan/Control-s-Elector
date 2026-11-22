@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.shared.cache;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheManager;
@@ -8,6 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * T-CACHE-STRAT-01 D.5: acceso a la cache de lectura, con el hit ratio medido.
@@ -31,6 +33,19 @@ public class CacheDeLectura {
 
   @Inject CacheManager cacheManager;
   @Inject MeterRegistry meterRegistry;
+
+  /**
+   * Identificador de la réplica que sirve la petición.
+   *
+   * <p>Railway reparte el tráfico al azar entre las réplicas y <b>agrega</b> las métricas de todas
+   * ellas en un solo tablero. Sin esta etiqueta, un tablero dice "el hit ratio es 90 %" sin poder
+   * decir si las dos réplicas coinciden o si una quedó con la caché desfasada respecto de la otra.
+   * Con la etiqueta, cada réplica tiene su propia línea y la divergencia se ve.
+   *
+   * <p>En Railway la variable {@code RAILWAY_REPLICA_ID} la inyecta la plataforma, una por réplica.
+   */
+  @ConfigProperty(name = "replica.id", defaultValue = "local")
+  String replicaId;
 
   /**
    * Busca el valor en la cache.
@@ -60,7 +75,7 @@ public class CacheDeLectura {
       return Optional.empty();
     }
 
-    meterRegistry.counter("cache.hits", "cache", cacheName).increment();
+    contador("cache.hits", cacheName).increment();
     return Optional.of((T) valor);
   }
 
@@ -115,6 +130,21 @@ public class CacheDeLectura {
   }
 
   private void contarFallo(String cacheName) {
-    meterRegistry.counter("cache.misses", "cache", cacheName).increment();
+    contador("cache.misses", cacheName).increment();
+  }
+
+  /**
+   * Contador de aciertos o fallos de una caché, etiquetado con su nombre y con la réplica.
+   *
+   * <p>La etiqueta {@code replica} es lo que permite distinguir "el hit ratio bajó" de "una de las
+   * réplicas quedó desfasada": Railway agrega las métricas de todas sus réplicas, así que sin ella
+   * el tablero no distingue los dos casos.
+   *
+   * @param nombre nombre del contador
+   * @param cacheName caché a la que pertenece
+   * @return el contador, ya registrado en el registro de métricas
+   */
+  private Counter contador(String nombre, String cacheName) {
+    return meterRegistry.counter(nombre, "cache", cacheName, "replica", replicaId);
   }
 }
