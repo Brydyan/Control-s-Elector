@@ -55,7 +55,7 @@ describe('RecintosListPage', () => {
     it('debería cargar recintos al iniciar', () => {
       const response: PagedResponse<RecintoResponse> = {
         data: mockRecintos,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       recintoApi.listarRecintos.and.returnValue(of(response));
 
@@ -113,7 +113,7 @@ describe('RecintosListPage', () => {
       recintoApi.eliminarRecinto.and.returnValue(of(undefined));
       const response: PagedResponse<RecintoResponse> = {
         data: [mockRecintos[1]],
-        meta: { total: 1 },
+        meta: { page: 0, size: 20, totalElements: 1, totalPages: 1 },
       };
       recintoApi.listarRecintos.and.returnValue(of(response));
 
@@ -137,7 +137,7 @@ describe('RecintosListPage', () => {
     it('debería recargar recintos al guardar', () => {
       const response: PagedResponse<RecintoResponse> = {
         data: mockRecintos,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       recintoApi.listarRecintos.and.returnValue(of(response));
 
@@ -159,7 +159,7 @@ describe('RecintosListPage', () => {
     it('debería cambiar página y recargar', () => {
       const response: PagedResponse<RecintoResponse> = {
         data: mockRecintos,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       recintoApi.listarRecintos.and.returnValue(of(response));
 
@@ -175,7 +175,7 @@ describe('RecintosListPage', () => {
     it('debería filtrar por estado', () => {
       const response: PagedResponse<RecintoResponse> = {
         data: [mockRecintos[0]],
-        meta: { total: 1 },
+        meta: { page: 0, size: 20, totalElements: 1, totalPages: 1 },
       };
       recintoApi.listarRecintos.and.returnValue(of(response));
 

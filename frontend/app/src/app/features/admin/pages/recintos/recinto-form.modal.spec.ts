@@ -31,13 +31,13 @@ describe('RecintoFormModalComponent', () => {
       id: 10,
       nombre: 'Juan Pérez',
       email: 'juan@test.com',
-      rol: 'COORDINATOR',
+      rolNombre: 'COORDINATOR',
     } as UsuarioResponseDto,
     {
       id: 11,
       nombre: 'María García',
       email: 'maria@test.com',
-      rol: 'COORDINATOR',
+      rolNombre: 'COORDINATOR',
     } as UsuarioResponseDto,
   ];
 
@@ -64,7 +64,7 @@ describe('RecintoFormModalComponent', () => {
     it('debería crear formulario con validaciones', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
       component.ngOnInit();
@@ -77,14 +77,14 @@ describe('RecintoFormModalComponent', () => {
     it('debería cargar coordinadores', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
 
       component.ngOnInit();
 
       expect(component.coordinadores.length).toBe(2);
-      expect(component.coordinadores[0].rol).toBe('COORDINATOR');
+      expect(component.coordinadores[0].rolNombre).toBe('COORDINATOR');
     });
   });
 
@@ -92,7 +92,7 @@ describe('RecintoFormModalComponent', () => {
     it('debería crear recinto con formulario válido', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
       const newRecinto: RecintoResponse = {
@@ -122,7 +122,7 @@ describe('RecintoFormModalComponent', () => {
     it('debería mostrar error si formulario inválido', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
       component.ngOnInit();
@@ -137,7 +137,7 @@ describe('RecintoFormModalComponent', () => {
     it('debería mostrar error si API falla', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
       const error = new Error('Error al crear');
@@ -165,7 +165,7 @@ describe('RecintoFormModalComponent', () => {
     it('debería actualizar recinto en modo edición', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
       recintoApi.actualizarRecinto.and.returnValue(of(mockRecinto));
@@ -192,7 +192,7 @@ describe('RecintoFormModalComponent', () => {
     it('debería limpiar cantones al cambiar provincia', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
       component.ngOnInit();
@@ -207,7 +207,7 @@ describe('RecintoFormModalComponent', () => {
     it('debería limpiar parroquias al cambiar cantón', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
       component.ngOnInit();
@@ -224,7 +224,7 @@ describe('RecintoFormModalComponent', () => {
     it('debería reset formulario y emitir evento', () => {
       const response: PagedResponse<UsuarioResponseDto> = {
         data: mockCoordinadores,
-        meta: { total: 2 },
+        meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
       };
       adminApi.listarUsuarios.and.returnValue(of(response));
       component.ngOnInit();
