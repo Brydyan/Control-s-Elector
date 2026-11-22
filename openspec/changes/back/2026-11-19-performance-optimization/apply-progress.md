@@ -15,7 +15,9 @@ No se declaran en verde.
 | B.1 | `c395d69` | `perf(auth): load usuario.rol lazily with batch size` |
 | B.2 | `25527f0` | `perf(observer): add batch endpoint for JRV cargos with candidatos` |
 | D | `6fe24ac` | `perf(infra): enable gzip and raise the datasource pool` |
-| F | TBD | docs: performance optimization and indexing guide |
+| F | `7813b2e` | docs: performance optimization and indexing guide |
+| F+ | `937e18b` | fix: use real Quarkus 3.40 pool/compression keys |
+| B.2 FE | `d5ce6a8` | perf(observer): wire registrar-acta/modificar-acta to batch catalog |
 
 ---
 
@@ -143,19 +145,18 @@ Ya implementada antes de esta sesión; no se reimplementó.
 | Fase C reimplementar | no se tocó | ya estaba hecha y documentada |
 | `PERFORMANCE_OPTIMIZATION.md` + `CACHING_STRATEGY.md` | + `INDEXING_GUIDE.md` | el SDD pedía los tres |
 
-## Brecha conocida: el endpoint batch no tiene consumidor
+## Brecha cerrada: consumidor frontend del endpoint batch
 
-`GET /observer/cargos-with-candidatos` existe, compila y tiene IT, pero **ningun
-cliente lo llama**. `observer.api.ts` sigue pidiendo candidatos por cargo
-(`/configuracion/candidatos?cargoId=`), y `registrar-acta.page.ts` /
-`modificar-acta.page.ts` lo invocan al abrir cada cargo. Con cinco cargos son
-cinco peticiones (mas partidos, ya cacheado), no una.
+La brecha registrada antes (endpoint sin consumidor) quedó cerrada en `d5ce6a8`.
+`observer.api.ts` expone `getCatalogoDeJrv(jrvId)`, que consume
+`GET /observer/cargos-with-candidatos` en una sola petición y enriquece
+candidatos con partidos. `registrar-acta.page.ts` y `modificar-acta.page.ts`
+usan el catálogo por JRV en vez de pedir candidatos por cargo.
 
-Es decir: el backend esta listo, pero el ahorro de red que promete la propuesta
-(11 peticiones -> 1) no ocurre hasta que el formulario del observador use el
-endpoint. El SDD (B.2) solo pide el endpoint y su test; migrar las paginas es
-una tarea nueva y toca el flujo critico de registro de acta, asi que no se hizo
-sin plantearlo.
+Intenté delegar la migración de páginas a `gentle-ai-worker` (3 sub-tareas
+acotadas, como pidió el usuario); los workers devolvieron estado completado sin
+diff. Implementé la migración inline, con specs actualizadas y suite completa
+en verde.
 
 ## Bloqueos
 
