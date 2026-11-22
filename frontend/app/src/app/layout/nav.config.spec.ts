@@ -143,6 +143,13 @@ describe('nav.config', () => {
       expect(configItem?.route).toBe('/master/configuracion');
     });
 
+    it('should place "Recintos" in the Administración section', () => {
+      const secciones = NAV_CONFIG['MASTER'];
+      const admin = secciones.find((s) => s.label === 'Administración');
+      const recintos = admin?.items.find((i) => i.label === 'Recintos');
+      expect(recintos?.route).toBe('/admin/recintos');
+    });
+
     it('should have ZERO duplicate routes across all sections', () => {
       const sections = NAV_CONFIG['MASTER'];
       const routes = sections.flatMap((s) => s.items.map((i) => i.route));
@@ -168,6 +175,7 @@ describe('nav.config', () => {
       expect(routes).toContain('/master/configuracion');
       expect(routes).toContain('/admin/usuarios');
       expect(routes).toContain('/admin/sesiones');
+      expect(routes).toContain('/admin/recintos');
     });
   });
 
