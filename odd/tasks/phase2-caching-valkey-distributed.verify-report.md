@@ -294,3 +294,129 @@ preview (H4) y la dependencia implícita del registro de reflexión de Quarkus
 así que el beneficio propio de Phase 2 (invalidación entre réplicas) todavía no
 está activo en producción. Phase 2 lo habilita; el escalado horizontal lo
 aprovecha.
+
+---
+
+## 12. Re-verificación sobre HEAD `83fff47` (2026-11-22)
+
+Segunda pasada de `/03-verify-odd` sobre el estado **ya remediado y commiteado**:
+todas las gates se re-ejecutaron con evidencia fresca, no se reutilizó lo de §11.
+
+### 12.1 Task completion — 14/14 ✅
+
+Checklist del ODD con las 14 casillas en `[x]` y estado *"Implementado y verificado"*.
+Cada casilla se contrasta contra el código real (no contra la marca):
+
+| Evidencia verificada | Ubicación |
+|---|---|
+| Extensión `quarkus-redis-cache` presente, sin Jedis/Lettuce | `backend/electoral-api-quarkus/pom.xml` |
+| Lectura/escritura por `RedisCache.getOrNull` / `put` | `shared/cache/CacheDeLectura.java:146-187` |
+| Degradación: `catch (Exception)` en lectura y escritura | `CacheDeLectura.java:155`, `:178` |
+| Contadores `cache.hits` / `cache.misses` | `CacheDeLectura.java:153`, `:171`, `:213` |
+| Backend configurable `quarkus.redis.hosts=${REDIS_HOSTS:redis://localhost:6379}` | `application.properties:357` |
+| TTL 2 min por defecto en los 4 cachés (`expire-after-write=${CACHE_TTL:2m}`) | `application.properties:387-391` |
+| Identidad de réplica `replica.id=${RAILWAY_REPLICA_ID:local}` | `application.properties:423` |
+| Caché local Caffeine **deshabilitada** (comentada) | `application.properties:409-412` |
+| TTL default de 2 min afirmado por test | `shared/cache/CacheTTLIT.java` |
+
+### 12.2 Gates re-ejecutadas
+
+| Gate | Resultado |
+|---|---|
+| `./mvnw -o -B clean verify` (backend completo) | **296 tests, 0 fallos, 0 errores, 0 skipped** — BUILD SUCCESS (3m55s) |
+| JaCoCo | *"All coverage checks have been met."* |
+| `./mvnw -o -B spotless:check` | BUILD SUCCESS (20 archivos clean) |
+| Build nativo (Mandrel 25, `Dockerfile.native`) | BUILD SUCCESS (1m32s) |
+| Binario nativo arrancado | SALUDABLE en **2 s** (`db: UP`, `s3: UP`) |
+| Paso de aserción de `ci-native.yml` (ejecutado **literalmente con `jq`**) | `cache_hits_total{cache="partidos"} = 1.0` → **ASERCIÓN OK** |
+| Suite de contrato contra el **binario nativo** | **152 tests, 0 fallos** — BUILD SUCCESS |
+| YAML de `ci.yml` + `ci-native.yml` | Válido |
+
+### 12.3 Regresión de tests BEFORE → AFTER (`7196ad3` → `83fff47`)
+
+| Métrica | Resultado |
+|---|---|
+| Tests perdidos | **0** |
+| Tests nuevos | **+7** (4 `CacheDeLecturaValkeyIT` + 3 `CacheValkeyCaidaIT`) |
+| Suite de caché | 27 → **34** |
+| `AdminCacheResourceTest` | 7 → 7 (conserva conteo) |
+| `CacheTTLIT` | 2 → 2 (conserva conteo) |
+| `RedisRateLimitBackendIT` | 7 → 7 (conserva conteo) |
+
+### 12.4 Cobertura de mutaciones / invariantes
+
+Los 8 invariantes del ODD quedaron con cobertura ejecutable:
+
+| Invariante | Cobertura | Estado |
+|---|---|---|
+| Lectura cacheada devuelve el mismo dato | `CacheDeLecturaValkeyIT` (round-trip con ids) | ✅ |
+| Invalidación propaga a otras réplicas | `CacheDeLecturaValkeyIT.otraReplicaComparteElMismoAlmacen` | ✅ |
+| TTL expira | `CacheTTLIT` + `CacheDeLecturaValkeyIT` | ✅ |
+| Backend caído no rompe la app | `CacheValkeyCaidaIT` (3 tests) | ✅ |
+| Métricas hits/misses | `CacheDeLecturaValkeyIT` + `CacheMetricasTestProfile` | ✅ |
+| Escritura es idempotente por clave de negocio | `CacheInvalidacionIT` (2) | ✅ |
+| No hay copia local (replica = otro cliente) | `otraReplicaComparteElMismoAlmacen` | ✅ |
+| Tipo genérico sobrevive a native | aserción `ci-native.yml` ejecutada contra binario real | ✅ |
+
+### 12.5 Calidad de commits
+
+4 commits conventional, `type(scope): mensaje`, **sin push** (decisión del humano),
+sin co-author IA ni marcas de IA:
+
+| Commit | Tipo | Revisa |
+|---|---|---|
+| `2502737` | `build(cache)` | Dependencia + infraestructura (compose, CI, `.env.example`) |
+| `b9ed749` | `feat(cache)` | Migración de `CacheDeLectura` al backend distribuido |
+| `75dee07` | `test(cache)` | Adaptación de suite + 7 tests nuevos |
+| `83fff47` | `docs(cache)` | Documentación, licencia y nota de native |
+
+Orden de commits correcto (build → feat → test → docs); cada commit es coherente y
+compilable por separado en su ámbito.
+
+### 12.6 Archivos (32 en el diff, +1337 / −356)
+
+- **27 modificados (M)**: `pom.xml`, `CacheDeLectura.java`, 5 use cases,
+  `application.properties`, `.env.example`, `compose.yaml`, `ci.yml`,
+  `ci-native.yml`, 8 perfiles de test, 2 tests modificados, 3 documentos.
+- **4 agregados (A)**: `CacheDeLecturaValkeyIT.java`,
+  `CacheValkeyCaidaIT.java`, `CacheValkeyTestProfile.java`,
+  `CacheValkeyCaidaTestProfile.java` (3 test + `ValkeyTestResource.java`),
+  `documents/load-test/cache-hit-ratio-summary-valkey.md`.
+- **1 borrado (D)**: `RedisTestResource.java` → reemplazado por `ValkeyTestResource.java`
+  (rename con propósito de licensing).
+
+### 12.7 Desviación de entorno (no defecto de código)
+
+El job `backend-quarkus` de `ci.yml` (build JVM *dentro* de Docker) **no se reprodujo
+localmente**: con caché frío de Maven, `dependency:go-offline` corrió a ~866 B/s por
+lentitud de red. Se sustituyó por el **build nativo equivalente** (misma cadena de
+herramientas y mismo `MAVEN_OPTS`), que además cubre la ruta de riesgo real (H1).
+Queda como desviación de cobertura de CI local, no como fallo.
+
+Los dos falsos positivos ambientales de §11.2 (puerto 9001 ocupado por
+`ci-rustfs2`; backend previo sin `APP_RATELIMIT_*` ocupando el 8080 con 429) se
+reprodujeron, se identificaron por mensaje (`BindException`, `429`) y se
+resolvieron cerrando el proceso estorbante.
+
+### 12.8 Veredicto de la re-verificación
+
+# ✅ PASS
+
+Se mantiene el veredicto de §11.3 con evidencia fresca:
+
+- Checklist **14/14** verificado contra el código, no contra la marca.
+- **296 tests** backend + **152 de contrato contra el binario nativo**, todos verdes.
+- **0 tests perdidos** y **+7 nuevos** respecto a `7196ad3`.
+- Los 8 invariantes del ODD tienen cobertura ejecutable.
+- La aserción de `ci-native.yml` se ejecutó **literalmente** contra el binario
+  nativo: **OK**.
+- 4 commits conventional, árbol limpio, **sin push**.
+
+**Nota menor (no bloquea):** la última línea de `ci-native.yml` sigue siendo
+`workflow_dispatch`-able y el job `backend-quarkus` de `ci.yml` no se pudo
+reproducir localmente por red (§12.7). Ninguna de las dos cosas afecta el
+veredicto.
+
+**Riesgos abiertos ya aceptados:** `quarkus-redis-cache` en preview (H4) y la
+dependencia del registro de reflexión de Quarkus (H1, protegida por aserción de
+CI).
