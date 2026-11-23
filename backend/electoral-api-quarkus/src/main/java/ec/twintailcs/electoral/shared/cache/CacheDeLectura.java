@@ -1,18 +1,24 @@
 package ec.twintailcs.electoral.shared.cache;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheManager;
 import io.quarkus.cache.CaffeineCache;
 import io.quarkus.cache.redis.runtime.RedisCache;
+import io.quarkus.redis.datasource.ReactiveRedisDataSource;
+import io.quarkus.redis.datasource.value.ReactiveValueCommands;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.enterprise.util.TypeLiteral;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import org.eclipse.microprofile.config.Config;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
@@ -46,6 +52,18 @@ public class CacheDeLectura {
 
   @Inject CacheManager cacheManager;
   @Inject MeterRegistry meterRegistry;
+
+  /**
+   * Cliente Redis directo. Usado como fallback cuando CacheManager no ha registrado el cache.
+   *
+   * <p>En Quarkus 3.40.1, los caches de Redis se crean on-demand a través de @CacheResult, pero
+   * CacheManager.getCache() devuelve empty si accedes sin haber usado @CacheResult. El cliente
+   * Redis directo permite escribir y leer de Redis sin pasar por CacheManager. Inyectado como
+   * Instance para ser opcional (no causa error de inyección si no hay Redis disponible).
+   */
+  @Inject Instance<ReactiveRedisDataSource> redisClientInstance;
+
+  @Inject ObjectMapper objectMapper;
 
   /**
    * Identificador de la replica que sirve la peticion.
@@ -84,6 +102,9 @@ public class CacheDeLectura {
   /**
    * Busca el valor en la cache.
    *
+   * <p>Intenta a través de CacheManager primero. Si devuelve empty (que ocurre en Quarkus 3.40.1
+   * cuando el cache aún no ha sido accedido), usa el cliente Redis directamente.
+   *
    * @param cacheName nombre del cache
    * @param clave clave dentro del cache
    * @param tipo tipo concreto para deserializar valores del backend Redis/Valkey
@@ -92,19 +113,31 @@ public class CacheDeLectura {
    */
   public <T> Optional<T> leer(String cacheName, Object clave, TypeReference<T> tipo) {
     Optional<Cache> cache = cacheManager.getCache(cacheName);
-    if (cache.isEmpty()) {
-      return Optional.empty();
+    if (cache.isPresent()) {
+      Cache actual = cache.get();
+      Optional<RedisCache> redis = comoRedis(actual);
+      if (redis.isPresent()) {
+        return leerDeRedis(cacheName, clave, tipo, redis.get());
+      }
+
+      Optional<CaffeineCache> caffeine = comoCaffeine(actual);
+      if (caffeine.isPresent()) {
+        return leerDeCaffeine(cacheName, clave, caffeine.get());
+      }
     }
 
-    Cache actual = cache.get();
-    Optional<RedisCache> redis = comoRedis(actual);
-    if (redis.isPresent()) {
-      return leerDeRedis(cacheName, clave, tipo, redis.get());
-    }
-
-    Optional<CaffeineCache> caffeine = comoCaffeine(actual);
-    if (caffeine.isPresent()) {
-      return leerDeCaffeine(cacheName, clave, caffeine.get());
+    // CacheManager no tiene el cache registrado: intenta directo con Redis como fallback.
+    if (redisClientInstance.isResolvable()) {
+      try {
+        return leerDirectoDeRedis(cacheName, clave, tipo, redisClientInstance.get());
+      } catch (Exception e) {
+        LOG.debugf(
+            e,
+            "Cache '%s' lectura fallida contra Redis directo (tipo: %s)",
+            cacheName,
+            e.getClass().getSimpleName());
+        contarError(cacheName);
+      }
     }
 
     // Cache apagada (NoOpCache) u otro backend no soportado: degradar a base.
@@ -136,32 +169,138 @@ public class CacheDeLectura {
    * <p>Guardar es, por definicion, el camino que no fue acierto: se cuenta como fallo para que el
    * hit ratio cuadre con lo que la base vio de verdad.
    *
+   * <p>Si CacheManager no tiene el cache registrado (que ocurre en Quarkus 3.40.1), intenta con
+   * el cliente Redis directo.
+   *
    * @param cacheName nombre del cache
    * @param clave clave dentro del cache
    * @param valor valor a guardar
    */
   public void guardar(String cacheName, Object clave, Object valor) {
     Optional<Cache> cache = cacheManager.getCache(cacheName);
-    if (cache.isEmpty()) {
-      contarFallo(cacheName);
-      return;
+    if (cache.isPresent()) {
+      Cache actual = cache.get();
+      Optional<RedisCache> redis = comoRedis(actual);
+      if (redis.isPresent()) {
+        guardarEnRedis(cacheName, clave, valor, redis.get());
+        return;
+      }
+
+      Optional<CaffeineCache> caffeine = comoCaffeine(actual);
+      if (caffeine.isPresent()) {
+        caffeine.get().put(clave, CompletableFuture.completedFuture(valor));
+        contarFallo(cacheName);
+        return;
+      }
     }
 
-    Cache actual = cache.get();
-    Optional<RedisCache> redis = comoRedis(actual);
-    if (redis.isPresent()) {
-      guardarEnRedis(cacheName, clave, valor, redis.get());
-      return;
-    }
-
-    Optional<CaffeineCache> caffeine = comoCaffeine(actual);
-    if (caffeine.isPresent()) {
-      caffeine.get().put(clave, CompletableFuture.completedFuture(valor));
-      contarFallo(cacheName);
-      return;
+    // CacheManager no tiene el cache registrado: intenta directo con Redis como fallback.
+    if (redisClientInstance.isResolvable()) {
+      try {
+        guardarDirectoEnRedis(cacheName, clave, valor, redisClientInstance.get());
+        contarFallo(cacheName);
+        return;
+      } catch (Exception e) {
+        LOG.debugf(
+            e,
+            "Cache '%s' escritura fallida contra Redis directo (tipo: %s)",
+            cacheName,
+            e.getClass().getSimpleName());
+        contarError(cacheName);
+      }
     }
 
     contarFallo(cacheName);
+  }
+
+  /**
+   * Escribe directamente al cliente Redis cuando CacheManager no ha registrado el cache.
+   *
+   * <p>Este método accede al backend Redis sin pasar por la API de CacheManager.
+   * Aplica el TTL configurado para el cache (expire-after-write).
+   */
+  private void guardarDirectoEnRedis(String cacheName, Object clave, Object valor, ReactiveRedisDataSource redis) throws Exception {
+    ReactiveValueCommands<String, String> comandos = redis.value(String.class);
+    String claveRedis = cacheKey(cacheName, clave);
+    String json = objectMapper.writeValueAsString(valor);
+    // Usar setex para aplicar tanto el valor como el TTL en una sola operación
+    // El TTL por defecto es 2 minutos, pero debe ser sobreescribible por cache
+    Duration ttl = getTTLForCache(cacheName);
+    comandos.setex(claveRedis, ttl.getSeconds(), json).await().atMost(timeoutCache);
+  }
+
+  /**
+   * Obtiene el TTL configurado para un cache específico.
+   *
+   * <p>Lee la configuración de application.properties: quarkus.cache.redis.[cacheName].expire-after-write
+   * Si no está configurado, usa el TTL global: quarkus.cache.redis.expire-after-write
+   * Si tampoco existe, usa 2 minutos por defecto.
+   */
+  private Duration getTTLForCache(String cacheName) {
+    Config config = ConfigProvider.getConfig();
+
+    // Intenta leer el TTL específico del cache
+    Optional<String> cacheSpecificTTL = config.getOptionalValue(
+        "quarkus.cache.redis." + cacheName + ".expire-after-write", String.class);
+    if (cacheSpecificTTL.isPresent()) {
+      return parseDuration(cacheSpecificTTL.get());
+    }
+
+    // Intenta leer el TTL global
+    Optional<String> globalTTL = config.getOptionalValue(
+        "quarkus.cache.redis.expire-after-write", String.class);
+    if (globalTTL.isPresent()) {
+      return parseDuration(globalTTL.get());
+    }
+
+    // Default: 2 minutos
+    return Duration.ofMinutes(2);
+  }
+
+  /**
+   * Parse una duración en formato string (ej: "1s", "2m", "1h").
+   */
+  private Duration parseDuration(String durationStr) {
+    if (durationStr.endsWith("s")) {
+      long segundos = Long.parseLong(durationStr.substring(0, durationStr.length() - 1));
+      return Duration.ofSeconds(segundos);
+    } else if (durationStr.endsWith("m")) {
+      long minutos = Long.parseLong(durationStr.substring(0, durationStr.length() - 1));
+      return Duration.ofMinutes(minutos);
+    } else if (durationStr.endsWith("h")) {
+      long horas = Long.parseLong(durationStr.substring(0, durationStr.length() - 1));
+      return Duration.ofHours(horas);
+    } else {
+      // Si no tiene sufijo, asumir milisegundos (Quarkus default)
+      return Duration.ofMillis(Long.parseLong(durationStr));
+    }
+  }
+
+  /**
+   * Lee directamente del cliente Redis cuando CacheManager no ha registrado el cache.
+   *
+   * <p>Este método accede al backend Redis sin pasar por la API de CacheManager, que en Quarkus
+   * 3.40.1 no funciona correctamente para caches que aún no han sido accedidos vía @CacheResult.
+   */
+  private <T> Optional<T> leerDirectoDeRedis(String cacheName, Object clave, TypeReference<T> tipo, ReactiveRedisDataSource redis) {
+    ReactiveValueCommands<String, String> valores = redis.value(String.class);
+    String claveRedis = cacheKey(cacheName, clave);
+    String crudo = valores.get(claveRedis).await().atMost(timeoutCache);
+    if (crudo == null) {
+      return Optional.empty();
+    }
+    try {
+      @SuppressWarnings("unchecked")
+      T valor = (T) objectMapper.readValue(crudo, tipo);
+      contador("cache.hits", cacheName).increment();
+      return Optional.of(valor);
+    } catch (Exception e) {
+      LOG.warnf(
+          "Cache '%s' no se pudo deserializar desde Redis; sirviendo desde la base",
+          cacheName);
+      contarError(cacheName);
+      return Optional.empty();
+    }
   }
 
   private <T> Optional<T> leerDeRedis(
@@ -277,6 +416,16 @@ public class CacheDeLectura {
    */
   private Counter contador(String nombre, String cacheName) {
     return meterRegistry.counter(nombre, "cache", cacheName, "replica", replicaId);
+  }
+
+  /**
+   * Genera la clave de Redis con namespace del nombre del cache.
+   *
+   * <p>Las claves de Redis de un cache se leen con un namespace: "cacheName:clave". Esto permite
+   * que varias caches compartan el mismo servidor Redis sin colisiones.
+   */
+  private static String cacheKey(String cacheName, Object clave) {
+    return cacheName + ":" + clave;
   }
 
   /**

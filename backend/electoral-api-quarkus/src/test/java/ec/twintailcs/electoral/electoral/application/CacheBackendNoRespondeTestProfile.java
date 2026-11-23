@@ -75,7 +75,6 @@ public class CacheBackendNoRespondeTestProfile implements QuarkusTestProfile {
     overrides.put("quarkus.redis.client-type", "standalone");
     overrides.put("quarkus.cache.type", "redis");
     overrides.put("quarkus.cache.redis.client-name", "default");
-    overrides.put("quarkus.cache.redis.default-client-type", "standalone");
     return overrides;
   }
 }

@@ -34,7 +34,6 @@ public class CacheMetricasTestProfile implements QuarkusTestProfile {
         "replica.id", "replica-de-prueba",
         "quarkus.redis.client-type", "standalone",
         "quarkus.cache.type", "redis",
-        "quarkus.cache.redis.client-name", "default",
-        "quarkus.cache.redis.default-client-type", "standalone");
+        "quarkus.cache.redis.client-name", "default");
   }
 }

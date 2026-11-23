@@ -31,7 +31,6 @@ public class CacheServicioTestProfile implements QuarkusTestProfile {
         "quarkus.hibernate-orm.log.statistics", "true",
         "quarkus.redis.client-type", "standalone",
         "quarkus.cache.type", "redis",
-        "quarkus.cache.redis.client-name", "default",
-        "quarkus.cache.redis.default-client-type", "standalone");
+        "quarkus.cache.redis.client-name", "default");
   }
 }
