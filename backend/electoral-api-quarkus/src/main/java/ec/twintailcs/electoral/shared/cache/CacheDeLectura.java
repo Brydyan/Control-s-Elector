@@ -10,6 +10,7 @@ import io.quarkus.cache.redis.runtime.RedisCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.util.TypeLiteral;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -58,6 +59,26 @@ public class CacheDeLectura {
    */
   @ConfigProperty(name = "replica.id", defaultValue = "local")
   String replicaId;
+
+  /**
+   * Techo de una operacion contra el backend de cache (Valkey/Redis).
+   *
+   * <p>Sin este techo, una llamada a Valkey que no responde —el contenedor del CI que todavia no
+   * esta listo, un backend saturado, una red lenta— se queda esperando para siempre. Y como la
+   * cache se consulta <b>dentro</b> de la transaccion de los casos de uso, esa espera indefinida
+   * agota el tiempo de la transaccion: Narayana la cancela a los 60 s y el commit falla con
+   * {@code jakarta.transaction.RollbackException} (checked), que ARC envuelve en
+   * {@code ArcUndeclaredThrowableException}. El resultado visible era un 500 en listados que solo
+   * deberian degradarse a "se sirve desde la base".
+   *
+   * <p>Con el techo, un backend que no responde es una degradacion, que es lo que el diseno de la
+   * cache exige: perder la cache no es un error.
+   *
+   * <p>El valor tiene que quedar por debajo del timeout de la transaccion (60 s por defecto en
+   * Narayana) con margen: si no, la cache seguiria siendo capaz de tumbar la transaccion.
+   */
+  @ConfigProperty(name = "app.cache.timeout", defaultValue = "10s")
+  Duration timeoutCache;
 
   /**
    * Busca el valor en la cache.
@@ -146,16 +167,24 @@ public class CacheDeLectura {
       String cacheName, Object clave, TypeReference<T> tipo, RedisCache redis) {
     try {
       @SuppressWarnings("unchecked")
-      T valor = (T) redis.getOrNull(clave, typeLiteral(tipo)).await().indefinitely();
+      T valor = (T) redis.getOrNull(clave, typeLiteral(tipo)).await().atMost(timeoutCache);
       if (valor == null) {
         return Optional.empty();
       }
       contador("cache.hits", cacheName).increment();
       return Optional.of(valor);
     } catch (Exception e) {
+      // Excepciones esperadas: (1) TimeoutException si atMost(timeoutCache) expira,
+      // (2) SerializationException si el valor en Redis no se puede deserializar,
+      // (3) IllegalStateException si TypeLiteral.actualType no es accesible (Java 17+ restrictivo).
       // El fallo de la cache es una degradacion, no un error: se sigue con la base. Pero queda
       // registrado (log y contador) porque una cache que falla siempre es un incidente, y con el
       // log en DEBUG ese incidente era invisible en el CI.
+      //
+      // Con un broad catch(Exception) se engloban todos sin distinguir: los esperados se log en
+      // WARN (degradacion), y los inesperados tambien (si uno nuevo emerge, el logging lo hace
+      // visible). El costo es que si el backend remoto cambia el tipo de excepcion en una
+      // version futura de Quarkus, aqui se maneja sin sorpresas.
       LOG.warnf(
           e,
           "Cache '%s' no disponible para lectura (Redis/Valkey); sirviendo desde la base",
@@ -178,8 +207,11 @@ public class CacheDeLectura {
 
   private void guardarEnRedis(String cacheName, Object clave, Object valor, RedisCache redis) {
     try {
-      redis.put(clave, valor).await().indefinitely();
+      redis.put(clave, valor).await().atMost(timeoutCache);
     } catch (Exception e) {
+      // Ver comentario en leerDeRedis() sobre el broad catch(Exception). La escritura en Redis
+      // no bloquea la respuesta: una falla aqui deja la cache vacia para ese caller, pero el
+      // siguiente caller lo vuelve a intentar (ver contarFallo en finally).
       LOG.warnf(
           e,
           "Cache '%s' no disponible para escritura (Redis/Valkey); se omite la carga",
@@ -243,11 +275,26 @@ public class CacheDeLectura {
    * Adaptador para pasar un {@link com.fasterxml.jackson.core.type.TypeReference} a la API de
    * Quarkus Redis Cache.
    *
-   * <p>Quarkus Redis Cache resuelve el tipo por reflexion sobre la superclase generica de {@link
-   * TypeLiteral}. Para tipos no-Class (por ejemplo {@code List<Cargo>}) construimos una subclase
-   * anonima con ese tipo como parametro real usando {@code TypeLiteral.getType()} del literal
-   * anonimo creado en el caller no sirve; en su lugar se usa el TypeReference del caller a traves
-   * de una clase auxiliar que fija el tipo en el campo {@code actualType} via reflexion.
+   * <p><b>Resolucion de tipos genéricos.</b> Quarkus Redis Cache resuelve el tipo por reflexion
+   * sobre la superclase generica de {@link TypeLiteral}. Para tipos no-Class (por ejemplo {@code
+   * List<Cargo>}) construimos una subclase anonima con ese tipo como parametro real. El
+   * {@code TypeLiteral.getType()} del literal anonimo creado inline no funciona (el tipo se pierde
+   * en la compilacion); en su lugar se usa el {@link TypeReference} del caller para fijar el tipo
+   * en el campo privado {@code actualType} via reflexion.
+   *
+   * <p><b>Riesgo: Java 17+ con módulos restrictivos.</b> El acceso a campos privados mediante
+   * reflexion puede fallar con {@code InaccessibleObjectException} en Java 17+ si Quarkus o su
+   * dependencia (Jakarta EE) restringe el acceso a {@code java.lang.reflect.Field}. Quarkus 3.40.1
+   * registra {@code TypeLiteral.actualType} para reflexion en {@code native-image.properties},
+   * asi que esta linea sigue siendo segura en la imagen nativa. En cambio, una futura version de
+   * Quarkus que quite ese registro, o un entorno donde {@code --illegal-access=deny} este fijo,
+   * haria fallar este código con {@code IllegalStateException}.
+   *
+   * <p><b>Mitigacion.</b> Ver {@link
+   * ec.twintailcs.electoral.shared.cache.CacheDeLecturaValkeyIT#testReadWithGenericType()} y
+   * {@code ci-native.yml}:  el test IT verifica que la reflexion funciona, y la asercion del CI
+   * verifica que el cache tiene aciertos en la imagen nativa (si la reflexion falla, el hit ratio
+   * es 0).
    */
   @SuppressWarnings("unchecked")
   private static <T> TypeLiteral<T> typeLiteral(

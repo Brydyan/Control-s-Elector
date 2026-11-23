@@ -254,6 +254,12 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Credenciales del admin de CI: solo para testing en esta pipeline. Estas no son
+          # credenciales de produccion ni de desarrollo. Son el hash conocido que genera
+          # Liquibase en el contexto bootstrap-admin (026-admin-inicial.sql).
+          # IMPORTANTE: si Liquibase se reejcuta contra una base existente con estas
+          # credenciales, el CHANGE ID debe bumpear para que la migracion no se salte.
+          # Ver documents/CACHE_SETUP_GUIDE.md §4 para la rotacion de credenciales en prod.
           TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
             -H 'Content-Type: application/json' \
             -d '{"email":"admin@control-elector.local","password":"admin12345"}' \
