@@ -480,3 +480,49 @@ artefacto; el runner de GitHub no tiene esta restricción.
 **Riesgos abiertos ya aceptados:** `quarkus-redis-cache` en preview (H4) y la
 dependencia del registro de reflexión de Quarkus (H1, protegida por aserción de
 CI).
+
+---
+
+### 12.9 Estado post-merge con `develop`: el CI real quedó rojo (no veredicto sobre el ODD)
+
+El veredicto de §12.8 se emitió sobre `83fff47`, **antes** del merge con
+`develop`. El commit de merge `e7ac3f0` (rama `brydyan/sc-524/fix-odd-phase-2-valkey`)
+**no está verde en CI**: el job `Backend Tests & Coverage` (`mvn -B clean verify`)
+falla en `CacheInvalidacionIT.unaProvinciaNuevaApareceDeInmediato` con
+`Expected status code <200> but was <500>` (305 tests, 1 fallo, run `45096589635`).
+
+Esto **no invalida §12.8**: el ODD y sus invariantes siguen verificados sobre el
+código de la fase 2. Lo que falla es una transición de estado del ciclo de vida
+de `CacheInvalidacionIT` en un entorno (el runner de GitHub) que no se lograba
+reproducir en local.
+
+**Descartes con evidencia (no son diferencias entre CI y local):**
+
+| Hipótesis | Resultado |
+|---|---|
+| Java distinto | ❌ Temurin 25.0.5 en CI == 25.0.5 local |
+| Orden de clases de test | ❌ Coincide (cola #35–#51 verificada) |
+| Contenedores reutilizados entre clases | ❌ `testcontainers.reuse.enable` no está activo |
+| Seed / schema distintos | ❌ Mismo `Rows affected: 237`, mismos 108 changesets |
+| Carrera entre invalidación y lectura | ❌ `invalidateAllBlocking` es sincrónico |
+| Fallo de auth | ❌ JWT puro, sin consulta a base |
+| NPE por `total_electores` NULL | ❌ `NOT NULL` en el schema |
+
+**Reproducciones locales (todas verdes):** 4/4 suites completas `clean test`
+(305/305), 6/6 corridas aisladas de `CacheInvalidacionIT`, y `clean verify` con el
+comando exacto de CI en un worktree.
+
+**Sin causa raíz identificada:** el log del job requiere permisos de admin en
+Actions y las anotaciones del check run vienen vacías, así que no hay stack trace
+del 500. En vez de inventar un fix a ciegas, se instrumentó el código (`e65aa09`):
+
+- `ErrorMappers` devuelve el tipo y el mensaje de la excepción en el `message` del
+  500 cuando `app.error.details.enabled` está prendido (solo perfil `%test`;
+  por defecto el mensaje sigue siendo `internal error` y la FORMA del error no cambia).
+- `CacheInvalidacionIT` falla con ruta, status y cuerpo de la respuesta, para que
+  el resumen del fallo de surefire muestre la causa sin ir a buscar el log del job.
+- `CacheDeLectura` sube los fallos de cache de `DEBUG` a `WARN` y los cuenta en
+  `cache.errors` (antes invisibles en CI).
+
+El siguiente ciclo de CI con esa instrumentación convierte el 500 opaco en un
+fallo con causa legible.
