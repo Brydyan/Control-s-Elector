@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.electoral.application;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import ec.twintailcs.electoral.geografia.application.GeografiaService;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import io.quarkus.cache.CacheManager;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -37,6 +38,7 @@ class CacheServicioIT {
   @Inject GeografiaService geografiaService;
   @Inject CacheManager cacheManager;
   @Inject EntityManagerFactory emf;
+  @Inject InvalidadorDeCache invalidador;
 
   @BeforeEach
   void vaciarCaches() {
@@ -47,6 +49,11 @@ class CacheServicioIT {
                 cacheManager
                     .getCache(nombre)
                     .ifPresent(cache -> cache.invalidateAll().await().indefinitely()));
+    // En Quarkus 3.40.1, caches no registradas en CacheManager aun pueden tener datos en Redis.
+    // Invalidar directamente para limpiar completamente.
+    for (String cacheName : new String[] {"cargos", "partidos", "candidatos", "geografia"}) {
+      invalidador.invalidarAhora(cacheName);
+    }
     // El contador se enciende y se limpia en cada test: asi los deltas son del test, no de la
     // sesion. No hace falta tocar la configuracion de la aplicacion para esto.
     stats().setStatisticsEnabled(true);
