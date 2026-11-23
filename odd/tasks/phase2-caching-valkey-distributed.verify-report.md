@@ -332,6 +332,9 @@ Cada casilla se contrasta contra el código real (no contra la marca):
 | Suite de contrato contra el **binario nativo** | **152 tests, 0 fallos** — BUILD SUCCESS |
 | YAML de `ci.yml` + `ci-native.yml` | Válido |
 
+> Nota: esta tabla son las *gates* sueltas. La ejecución **completa de los 9 jobs
+> de CI** está en §12.7.
+
 ### 12.3 Regresión de tests BEFORE → AFTER (`7196ad3` → `83fff47`)
 
 | Métrica | Resultado |
@@ -385,13 +388,69 @@ compilable por separado en su ámbito.
 - **1 borrado (D)**: `RedisTestResource.java` → reemplazado por `ValkeyTestResource.java`
   (rename con propósito de licensing).
 
-### 12.7 Desviación de entorno (no defecto de código)
+### 12.7 Ejecución real de los jobs de CI (todos)
 
-El job `backend-quarkus` de `ci.yml` (build JVM *dentro* de Docker) **no se reprodujo
-localmente**: con caché frío de Maven, `dependency:go-offline` corrió a ~866 B/s por
-lentitud de red. Se sustituyó por el **build nativo equivalente** (misma cadena de
-herramientas y mismo `MAVEN_OPTS`), que además cubre la ruta de riesgo real (H1).
-Queda como desviación de cobertura de CI local, no como fallo.
+La ronda anterior (§12.1–§12.6) reprodujo **pasos sueltos**, no los jobs
+completos. Una revisión posterior detectó el hueco: el job `changes` de `ci.yml`
+pone `frontend=true` cuando el diff toca un `.github/workflows/*`, así que **los
+jobs de frontend también correrían** en CI con este diff, y no se habían
+ejecutado. Se reprodujeron **los 8 jobs** de `ci.yml` y el de `ci-native.yml`,
+cada uno con sus comandos literales.
+
+**Job `changes` (simulado con su propio script):**
+
+```
+backend=true frontend=true
+```
+
+**`ci.yml`:**
+
+| Job | Comando literal | Resultado |
+|---|---|---|
+| `backend-format` | `mvn -B spotless:check` | ✅ SUCCESS (20 archivos clean) |
+| `backend-quarkus-test` | `mvn -B clean verify` | ✅ **296 tests, 0 fallos**, JaCoCo "All coverage checks have been met" |
+| `backend-quarkus` | `docker build` de `electoral-api-quarkus` + arranque doble contra base vacía | ✅ imagen 609 MB · 1er arranque (crea schema) **UP** · 2do arranque con rol de app y `validate` **UP** |
+| `backend-contract` | `docker build` de `electoral-api:contract` + bucket S3 + migrate-only + rol de app + `mvn -B verify -Dcontract.baseUrl` | ✅ migrate-only **238 changesets** · health `db: UP, s3: UP` · **152 tests, 0 fallos** |
+| `frontend-format` | `pnpm install --frozen-lockfile` + `pnpm format:check` | ✅ "All matched files use Prettier code style!" |
+| `frontend-lint` | `pnpm lint` | ✅ "All files pass linting." |
+| `frontend-test` | `pnpm test:ci` | ✅ **1153 tests** (111 archivos) + **5 a11y** + lint |
+| `frontend-build` | `pnpm build` | ✅ bundle generado (983 kB inicial, 5.1 s) |
+
+**`ci-native.yml`:**
+
+| Job | Resultado |
+|---|---|
+| `backend-native` — build | ✅ Mandrel 25, `BUILD SUCCESS` (1m46s AOT + imagen) |
+| `backend-native` — arranque doble contra base vacía | ✅ **COLD START 8 283 ms** (crea el schema) / **1 149 ms** (schema ya creado, con `validate` y rol de app) |
+| `backend-native` — *"Assert the distributed cache serves the second read"* | ✅ **ASERCIÓN OK**: `cache_hits_total{cache="partidos"} = 1.0` |
+| `backend-native` — RSS en reposo | ✅ **178 MB** |
+| `backend-native` — suite de contrato contra el binario nativo | ✅ **152 tests, 0 fallos** |
+
+**Desviaciones declaradas respecto al CI (todas de entorno, ninguna de código):**
+
+1. **Caché de Maven inyectada.** La red local a Maven Central va a ~32 KB/s, así
+   que el `dependency:go-offline` del `Dockerfile.native` no terminaba. Se usó el
+   repo Maven ya precalentado en `/tmp/m2`, que es exactamente el mecanismo de
+   `cache: maven` del runner de GitHub Actions. El contenido del repo es el
+   mismo; solo cambia de dónde sale.
+2. **`docker build` sin `--no-cache`.** La capa de dependencias se reutiliza en
+   vez de redescargarse. El `pom.xml` y el `src/` copiados son los del commit
+   bajo prueba.
+3. **Un solo Postgres para todos los jobs.** En CI cada job tiene su **propio**
+   service de Postgres, y por eso arrancan desde una base vacía. Localmente se
+   recreó la base (`DROP DATABASE` + `CREATE DATABASE ... TEMPLATE template1`)
+   entre jobs para reproducir ese aislamiento.
+
+**Falso positivo real encontrado y corregido durante esta ejecución:** al
+reusar la base entre jobs, el rol de aplicación veía
+`ERROR: relation "usuario" does not exist` y la suite de contrato falló
+**134/152**. La causa fue un `DROP SCHEMA public CASCADE; CREATE SCHEMA public`
+manual, que dejó el schema `public` **sin el permiso `USAGE` por defecto** que
+aporta `template1`. No era un defecto del código ni del ODD: recreando la base
+con `TEMPLATE template1` (como hace el service de Postgres del CI) el
+`USAGE` volvió a estar granted (`has_schema_privilege = t`) y los 152 tests
+pasaron. Queda registrado porque es exactamente el tipo de contamination que
+hace fallar un pipeline y se confunde con un defecto de RBAC.
 
 Los dos falsos positivos ambientales de §11.2 (puerto 9001 ocupado por
 `ci-rustfs2`; backend previo sin `APP_RATELIMIT_*` ocupando el 8080 con 429) se
@@ -402,20 +461,21 @@ resolvieron cerrando el proceso estorbante.
 
 # ✅ PASS
 
-Se mantiene el veredicto de §11.3 con evidencia fresca:
+Veredicto con **todos los jobs de CI ejecutados**, no solo pasos sueltos:
 
 - Checklist **14/14** verificado contra el código, no contra la marca.
-- **296 tests** backend + **152 de contrato contra el binario nativo**, todos verdes.
+- **8/8 jobs de `ci.yml`** y **1/1 de `ci-native.yml`** reproducidos y verdes.
+- **296 tests** backend + **152 de contrato contra la imagen JVM** + **152
+  contra el binario nativo** + **1153 + 5 de frontend**, todos verdes.
 - **0 tests perdidos** y **+7 nuevos** respecto a `7196ad3`.
 - Los 8 invariantes del ODD tienen cobertura ejecutable.
-- La aserción de `ci-native.yml` se ejecutó **literalmente** contra el binario
-  nativo: **OK**.
-- 4 commits conventional, árbol limpio, **sin push**.
+- La aserción de `cache_hits_total` del job nativo se ejecutó **literalmente**
+  contra el binario nativo real: **OK**.
+- 4 commits conventional + 1 de documentación, árbol limpio, **sin push**.
 
-**Nota menor (no bloquea):** la última línea de `ci-native.yml` sigue siendo
-`workflow_dispatch`-able y el job `backend-quarkus` de `ci.yml` no se pudo
-reproducir localmente por red (§12.7). Ninguna de las dos cosas afecta el
-veredicto.
+**Nota menor (no bloquea):** el build de la imagen JVM en local reusa la caché de
+Maven en lugar de descargarla (§12.7, desviación 1). El resultado es el mismo
+artefacto; el runner de GitHub no tiene esta restricción.
 
 **Riesgos abiertos ya aceptados:** `quarkus-redis-cache` en preview (H4) y la
 dependencia del registro de reflexión de Quarkus (H1, protegida por aserción de
