@@ -11,6 +11,7 @@ import ec.twintailcs.electoral.auth.domain.Usuario;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
+import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.UUID;
@@ -112,27 +113,30 @@ class CacheInvalidacionIT {
 
   /** Nombres de los cargos del listado. */
   private List<String> nombresDeCargos() {
-    return given()
-        .header("Authorization", "Bearer " + tokenMaster)
-        .when()
-        .get("/api/v1/configuracion/cargos")
-        .then()
-        .statusCode(200)
-        .extract()
-        .jsonPath()
-        .getList("nombre");
+    return listar("/api/v1/configuracion/cargos", "nombre");
   }
 
   /** Nombres de las provincias del arbol geografico. */
   private List<String> arbolDeGeografia() {
-    return given()
-        .header("Authorization", "Bearer " + tokenMaster)
-        .when()
-        .get("/api/v1/master/geografia")
-        .then()
-        .statusCode(200)
-        .extract()
-        .jsonPath()
-        .getList("provincias.nombre");
+    return listar("/api/v1/master/geografia", "provincias.nombre");
+  }
+
+  /**
+   * GET a un listado y extraccion de un campo.
+   *
+   * <p>El cuerpo de la respuesta va en el mensaje del fallo a proposito: si el endpoint responde
+   * 500, el cuerpo dice por que (con el detalle de error prendido en el perfil de test). Sin eso,
+   * el resumen del fallo de CI solo dice "expected 200 but was 500" y el unico diagnostico posible
+   * es ir a buscar el stack trace en el log del job.
+   */
+  private List<String> listar(String ruta, String camino) {
+    Response respuesta = given().header("Authorization", "Bearer " + tokenMaster).when().get(ruta);
+
+    if (respuesta.statusCode() != 200) {
+      throw new AssertionError(
+          "GET " + ruta + " respondio " + respuesta.statusCode() + ": " + respuesta.asString());
+    }
+
+    return respuesta.jsonPath().getList(camino);
   }
 }

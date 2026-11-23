@@ -153,10 +153,14 @@ public class CacheDeLectura {
       contador("cache.hits", cacheName).increment();
       return Optional.of(valor);
     } catch (Exception e) {
-      LOG.debugf(
+      // El fallo de la cache es una degradacion, no un error: se sigue con la base. Pero queda
+      // registrado (log y contador) porque una cache que falla siempre es un incidente, y con el
+      // log en DEBUG ese incidente era invisible en el CI.
+      LOG.warnf(
           e,
           "Cache '%s' no disponible para lectura (Redis/Valkey); sirviendo desde la base",
           cacheName);
+      contarError(cacheName);
       return Optional.empty();
     }
   }
@@ -176,10 +180,11 @@ public class CacheDeLectura {
     try {
       redis.put(clave, valor).await().indefinitely();
     } catch (Exception e) {
-      LOG.debugf(
+      LOG.warnf(
           e,
           "Cache '%s' no disponible para escritura (Redis/Valkey); se omite la carga",
           cacheName);
+      contarError(cacheName);
     } finally {
       // Contar fallo aunque la escritura falle: el dato se sirvio desde la base.
       contarFallo(cacheName);
@@ -211,6 +216,16 @@ public class CacheDeLectura {
 
   private void contarFallo(String cacheName) {
     contador("cache.misses", cacheName).increment();
+  }
+
+  /**
+   * Contador de errores de la cache (el backend no respondio, el valor no se pudo deserializar).
+   *
+   * <p>Va aparte de {@code cache.misses}: un fallo es una linea de log y un contador de error, no
+   * un simple acierto perdido. Sin el, "el hit ratio bajo" y "el backend esta caido" se ven igual.
+   */
+  private void contarError(String cacheName) {
+    contador("cache.errors", cacheName).increment();
   }
 
   /**
