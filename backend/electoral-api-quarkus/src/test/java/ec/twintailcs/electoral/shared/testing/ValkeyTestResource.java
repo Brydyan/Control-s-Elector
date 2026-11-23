@@ -33,8 +33,7 @@ public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
         new GenericContainer<>(DockerImageName.parse("valkey/valkey:8-alpine"))
             .withExposedPorts(6379)
             .waitingFor(
-                Wait.forListeningPort()
-                    .andLogMessage(".*Ready to accept connections.*"));
+                Wait.forLogMessage(".*Ready to accept connections.*", 1));
     container.start();
 
     String host = container.getHost();
