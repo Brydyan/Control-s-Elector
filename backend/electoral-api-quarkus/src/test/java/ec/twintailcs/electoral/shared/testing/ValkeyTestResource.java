@@ -4,6 +4,7 @@ import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -33,8 +34,9 @@ public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
         new GenericContainer<>(DockerImageName.parse("valkey/valkey:8-alpine"))
             .withExposedPorts(6379)
             .waitingFor(
-                Wait.forListeningPort()
-                    .andLogMessage(".*ready to accept connections.*", 1));
+                new WaitAllStrategy()
+                    .withStrategy(Wait.forListeningPort())
+                    .withStrategy(Wait.forLogMessage(".*ready to accept connections.*", 1)));
     container.start();
 
     String host = container.getHost();
