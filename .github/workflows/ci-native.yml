@@ -87,6 +87,18 @@ jobs:
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
+      # Valkey: cache distribuida de Phase 2 y contadores del rate limiting.
+      # Sin este servicio, la cache degrada a "siempre miss" en el binario nativo y
+      # la asercion de cache_hits de mas abajo no probaria nada.
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -227,6 +239,48 @@ jobs:
           }
           END=$(date +%s%N)
           echo "COLD START (schema ya creado): $(( (END-START)/1000000 )) ms"
+
+      # La prueba que decide si la cache distribuida sirve DE VERDAD en el binario
+      # nativo. La lectura con tipo generico (`List<Cargo>`, `GeografiaTreeDto`)
+      # necesita el tipo concreto para deserializar, y eso lo resuelve el helper
+      # reflejando sobre `TypeLiteral.actualType`. Esa reflexion solo funciona en
+      # la imagen nativa si Quarkus registra el campo, y si deja de registrarlo la
+      # cache degrada a "siempre miss" en silencio: el backend responde 200, pero
+      # cada request va a la base. Ningun test de la JVM lo detectaria.
+      #
+      # Por eso la asercion mira el contador de aciertos, no el codigo de respuesta:
+      # el codigo es 200 con y sin cache.
+      - name: Assert the distributed cache serves the second read
+        run: |
+          set -euo pipefail
+
+          TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@control-elector.local","password":"admin12345"}' \
+            | jq -r '.accessToken')
+          if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]; then
+            echo "FALLO: no se pudo iniciar sesion como MASTER"
+            docker logs electoral-api-native
+            exit 1
+          fi
+
+          # Dos lecturas: la primera llena la cache, la segunda tiene que servirse de ella.
+          for _ in 1 2; do
+            curl -sf -H "Authorization: Bearer $TOKEN" \
+              http://localhost:8080/api/v1/configuracion/partidos > /dev/null
+          done
+
+          HITS=$(curl -s http://localhost:8080/q/metrics \
+            | grep -E '^cache_hits_total\{cache="partidos"' \
+            | head -1 | awk '{print $2}')
+          echo "cache_hits_total{cache=partidos} = ${HITS:-0}"
+
+          if ! awk -v h="${HITS:-0}" 'BEGIN { exit !(h >= 1) }'; then
+            echo "FALLO: la cache distribuida no registro ni un acierto en el binario nativo."
+            echo "La deserializacion generica en native image esta rota: la cache degrada a 'siempre miss'."
+            docker logs electoral-api-native
+            exit 1
+          fi
 
       - name: Measure resident memory at rest
         run: |

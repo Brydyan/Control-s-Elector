@@ -21,7 +21,7 @@
 # el AOT no entra. Para desarrollo, `mvn quarkus:dev` sobre la JVM.
 #
 # Uso (desarrollo local):
-#   docker compose --profile dev up -d   # Postgres + Backend + Redis + RustFS
+#   docker compose --profile dev up -d   # Postgres + Backend + Valkey + RustFS
 #   # en otra terminal: ng serve (frontend)
 #
 # Uso (staging):
@@ -152,17 +152,18 @@ services:
       # Liquibase corre todos los changesets. Ver el aviso de seguridad en el
       # changelog 026-admin-inicial.sql.
       QUARKUS_LIQUIDASE_CONTEXTS: ${QUARKUS_LIQUIDASE_CONTEXTS:-seed,bootstrap-admin}
-      # Rate limiting: contadores compartidos en Redis, igual que en produccion.
-      # Sin Redis las politicas `on-failure=allow` (lecturas) no limitan nada.
-      REDIS_HOSTS: redis://redis:6379
+      # Rate limiting y cache: contadores y entradas compartidos en Valkey, igual que en
+      # produccion. Sin Valkey las politicas `on-failure=allow` (lecturas) no limitan nada.
+      # El protocolo es RESP: el cliente de Quarkus no cambia aunque el servidor sea Valkey.
+      REDIS_HOSTS: redis://valkey:6379
     ports:
       - "8083:80"
     depends_on:
       postgres:
         condition: service_healthy
-      # `service_started`, no `service_healthy`: Redis es opcional para la API.
+      # `service_started`, no `service_healthy`: Valkey es opcional para la API.
       # Si no esta, el rate limiting degrada al fallback local y la API sigue.
-      redis:
+      valkey:
         condition: service_started
       # El rol con el que conecta la API tiene que existir antes de que arranque.
       db-app-role:
@@ -300,7 +301,7 @@ services:
           memory: 256M
 
   # ---------------------------------------------------------------------------
-  # Redis — almacen compartido del rate limiting
+  # Valkey — almacen compartido del rate limiting y de la cache distribuida
   # ---------------------------------------------------------------------------
   # Los contadores (`rl:v1:*`) viven aca para que todas las replicas cuenten
   # juntas, como en produccion (Railway). Sin persistencia: ninguna clave dura
@@ -309,13 +310,19 @@ services:
   # claves tienen TTL y, si se llena, se descartan primero las que vencen antes.
   #
   # El puerto queda solo en 127.0.0.1: alcanza para `mvn quarkus:dev` en el host
-  # (que apunta a localhost:6379 por defecto) sin exponer Redis a la red.
-  redis:
-    image: redis:7.4-alpine
-    container_name: electoral-redis-${APP_ENV:-dev}
+  # (que apunta a localhost:6379 por defecto) sin exponer Valkey a la red.
+  #
+  # La imagen es Valkey (BSD-3-Clause, Linux Foundation), no Redis: Redis 7.4+
+  # licencia RSALv2/SSPL, que no es una licencia OSI. Valkey speaks the same
+  # protocol (RESP), asi que el cliente de Quarkus no cambia. La imagen trae
+  # `valkey-cli` y tambien `redis-cli` como alias, por eso el healthcheck usa
+  # `redis-cli`.
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: electoral-valkey-${APP_ENV:-dev}
     profiles: ["dev"]
     command:
-      - redis-server
+      - valkey-server
       - --maxmemory
       - 64mb
       - --maxmemory-policy

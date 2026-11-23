@@ -157,12 +157,17 @@
 			<artifactId>quarkus-mailer</artifactId>
 		</dependency>
 
-		<!-- Caching: T-FE-15 B.1. Cache de datos estáticos (cargos, partidos, geografia)
-		     con backend en memoria. Los datos se cachean por 10 minutos (configurable).
-		     Utiliza @CacheResult en los UseCase que cargan datos de referencia. -->
+		<!-- Caching: Phase 1 usaba Caffeine en memoria. Phase 2 (ODD 2026-11-22)
+		     cambia el backend a Valkey (protocolo Redis, OSS) para cache compartida
+		     entre replicas. quarkus-redis-cache se apoya en quarkus-cache (anotaciones
+		     @CacheInvalidateAll y CacheManager) y en quarkus-redis-client. -->
 		<dependency>
 			<groupId>io.quarkus</groupId>
 			<artifactId>quarkus-cache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.quarkus</groupId>
+			<artifactId>quarkus-redis-cache</artifactId>
 		</dependency>
 
 		<!-- Métricas: T-CACHE-STRAT-01 D.5. Sin esto el hit ratio de la cache es
