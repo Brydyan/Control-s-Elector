@@ -36,7 +36,7 @@ public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
             .waitingFor(
                 new WaitAllStrategy()
                     .withStrategy(Wait.forListeningPort())
-                    .withStrategy(Wait.forLogMessage(".*ready to accept connections.*", 1)));
+                    .withStrategy(Wait.forLogMessage("(?i).*ready to accept connections.*", 1)));
     container.start();
 
     String host = container.getHost();
