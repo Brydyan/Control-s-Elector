@@ -26,24 +26,49 @@ public class CacheInitializer {
   @Inject CacheManager cacheManager;
 
   /**
-   * Inicializa los caches al arrancar.
+   * Verifica disponibilidad de caches al arrancar.
+   *
+   * <p>En Quarkus 3.40.1 con backend Redis (Phase 2), los caches se crean dinámicamente cuando se
+   * acceden por primera vez. Este inicializador verifica que el backend de cache esté disponible y
+   * registra el estado para diagnóstico.
    *
    * @param event evento de arranque de Quarkus
    */
   public void init(@Observes StartupEvent event) {
-    LOG.infof("Inicializando %d caches para Phase 2: %s", CACHE_NAMES.length, Arrays.toString(CACHE_NAMES));
+    LOG.infof(
+        "Phase 2 Cache Initialization: checking %d named caches (%s)",
+        CACHE_NAMES.length, Arrays.toString(CACHE_NAMES));
+
+    int found = 0;
+    int notFound = 0;
 
     for (String cacheName : CACHE_NAMES) {
       try {
         var cache = cacheManager.getCache(cacheName);
         if (cache.isEmpty()) {
-          LOG.warnf("Cache '%s' no está disponible en CacheManager", cacheName);
+          LOG.warnf("⚠️  Cache '%s' not found in CacheManager at startup", cacheName);
+          notFound++;
         } else {
-          LOG.debugf("Cache '%s' inicializado: %s", cacheName, cache.get().getClass().getSimpleName());
+          LOG.infof("✓ Cache '%s' available: %s", cacheName, cache.get().getClass().getSimpleName());
+          found++;
         }
       } catch (Exception e) {
-        LOG.warnf(e, "Error al verificar cache '%s'", cacheName);
+        LOG.warnf(
+            e,
+            "ERROR verifying cache '%s' at startup (Phase 2 may degrade if Redis unavailable)",
+            cacheName);
+        notFound++;
       }
+    }
+
+    LOG.infof(
+        "Phase 2 Cache Status: %d/%d caches available. Backend type: %s",
+        found, CACHE_NAMES.length, cacheManager.getClass().getSimpleName());
+
+    if (notFound > 0) {
+      LOG.warnf(
+          "⚠️  %d cache(s) not found. Caches may be created on-demand by Quarkus (dynamic creation).",
+          notFound);
     }
   }
 }
