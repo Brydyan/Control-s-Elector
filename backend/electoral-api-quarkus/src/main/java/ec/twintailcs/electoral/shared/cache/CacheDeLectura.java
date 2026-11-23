@@ -77,7 +77,7 @@ public class CacheDeLectura {
    * <p>El valor tiene que quedar por debajo del timeout de la transaccion (60 s por defecto en
    * Narayana) con margen: si no, la cache seguiria siendo capaz de tumbar la transaccion.
    */
-  @ConfigProperty(name = "app.cache.timeout", defaultValue = "10s")
+  @ConfigProperty(name = "app.cache.timeout", defaultValue = "5s")
   Duration timeoutCache;
 
   /**
