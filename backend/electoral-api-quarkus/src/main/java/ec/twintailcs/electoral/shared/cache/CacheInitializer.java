@@ -9,9 +9,9 @@ import org.jboss.logging.Logger;
 /**
  * Inicializa los caches de Phase 2 (Valkey) al arrancar la aplicación.
  *
- * <p>En Quarkus 3.40.1 con backend Redis, los caches se crean on-demand cuando se acceden a
- * través del cliente Redis. CacheManager no registra los caches en su catálogo incluso con
- * configuración correcta. Este inicializador registra el estado de los caches para observabilidad.
+ * <p>En Quarkus 3.40.1 con backend Redis, los caches se crean on-demand cuando se acceden a través
+ * del cliente Redis. CacheManager no registra los caches en su catálogo incluso con configuración
+ * correcta. Este inicializador registra el estado de los caches para observabilidad.
  */
 @ApplicationScoped
 public class CacheInitializer {

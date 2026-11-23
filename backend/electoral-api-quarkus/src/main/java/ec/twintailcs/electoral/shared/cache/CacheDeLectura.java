@@ -169,8 +169,8 @@ public class CacheDeLectura {
    * <p>Guardar es, por definicion, el camino que no fue acierto: se cuenta como fallo para que el
    * hit ratio cuadre con lo que la base vio de verdad.
    *
-   * <p>Si CacheManager no tiene el cache registrado (que ocurre en Quarkus 3.40.1), intenta con
-   * el cliente Redis directo.
+   * <p>Si CacheManager no tiene el cache registrado (que ocurre en Quarkus 3.40.1), intenta con el
+   * cliente Redis directo.
    *
    * @param cacheName nombre del cache
    * @param clave clave dentro del cache
@@ -216,10 +216,12 @@ public class CacheDeLectura {
   /**
    * Escribe directamente al cliente Redis cuando CacheManager no ha registrado el cache.
    *
-   * <p>Este método accede al backend Redis sin pasar por la API de CacheManager.
-   * Aplica el TTL configurado para el cache (expire-after-write).
+   * <p>Este método accede al backend Redis sin pasar por la API de CacheManager. Aplica el TTL
+   * configurado para el cache (expire-after-write).
    */
-  private void guardarDirectoEnRedis(String cacheName, Object clave, Object valor, ReactiveRedisDataSource redis) throws Exception {
+  private void guardarDirectoEnRedis(
+      String cacheName, Object clave, Object valor, ReactiveRedisDataSource redis)
+      throws Exception {
     ReactiveValueCommands<String, String> comandos = redis.value(String.class);
     String claveRedis = cacheKey(cacheName, clave);
     String json = objectMapper.writeValueAsString(valor);
@@ -232,23 +234,24 @@ public class CacheDeLectura {
   /**
    * Obtiene el TTL configurado para un cache específico.
    *
-   * <p>Lee la configuración de application.properties: quarkus.cache.redis.[cacheName].expire-after-write
-   * Si no está configurado, usa el TTL global: quarkus.cache.redis.expire-after-write
-   * Si tampoco existe, usa 2 minutos por defecto.
+   * <p>Lee la configuración de application.properties:
+   * quarkus.cache.redis.[cacheName].expire-after-write Si no está configurado, usa el TTL global:
+   * quarkus.cache.redis.expire-after-write Si tampoco existe, usa 2 minutos por defecto.
    */
   private Duration getTTLForCache(String cacheName) {
     Config config = ConfigProvider.getConfig();
 
     // Intenta leer el TTL específico del cache
-    Optional<String> cacheSpecificTTL = config.getOptionalValue(
-        "quarkus.cache.redis." + cacheName + ".expire-after-write", String.class);
+    Optional<String> cacheSpecificTTL =
+        config.getOptionalValue(
+            "quarkus.cache.redis." + cacheName + ".expire-after-write", String.class);
     if (cacheSpecificTTL.isPresent()) {
       return parseDuration(cacheSpecificTTL.get());
     }
 
     // Intenta leer el TTL global
-    Optional<String> globalTTL = config.getOptionalValue(
-        "quarkus.cache.redis.expire-after-write", String.class);
+    Optional<String> globalTTL =
+        config.getOptionalValue("quarkus.cache.redis.expire-after-write", String.class);
     if (globalTTL.isPresent()) {
       return parseDuration(globalTTL.get());
     }
@@ -257,9 +260,7 @@ public class CacheDeLectura {
     return Duration.ofMinutes(2);
   }
 
-  /**
-   * Parse una duración en formato string (ej: "1s", "2m", "1h").
-   */
+  /** Parse una duración en formato string (ej: "1s", "2m", "1h"). */
   private Duration parseDuration(String durationStr) {
     if (durationStr.endsWith("s")) {
       long segundos = Long.parseLong(durationStr.substring(0, durationStr.length() - 1));
@@ -282,7 +283,8 @@ public class CacheDeLectura {
    * <p>Este método accede al backend Redis sin pasar por la API de CacheManager, que en Quarkus
    * 3.40.1 no funciona correctamente para caches que aún no han sido accedidos vía @CacheResult.
    */
-  private <T> Optional<T> leerDirectoDeRedis(String cacheName, Object clave, TypeReference<T> tipo, ReactiveRedisDataSource redis) {
+  private <T> Optional<T> leerDirectoDeRedis(
+      String cacheName, Object clave, TypeReference<T> tipo, ReactiveRedisDataSource redis) {
     ReactiveValueCommands<String, String> valores = redis.value(String.class);
     String claveRedis = cacheKey(cacheName, clave);
     String crudo = valores.get(claveRedis).await().atMost(timeoutCache);
@@ -296,8 +298,7 @@ public class CacheDeLectura {
       return Optional.of(valor);
     } catch (Exception e) {
       LOG.warnf(
-          "Cache '%s' no se pudo deserializar desde Redis; sirviendo desde la base",
-          cacheName);
+          "Cache '%s' no se pudo deserializar desde Redis; sirviendo desde la base", cacheName);
       contarError(cacheName);
       return Optional.empty();
     }
