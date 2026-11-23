@@ -4,7 +4,7 @@ import ec.twintailcs.electoral.electoral.application.ConfiguracionAuditService;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.Provincia;
 import ec.twintailcs.electoral.geografia.web.dto.ProvinciaRequest;
-import io.quarkus.cache.CacheInvalidateAll;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -22,8 +22,9 @@ public class CrearProvinciaUseCase {
   @Inject ConfiguracionAuditService audit;
   @Inject EntityManager entityManager;
 
+  @Inject InvalidadorDeCache invalidador;
+
   /** Crea la provincia y deja rastro en la auditoria. */
-  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public Provincia execute(ProvinciaRequest dto, Long masterId, String ipAddress) {
     String codigo = normalizar(dto.codigo());
@@ -42,6 +43,9 @@ public class CrearProvinciaUseCase {
         provincia.getId(),
         "Provincia creada: " + dto.nombre(),
         ipAddress);
+    // La invalidacion se aplica despues del commit (ver InvalidadorDeCache): invalidar
+    // antes dejaria una ventana en la que un lector concurrente recachea el dato viejo.
+    invalidador.invalidar("geografia");
     return provincia;
   }
 

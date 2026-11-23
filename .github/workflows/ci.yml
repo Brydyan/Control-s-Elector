@@ -283,8 +283,13 @@ jobs:
             electoral-api:contract
 
       # --network host para que el contenedor alcance los services de GitHub
-      # Actions por los puertos publicados en el host (5432 y 9000). Asi no
+      # Actions por los puertos publicados en el host (5432, 6379 y 9000). Asi no
       # hay que adivinar el nombre de la red de los services.
+      #
+      # OJO con Valkey: el service se declara con id `redis`, pero con --network
+      # host el contenedor NO resuelve nombres de service: la conexion va al
+      # puerto publicado en el host, o sea `localhost:6379`. Con `redis://valkey:6379`
+      # el host no existia y TODA escritura que invalida cache respondia 500.
       #
       # El backend entra con el rol de APLICACION: el schema ya esta migrado y
       # el contenedor no lleva las credenciales del dueno.
@@ -327,7 +332,7 @@ jobs:
             -e APP_RATELIMIT_LOGIN_ACCOUNT_IP_LIMIT=100000 \
             -e APP_RATELIMIT_REAUTH_LIMIT=100000 \
             -e APP_RATELIMIT_CONTACT_DPO_LIMIT=100000 \
-            -e REDIS_HOSTS=redis://valkey:6379 \
+            -e REDIS_HOSTS=redis://localhost:6379 \
             electoral-api:contract
 
       - name: Wait for the backend to be healthy
