@@ -33,6 +33,8 @@ public class CacheValkeyTestProfile implements QuarkusTestProfile {
         "quarkus.liquibase.migrate-at-start", "true",
         "quarkus.liquibase.contexts", "seed",
         "quarkus.hibernate-orm.database.generation", "validate",
+        // Asegurar que la cache usa Redis en lugar de Caffeine.
+        "quarkus.cache.type", "redis",
         // TTL corto solo para esta prueba: el resto de las caches conserva el de produccion.
         "quarkus.cache.redis.cargos.expire-after-write", "1s");
   }
