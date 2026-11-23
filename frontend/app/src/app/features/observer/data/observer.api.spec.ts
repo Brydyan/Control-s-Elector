@@ -226,4 +226,58 @@ describe('ObserverApi', () => {
       0,
     );
   });
+
+  it('getCatalogoDeJrv should fetch the full JRV catalog in one request and enrich candidatos', async () => {
+    const mockResponse = {
+      cargos: [
+        {
+          id: 10,
+          nombre: 'Presidente',
+          candidatos: [
+            {
+              id: 1,
+              nombre: 'Candidato A',
+              orden: 1,
+              cargoId: 10,
+              partidoId: 5,
+            },
+          ],
+          partidos: [
+            { id: 5, nombre: 'Partido Uno', siglas: 'P1', numeroLista: 7 },
+          ],
+        },
+        {
+          id: 20,
+          nombre: 'Asambleísta',
+          candidatos: [],
+          partidos: [
+            { id: 5, nombre: 'Partido Uno', siglas: 'P1', numeroLista: 7 },
+          ],
+        },
+      ],
+    };
+
+    const dataPromise = firstValueFrom(service.getCatalogoDeJrv(99));
+
+    const req = httpMock.expectOne(
+      `${environment.apiUrl}/observer/cargos-with-candidatos?jrvId=99`,
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush(mockResponse);
+
+    const data = await dataPromise;
+    expect(data).toHaveLength(2);
+    expect(data[0].id).toBe(10);
+    expect(data[0].candidatos[0]).toEqual({
+      id: 1,
+      nombre: 'Candidato A',
+      orden: 1,
+      cargoId: 10,
+      partidoId: 5,
+      partidoNombre: 'Partido Uno',
+      partidoSiglas: 'P1',
+      partidoNumeroLista: 7,
+    });
+    expect(data[1].candidatos).toEqual([]);
+  });
 });

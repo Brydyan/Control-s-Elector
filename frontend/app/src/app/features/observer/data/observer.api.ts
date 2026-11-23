@@ -7,9 +7,21 @@ import {
   ActaRequest,
   ActaResponse,
   CandidatoInfo,
+  CargoCatalogo,
   CargoConEstado,
   JrvConEstado,
 } from '../domain/models/observer.model';
+
+interface CargoCatalogoDto {
+  id: number;
+  nombre: string;
+  candidatos: CandidatoDto[];
+  partidos: PartidoDto[];
+}
+
+interface CatalogoJrvResponse {
+  cargos: CargoCatalogoDto[];
+}
 
 interface PartidoDto {
   id: number;
@@ -63,6 +75,38 @@ export class ObserverApi {
         })),
       ),
     );
+  }
+
+  /**
+   * Full JRV catalog in one request (T-PERF-OPT-01 B.2).
+   * Replaces the N per-cargo candidatos requests + partidos request.
+   */
+  getCatalogoDeJrv(jrvId: number): Observable<CargoCatalogo[]> {
+    return this.http
+      .get<CatalogoJrvResponse>(
+        `${this.baseUrl}/cargos-with-candidatos?jrvId=${jrvId}`,
+      )
+      .pipe(
+        map((res) =>
+          res.cargos.map((cargo) => {
+            const partidosPorId = new Map(cargo.partidos.map((p) => [p.id, p]));
+            return {
+              id: cargo.id,
+              nombre: cargo.nombre,
+              candidatos: cargo.candidatos.map((c) => ({
+                id: c.id,
+                nombre: c.nombre,
+                orden: c.orden,
+                cargoId: c.cargoId,
+                partidoId: c.partidoId,
+                partidoNombre: partidosPorId.get(c.partidoId)?.nombre,
+                partidoSiglas: partidosPorId.get(c.partidoId)?.siglas,
+                partidoNumeroLista: partidosPorId.get(c.partidoId)?.numeroLista,
+              })),
+            };
+          }),
+        ),
+      );
   }
 
   getCandidatosPorCargo(cargoId: number): Observable<CandidatoInfo[]> {

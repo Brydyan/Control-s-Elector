@@ -47,7 +47,20 @@ public class Usuario extends PanacheEntityBase {
   @Column(name = "password_hash", nullable = false, length = 100)
   String passwordHash;
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  /**
+   * Rol del usuario.
+   *
+   * <p>LAZY: el listado del panel de administracion pide 20 usuarios por pagina y solo necesita el
+   * nombre del rol. Con EAGER cada consulta arrastraba el join a {@code rol} aunque nadie leyera la
+   * asociacion; con LAZY, y con {@link Rol} anotado con {@code @BatchSize}, el mapeo resuelve todos
+   * los roles de la pagina en una sola consulta extra en vez de una por usuario.
+   *
+   * <p>Todos los consumidores de {@link #getRolNombre()} corren dentro de una transaccion ({@code
+   * LoginUseCase}, {@code RefreshTokenUseCase}, {@code InvitacionService}, {@code
+   * UserInvitationService}, {@code ActivarUsuarioPorTokenUseCase} y {@code UsuarioAdminService}),
+   * asi que la inicializacion diferida no puede lanzar {@code LazyInitializationException}.
+   */
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "rol_id", nullable = false)
   Rol rol;
 

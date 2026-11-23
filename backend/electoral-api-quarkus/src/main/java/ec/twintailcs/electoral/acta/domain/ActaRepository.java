@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.acta.domain;
 
+import ec.twintailcs.electoral.electoral.domain.Candidato;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -442,6 +443,26 @@ public class ActaRepository {
               fila[4] == null ? null : ((Number) fila[4]).longValue()));
     }
     return out;
+  }
+
+  /**
+   * Candidatos de los cargos pedidos, con cargo y partido resueltos en la misma consulta.
+   *
+   * <p>Es la segunda consulta del catalogo batch del observer: una sola consulta cubre todos los
+   * cargos de la JRV, en vez de una por cargo. El {@code join fetch} evita que el mapeo toque
+   * proxys perezosos.
+   */
+  public List<Candidato> listarCandidatosDeCargos(List<Long> cargoIds) {
+    if (cargoIds.isEmpty()) {
+      return List.of();
+    }
+    return entityManager
+        .createQuery(
+            "select c from Candidato c join fetch c.cargo join fetch c.partido"
+                + " where c.cargo.id in :cargoIds order by c.cargo.id, c.orden",
+            Candidato.class)
+        .setParameter("cargoIds", cargoIds)
+        .getResultList();
   }
 
   /** Indica si el cargo esta habilitado (activo) en la JRV. */
