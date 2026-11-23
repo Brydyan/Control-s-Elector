@@ -3,10 +3,13 @@ package ec.twintailcs.electoral.shared.cache;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheManager;
+import io.quarkus.redis.datasource.ReactiveRedisDataSource;
+import io.quarkus.redis.datasource.keys.ReactiveKeyCommands;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.enterprise.event.TransactionPhase;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.transaction.Status;
 import jakarta.transaction.TransactionSynchronizationRegistry;
@@ -50,6 +53,7 @@ public class InvalidadorDeCache {
   @Inject MeterRegistry meterRegistry;
   @Inject TransactionSynchronizationRegistry registry;
   @Inject Event<Invalidacion> evento;
+  @Inject Instance<ReactiveRedisDataSource> redisClientInstance;
 
   /**
    * Identificador de la replica que sirve la peticion: la misma etiqueta que usa la lectura, para
@@ -88,31 +92,53 @@ public class InvalidadorDeCache {
    * <p>Para el vaciado manual (endpoint de administracion): ahi el que pide el vaciado quiere el
    * efecto ya, no despues del commit de otra cosa.
    *
+   * <p>En Quarkus 3.40.1 con Redis, los caches se crean on-demand: si un cache no ha sido accedido
+   * via @CacheResult aun, CacheManager.getCache() devuelve empty y no hay nada que invalidar via
+   * CacheManager. Este metodo implementa un fallback directo a Redis para limpiar las claves que
+   * fueron escritas via guardarDirectoEnRedis().
+   *
    * @param cacheName nombre del cache a invalidar
    * @return {@code true} si la invalidacion se completo, {@code false} si el backend no respondio
    */
   public boolean invalidarAhora(String cacheName) {
     Optional<Cache> cache = cacheManager.getCache(cacheName);
-    if (cache.isEmpty()) {
-      // El cache no existe todavia: no hay nada que invalidar.
-      return true;
+    if (cache.isPresent()) {
+      try {
+        cache.get().invalidateAll().await().atMost(timeoutCache);
+        return true;
+      } catch (Exception e) {
+        // Excepciones esperadas: (1) TimeoutException si atMost(timeoutCache) expira,
+        // (2) la excepcion del cliente Redis/Valkey si el backend no esta (UnknownHostException,
+        // ConnectionException). El broad catch cubre los dos sin depender del tipo exacto que
+        // devuelva la version de Quarkus.
+        LOG.warnf(
+            e,
+            "Cache '%s' no disponible para invalidacion via CacheManager; intentando fallback directo",
+            cacheName);
+        // Fallthrough a fallback directo
+      }
     }
 
-    try {
-      cache.get().invalidateAll().await().atMost(timeoutCache);
-      return true;
-    } catch (Exception e) {
-      // Excepciones esperadas: (1) TimeoutException si atMost(timeoutCache) expira,
-      // (2) la excepcion del cliente Redis/Valkey si el backend no esta (UnknownHostException,
-      // ConnectionException). El broad catch cubre los dos sin depender del tipo exacto que
-      // devuelva la version de Quarkus.
-      LOG.warnf(
-          e,
-          "Cache '%s' no disponible para invalidacion (Redis/Valkey); se sigue con la escritura",
-          cacheName);
-      contador(cacheName).increment();
-      return false;
+    // Fallback: invalida directo en Redis si el cliente esta disponible.
+    // Esto es necesario porque en Quarkus 3.40.1, caches no registrados en CacheManager aun
+    // pueden tener claves en Redis si fueron escritas via guardarDirectoEnRedis().
+    if (redisClientInstance.isResolvable()) {
+      try {
+        invalidarDirectoEnRedis(cacheName, redisClientInstance.get());
+        return true;
+      } catch (Exception e) {
+        LOG.warnf(
+            e,
+            "Cache '%s' no disponible para invalidacion directa contra Redis/Valkey; se sigue con la escritura",
+            cacheName);
+        contador(cacheName).increment();
+        return false;
+      }
     }
+
+    // El cache no existe y no tenemos cliente Redis: considerar exitosa la invalidacion
+    // (no hay nada que limpiar).
+    return true;
   }
 
   /**
@@ -124,6 +150,31 @@ public class InvalidadorDeCache {
   void invalidarAlCommit(
       @Observes(during = TransactionPhase.AFTER_SUCCESS) Invalidacion invalidacion) {
     invalidarAhora(invalidacion.cacheName());
+  }
+
+  /**
+   * Invalida una cache completa directamente contra Redis, sin pasar por CacheManager.
+   *
+   * <p>Las claves del cache se almacenan con formato cacheName:clave. Para invalidar todas las
+   * claves de un cache, buscamos todas las claves que coinciden con el patron cacheName:* y las
+   * borramos de una vez usando los comandos de Redis disponibles en Quarkus 3.40.1.
+   */
+  private void invalidarDirectoEnRedis(String cacheName, ReactiveRedisDataSource redis)
+      throws Exception {
+    ReactiveKeyCommands<String> keyCommands = redis.key();
+    String patron = cacheName + ":*";
+
+    // Buscar todas las claves que coinciden con el patron
+    var claves = keyCommands.keys(patron).await().atMost(timeoutCache);
+
+    // Si hay claves, borrarlas todas de una vez
+    if (claves != null && !claves.isEmpty()) {
+      keyCommands.del(claves.toArray(new String[0])).await().atMost(timeoutCache);
+    }
+
+    LOG.debugf(
+        "Cache '%s' invalidada directamente en Redis (patron '%s', claves borradas: %d)",
+        cacheName, patron, claves == null ? 0 : claves.size());
   }
 
   /** Si hay una transaccion activa en este hilo. */

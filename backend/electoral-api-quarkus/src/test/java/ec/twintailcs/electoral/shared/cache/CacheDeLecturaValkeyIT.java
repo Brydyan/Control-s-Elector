@@ -46,6 +46,7 @@ class CacheDeLecturaValkeyIT {
   @Inject CacheManager cacheManager;
   @Inject ReactiveRedisDataSource redis;
   @Inject ListarCargosUseCase listarCargos;
+  @Inject InvalidadorDeCache invalidador;
 
   @BeforeEach
   void vaciarCaches() {
@@ -83,7 +84,8 @@ class CacheDeLecturaValkeyIT {
     listarCargos.execute();
     assertThat(cache.leer("cargos", "todos", TIPO_CARGOS)).as("la cache esta llena").isPresent();
 
-    cacheManager.getCache("cargos").orElseThrow().invalidateAll().await().indefinitely();
+    // En Quarkus 3.40.1, caches no registradas en CacheManager se invalidan via el helper fallback.
+    invalidador.invalidarAhora("cargos");
 
     assertThat(cache.leer("cargos", "todos", TIPO_CARGOS))
         .as("despues de invalidar, la cache no sirve el valor viejo")
