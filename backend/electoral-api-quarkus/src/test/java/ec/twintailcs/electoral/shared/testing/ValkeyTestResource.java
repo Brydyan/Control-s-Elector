@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.shared.testing;
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
 import java.util.Map;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -17,6 +18,10 @@ import org.testcontainers.utility.DockerImageName;
  * 7.4+ es RSALv2/SSPL, que no es una licencia OSI. Valkey habla el mismo protocolo (RESP), asi que
  * el cliente de Quarkus no cambia. La URL conserva el esquema {@code redis://} porque ese es el que
  * espera la extension {@code quarkus-redis-client}.
+ *
+ * <p>Testcontainers en modo alpine es rápido pero a veces el puerto está accesible antes de que
+ * Valkey esté listo internamente. Se agrega wait strategy que verifica la conexión TCP + el
+ * log "Ready to accept connections" para garantizar que Valkey responda a comandos Redis.
  */
 public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
 
@@ -26,7 +31,10 @@ public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
   public Map<String, String> start() {
     container =
         new GenericContainer<>(DockerImageName.parse("valkey/valkey:8-alpine"))
-            .withExposedPorts(6379);
+            .withExposedPorts(6379)
+            .waitingFor(
+                Wait.forListeningPort()
+                    .andLogMessage(".*Ready to accept connections.*"));
     container.start();
 
     String host = container.getHost();
