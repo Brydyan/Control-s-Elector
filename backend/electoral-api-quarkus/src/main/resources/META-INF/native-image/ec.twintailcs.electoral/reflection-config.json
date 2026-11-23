@@ -4,6 +4,7 @@
     "fields": [
       {
         "name": "actualType",
+        "allowRead": true,
         "allowWrite": true
       }
     ]
