@@ -327,6 +327,7 @@ jobs:
             -e APP_RATELIMIT_LOGIN_ACCOUNT_IP_LIMIT=100000 \
             -e APP_RATELIMIT_REAUTH_LIMIT=100000 \
             -e APP_RATELIMIT_CONTACT_DPO_LIMIT=100000 \
+            -e REDIS_HOSTS=redis://valkey:6379 \
             electoral-api:contract
 
       - name: Wait for the backend to be healthy
