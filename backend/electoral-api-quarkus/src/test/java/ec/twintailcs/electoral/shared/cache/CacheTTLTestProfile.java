@@ -33,6 +33,7 @@ public class CacheTTLTestProfile implements QuarkusTestProfile {
         // TTL corto solo para esta prueba: el resto de las caches conserva el de produccion.
         "quarkus.cache.redis.partidos.expire-after-write", "1s",
         "quarkus.cache.type", "redis",
+        "quarkus.cache.redis.client-type", "standalone",
         "quarkus.cache.names", "cargos,partidos,candidatos,geografia");
   }
 }

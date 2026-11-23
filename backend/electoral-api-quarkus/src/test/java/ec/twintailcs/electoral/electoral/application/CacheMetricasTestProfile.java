@@ -33,6 +33,7 @@ public class CacheMetricasTestProfile implements QuarkusTestProfile {
         // comprobar que la etiqueta llega a las metricas.
         "replica.id", "replica-de-prueba",
         "quarkus.cache.type", "redis",
+        "quarkus.cache.redis.client-type", "standalone",
         "quarkus.cache.names", "cargos,partidos,candidatos,geografia");
   }
 }

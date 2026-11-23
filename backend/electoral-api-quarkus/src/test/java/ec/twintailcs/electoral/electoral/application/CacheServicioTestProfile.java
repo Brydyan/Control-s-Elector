@@ -30,6 +30,7 @@ public class CacheServicioTestProfile implements QuarkusTestProfile {
         "quarkus.hibernate-orm.database.generation", "validate",
         "quarkus.hibernate-orm.log.statistics", "true",
         "quarkus.cache.type", "redis",
+        "quarkus.cache.redis.client-type", "standalone",
         "quarkus.cache.names", "cargos,partidos,candidatos,geografia");
   }
 }
