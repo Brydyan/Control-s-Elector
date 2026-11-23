@@ -1,7 +1,7 @@
 package ec.twintailcs.electoral.common.web;
 
 import ec.twintailcs.electoral.shared.testing.PostgresTestResource;
-import ec.twintailcs.electoral.shared.testing.RedisTestResource;
+import ec.twintailcs.electoral.shared.testing.ValkeyTestResource;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ public class RateLimitingTestProfile implements QuarkusTestProfile {
   public List<TestResourceEntry> testResources() {
     return List.of(
         new TestResourceEntry(PostgresTestResource.class),
-        new TestResourceEntry(RedisTestResource.class));
+        new TestResourceEntry(ValkeyTestResource.class));
   }
 
   @Override

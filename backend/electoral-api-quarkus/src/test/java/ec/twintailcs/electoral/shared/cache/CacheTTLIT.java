@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.shared.cache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
@@ -31,31 +32,35 @@ class CacheTTLIT {
   @Inject CacheDeLectura cache;
 
   @Test
-  @DisplayName("el TTL por defecto de las cachés de configuración es de 2 minutos")
+  @DisplayName("el TTL por defecto de las caches de configuracion es de 2 minutos")
   void elTtlPorDefectoEsDeDosMinutos() {
     Duration ttl =
         ConfigProvider.getConfig()
-            .getValue("quarkus.cache.caffeine.cargos.expire-after-write", Duration.class);
+            .getValue("quarkus.cache.redis.cargos.expire-after-write", Duration.class);
 
     assertThat(ttl)
-        .as("el TTL de producción de la caché de cargos (D2: acota el desfase entre réplicas)")
+        .as("el TTL de produccion de la cache de cargos (acota el desfase entre replicas)")
         .isEqualTo(Duration.ofMinutes(2));
   }
 
   @Test
-  @DisplayName("la entrada de la caché caduca cuando pasa el TTL")
+  @DisplayName("la entrada de la cache caduca cuando pasa el TTL")
   void laEntradaCaducaCuandoPasaElTtl() throws InterruptedException {
-    cache.guardar("partidos", "clave-de-prueba", "valor");
+    cache.guardar("partidos", "clave-de-prueba", java.util.List.of("valor"));
 
-    assertThat(cache.leer("partidos", "clave-de-prueba"))
-        .as("recién guardada, la entrada está en la caché")
-        .contains("valor");
+    assertThat(
+            cache.leer(
+                "partidos", "clave-de-prueba", new TypeReference<java.util.List<String>>() {}))
+        .as("recien guardada, la entrada esta en la cache")
+        .contains(java.util.List.of("valor"));
 
     // El TTL de 'partidos' en este perfil es de 1 segundo.
     Thread.sleep(1500);
 
-    assertThat(cache.leer("partidos", "clave-de-prueba"))
-        .as("pasado el TTL, la entrada ya no está en la caché")
+    assertThat(
+            cache.leer(
+                "partidos", "clave-de-prueba", new TypeReference<java.util.List<String>>() {}))
+        .as("pasado el TTL, la entrada ya no esta en la cache")
         .isEmpty();
   }
 }

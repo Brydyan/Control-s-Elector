@@ -106,8 +106,10 @@ class AdminCacheResourceTest {
 
     // Se siembra una entrada y se comprueba que sobrevive: si el valor se perdiera solo, el test
     // pasaria sin comprobar nada.
-    assertThat(valorEnCache(cache, "valor")).isEqualTo("valor");
-    assertThat(valorEnCache(cache, "otro")).as("la entrada esta en la cache").isEqualTo("valor");
+    assertThat(valorEnCache(cache, "valor")).isEqualTo(java.util.List.of("valor"));
+    assertThat(valorEnCache(cache, "otro"))
+        .as("la entrada esta en la cache")
+        .isEqualTo(java.util.List.of("valor"));
 
     given()
         .header("Authorization", "Bearer " + tokenMaster)
@@ -119,7 +121,7 @@ class AdminCacheResourceTest {
 
     assertThat(valorEnCache(cache, "otro"))
         .as("tras el vaciado la entrada ya no esta, y el cache vuelve a pedir el dato")
-        .isEqualTo("otro");
+        .isEqualTo(java.util.List.of("otro"));
   }
 
   @Test
@@ -157,7 +159,9 @@ class AdminCacheResourceTest {
         .then()
         .statusCode(403);
 
-    assertThat(valorEnCache(cache, "otro")).as("un 403 no toca la cache").isEqualTo("valor");
+    assertThat(valorEnCache(cache, "otro"))
+        .as("un 403 no toca la cache")
+        .isEqualTo(java.util.List.of("valor"));
   }
 
   @Test
@@ -214,9 +218,12 @@ class AdminCacheResourceTest {
    *
    * <p>Usa la API de la cache con su cargador: si la clave esta, devuelve lo que hay; si no, carga
    * y guarda. Asi el test puede distinguir "la entrada sigue en la cache" de "la cache se vacio".
+   *
+   * <p>Phase 2 (Valkey): el cache "partidos" tiene value-type configurado como List, asi que el
+   * sentinel debe ser compatible con ese tipo.
    */
   private Object valorEnCache(Cache cache, String valorSiNoEsta) {
-    return cache.get(CLAVE, (Object k) -> valorSiNoEsta).await().indefinitely();
+    return cache.get(CLAVE, (Object k) -> java.util.List.of(valorSiNoEsta)).await().indefinitely();
   }
 
   /** Lee un endpoint protegido con el token del MASTER. */
