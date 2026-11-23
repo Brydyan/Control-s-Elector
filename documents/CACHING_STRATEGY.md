@@ -1,7 +1,8 @@
 # Estrategia de Caché — T-CACHE-STRAT-01
 
-> Estado: implementado en backend y frontend. Última actualización: 2026-11-21.
-> Spec: `openspec/changes/back/2026-11-19-caching-strategy/`.
+> Estado: Phase 2 implementada en backend (Valkey distribuido) y frontend. Última actualización: 2026-11-22.
+> Spec Phase 1: `openspec/changes/back/2026-11-19-caching-strategy/`.
+> ODD Phase 2: `odd/tasks/phase2-caching-valkey-distributed.md`.
 
 ## Qué cachea y por qué
 
@@ -14,7 +15,7 @@ de registro pasan por la caché.
 |------|------|-----------|-----|
 | Frontend | partidos (formulario del observador) | RxJS `shareReplay(1)` | sesión |
 | Frontend | resumen, resultados, progreso, novedades (dashboard) | RxJS `shareReplay(1)` | sesión |
-| Backend | `cargos`, `partidos`, `candidatos`, `geografia` | Quarkus Cache (Caffeine) | 2 min |
+| Backend | `cargos`, `partidos`, `candidatos`, `geografia` | Quarkus Cache + Valkey (Redis protocol, OSS) | 2 min |
 
 Efecto medido en los tests:
 
@@ -24,6 +25,8 @@ Efecto medido en los tests:
   caché vive en el servicio, no en el componente.
 - Backend: la 2ª lectura de cargos/partidos/candidatos/geografía **no toca la
   base** (`CacheServicioIT` cuenta consultas con `SessionFactory.getStatistics()`).
+- Multi-replica: todas las réplicas comparten el mismo caché Valkey; una
+  invalidación por escritura se ve en las demás réplicas.
 
 ---
 
@@ -74,7 +77,7 @@ con `page.goto()`: un `goto` recarga la aplicación entera y borra la caché.
 
 ---
 
-## Backend: Quarkus Cache (Caffeine)
+## Backend: Quarkus Cache + Valkey (Phase 2)
 
 ### Por qué no `@CacheResult`
 
@@ -89,7 +92,7 @@ lectura es explícita, con un helper que cuenta:
 El patrón en un caso de uso:
 
 ```java
-Optional<List<Cargo>> enCache = cache.leer("cargos", "todos");
+Optional<List<Cargo>> enCache = cache.leer("cargos", "todos", TIPO_CARGOS);
 if (enCache.isPresent()) {
   return enCache.get();
 }
@@ -102,6 +105,29 @@ La consulta a la base **no** va dentro del helper: una lambda que llama a un
 método estático de Panache se ejecuta en otra clase sintética, y ahí Panache ya
 no tiene inyectada su implementación
 (`IllegalStateException: implementationInjectionMissing`).
+
+Phase 2: el backend es Valkey (protocolo Redis, BSD-3-Clause, Linux
+Foundation). `CacheDeLectura` usa `quarkus-redis-cache`/`RedisCache` para
+leer/escribir y mantiene contadores Micrometer (`cache.hits`, `cache.misses`)
+porque Valkey no expone hit/miss automático. Si Valkey no responde, el helper
+degrada a "sin caché" (consulta a base) y registra el fallo; la app sigue
+operativa.
+
+**Por qué la lectura necesita un tipo.** El backend Redis devuelve bytes: para
+devolver `List<Cargo>` y no `List<Object>`, la deserialización necesita el tipo
+concreto. La API de `RedisCache` solo ofrece `getOrNull(K, Class<V>)` y
+`getOrNull(K, TypeLiteral<V>)`: no hay sobrecarga con `java.lang.reflect.Type`.
+`TypeLiteral` es el único vehículo que transporta un tipo genérico, y para
+construir uno con el tipo del caller el helper reflectea sobre el campo privado
+`TypeLiteral.actualType`.
+
+Eso funciona en la imagen nativa **porque Quarkus registra el campo para
+reflexión**, y no por casualidad: si una actualización de Quarkus dejara de
+registrarlo, la lectura fallaría y la caché degradaría a "siempre miss" en
+silencio (el backend seguiría respondiendo 200, pero cada request iría a la
+base). Por eso el job `backend-native` de CI tiene el paso *"Assert the
+distributed cache serves the second read"*, que mira el contador de aciertos y
+no el código de respuesta.
 
 ### Implementación
 
@@ -118,39 +144,60 @@ cargo son datos distintos y no pueden compartir entrada.
 ### Configuración (`application.properties`)
 
 ```properties
-quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
-quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
-quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
-quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.enabled=${QUARKUS_CACHE_ENABLED:true}
+quarkus.cache.type=redis
+quarkus.cache.redis.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.redis.cargos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.redis.partidos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.redis.candidatos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.redis.geografia.expire-after-write=${CACHE_TTL:2m}
 
-# Métricas estándar de Caffeine por caché (tamaño, evictions)
-quarkus.cache.caffeine.cargos.metrics-enabled=true
-quarkus.cache.caffeine.partidos.metrics-enabled=true
-quarkus.cache.caffeine.candidatos.metrics-enabled=true
-quarkus.cache.caffeine.geografia.metrics-enabled=true
+# Tipos por cache. OJO: `java.util.List` es un tipo CRUDO. Sirve para la
+# escritura (el backend serializa la lista sin saber de qué elementos se trata);
+# la forma genérica de la LECTURA la resuelve el helper reflejando el tipo del
+# caller sobre `TypeLiteral` (ver "Por qué la lectura necesita un tipo").
+quarkus.cache.redis.cargos.value-type=java.util.List
+quarkus.cache.redis.partidos.value-type=java.util.List
+quarkus.cache.redis.candidatos.value-type=java.util.List
+quarkus.cache.redis.geografia.value-type=ec.twintailcs.electoral.geografia.web.dto.GeografiaTreeDto
+
+# Redis/Valkey compartido (rate limiting + cache)
+quarkus.redis.hosts=${REDIS_HOSTS:redis://localhost:6379}
 
 # Réplica (Railway inyecta RAILWAY_REPLICA_ID): etiqueta en las métricas de caché
 replica.id=${RAILWAY_REPLICA_ID:local}
 ```
 
-### Advertencia: Caffeine está acoplado en el helper
+### Phase 2: Valkey distribuido (reemplaza Caffeine)
 
-`CacheDeLectura` usa `cache.as(CaffeineCache.class)` porque la API pública de
-Quarkus (`io.quarkus.cache.Cache`) solo expone `get(key, loader)` e
-`invalidate*`: no hay `put` ni `getIfPresent`.
+Phase 1 usaba Caffeine en memoria por réplica. Eso es correcto con 1 réplica,
+pero con 2+ réplicas produce stale cache: una escritura invalida solo la réplica
+que la atendió. Phase 2 mueve el backend a **Valkey**, un fork de Redis 7.2.4
+que habla el mismo protocolo (RESP) y que licencia **BSD-3-Clause** (Linux
+Foundation).
 
-`Cache.as(Class)` lanza **`IllegalStateException`** cuando el caché no es del
-tipo pedido (no `ClassCastException`). Por eso el helper captura ese tipo
-concreto y trata "el caché no es Caffeine" como **sin caché**: se sirve
-siempre desde la base, sin contadores, y la aplicación sigue funcionando.
-Sin esa captura, con `quarkus.cache.enabled=false` (Quarkus entrega un
-`NoOpCache`) o con un backend que no sea Caffeine, **cada lectura de
-configuración devolvía 500**. Está sujetado por `CacheApagadaIT`.
+**Por qué Valkey y no Redis.** No es una cuestión de "Redis es closed source"
+(Redis 7.2 y anteriores son BSD-3-Clause): Redis 7.4+ usa RSALv2/SSPL, que no
+es una licencia OSI, y Redis 8+ es tri-license (con AGPLv3, que sí es OSI).
+Valkey resuelve el problema sin Persistent.io: BSD-3-Clause, sin arguables
+empresas de por medio, mantenido por la Linux Foundation. Por eso el compose,
+los tests y los servicios de CI usan la imagen `valkey/valkey:8-alpine`.
 
-D2 quedó decidida como **Caffeine en memoria** (el backend corre en una sola
-réplica en Railway; ver `CACHE_SETUP_GUIDE.md`). Si algún día se migra a Redis,
-habrá que **reescribir `CacheDeLectura`** para hablar la API de Redis; con el
-helper actual, Redis degrada a "sin caché" (hit ratio 0 %), no a "caché rota".
+- **Backend:** `quarkus-redis-cache` + `quarkus-redis-client`. Las propiedades
+  se llaman `quarkus.redis.*` porque ese es el nombre de la extensión de
+  Quarkus, no porque el servidor sea Redis.
+- **Estado de la extensión:** `quarkus-redis-cache` está en **preview** en
+  Quarkus 3.40.1 (la versión que usa este proyecto). La API puede cambiar en
+  una actualización de Quarkus: es el riesgo a vigilar.
+- **API de app:** `CacheDeLectura.leer/guardar` sin cambio de firma pública.
+- **Invalidación:** `@CacheInvalidateAll` sigue funcionando vía `CacheManager`.
+- **Métricas:** `cache.hits`/`cache.misses` manuales en Micrometer, etiquetadas
+  con `cache` y `replica`.
+- **Fallback:** si Valkey no está disponible, el helper captura la excepción y
+  sirve desde base (hit ratio baja, la app no cae). `quarkus.cache.enabled=false`
+  sigue siendo el kill switch de build-time.
+- **Config Caffeine:** deprecada y comentada en `application.properties` como
+  referencia histórica.
 
 ---
 

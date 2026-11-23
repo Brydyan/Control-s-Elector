@@ -1,46 +1,56 @@
 # Guía de Configuración de Caché — T-CACHE-STRAT-01
 
-> Cómo se configura la caché en cada entorno y qué decisiones siguen abiertas.
+> Phase 2 (2026-11-22): backend de caché distribuido con Valkey (protocolo Redis).
+> Phase 1 usaba Caffeine en memoria (1 réplica).
 
 ## Resumen
 
 | Entorno | Backend de caché | Qué hace falta |
 |----------|-------------------|----------------|
-| Local / dev | Caffeine (en memoria) | Nada: no hay servicio que instalar |
-| Tests | Caffeine (en memoria) | Nada |
-| Producción (Railway) | Caffeine (en memoria), **1 réplica** | Nada: ver el guardrail de réplicas de la sección 2 |
+| Local / dev | Valkey en `compose` (servicio `valkey`) | `docker compose --profile dev up -d valkey` |
+| Tests | Valkey vía Testcontainers (`ValkeyTestResource`) | Docker disponible |
+| Producción (Railway) | Valkey compartido entre réplicas | Servicio Valkey + `REDIS_HOSTS` |
 
-La caché actual **no necesita Redis ni ningún servicio externo**: Caffeine vive
-dentro de la JVM. Lo que sí necesita es el registro de métricas (Micrometer),
-que ya está en el `pom.xml` y se publica en `/q/metrics`.
+Phase 2 usa `quarkus-redis-cache` sobre Valkey para caché compartida entre
+réplicas. La app degrada a "sin caché" si Valkey no está disponible (no cae),
+pero en producción debe estar provisionado.
+
+**Por qué Valkey y no Redis.** Valkey es un fork de Redis 7.2.4 con el mismo
+protocolo (RESP) y licencia **BSD-3-Clause** (Linux Foundation). Redis 7.4+ usa
+RSALv2/SSPL, que no es una licencia OSI; Redis 8+ es tri-license (con AGPLv3).
+Las propiedades de Quarkus se llaman `quarkus.redis.*` porque ese es el nombre
+de la extensión (`quarkus-redis-client` / `quarkus-redis-cache`), no porque el
+servidor sea Redis.
 
 ---
 
 ## 1. Configuración en `application.properties`
 
 ```properties
-# Caché de datos estáticos (T-CACHE-STRAT-01 D)
-# TTL corto a propósito: acota el desfase si el backend llegara a correr en más
-# de una réplica. CACHE_TTL lo ajusta por entorno sin tocar el código.
-quarkus.cache.caffeine.cargos.expire-after-write=${CACHE_TTL:2m}
-quarkus.cache.caffeine.partidos.expire-after-write=${CACHE_TTL:2m}
-quarkus.cache.caffeine.candidatos.expire-after-write=${CACHE_TTL:2m}
-quarkus.cache.caffeine.geografia.expire-after-write=${CACHE_TTL:2m}
+# Caché de datos estáticos (Phase 2: Valkey distribuido)
+quarkus.cache.enabled=${QUARKUS_CACHE_ENABLED:true}
+quarkus.cache.type=redis
+quarkus.cache.redis.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.redis.cargos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.redis.partidos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.redis.candidatos.expire-after-write=${CACHE_TTL:2m}
+quarkus.cache.redis.geografia.expire-after-write=${CACHE_TTL:2m}
 
-# Métricas estándar de Caffeine por caché (entradas, evictions, acierto/fallo)
-quarkus.cache.caffeine.cargos.metrics-enabled=true
-quarkus.cache.caffeine.partidos.metrics-enabled=true
-quarkus.cache.caffeine.candidatos.metrics-enabled=true
-quarkus.cache.caffeine.geografia.metrics-enabled=true
+# Tipos por cache (deserialización en Valkey)
+quarkus.cache.redis.cargos.value-type=java.util.List
+quarkus.cache.redis.partidos.value-type=java.util.List
+quarkus.cache.redis.candidatos.value-type=java.util.List
+quarkus.cache.redis.geografia.value-type=ec.twintailcs.electoral.geografia.web.dto.GeografiaTreeDto
+
+# Valkey compartido (rate limiting + cache)
+quarkus.redis.hosts=${REDIS_HOSTS:redis://localhost:6379}
 
 # Identificador de la réplica (Railway inyecta RAILWAY_REPLICA_ID por réplica)
 replica.id=${RAILWAY_REPLICA_ID:local}
-
-# Métricas (T-CACHE-STRAT-01 D.5)
-quarkus.micrometer.enabled=${QUARKUS_MICROMETER_ENABLED:true}
-quarkus.micrometer.export.prometheus.enabled=${QUARKUS_MICROMETER_PROMETHEUS_ENABLED:true}
-quarkus.micrometer.binder.http-server.enabled=true
 ```
+
+La config Caffeine de Phase 1 queda comentada en `application.properties` como
+referencia histórica; no se usa con `quarkus.cache.type=redis`.
 
 Todas las claves admiten variable de entorno, así que en Railway se pueden
 ajustar sin tocar la imagen: `CACHE_TTL` para el TTL y `RAILWAY_REPLICA_ID` la
@@ -89,91 +99,87 @@ réplicas en un solo tablero, así que sin ella no se puede distinguir "el hit
 ratio bajó" de "una réplica quedó desfasada respecto de las otras".
 
 Si `cache_hits_total` no aparece, la caché no está sirviendo: mira los logs
-de arranque (`Cache 'cargos' initialized`) y que el TTL esté configurado.
+de arranque, que `REDIS_HOSTS` apunte a Valkey, y que el TTL esté
+configurado.
 
 ---
 
-## 2. Despliegue en Railway: el guardrail de las réplicas
+## 2. Despliegue en Railway: Valkey compartido
 
-El backend corre en **Railway con 1 réplica**. Con Caffeine en memoria la
-caché vive en el proceso, así que el número de réplicas decide si el dato
-puede quedar desfasado:
+Phase 2 usa Valkey como backend de caché compartido. Con múltiples
+réplicas, todas leen y escriben el mismo caché:
 
-- **Con 1 réplica** (lo actual): no hay split. La invalidación es local e
-  instantánea, y el TTL de 2 min es solo la red de seguridad para lo que se
-  escribiera por un camino que no pasa por los casos de uso.
-- **Con 2 o más réplicas**: Railway reparte el tráfico **al azar** y **no hay
-  sticky sessions**. Una escritura en la réplica A no invalida la copia de la
-  réplica B, así que B puede servir datos viejos hasta que venza su TTL (2 min).
-  El tráfico tampoco se queda en la réplica que invalidó: el siguiente request
-  puede caer en la otra.
+- **Invalidación:** `@CacheInvalidateAll` invalida la entrada en Valkey; las
+  demás réplicas ven el cambio en la siguiente lectura.
+- **TTL:** 2 min (`CACHE_TTL`) como red de seguridad.
+- **Vaciado manual:** `GET /api/v1/admin/cache/clear` (rol MASTER) limpia el
+  caché compartido vía `CacheManager`; queda auditado.
+- **Fallback:** si Valkey no responde, `CacheDeLectura` degrada a "sin caché"
+  (sirve desde la base) y registra el error en debug; la app no devuelve 500
+  por la caché.
 
-**Guardrail: antes de escalar el backend a más de una réplica, hay que volver
-a mirar D2.** Con el TTL de 2 min el desfase está acotado y es aceptable para
-datos de configuración electoral; si además hace falta invalidación
-instantánea entre réplicas, la respuesta es una caché compartida (Redis), que
-es un cambio de producto con su propio coste, no un ajuste de configuración.
-
-Cómo saber si hay más de una réplica sin mirar el panel de Railway: las
-métricas van etiquetadas por réplica. Si `/q/metrics` muestra más de un valor
-de `replica=`, hay más de una réplica en servicio.
-
-### El vaciado manual de caché es best-effort por réplica
-
-`GET /api/v1/admin/cache/clear` (rol MASTER) vacía la caché **del proceso que
-atiende la petición**. Con una sola réplica, vacía todo. Con varias, vacía
-una: la otra sigue con su copia hasta que venza el TTL. No hay forma de vaciar
-todas sin una caché compartida.
+**Guardrail operativo:** provisionar Valkey antes de escalar réplicas.
+Sin Valkey, el sistema funciona pero pierde hit ratio y aumenta carga a Neon.
 
 ---
 
-## 3. Decisión D2: Caffeine en memoria (tomada)
+## 3. Decisión de backend: Phase 1 Caffeine, Phase 2 Valkey
 
-**Estado: decidida.** El diseño original (`proposal.md`, `design.md`) elegía
-Redis; la decisión se cerró con el despliegue real en Railway y Neon.
+**Phase 1 (2026-11-21):** Caffeine en memoria, 1 réplica, TTL 2 min. Correcto
+para el despliegue de entonces.
 
-**Decisión: Opción A — Caffeine en memoria, TTL de 2 minutos.**
+**Phase 2 (2026-11-22, este ODD):** Valkey distribuido. Motivo: al escalar
+a 2+ réplicas, Caffeine por réplica genera stale cache tras invalidaciones. La
+licencia es BSD-3-Clause (Linux Foundation), a diferencia de Redis 7.4+
+(RSALv2/SSPL, que no es OSI).
 
-Por qué, en el stack real:
+**Comportamiento esperado:**
 
-- **El problema que Redis resolvía no existe.** Redis se eligió para que varias
-  réplicas compartieran caché. Railway corre **1 réplica**, y sin sticky
-  sessions el reparto aleatorio es lo que hace aparecer el split.
-- **En Neon, una caché en proceso es mejor que una remota.** Neon es
-  PostgreSQL serverless: cada acierto de caché es un round-trip a la red
-  (y un posible arranque en frío del compute). Caffeine responde desde el heap;
-  Redis solo cambiaría un salto de red (Neon) por otro (Redis). La caché en
-  proceso además **amortigua el arranque en frío de Neon**, cosa que Redis no
-  hace.
-- **Redis sería un servicio nuevo**: coste, un modo de falla más y un
-  despliegue más, para un problema que no está presente.
-- **Lo que Redis sí daría** —invalidación instantánea entre réplicas— solo
-  importa si se escala a más de una réplica, y el TTL de 2 min acota el daño
-  mientras tanto.
+- Con Valkey disponible: hit ratio alto, invalidación compartida entre réplicas.
+- Con Valkey caído: `CacheDeLectura` captura errores y sirve desde base; la app
+  no cae, pero aumenta latencia/carga en DB.
+- Con `quarkus.cache.enabled=false` (build-time): la extensión entrega NoOp;
+  `CacheDeLectura` degrada a "sin caché".
 
-Qué quedaría para migrar a Redis, si algún día hace falta:
+### 3.1 La lectura con tipo genérico y la imagen nativa
 
-- `CacheDeLectura` usa `cache.as(CaffeineCache.class)` porque la API pública
-  de Quarkus solo expone `get(key, loader)` e `invalidate*` (no hay `put` ni
-  `getIfPresent`). `Cache.as(Class)` lanza `IllegalStateException` si el caché
-  no es del tipo pedido; el helper captura ese tipo y **degrada a "sin caché"**
-  (se sirve desde la base, hit ratio 0 %), de modo que Redis no tiraría la
-  aplicación — pero tampoco cachearía. Para cachear de verdad hay que
-  reescribir `CacheDeLectura` para hablar la API de Redis.
-- Nota: `@CacheResult` (la opción que sí es agnóstica del backend) no sirve
-  aquí, porque no permite medir el hit ratio.
+Valkey devuelve bytes. Para que la lectura devuelva `List<Cargo>` y no
+`List<Object>`, la deserialización necesita el tipo concreto, y la API de
+`RedisCache` solo ofrece `getOrNull(K, Class<V>)` y
+`getOrNull(K, TypeLiteral<V>)` — no hay sobrecarga con `java.lang.reflect.Type`.
+`TypeLiteral` es el único vehículo que transporta un tipo genérico, así que
+`CacheDeLectura.typeLiteral()` construye uno y le fija el tipo del caller
+reflejeando sobre el campo privado `TypeLiteral.actualType`.
+
+Eso **sí funciona en la imagen nativa**, porque Quarkus registra ese campo
+para reflexión. Pero es una dependencia implícita: si una actualización de
+Quarkus deja de registrarlo, la lectura falla, el helper degrada a "sin caché"
+y el sistema sigue respondiendo 200 — con el 100 % del tráfico contra la base.
+El síntoma es invisible salvo que se mire el contador de aciertos.
+
+Por eso el job `backend-native` de CI tiene el paso **"Assert the distributed
+cache serves the second read"**: lee dos veces un endpoint cacheado y exige que
+`cache_hits_total` haya subido. Si ese día el registro de reflexión desaparece,
+el CI se pone rojo en vez de producción.
+
+**Consecuencia práctica:** al actualizar Quarkus, revisar ese paso. No es un
+detalle: es lo que separa "la caché sirve" de "la caché finge que sirve".
+
+### 3.2 Estado de la extensión
+
+`quarkus-redis-cache` está en **preview** en Quarkus 3.40.1 (la versión que
+usa este proyecto). Es la extensión oficial de Quarkus, pero en preview: la API
+puede cambiar entre versiones. Riesgo de mantenimiento, no de runtime —
+siempre que se conserve el paso de aserción de 3.1.
 
 ---
 
-## 4. La caché del frontend cubre el desfase
+## 4. Caché frontend
 
-El frontend ya cachea los partidos por sesión (`shareReplay(1)`), así que el
-efecto de la caché es visible para el usuario aunque el backend sirva datos
-viejos: el navegador no vuelve a pedirlos hasta que recargue la página.
-
-Ojo: esto **no** protege al observador que acaba de recargar la página en el
-momento exacto en que el backend sirve una copia desfasada. Acota el problema,
-no lo elimina.
+El frontend sigue cacheando catálogos por sesión (`shareReplay(1)`). Eso reduce
+requests, pero no reemplaza la consistencia del backend. Con Valkey, el backend
+comparte invalidaciones entre réplicas; el frontend sigue refrescando al
+recargar sesión/página según su política actual.
 
 ---
 
@@ -218,11 +224,9 @@ La métrica estable es la de **consultas de configuración**: el total absoluto
 de consultas al servidor depende del ruido de arranque (login, auditoría,
 metadatos) y no se puede comparar entre corridas.
 
-El **tamaño de la caché** es lo que más se vigila: con las cuatro cachés calientes
-hay **4 entradas** en total (una por caché) y ~2,3 KB de payload JSON. El límite
-real de memoria es el heap de la JVM del contenedor de Railway, no un servicio
-aparte: `cache_size` y `cache_evictions_total` por caché quedan publicados en
-`/q/metrics` para alertar sobre eso.
+Con backend Valkey, el tamaño no vive en el heap de la JVM sino en
+Valkey. Vigilar memoria/evictions de Valkey y `cache_hits_total` /
+`cache_misses_total` por caché/replica en `/q/metrics`.
 
 Reportes: `documents/load-test/cache-hit-ratio-summary-{con,sin}-cache.md`.
 
