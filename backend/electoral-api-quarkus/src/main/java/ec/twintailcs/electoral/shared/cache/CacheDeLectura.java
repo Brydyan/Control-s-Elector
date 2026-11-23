@@ -186,8 +186,12 @@ public class CacheDeLectura {
       // WARN (degradacion), y los inesperados tambien (si uno nuevo emerge, el logging lo hace
       // visible). El costo es que si el backend remoto cambia el tipo de excepcion en una
       // version futura de Quarkus, aqui se maneja sin sorpresas.
-      LOG.warnf(
+      LOG.debugf(
           e,
+          "Cache '%s' no disponible para lectura (Redis/Valkey); sirviendo desde la base. Exception type: %s",
+          cacheName,
+          e.getClass().getSimpleName());
+      LOG.warnf(
           "Cache '%s' no disponible para lectura (Redis/Valkey); sirviendo desde la base",
           cacheName);
       contarError(cacheName);
@@ -213,8 +217,12 @@ public class CacheDeLectura {
       // Ver comentario en leerDeRedis() sobre el broad catch(Exception). La escritura en Redis
       // no bloquea la respuesta: una falla aqui deja la cache vacia para ese caller, pero el
       // siguiente caller lo vuelve a intentar (ver contarFallo en finally).
-      LOG.warnf(
+      LOG.debugf(
           e,
+          "Cache '%s' no disponible para escritura (Redis/Valkey); se omite la carga. Exception type: %s",
+          cacheName,
+          e.getClass().getSimpleName());
+      LOG.warnf(
           "Cache '%s' no disponible para escritura (Redis/Valkey); se omite la carga",
           cacheName);
       contarError(cacheName);
