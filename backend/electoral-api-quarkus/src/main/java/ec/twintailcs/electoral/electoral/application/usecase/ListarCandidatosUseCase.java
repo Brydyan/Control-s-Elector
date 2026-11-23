@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.electoral.application.usecase;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.shared.cache.CacheDeLectura;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -17,10 +18,12 @@ import java.util.Optional;
 @ApplicationScoped
 public class ListarCandidatosUseCase {
 
+  private static final TypeReference<List<Candidato>> TIPO_CANDIDATOS = new TypeReference<>() {};
+
   @Inject CacheDeLectura cache;
 
   /**
-   * Candidatos del cargo y del partido pedidos. Cacheado con TTL de 10 minutos.
+   * Candidatos del cargo y del partido pedidos. Cacheado con TTL de 2 minutos.
    *
    * <p>La clave lleva los filtros: el listado sin filtros y el de un cargo son datos distintos y no
    * pueden compartir entrada.
@@ -28,7 +31,7 @@ public class ListarCandidatosUseCase {
   @Transactional
   public List<Candidato> execute(Long cargoId, Long partidoId) {
     String clave = "cargo:" + cargoId + "|partido:" + partidoId;
-    Optional<List<Candidato>> cacheado = cache.leer("candidatos", clave);
+    Optional<List<Candidato>> cacheado = cache.leer("candidatos", clave, TIPO_CANDIDATOS);
     if (cacheado.isPresent()) {
       return cacheado.get();
     }

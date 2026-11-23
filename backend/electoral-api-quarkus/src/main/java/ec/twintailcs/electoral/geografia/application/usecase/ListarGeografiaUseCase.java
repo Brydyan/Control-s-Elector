@@ -1,5 +1,6 @@
 package ec.twintailcs.electoral.geografia.application.usecase;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import ec.twintailcs.electoral.geografia.web.dto.GeografiaTreeDto;
 import ec.twintailcs.electoral.shared.cache.CacheDeLectura;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -22,16 +23,18 @@ import java.util.Optional;
 @ApplicationScoped
 public class ListarGeografiaUseCase {
 
+  private static final TypeReference<GeografiaTreeDto> TIPO_GEOGRAFIA = new TypeReference<>() {};
+
   @Inject EntityManager entityManager;
   @Inject CacheDeLectura cache;
 
   /**
-   * Devuelve el arbol completo, con listas vacias en los niveles sin hijos. Cacheado con TTL de 10
+   * Devuelve el arbol completo, con listas vacias en los niveles sin hijos. Cacheado con TTL de 2
    * minutos.
    */
   @Transactional
   public GeografiaTreeDto execute() {
-    Optional<GeografiaTreeDto> cacheado = cache.leer("geografia", "todos");
+    Optional<GeografiaTreeDto> cacheado = cache.leer("geografia", "todos", TIPO_GEOGRAFIA);
     if (cacheado.isPresent()) {
       return cacheado.get();
     }
