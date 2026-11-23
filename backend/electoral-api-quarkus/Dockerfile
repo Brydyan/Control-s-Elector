@@ -18,14 +18,20 @@ COPY src ./src
 # Build. Use system Maven 3.9 from base image (avoid mvnw rate limiting on GitHub Actions).
 # -B = batch mode (no interactivity), -DskipTests = skip unit/integration tests in Docker.
 # env -i isolates Maven from corrupted environment variables (MAVEN_OPTS, etc).
-# Retry with backoff on 429 rate limit errors from Maven Central.
-RUN env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B \
-    -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
-    clean package -DskipTests || \
-    (echo "First attempt failed, retrying after 15s..." && sleep 15 && \
-    env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B \
-    -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
-    clean package -DskipTests)
+# Retry with exponential backoff on 429 rate limit errors from Maven Central.
+# GitHub Actions CI runners hit rate limits; use multiple retries with increasing delays.
+RUN for attempt in 1 2 3; do \
+      echo "Maven build attempt $attempt..."; \
+      env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B \
+        -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
+        clean package -DskipTests && exit 0; \
+      if [ $attempt -lt 3 ]; then \
+        delay=$((30 * attempt)); \
+        echo "Attempt $attempt failed. Retrying in ${delay}s..."; \
+        sleep $delay; \
+      fi; \
+    done; \
+    exit 1
 
 # ─── Runtime ────────────────────────────────────────────────────────────────
 FROM eclipse-temurin:25-jre-noble
