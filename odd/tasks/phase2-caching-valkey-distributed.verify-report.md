@@ -526,3 +526,73 @@ del 500. En vez de inventar un fix a ciegas, se instrumentó el código (`e65aa0
 
 El siguiente ciclo de CI con esa instrumentación convierte el 500 opaco en un
 fallo con causa legible.
+
+### 12.10 Causa raíz del 500: la cache sin techo tumba la transacción (2026-11-22)
+
+La instrumentación de §12.9 no hizo falta: la causa raíz se **reprodujo en local**
+con un backend de cache que acepta la conexión y no responde nunca.
+
+**La familia de fallos.** Los tres fallos del run `45103645833` eran de la misma
+familia: lecturas de listados cacheados.
+
+| Job | Test | Síntoma |
+|---|---|---|
+| `Backend Tests & Coverage` | `CacheContenidoIT.candidatosFiltradosElAciertoRespetaElFiltro` | `ArcUndeclaredThrowableException` |
+| `Backend Contract Tests` | `ConfiguracionContractIT.listarCargosDevuelveLaLista` | 500 `internal error` |
+| (run anterior) | `CacheInvalidacionIT.unaProvinciaNuevaApareceDeInmediato` | 500 |
+
+Los tres son exactamente los tres caminos que **consultan la cache dentro de la
+transacción JTA** del caso de uso (`ListarCargosUseCase`, `ListarCandidatosUseCase`,
+`ListarGeografiaUseCase`).
+
+**La cadena (reproducida):**
+
+1. `CacheDeLectura` llamaba a Valkey con `await().indefinitely()`: **sin techo**.
+   Si el backend acepta la conexión pero no contesta (el contenedor del CI que
+   todavía no está listo, un backend saturado), la llamada **espera para siempre**.
+2. Esa llamada va **dentro** de la transacción del caso de uso (`@Transactional`).
+3. A los **60 s** el reaper de Narayana cancela la transacción
+   (`ARJUNA012108 ... aborting with 1 threads active!`).
+4. El commit entonces falla con `jakarta.transaction.RollbackException` — que es
+   **checked** — y ARC la envuelve en `ArcUndeclaredThrowableException`
+   (`"Error invoking subclass method"`). De ahí el 500.
+
+`ArcUndeclaredThrowableException` solo aparece cuando una excepción **checked**
+escapa de un método de bean interceptado; en esta ruta la única checked posible
+es la del `TransactionManager` (`RollbackException` / `SystemException`), y el
+`endTransaction()` de Quarkus lanza exactamente `RollbackException("Transaction
+was already rolled back (e.g., by the transaction reaper)")` cuando
+`getTransaction()` ya no devuelve la transacción.
+
+**Evidencia de la reproducción local** (backend con Valkey mudo):
+
+| | Antes | Después |
+|---|---|---|
+| `GET /api/v1/configuracion/cargos` | cuelga > 75 s, sin respuesta | **200 en 20 s** |
+| Reaper de Narayana | `ARJUNA012108` + `ARJUNA012121` (tx cancelada) | **0 eventos** |
+| Síntoma en el log | — | `Cache 'cargos' no disponible para lectura (Redis/Valkey); sirviendo desde la base: io.smallrye.mutiny.TimeoutException` |
+
+**El fix (dos capas):**
+
+1. **Techo de tiempo en toda operación de cache** (`CacheDeLectura`, `app.cache.timeout`,
+   default 5 s, env `CACHE_TIMEOUT`): `await().atMost(timeout)` en lectura y en
+   escritura. Un backend mudo degrada a fallo de cache, que es lo que el diseño
+   exige; deja de ser un cuelgue.
+2. **Los listados cacheados ya no abren transacción JTA** (`ListarCargosUseCase`,
+   `ListarPartidosUseCase`, `ListarCandidatosUseCase`, `ListarGeografiaUseCase`):
+   son lecturas que no escriben en la base. Con la transacción abierta, la cache
+   quedaba dentro del ciclo de vida de la transacción y una cache lenta podía
+   tumbarla. Sin transacción, la cache es una degradación y punto.
+
+**Test de regresión:** `CacheBackendNoRespondeIT` levanta un backend que acepta y
+no contesta y afirma que el listado **se sirve desde la base** (sin excepción y sin
+cuelgue, con `@Timeout(60)`). Antes del fix, ese escenario colgaba hasta que el
+reaper mataba la transacción.
+
+**Validación local tras el fix:** backend **307/307** (305 previos + 2 nuevos),
+suite de contrato **152/152**, `spotless:check` verde, y el escenario de Valkey
+mudo responds 200 sin cancelar ninguna transacción.
+
+**Commits:** `02d7aa4` (techo + test), `ee2fd8b` (listados sin transacción + test),
+`3c0547b` (techo a 5 s).
+
