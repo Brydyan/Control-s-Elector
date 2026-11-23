@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -63,15 +64,19 @@ public class CacheBackendNoRespondeTestProfile implements QuarkusTestProfile {
 
   @Override
   public Map<String, String> getConfigOverrides() {
-    return Map.of(
-        "quarkus.redis.hosts", "redis://127.0.0.1:" + BLACKHOLE.getLocalPort(),
-        // Techo corto para que el test no tarde: lo que se prueba es la degradacion, no la espera.
-        "app.cache.timeout", "2s",
-        "quarkus.liquibase.migrate-at-start", "true",
-        "quarkus.liquibase.contexts", "seed",
-        "quarkus.hibernate-orm.database.generation", "validate",
-        "quarkus.hibernate-orm.log.statistics", "true",
-        "quarkus.cache.redis.client-type", "standalone",
-        "quarkus.cache.names", "cargos,partidos,candidatos,geografia");
+    Map<String, String> overrides = new LinkedHashMap<>();
+    overrides.put("quarkus.redis.hosts", "redis://127.0.0.1:" + BLACKHOLE.getLocalPort());
+    // Techo corto para que el test no tarde: lo que se prueba es la degradacion, no la espera.
+    overrides.put("app.cache.timeout", "2s");
+    overrides.put("quarkus.liquibase.migrate-at-start", "true");
+    overrides.put("quarkus.liquibase.contexts", "seed");
+    overrides.put("quarkus.hibernate-orm.database.generation", "validate");
+    overrides.put("quarkus.hibernate-orm.log.statistics", "true");
+    overrides.put("quarkus.redis.client-type", "standalone");
+    overrides.put("quarkus.cache.type", "redis");
+    overrides.put("quarkus.cache.caches", "cargos,partidos,candidatos,geografia");
+    overrides.put("quarkus.cache.redis.client-name", "default");
+    overrides.put("quarkus.cache.redis.default-client-type", "standalone");
+    return overrides;
   }
 }

@@ -32,8 +32,10 @@ public class CacheMetricasTestProfile implements QuarkusTestProfile {
         // Railway inyecta RAILWAY_REPLICA_ID por replica. Aqui se fija a mano para poder
         // comprobar que la etiqueta llega a las metricas.
         "replica.id", "replica-de-prueba",
+        "quarkus.redis.client-type", "standalone",
         "quarkus.cache.type", "redis",
-        "quarkus.cache.redis.client-type", "standalone",
-        "quarkus.cache.names", "cargos,partidos,candidatos,geografia");
+        "quarkus.cache.caches", "cargos,partidos,candidatos,geografia",
+        "quarkus.cache.redis.client-name", "default",
+        "quarkus.cache.redis.default-client-type", "standalone");
   }
 }

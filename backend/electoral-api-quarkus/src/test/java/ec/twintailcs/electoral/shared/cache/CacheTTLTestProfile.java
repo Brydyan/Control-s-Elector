@@ -32,8 +32,10 @@ public class CacheTTLTestProfile implements QuarkusTestProfile {
         "quarkus.hibernate-orm.log.statistics", "true",
         // TTL corto solo para esta prueba: el resto de las caches conserva el de produccion.
         "quarkus.cache.redis.partidos.expire-after-write", "1s",
+        "quarkus.redis.client-type", "standalone",
         "quarkus.cache.type", "redis",
-        "quarkus.cache.redis.client-type", "standalone",
-        "quarkus.cache.names", "cargos,partidos,candidatos,geografia");
+        "quarkus.cache.caches", "cargos,partidos,candidatos,geografia",
+        "quarkus.cache.redis.client-name", "default",
+        "quarkus.cache.redis.default-client-type", "standalone");
   }
 }
