@@ -82,8 +82,12 @@ public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
       }
     }
     throw new RuntimeException(
-        "Valkey did not respond after " + maxAttempts + " attempts (3 seconds). Host: "
-            + host + ", Port: " + port);
+        "Valkey did not respond after "
+            + maxAttempts
+            + " attempts (3 seconds). Host: "
+            + host
+            + ", Port: "
+            + port);
   }
 
   @Override

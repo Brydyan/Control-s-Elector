@@ -93,7 +93,6 @@ public class CacheDeLectura {
   public <T> Optional<T> leer(String cacheName, Object clave, TypeReference<T> tipo) {
     Optional<Cache> cache = cacheManager.getCache(cacheName);
     if (cache.isEmpty()) {
-      LOG.warnf("DIAGNOSTIC: Cache '%s' not found. Available: %s", cacheName, cacheManager.getCacheNames());
       return Optional.empty();
     }
 
