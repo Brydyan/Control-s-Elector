@@ -29,7 +29,6 @@ public class CacheInvalidationTestProfile implements QuarkusTestProfile {
         "quarkus.hibernate-orm.database.generation", "validate",
         "quarkus.redis.client-type", "standalone",
         "quarkus.cache.type", "redis",
-        "quarkus.cache.caches", "cargos,partidos,candidatos,geografia",
         "quarkus.cache.redis.client-name", "default",
         "quarkus.cache.redis.default-client-type", "standalone");
   }

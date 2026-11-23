@@ -32,7 +32,6 @@ public class RateLimitingTestProfile implements QuarkusTestProfile {
         "app.ratelimit.policies.user-global.limit", String.valueOf(USER_GLOBAL_LIMIT),
         "quarkus.redis.client-type", "standalone",
         "quarkus.cache.type", "redis",
-        "quarkus.cache.caches", "cargos,partidos,candidatos,geografia",
         "quarkus.cache.redis.client-name", "default",
         "quarkus.cache.redis.default-client-type", "standalone");
   }

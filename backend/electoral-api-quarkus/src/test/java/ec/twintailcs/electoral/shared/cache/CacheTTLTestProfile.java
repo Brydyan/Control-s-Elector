@@ -34,7 +34,6 @@ public class CacheTTLTestProfile implements QuarkusTestProfile {
         "quarkus.cache.redis.partidos.expire-after-write", "1s",
         "quarkus.redis.client-type", "standalone",
         "quarkus.cache.type", "redis",
-        "quarkus.cache.caches", "cargos,partidos,candidatos,geografia",
         "quarkus.cache.redis.client-name", "default",
         "quarkus.cache.redis.default-client-type", "standalone");
   }
