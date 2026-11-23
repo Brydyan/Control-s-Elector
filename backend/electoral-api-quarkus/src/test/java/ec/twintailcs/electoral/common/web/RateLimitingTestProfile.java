@@ -29,6 +29,7 @@ public class RateLimitingTestProfile implements QuarkusTestProfile {
         "quarkus.liquibase.migrate-at-start", "true",
         "quarkus.liquibase.contexts", "seed",
         "quarkus.hibernate-orm.database.generation", "validate",
-        "app.ratelimit.policies.user-global.limit", String.valueOf(USER_GLOBAL_LIMIT));
+        "app.ratelimit.policies.user-global.limit", String.valueOf(USER_GLOBAL_LIMIT),
+        "quarkus.cache.type", "redis");
   }
 }

@@ -31,6 +31,7 @@ public class CacheMetricasTestProfile implements QuarkusTestProfile {
         "quarkus.hibernate-orm.log.statistics", "true",
         // Railway inyecta RAILWAY_REPLICA_ID por replica. Aqui se fija a mano para poder
         // comprobar que la etiqueta llega a las metricas.
-        "replica.id", "replica-de-prueba");
+        "replica.id", "replica-de-prueba",
+        "quarkus.cache.type", "redis");
   }
 }
