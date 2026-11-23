@@ -223,8 +223,7 @@ public class CacheDeLectura {
           cacheName,
           e.getClass().getSimpleName());
       LOG.warnf(
-          "Cache '%s' no disponible para escritura (Redis/Valkey); se omite la carga",
-          cacheName);
+          "Cache '%s' no disponible para escritura (Redis/Valkey); se omite la carga", cacheName);
       contarError(cacheName);
     } finally {
       // Contar fallo aunque la escritura falle: el dato se sirvio desde la base.

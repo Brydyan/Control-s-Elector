@@ -20,8 +20,8 @@ import org.testcontainers.utility.DockerImageName;
  * espera la extension {@code quarkus-redis-client}.
  *
  * <p>Testcontainers en modo alpine es rápido pero a veces el puerto está accesible antes de que
- * Valkey esté listo internamente. Se agrega wait strategy que verifica la conexión TCP + el
- * log "Ready to accept connections" para garantizar que Valkey responda a comandos Redis.
+ * Valkey esté listo internamente. Se agrega wait strategy que verifica la conexión TCP + el log
+ * "Ready to accept connections" para garantizar que Valkey responda a comandos Redis.
  */
 public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
 
@@ -32,8 +32,7 @@ public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
     container =
         new GenericContainer<>(DockerImageName.parse("valkey/valkey:8-alpine"))
             .withExposedPorts(6379)
-            .waitingFor(
-                Wait.forLogMessage(".*Ready to accept connections.*", 1));
+            .waitingFor(Wait.forLogMessage(".*Ready to accept connections.*", 1));
     container.start();
 
     String host = container.getHost();
