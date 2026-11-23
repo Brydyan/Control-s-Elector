@@ -5,7 +5,6 @@ import ec.twintailcs.electoral.electoral.domain.Candidato;
 import ec.twintailcs.electoral.shared.cache.CacheDeLectura;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,8 +26,14 @@ public class ListarCandidatosUseCase {
    *
    * <p>La clave lleva los filtros: el listado sin filtros y el de un cargo son datos distintos y no
    * pueden compartir entrada.
+   *
+   * <p><b>Sin transaccion.</b> Es una lectura: no escribe en la base. Y la transaccion de JTA era
+   * un problema, no una ayuda: la llamada a la cache va dentro del caso de uso, y con la
+   * transaccion abierta un backend de cache lento (el contenedor del CI que aun no esta listo)
+   * hacia esperar hasta que Narayana cancelaba la transaccion a los 60 s; el commit fallaba con
+   * {@code RollbackException} y el listado respondia 500 en vez de degradarse a "se sirve desde la
+   * base". Sin transaccion, la cache es una degradacion y punto.
    */
-  @Transactional
   public List<Candidato> execute(Long cargoId, Long partidoId) {
     String clave = "cargo:" + cargoId + "|partido:" + partidoId;
     Optional<List<Candidato>> cacheado = cache.leer("candidatos", clave, TIPO_CANDIDATOS);

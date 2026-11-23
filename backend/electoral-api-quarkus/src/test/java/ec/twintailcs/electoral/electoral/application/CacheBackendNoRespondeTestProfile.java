@@ -17,10 +17,10 @@ import java.util.Map;
  * al instante) sino "el backend esta despierto pero no contesta": el contenedor del CI que todavia
  * no esta listo para atender comandos, un backend saturado, una red lenta. Contra ese backend, la
  * llamada a la cache se quedaba esperando para siempre <b>dentro de la transaccion</b> del caso de
- * uso; a los 60 s Narayana cancelaba la transaccion y el commit fallaba con
- * {@code jakarta.transaction.RollbackException}, que ARC envuelve en
- * {@code ArcUndeclaredThrowableException}. El sintoma era un 500 en listados que solo debian
- * degradarse a "se sirven desde la base".
+ * uso; a los 60 s Narayana cancelaba la transaccion y el commit fallaba con {@code
+ * jakarta.transaction.RollbackException}, que ARC envuelve en {@code
+ * ArcUndeclaredThrowableException}. El sintoma era un 500 en listados que solo debian degradarse a
+ * "se sirven desde la base".
  *
  * <p>El socket falso se abre antes de que arranque la aplicacion (el perfil se construye antes del
  * arranque), para que la primera operacion de cache caiga en el, y no en un rechazo de conexion.

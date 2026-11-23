@@ -66,10 +66,10 @@ public class CacheDeLectura {
    * <p>Sin este techo, una llamada a Valkey que no responde —el contenedor del CI que todavia no
    * esta listo, un backend saturado, una red lenta— se queda esperando para siempre. Y como la
    * cache se consulta <b>dentro</b> de la transaccion de los casos de uso, esa espera indefinida
-   * agota el tiempo de la transaccion: Narayana la cancela a los 60 s y el commit falla con
-   * {@code jakarta.transaction.RollbackException} (checked), que ARC envuelve en
-   * {@code ArcUndeclaredThrowableException}. El resultado visible era un 500 en listados que solo
-   * deberian degradarse a "se sirve desde la base".
+   * agota el tiempo de la transaccion: Narayana la cancela a los 60 s y el commit falla con {@code
+   * jakarta.transaction.RollbackException} (checked), que ARC envuelve en {@code
+   * ArcUndeclaredThrowableException}. El resultado visible era un 500 en listados que solo deberian
+   * degradarse a "se sirve desde la base".
    *
    * <p>Con el techo, un backend que no responde es una degradacion, que es lo que el diseno de la
    * cache exige: perder la cache no es un error.
@@ -277,24 +277,23 @@ public class CacheDeLectura {
    *
    * <p><b>Resolucion de tipos genéricos.</b> Quarkus Redis Cache resuelve el tipo por reflexion
    * sobre la superclase generica de {@link TypeLiteral}. Para tipos no-Class (por ejemplo {@code
-   * List<Cargo>}) construimos una subclase anonima con ese tipo como parametro real. El
-   * {@code TypeLiteral.getType()} del literal anonimo creado inline no funciona (el tipo se pierde
-   * en la compilacion); en su lugar se usa el {@link TypeReference} del caller para fijar el tipo
-   * en el campo privado {@code actualType} via reflexion.
+   * List<Cargo>}) construimos una subclase anonima con ese tipo como parametro real. El {@code
+   * TypeLiteral.getType()} del literal anonimo creado inline no funciona (el tipo se pierde en la
+   * compilacion); en su lugar se usa el {@link TypeReference} del caller para fijar el tipo en el
+   * campo privado {@code actualType} via reflexion.
    *
    * <p><b>Riesgo: Java 17+ con módulos restrictivos.</b> El acceso a campos privados mediante
    * reflexion puede fallar con {@code InaccessibleObjectException} en Java 17+ si Quarkus o su
    * dependencia (Jakarta EE) restringe el acceso a {@code java.lang.reflect.Field}. Quarkus 3.40.1
-   * registra {@code TypeLiteral.actualType} para reflexion en {@code native-image.properties},
-   * asi que esta linea sigue siendo segura en la imagen nativa. En cambio, una futura version de
+   * registra {@code TypeLiteral.actualType} para reflexion en {@code native-image.properties}, asi
+   * que esta linea sigue siendo segura en la imagen nativa. En cambio, una futura version de
    * Quarkus que quite ese registro, o un entorno donde {@code --illegal-access=deny} este fijo,
    * haria fallar este código con {@code IllegalStateException}.
    *
    * <p><b>Mitigacion.</b> Ver {@link
-   * ec.twintailcs.electoral.shared.cache.CacheDeLecturaValkeyIT#testReadWithGenericType()} y
-   * {@code ci-native.yml}:  el test IT verifica que la reflexion funciona, y la asercion del CI
-   * verifica que el cache tiene aciertos en la imagen nativa (si la reflexion falla, el hit ratio
-   * es 0).
+   * ec.twintailcs.electoral.shared.cache.CacheDeLecturaValkeyIT#testReadWithGenericType()} y {@code
+   * ci-native.yml}: el test IT verifica que la reflexion funciona, y la asercion del CI verifica
+   * que el cache tiene aciertos en la imagen nativa (si la reflexion falla, el hit ratio es 0).
    */
   @SuppressWarnings("unchecked")
   private static <T> TypeLiteral<T> typeLiteral(

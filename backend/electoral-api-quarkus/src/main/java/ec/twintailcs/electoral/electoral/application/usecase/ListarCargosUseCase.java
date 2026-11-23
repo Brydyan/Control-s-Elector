@@ -5,7 +5,6 @@ import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.shared.cache.CacheDeLectura;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,8 +21,14 @@ public class ListarCargosUseCase {
    *
    * <p>El acceso a la cache va explicito (y no con {@code @CacheResult}) para que el hit ratio
    * quede medido: ver {@link CacheDeLectura}.
+   *
+   * <p><b>Sin transaccion.</b> Es una lectura: no escribe en la base. Y la transaccion de JTA era
+   * un problema, no una ayuda: la llamada a la cache va dentro del caso de uso, y con la
+   * transaccion abierta un backend de cache lento (el contenedor del CI que aun no esta listo)
+   * hacia esperar hasta que Narayana cancelaba la transaccion a los 60 s; el commit fallaba con
+   * {@code RollbackException} y el listado respondia 500 en vez de degradarse a "se sirve desde la
+   * base". Sin transaccion, la cache es una degradacion y punto.
    */
-  @Transactional
   public List<Cargo> execute() {
     Optional<List<Cargo>> cacheado = cache.leer("cargos", "todos", TIPO_CARGOS);
     if (cacheado.isPresent()) {
