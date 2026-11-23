@@ -1,7 +1,10 @@
 package ec.twintailcs.electoral.shared.testing;
 
 import io.quarkus.test.common.QuarkusTestResourceLifecycleManager;
+import java.io.IOException;
+import java.net.Socket;
 import java.util.Map;
+import org.jboss.logging.Logger;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
@@ -26,6 +29,8 @@ import org.testcontainers.utility.DockerImageName;
  */
 public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
 
+  private static final Logger LOG = Logger.getLogger(ValkeyTestResource.class);
+
   private GenericContainer<?> container;
 
   @Override
@@ -42,7 +47,43 @@ public class ValkeyTestResource implements QuarkusTestResourceLifecycleManager {
     String host = container.getHost();
     int port = container.getFirstMappedPort();
 
+    // Verificacion adicional: conectar al puerto para garantizar que Valkey responde
+    // Testcontainers a veces considera el puerto "listo" antes de que el servicio esté
+    // verdaderamente disponible. Este wait adicional descarta ese caso.
+    verifyValkeyConnectivity(host, port);
+
+    LOG.infof("Valkey started at redis://%s:%d", host, port);
     return Map.of("quarkus.redis.hosts", "redis://" + host + ":" + port);
+  }
+
+  /**
+   * Verifica que Valkey responda a conexiones TCP.
+   *
+   * <p>Intenta conectar hasta 30 veces (3 segundos) para garantizar que el servicio está realmente
+   * listo, no solo que el puerto esté abierto.
+   */
+  private void verifyValkeyConnectivity(String host, int port) {
+    int maxAttempts = 30;
+    int attempt = 0;
+    while (attempt < maxAttempts) {
+      try (Socket socket = new Socket(host, port)) {
+        LOG.infof("Valkey connectivity verified after %d attempts", attempt);
+        return;
+      } catch (IOException e) {
+        attempt++;
+        if (attempt < maxAttempts) {
+          try {
+            Thread.sleep(100);
+          } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Interrupted waiting for Valkey", ie);
+          }
+        }
+      }
+    }
+    throw new RuntimeException(
+        "Valkey did not respond after " + maxAttempts + " attempts (3 seconds). Host: "
+            + host + ", Port: " + port);
   }
 
   @Override
