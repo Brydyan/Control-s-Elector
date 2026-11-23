@@ -70,6 +70,7 @@ public class CacheBackendNoRespondeTestProfile implements QuarkusTestProfile {
         "quarkus.liquibase.migrate-at-start", "true",
         "quarkus.liquibase.contexts", "seed",
         "quarkus.hibernate-orm.database.generation", "validate",
-        "quarkus.hibernate-orm.log.statistics", "true");
+        "quarkus.hibernate-orm.log.statistics", "true",
+        "quarkus.cache.names", "cargos,partidos,candidatos,geografia");
   }
 }

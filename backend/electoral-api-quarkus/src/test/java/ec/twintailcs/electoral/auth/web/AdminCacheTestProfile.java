@@ -27,6 +27,7 @@ public class AdminCacheTestProfile implements QuarkusTestProfile {
         "quarkus.liquibase.migrate-at-start", "true",
         "quarkus.liquibase.contexts", "seed",
         "quarkus.hibernate-orm.database.generation", "validate",
-        "quarkus.cache.type", "redis");
+        "quarkus.cache.type", "redis",
+        "quarkus.cache.names", "cargos,partidos,candidatos,geografia");
   }
 }
