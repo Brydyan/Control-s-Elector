@@ -563,6 +563,101 @@ class UserInvitationIT {
   }
 
   // -------------------------------------------------------------------------
+  // Escenario 1b: email personal duplicado
+  // -------------------------------------------------------------------------
+
+  @Test
+  @DisplayName("un email personal ya usado responde 409 y no crea otra cuenta")
+  void unEmailPersonalYaUsadoResponde409() {
+    String email = emailDe("Duplicado");
+    Response primera =
+        given()
+            .header("Authorization", "Bearer " + tokenMaster)
+            .headers(ClientIpHeaders.from(ip("22")))
+            .contentType("application/json")
+            .body(
+                """
+                {"nombre":"Ana","apellido":"Duplicado","emailPersonal":"%s","rolNombre":"OBSERVER","sendEmail":false}
+                """
+                    .formatted(email))
+            .when()
+            .post("/api/v1/users/invite");
+    assertThat(primera.getStatusCode()).isEqualTo(200);
+
+    long usuariosAntes =
+        contar("select count(*) from usuario where email_personal = '" + email + "'");
+
+    Response segunda =
+        given()
+            .header("Authorization", "Bearer " + tokenMaster)
+            .headers(ClientIpHeaders.from(ip("23")))
+            .contentType("application/json")
+            .body(
+                """
+                {"nombre":"Beto","apellido":"Duplicado","emailPersonal":"%s","rolNombre":"OBSERVER","sendEmail":false}
+                """
+                    .formatted(email))
+            .when()
+            .post("/api/v1/users/invite");
+
+    assertThat(segunda.getStatusCode()).isEqualTo(409);
+    assertThat(segunda.jsonPath().getString("message"))
+        .isEqualTo("Ya existe usuario con email personal: " + email);
+    assertThat(contar("select count(*) from usuario where email_personal = '" + email + "'"))
+        .as("el duplicado no crea otra cuenta")
+        .isEqualTo(usuariosAntes);
+  }
+
+  @Test
+  @DisplayName("dos invitaciones paralelas con mismo email personal: una gana y la otra recibe 409")
+  void dosInvitacionesParalelasMismoEmailPersonal() throws Exception {
+    String email = emailDe("Paralelo");
+    String ipA = ip("24");
+    String ipB = ip("25");
+    java.util.concurrent.CountDownLatch listo = new java.util.concurrent.CountDownLatch(2);
+    java.util.concurrent.CountDownLatch salida = new java.util.concurrent.CountDownLatch(1);
+    java.util.concurrent.ExecutorService pool =
+        java.util.concurrent.Executors.newFixedThreadPool(2);
+    try {
+      java.util.concurrent.Future<Response> f1 =
+          pool.submit(
+              () -> {
+                listo.countDown();
+                salida.await(5, java.util.concurrent.TimeUnit.SECONDS);
+                return invitarConIpYEmail(ipA, "ParaleloA", email);
+              });
+      java.util.concurrent.Future<Response> f2 =
+          pool.submit(
+              () -> {
+                listo.countDown();
+                salida.await(5, java.util.concurrent.TimeUnit.SECONDS);
+                return invitarConIpYEmail(ipB, "ParaleloB", email);
+              });
+      assertThat(listo.await(5, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+      salida.countDown();
+      Response r1 = f1.get(30, java.util.concurrent.TimeUnit.SECONDS);
+      Response r2 = f2.get(30, java.util.concurrent.TimeUnit.SECONDS);
+
+      java.util.List<Integer> status = java.util.List.of(r1.getStatusCode(), r2.getStatusCode());
+      assertThat(status).doesNotContain(500);
+      assertThat(contar("select count(*) from usuario where email_personal = '" + email + "'"))
+          .as("la unicidad de BD impide duplicados aunque haya carrera")
+          .isLessThanOrEqualTo(1);
+
+      // Timing ideal: 200 + 409. Si no chocan, ambos pueden ser 200 por ventana/rate o uno 409 por
+      // check previo.
+      if (status.contains(409)) {
+        Response conflicto = r1.getStatusCode() == 409 ? r1 : r2;
+        assertThat(conflicto.jsonPath().getString("message"))
+            .isEqualTo("Ya existe usuario con email personal: " + email);
+      }
+      assertThat(status).allMatch(s -> s == 200 || s == 409);
+    } finally {
+      pool.shutdownNow();
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Escenario 2: rate limit
   // -------------------------------------------------------------------------
 
@@ -682,6 +777,10 @@ class UserInvitationIT {
     // Cachear también en emailCache para que emailDe() después lo encuentre
     emailCache.putIfAbsent(apellido, email);
 
+    return invitarConIpYEmail(ip, apellido, email);
+  }
+
+  private Response invitarConIpYEmail(String ip, String apellido, String email) {
     return given()
         .header("Authorization", "Bearer " + tokenMaster)
         .headers(ClientIpHeaders.from(ip))

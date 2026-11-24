@@ -111,6 +111,10 @@ public class UserInvitationService {
       throw InvitacionException.peticionInvalida("Email inválido: " + emailPersonal);
     }
 
+    if (Usuario.count("emailPersonal", emailPersonal) > 0) {
+      throw InvitacionException.conflicto("Ya existe usuario con email personal: " + emailPersonal);
+    }
+
     Rol rol = Rol.find("nombre", pedido.rolNombre()).firstResult();
     if (rol == null) {
       throw InvitacionException.peticionInvalida("Rol inválido: " + pedido.rolNombre());
@@ -143,7 +147,7 @@ public class UserInvitationService {
     usuario.setHabilitado(true);
     usuario.setEstadoUsuario(EstadoUsuario.PENDIENTE_INVITACION);
     usuario.validarDatosObligatorios();
-    usuario.persist();
+    persistirUsuario(usuario, emailPersonal);
 
     Instant ahora = Instant.now();
 
@@ -341,6 +345,42 @@ public class UserInvitationService {
     }
     invitacion.marcarActivada(Instant.now());
     invitacion.persist();
+  }
+
+  private void persistirUsuario(Usuario usuario, String emailPersonal) {
+    try {
+      usuario.persist();
+    } catch (jakarta.persistence.PersistenceException e) {
+      if (esViolacionUnicidadEmailPersonal(e)) {
+        throw InvitacionException.conflicto(
+            "Ya existe usuario con email personal: " + emailPersonal);
+      }
+      throw e;
+    }
+  }
+
+  private boolean esViolacionUnicidadEmailPersonal(Throwable error) {
+    Throwable actual = error;
+    while (actual != null) {
+      if (actual instanceof org.hibernate.exception.ConstraintViolationException cve) {
+        String constraint = cve.getConstraintName();
+        String sqlState = cve.getSQLState();
+        if ("23505".equals(sqlState)
+            || "uq_usuario_email_personal".equals(constraint)
+            || "idx_usuario_email_personal".equals(constraint)) {
+          return true;
+        }
+      }
+      if (actual instanceof java.sql.SQLException sqle && "23505".equals(sqle.getSQLState())) {
+        String mensaje = String.valueOf(sqle.getMessage());
+        if (mensaje.contains("uq_usuario_email_personal")
+            || mensaje.contains("idx_usuario_email_personal")) {
+          return true;
+        }
+      }
+      actual = actual.getCause();
+    }
+    return false;
   }
 
   /** Id interno del MASTER que esta ejecutando la operacion. */
