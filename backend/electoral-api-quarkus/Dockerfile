@@ -24,13 +24,18 @@ COPY src ./src
 # -B = batch mode (no interactivity), -DskipTests = skip unit/integration tests in Docker.
 # env -i isolates Maven from corrupted environment variables (MAVEN_OPTS, etc).
 #
+# ARG BUILD_ID para invalidar cache de BuildKit cuando sea necesario.
+# Usar en Railway: Variables → BUILD_ID=<unique_timestamp o valor>
+# BuildKit incluye valores ARG en el hash de capas, invalidando cache si cambia.
+#
 # El 429 de Maven Central NO es un fallo del codigo: los runners de GitHub
 # Actions comparten IP publica y Central responde "429 Too Many Requests" a ese
 # trafico. Reintentar contra el MISMO host no lo arregla (el rate limit sigue
 # vivo), asi que cada reintento rota de mirror: Google GCS -> Aliyun ->
 # Central. Cada mirror tiene su propio settings porque Maven usa solo el
 # PRIMERO que coincide con `mirrorOf` y no hace fallback entre ellos.
-RUN echo "Build timestamp: 2026-11-24T15:30:00Z (force cache invalidation)" && \
+ARG BUILD_ID=unknown
+RUN echo "Build ID: ${BUILD_ID}" && \
     attempt=1; \
     for mirror in google aliyun central google aliyun; do \
       echo "Maven build attempt $attempt (mirror: $mirror)..."; \
