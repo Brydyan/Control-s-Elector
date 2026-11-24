@@ -70,4 +70,5 @@ ENV DB_HOST=postgres \
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
   CMD curl -sf http://localhost:8080/actuator/health || exit 1
 
+# Cache invalidation: force fresh Maven build - 2026-11-24T15:30:00Z
 CMD ["java", "-jar", "quarkus-run.jar"]
