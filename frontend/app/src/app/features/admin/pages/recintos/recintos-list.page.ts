@@ -1,19 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Dialog } from 'primeng/dialog';
-import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { Message } from 'primeng/message';
-import {
-  ButtonComponent,
-  EmptyStateComponent,
-  ErrorStateComponent,
-  SkeletonComponent,
-} from '../../../../shared/ui';
-import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
+import { ButtonModule } from 'primeng/button';
+import { EmptyStateComponent } from '../../../../shared/ui';
 import {
   RecintoApi,
   RecintoResponse,
@@ -28,13 +21,8 @@ import { RecintoJrvsModalComponent } from './recinto-jrvs.modal';
   imports: [
     CommonModule,
     FormsModule,
-    ButtonComponent,
+    ButtonModule,
     EmptyStateComponent,
-    ErrorStateComponent,
-    SkeletonComponent,
-    PaginatorComponent,
-    Dialog,
-    InputText,
     Select,
     Skeleton,
     TableModule,
@@ -85,7 +73,7 @@ export class RecintosListPage implements OnInit {
     this.api.listarRecintos(filtros).subscribe({
       next: (response) => {
         this.recintos.set(response.data || []);
-        this.totalElements.set(response.meta?.total || 0);
+        this.totalElements.set(response.meta?.totalElements || 0);
         this.loading.set(false);
       },
       error: (err) => {

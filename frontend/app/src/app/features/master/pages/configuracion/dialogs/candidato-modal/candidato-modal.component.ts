@@ -52,7 +52,7 @@ import {
           class="form-input"
           data-testid="select-cargo"
         >
-          <option value="">-- Selecciona Cargo --</option>
+          <option value="" disabled selected hidden>Seleccionar cargo</option>
           <option *ngFor="let cargo of cargos" [value]="cargo.id">
             {{ cargo.nombre }}
           </option>
@@ -71,7 +71,7 @@ import {
           class="form-input"
           data-testid="select-partido"
         >
-          <option value="">-- Selecciona Partido --</option>
+          <option value="" disabled selected hidden>Seleccionar partido</option>
           <option *ngFor="let partido of partidos" [value]="partido.id">
             {{ partido.nombre }} ({{ partido.siglas }})
           </option>

@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -166,6 +166,23 @@ describe('LoginPage (T-FE-05)', () => {
     component.submit();
 
     expect(component.errorMessage()).toBe('Credenciales inválidas');
+    expect(router.navigateByUrl).not.toHaveBeenCalled();
+  });
+
+  it('S-Login-4: 429 explica que hay que esperar y cuánto, según Retry-After', () => {
+    const err = new HttpErrorResponse({
+      status: 429,
+      headers: new HttpHeaders({ 'Retry-After': '900' }),
+      error: { message: 'Demasiadas solicitudes. Reintente en 900 segundos.' },
+    });
+    authService.login.mockReturnValue(throwError(() => err));
+    component.form.setValue({ email: 'bad@test.local', password: 'wrong1234' });
+
+    component.submit();
+
+    expect(component.errorMessage()).toBe(
+      'Demasiados intentos de inicio de sesión. Intenta de nuevo en 15 minutos.',
+    );
     expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 

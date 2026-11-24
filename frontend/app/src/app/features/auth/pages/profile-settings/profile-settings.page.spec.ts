@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { of, throwError } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 import { MessageService } from 'primeng/api';
 
 import { ProfileSettingsPage } from './profile-settings.page';
@@ -51,6 +52,12 @@ describe('ProfileSettingsPage (SDD Phase D)', () => {
       providers: [
         { provide: UserApi, useValue: userApi },
         { provide: MessageService, useValue: messageService },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            queryParams: of({}),
+          },
+        },
       ],
     }).compileComponents();
 
@@ -289,6 +296,28 @@ describe('ProfileSettingsPage (SDD Phase D)', () => {
 
       expect(component.emailError()).toBe('Email duplicado');
       expect(messageService.add).toHaveBeenCalled();
+    });
+
+    it('con 429 muestra el tiempo de espera que manda el backend', () => {
+      const error = {
+        status: 429,
+        error: {
+          status: 429,
+          error: 'Too Many Requests',
+          message: 'Demasiadas solicitudes. Reintente en 840 segundos.',
+        },
+      };
+      userApi.updatePersonalEmail.mockReturnValue(throwError(() => error));
+
+      component.personalEmail.set('nuevo@example.com');
+      component.emailConfirmPassword.set('Password123!');
+
+      component.submitUpdateEmail();
+
+      expect(component.emailError()).toBe(
+        'Demasiadas solicitudes. Reintente en 840 segundos.',
+      );
+      expect(component.emailLoading()).toBe(false);
     });
 
     it('valida formato de email antes de enviar', () => {

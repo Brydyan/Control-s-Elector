@@ -5,11 +5,13 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotAllowedException;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 /**
@@ -92,11 +94,54 @@ public final class ErrorMappers {
 
     @Override
     public Response toResponse(Throwable ex) {
+      if (ex instanceof WebApplicationException wae) {
+        Response original = wae.getResponse();
+        int status = original != null ? original.getStatus() : 500;
+        String reason =
+            original != null && original.getStatusInfo() != null
+                ? original.getStatusInfo().getReasonPhrase()
+                : "Error";
+        String message = ex.getMessage() != null ? ex.getMessage() : reason;
+        return Response.status(status)
+            .type("application/json")
+            .entity(ApiErrorResponse.body(status, reason, message))
+            .build();
+      }
       log.error("Unhandled exception", ex);
       return Response.status(500)
           .type("application/json")
-          .entity(ApiErrorResponse.body(500, "Internal Server Error", "internal error"))
+          .entity(ApiErrorResponse.body(500, "Internal Server Error", mensaje(ex)))
           .build();
+    }
+
+    /**
+     * Mensaje del 500.
+     *
+     * <p>Por defecto es {@code internal error}: el cliente no debe ver la excepcion interna. Cuando
+     * {@code app.error.details.enabled} esta prendido (solo en tests), el mensaje lleva el tipo y
+     * el texto de la excepcion. Sin eso, un 500 en el CI es un fallo sin causa: el log del job
+     * tiene el stack trace, pero el resumen del fallo dice solo "expected 200 but was 500" y no
+     * deja diagnosticar nada sin ir a buscar el log a mano.
+     */
+    private static String mensaje(Throwable ex) {
+      if (!detallesHabilitados()) {
+        return "internal error";
+      }
+      String texto = ex.getMessage();
+      return ex.getClass().getName() + ": " + (texto == null ? "(sin mensaje)" : texto);
+    }
+
+    /** El detalle del error se enciende solo cuando la configuracion lo pide. */
+    private static boolean detallesHabilitados() {
+      try {
+        return ConfigProvider.getConfig()
+            .getOptionalValue("app.error.details.enabled", Boolean.class)
+            .orElse(Boolean.FALSE);
+      } catch (RuntimeException e) {
+        // El mapper de errores no puede fallar por leer la configuracion: si falla, el 500 se
+        // devuelve sin detalle, que es exactamente el comportamiento por defecto.
+        return false;
+      }
     }
   }
 }

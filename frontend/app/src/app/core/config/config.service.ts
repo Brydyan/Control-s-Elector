@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
+import { environment } from '../../../environments/environment';
+
 export interface AppConfig {
   apiUrl: string;
   sentryDsn?: string;
@@ -30,6 +32,17 @@ export class ConfigService {
    * Se invoca en APP_INITIALIZER antes de que Angular inicie
    */
   async load(): Promise<void> {
+    // En desarrollo la API se sirve por el proxy relativo (`proxy.conf.json` -> localhost:8080).
+    // El `config.json` versionado trae la URL de PRODUCCION, asi que usarlo en dev mandaria
+    // la app contra el backend real: los E2E locales verian datos de otra base.
+    if (!environment.production) {
+      this.config = {
+        apiUrl: environment.apiUrl,
+        sentryDsn: environment.sentryDsn,
+      };
+      return;
+    }
+
     try {
       this.config = await firstValueFrom(
         this.http.get<AppConfig>('/assets/config.json'),
@@ -62,9 +75,21 @@ export class ConfigService {
 
   /**
    * Acceso directo a apiUrl (el valor más usado)
+   * Throws if ConfigService not initialized
    */
   getApiUrl(): string {
     return this.getConfig().apiUrl;
+  }
+
+  /**
+   * Acceso seguro a apiUrl con fallback (para tests)
+   * No throws si ConfigService no está inicializado
+   */
+  getApiUrlSafe(): string {
+    if (!this.config) {
+      return '/api/v1';
+    }
+    return this.config.apiUrl;
   }
 
   /**

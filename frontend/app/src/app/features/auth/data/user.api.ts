@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 
 /**
  * Profile data returned by GET /api/v1/user/profile
@@ -59,7 +59,8 @@ export interface UpdateEmailResponse {
 @Injectable({ providedIn: 'root' })
 export class UserApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = this.configService.getApiUrlSafe();
 
   /**
    * Fetches the current user profile

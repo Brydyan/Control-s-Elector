@@ -10,7 +10,7 @@
 
 - Question: What is the domain, business model and type of system you are building?
 - Answer: C — Full-stack application (B2B SaaS or B2C user-facing product).
-- Detail: Aplicación full-stack de misión crítica para el control electoral de la Provincia de Santa Elena: frontend Angular 21 + PrimeNG 21 + Tailwind CSS 4 (PWA offline-first) y backend Quarkus 3.40 / Java 25 (Panache + Hibernate ORM), con PostgreSQL y Supabase Object Storage para las evidencias fotográficas.
+- Detail: Aplicación full-stack de misión crítica para el control electoral de la Provincia de Santa Elena: frontend Angular 21 + PrimeNG 21 + Tailwind CSS 4 (PWA offline-first) y backend Quarkus 3.40 / Java 25 (Panache + Hibernate ORM), con PostgreSQL (Neon en producción) y Cloudflare R2 para las evidencias fotográficas.
 - Source: user
 
 ### Greenfield / new product: initial functional release with defined boundaries.
@@ -37,7 +37,7 @@
 
 - Question: How will the system store and manage data?
 - Answer: A — Relational database (PostgreSQL, MySQL, SQLite).
-- Detail: PostgreSQL como única fuente de verdad, con el esquema gestionado por Liquibase y el acceso por Hibernate ORM con Panache. Las evidencias fotográficas van a Supabase Object Storage en formato .webp; el binario no se guarda en la base de datos. RLS de PostgreSQL actúa como segunda línea de autorización.
+- Detail: PostgreSQL como única fuente de verdad, con el esquema gestionado por Liquibase y el acceso por Hibernate ORM con Panache. Las evidencias fotográficas van a Cloudflare R2 (S3-compatible) en formato .webp; el binario no se guarda en la base de datos. RLS de PostgreSQL actúa como segunda línea de autorización.
 - Source: user
 
 ### Multi-tenant with role-based access control (RBAC/ABAC).
@@ -58,16 +58,17 @@
 - Detail: Pirámide completa: unitarios en backend (JUnit 5 + AssertJ) y frontend (Vitest), contract tests de integración contra PostgreSQL real con Testcontainers + RestAssured, y E2E de navegador cubriendo el flujo completo de registro de acta y sus transiciones de estado. Todo orquestado por los workflows de CI existentes (ci.yml, ci-native.yml).
 - Source: user
 
-### Kubernetes / cloud-native (AWS ECS, GKE, etc.).
+### Railway (backend) + Cloudflare Pages (frontend), con Neon y Cloudflare R2.
 
 ## Infrastructure and deployment
 
 - Question: How will this system be deployed and run?
-- Answer: D — Kubernetes / cloud-native (AWS ECS, GKE, etc.).
-- Detail: Kubernetes como destino de producción, con ArgoCD para la sincronización (k8s/ con kustomization, ingress y ArgoCD Application), secretos y configmap separados, PostgreSQL en StatefulSet, frontend servido por nginx y backend Quarkus. Docker Compose (compose.yaml) queda como entorno local reproducible, no como destino de producción.
+- Answer: B — Railway (backend) + Cloudflare Pages (frontend), con Neon (PostgreSQL serverless) y Cloudflare R2 (object storage).
+- Detail: Topología de producción confirmada: backend Quarkus en Railway (plan Pro, 1 réplica), desplegado desde `railway.json` con builder dockerfile y `backend/electoral-api-quarkus/Dockerfile.native`; API en `api.brydyan.me`. Frontend Angular estático en Cloudflare Pages, en `control.brydyan.me`. Base de datos PostgreSQL serverless en Neon (schema gestionado por Liquibase). Evidencias .webp en Cloudflare R2 (S3-compatible, tier 10 GB gratis, 0$ egress). Local: Docker Compose / Podman con `compose.yaml`. El directorio `k8s/` se conserva como manifiestos de referencia/legado: no es el destino de producción.
 - Source: confirmed
 - Evidence:
-  - k8s/: kubernetes manifest directory
+  - railway.json
+  - backend/electoral-api-quarkus/Dockerfile.native
 
 ### Full observability: logs + metrics + traces (OpenTelemetry).
 

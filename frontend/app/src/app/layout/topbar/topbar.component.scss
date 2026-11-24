@@ -1,0 +1,74 @@
+.layout-user-panel {
+  min-width: 200px;
+
+  .layout-user-panel-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .layout-user-panel-name {
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0 0 0.25rem 0;
+    font-size: 0.95rem;
+  }
+
+  .layout-user-panel-role {
+    color: var(--color-text-secondary);
+    margin: 0;
+    font-size: 0.85rem;
+  }
+
+  .layout-user-panel-menu {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0;
+  }
+
+  .layout-user-panel-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+    text-align: left;
+    width: 100%;
+
+    i {
+      font-size: 1rem;
+      color: var(--color-text-secondary);
+      transition: color 0.2s ease;
+    }
+
+    &:hover {
+      background-color: var(--color-surface-raised);
+
+      i {
+        color: var(--color-brand-primary);
+      }
+    }
+
+    &--logout {
+      color: var(--color-status-danger);
+
+      i {
+        color: var(--color-status-danger);
+      }
+
+      &:hover {
+        background-color: var(--color-status-danger-bg);
+      }
+    }
+  }
+
+  .layout-user-panel-divider {
+    height: 1px;
+    background-color: var(--color-border-subtle);
+    margin: 0.5rem 0;
+  }
+}

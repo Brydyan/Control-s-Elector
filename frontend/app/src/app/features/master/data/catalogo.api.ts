@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import { mapError } from '../../../shared/errors/error-handler';
 import {
   CandidatoRequestDto,
@@ -15,7 +15,8 @@ import {
 @Injectable({ providedIn: 'root' })
 export class CatalogoApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/configuracion`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/configuracion`;
 
   // --- CARGOS ---
   listarCargos(): Observable<CargoResponseDto[]> {

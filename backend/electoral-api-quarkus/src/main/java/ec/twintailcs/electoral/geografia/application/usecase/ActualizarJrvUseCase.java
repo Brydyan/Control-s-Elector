@@ -6,6 +6,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.web.dto.JrvRequest;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -17,6 +18,8 @@ public class ActualizarJrvUseCase {
 
   @Inject ConfiguracionAuditService audit;
   @Inject EntityManager entityManager;
+
+  @Inject InvalidadorDeCache invalidador;
 
   /** Actualiza la JRV y deja rastro en la auditoria. */
   @Transactional
@@ -40,6 +43,9 @@ public class ActualizarJrvUseCase {
 
     audit.registrarConIp(
         masterId, "EDITAR_JRV", "jrv", jrv.getId(), "JRV editada: " + dto.numero(), ipAddress);
+    // La invalidacion se aplica despues del commit (ver InvalidadorDeCache): invalidar
+    // antes dejaria una ventana en la que un lector concurrente recachea el dato viejo.
+    invalidador.invalidar("geografia");
     return jrv;
   }
 

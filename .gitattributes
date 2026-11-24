@@ -1,0 +1,27 @@
+# Fin de linea del repositorio: LF en todas las plataformas.
+#
+# Sin este archivo, cada clon decide por su cuenta (core.autocrlf): en Windows
+# los archivos quedan en CRLF, Spotless (que lee estas reglas) los marca como mal
+# formateados, y un .sh con CRLF copiado a una imagen Docker falla con
+# "/bin/sh^M: bad interpreter". En Linux y en CI no cambia nada: el repositorio
+# ya esta en LF.
+* text=auto eol=lf
+
+# Los scripts de cmd.exe necesitan CRLF: con LF fallan los saltos a etiquetas.
+# `-text` los deja tal cual estan versionados (en CRLF), sin convertirlos en
+# ninguna plataforma.
+*.cmd -text
+*.bat -text
+
+# Binarios: nunca se convierten ni se comparan como texto.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.pdf binary

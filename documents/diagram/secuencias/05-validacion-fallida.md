@@ -10,8 +10,8 @@ Escenario: backend rechaza acta por totales incorrectos y habilita modo edición
 ```mermaid
 sequenceDiagram
     actor OBS as Observador
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant SVC as ActaService
     participant AUDIT as AuditLogService
     participant JPA as JPA Repository
@@ -51,12 +51,12 @@ Escenario: observador consulta acta física, corrige el valor, pasa validación 
 ```mermaid
 sequenceDiagram
     actor OBS as Observador
-    participant APP as App Angular/Ionic
+    participant APP as App Angular
     participant VAL as Validador Cliente
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant AUDIT as AuditLogService
     participant SVC as ActaService
-    participant STG as Supabase Storage
+    participant STG as Cloudflare R2
     participant JPA as JPA Repository
     participant PG as PostgreSQL
 
@@ -104,8 +104,8 @@ Escenario: observador agota intentos sin corregir correctamente; caso escala al 
 sequenceDiagram
     actor OBS as Observador
     actor COORD as Coordinator
-    participant APP as App Angular/Ionic
-    participant API as Spring Boot API
+    participant APP as App Angular
+    participant API as Quarkus API
     participant AUDIT as AuditLogService
     participant NOTIF as NotificacionService
     participant JPA as JPA Repository

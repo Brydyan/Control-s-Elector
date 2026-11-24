@@ -6,9 +6,9 @@ personas distintas.
 
 ```
 openspec/changes/
-  back/    ← Spring Boot · backend/electoral-api/     · fuente: documents/task-control/backend.md
-  front/   ← Angular+Ionic · frontend/app/            · fuente: documents/task-control/frontend.md
-  infra/   ← Docker, Railway, Vercel, Supabase, CI/CD · fuente: documents/task-control/infra.md
+  back/    ← Quarkus · backend/electoral-api-quarkus/  · fuente: documents/task-control/backend.md
+  front/   ← Angular · frontend/app/                   · fuente: documents/task-control/frontend.md
+  infra/   ← Docker, Railway, Cloudflare Pages, Neon, R2, CI/CD · fuente: documents/task-control/infra.md
   archive/ ← changes cerrados, EN PLANO (sin subcarpetas por área)
 ```
 

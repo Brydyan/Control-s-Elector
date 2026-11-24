@@ -8,6 +8,7 @@ import ec.twintailcs.electoral.auth.security.CurrentUser;
 import ec.twintailcs.electoral.auth.web.dto.UpdatePersonalEmailRequest;
 import ec.twintailcs.electoral.auth.web.dto.UserProfileResponseDto;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import ec.twintailcs.electoral.common.web.RateLimited;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -77,6 +78,7 @@ public class UserResource {
    */
   @PUT
   @Path("/update-personal-email")
+  @RateLimited("reauth")
   public Response updatePersonalEmail(@Valid UpdatePersonalEmailRequest request) {
     String email = currentUser.email();
     if (email == null) {

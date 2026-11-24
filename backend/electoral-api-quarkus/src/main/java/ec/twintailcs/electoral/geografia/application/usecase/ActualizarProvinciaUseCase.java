@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Provincia;
 import ec.twintailcs.electoral.geografia.web.dto.ProvinciaRequest;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -16,6 +17,8 @@ public class ActualizarProvinciaUseCase {
 
   @Inject ConfiguracionAuditService audit;
   @Inject EntityManager entityManager;
+
+  @Inject InvalidadorDeCache invalidador;
 
   /** Actualiza la provincia y deja rastro en la auditoria. */
   @Transactional
@@ -42,6 +45,9 @@ public class ActualizarProvinciaUseCase {
         provincia.getId(),
         "Provincia editada: " + dto.nombre(),
         ipAddress);
+    // La invalidacion se aplica despues del commit (ver InvalidadorDeCache): invalidar
+    // antes dejaria una ventana en la que un lector concurrente recachea el dato viejo.
+    invalidador.invalidar("geografia");
     return provincia;
   }
 

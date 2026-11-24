@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import { mapError } from '../../../shared/errors/error-handler';
 import type { PagedResponse } from '../../../shared/models/page.model';
 
@@ -28,6 +28,36 @@ export interface RecintoRequest {
   estado?: string;
 }
 
+export interface CrearRecintoConAsignacionesRequest {
+  nombre: string;
+  parroquiaId: number;
+  cantidadJrvs: number;
+  observadorIds: string[];
+  coordinadorIds: string[];
+}
+
+export interface EditarRecintoConAsignacionesRequest {
+  nombre?: string;
+  parroquiaId?: number;
+  cantidadJrvs?: number;
+  observadorIds?: string[];
+  coordinadorIds?: string[];
+}
+
+export interface RecintoConAsignacionesResponse {
+  id: string;
+  nombre: string;
+  parroquiaId: string;
+  parroquiaNombre?: string;
+  cantidadJrvs: number;
+  cantidadJrvsActuales: number;
+  estado: string;
+  observadorIds: string[];
+  coordinadorIds: string[];
+  fechaCreacion?: string;
+  fechaActualizacion?: string;
+}
+
 export interface RecintoFiltros {
   page?: number;
   size?: number;
@@ -38,7 +68,8 @@ export interface RecintoFiltros {
 @Injectable({ providedIn: 'root' })
 export class RecintoApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/admin/recintos`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/admin/recintos`;
 
   listarRecintos(
     filtros: RecintoFiltros = { page: 0, size: 20 },
@@ -81,6 +112,42 @@ export class RecintoApi {
         map(() => undefined),
         catchError((err) => this.handleError(err)),
       );
+  }
+
+  crearRecintoConAsignaciones(
+    payload: CrearRecintoConAsignacionesRequest,
+  ): Observable<{ recintoId: string }> {
+    return this.http
+      .post<{ recintoId: string }>(
+        `${this.baseUrl}/crear-con-asignaciones`,
+        payload,
+      )
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  editarRecintoConAsignaciones(
+    recintoId: string,
+    payload: EditarRecintoConAsignacionesRequest,
+  ): Observable<void> {
+    return this.http
+      .put<void>(
+        `${this.baseUrl}/${recintoId}/editar-con-asignaciones`,
+        payload,
+      )
+      .pipe(
+        map(() => undefined),
+        catchError((err) => this.handleError(err)),
+      );
+  }
+
+  obtenerRecintoConAsignaciones(
+    recintoId: string,
+  ): Observable<RecintoConAsignacionesResponse> {
+    return this.http
+      .get<RecintoConAsignacionesResponse>(
+        `${this.baseUrl}/${recintoId}/con-asignaciones`,
+      )
+      .pipe(catchError((err) => this.handleError(err)));
   }
 
   private params(filtros: object): HttpParams {

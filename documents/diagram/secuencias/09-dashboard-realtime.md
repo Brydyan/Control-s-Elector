@@ -7,8 +7,8 @@ Escenario: el dashboard recibe y muestra nuevas actas conforme los observadores 
 sequenceDiagram
     actor ADMIN_U as Admin / Coordinator / Master
     participant DASH as Dashboard Angular
-    participant API as Spring Boot API
-    participant WS as Supabase Realtime (WebSocket)
+    participant API as Quarkus API
+    participant WS as WebSocket (mecanismo por definir)
     participant PG as PostgreSQL
 
     ADMIN_U->>DASH: Accede a resultados.brydyan.me

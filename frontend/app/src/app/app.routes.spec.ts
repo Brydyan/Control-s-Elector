@@ -185,6 +185,17 @@ describe('regresion de rutas del menu (sin URL fantasma)', () => {
     expect(r!.data?.['roles']).toEqual(expect.arrayContaining(['MASTER']));
   });
 
+  it('/admin/recintos existe, es lazy y queda restringida a MASTER', () => {
+    // La escritura de recintos es `configuracion:write` (solo MASTER en el
+    // backend) y la pagina no tiene gating por rol: abrirla con ADMIN
+    // mostraria botones que el backend rebota con 403.
+    const r = findRoute(routes, 'admin/recintos');
+    expect(r, 'falta la ruta admin/recintos').toBeDefined();
+    expect(r!.loadComponent).toBeDefined();
+    expect(r!.canActivate).toBeDefined();
+    expect(r!.data?.['roles']).toEqual(['MASTER']);
+  });
+
   it('/master/cargos, /master/partidos y /master/candidatos redirigen a /master/configuracion', () => {
     for (const path of [
       'master/cargos',

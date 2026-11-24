@@ -75,6 +75,16 @@ Spring sirve el health en `/actuator/health` del puerto principal, `shared/web/H
 lo expone ahí, con la misma forma de body. Así el probe de Kubernetes y el proxy del strangler no
 dependen de cuál implementación esté detrás.
 
+### Métricas en el puerto principal
+
+El management interface también mueve el export de Prometheus fuera del puerto principal: con
+`quarkus.management.enabled=true` (puerto 9180, que Railway no publica) `/q/metrics` desaparece del
+puerto único que Railway expone. `shared/web/MetricsAliasResource` lo vuelve a publicar en
+`/q/metrics` del puerto principal: lee el management interface por HTTP y devuelve su cuerpo y su
+content-type tal cual, sin reimplementar el scrape. El management interface sigue siendo el dueño
+real de las métricas; el alias existe para que el scraper las alcance en la ruta que el SDD de
+caché declara pública (`/q` está en las rutas públicas del filtro de JWT).
+
 ### Mismas variables de entorno
 
 `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `SERVER_PORT`, `APP_JWT_*`,

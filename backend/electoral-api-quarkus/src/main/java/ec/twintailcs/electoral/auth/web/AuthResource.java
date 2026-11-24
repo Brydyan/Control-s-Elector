@@ -18,6 +18,7 @@ import ec.twintailcs.electoral.auth.web.dto.LoginRequest;
 import ec.twintailcs.electoral.auth.web.dto.RefreshRequest;
 import ec.twintailcs.electoral.auth.web.dto.RegisterRequest;
 import ec.twintailcs.electoral.auth.web.dto.mapper.UsuarioMapper;
+import ec.twintailcs.electoral.common.web.ClientAddressResolver;
 import ec.twintailcs.electoral.common.web.RateLimited;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -80,13 +81,20 @@ public class AuthResource {
 
   @Inject UsuarioMapper mapper;
 
-  @RateLimited(limit = 5, windowSeconds = 300, identifier = "ip", endpoint = "login")
+  @Inject ClientAddressResolver clientAddress;
+
+  @RateLimited("login-ip")
   @POST
   @Path("/login")
   public Response login(
       @Valid LoginRequest body, @HeaderParam(HttpHeaders.USER_AGENT) String userAgent) {
     JwtService.TokenPair pair =
-        loginUseCase.execute(body.email(), body.password(), ipDe(), userAgent);
+        loginUseCase.execute(
+            body.email(),
+            body.password(),
+            clientAddress.auditIp(),
+            clientAddress.trustedIp(),
+            userAgent);
     Usuario usuario = Usuario.find("email", body.email().trim().toLowerCase()).firstResult();
 
     AuthResponse payload =
@@ -197,7 +205,7 @@ public class AuthResource {
     }
 
     // Rate limit: 1 cambio por hora
-    rateLimiter.registerAttempt(usuario.getId(), ipDe());
+    rateLimiter.registerAttempt(usuario.getId(), clientAddress.auditIp());
 
     // Realizar cambio de contraseña
     try {
@@ -243,15 +251,5 @@ public class AuthResource {
         + "; HttpOnly; Secure; SameSite=Strict; Path=/"
         + "; Max-Age="
         + REFRESH_COOKIE_MAX_AGE_SEC;
-  }
-
-  /**
-   * IP del cliente. El backend Spring toma {@code X-Forwarded-For} y si no, la direccion remota del
-   * servlet; aca se usa el header que deja el proxy, con "sistema" como fallback. Cuando el modulo
-   * este completo se engancha la direccion remota de Vert.x.
-   */
-  private static String ipDe() {
-    String xForwardedFor = System.getProperty("x-forwarded-for", "sistema");
-    return xForwardedFor.isBlank() ? "sistema" : xForwardedFor;
   }
 }

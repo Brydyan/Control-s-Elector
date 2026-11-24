@@ -1,4 +1,8 @@
-# Cloudflare Pages — Configuración de Variab les de Entorno
+# Cloudflare Pages — Configuración de Variables de Entorno
+
+> Cloudflare Pages es el **destino de producción del frontend** (Angular estático) en `control.brydyan.me`.
+> El backend Quarkus se despliega por separado en Railway (`api.brydyan.me`); la base de datos es
+> Neon y las evidencias .webp viven en Cloudflare R2.
 
 ## Cómo funciona
 
@@ -23,7 +27,7 @@ En **Settings → Builds & deployments → Build output settings** → Post-buil
 
 ```bash
 # Reemplaza config.json después del build
-cat > dist/app/assets/config.json << 'EOF'
+cat > frontend/app/www/assets/config.json << 'EOF'
 {
   "apiUrl": "https://api.brydyan.me/api/v1",
   "sentryDsn": ""
@@ -33,7 +37,7 @@ EOF
 
 Puedes inyectar variables de Cloudflare:
 ```bash
-cat > dist/app/assets/config.json << 'EOF'
+cat > frontend/app/www/assets/config.json << 'EOF'
 {
   "apiUrl": "$CF_API_URL",
   "sentryDsn": "$CF_SENTRY_DSN"
@@ -43,11 +47,14 @@ EOF
 
 ### 2. Build command (si no está automático)
 
+> El `outputPath` real del proyecto Angular es `frontend/app/www` (`angular.json` → `outputPath.base`),
+> no `dist/app`: el build de Cloudflare debe apuntar a esa carpeta.
+
 En **Settings → Builds & deployments → Build settings**:
 
 ```
 Build command:    npm run build
-Build output:     frontend/app/dist/app
+Build output:     frontend/app/www
 ```
 
 ### 3. Environment variables en Cloudflare
@@ -76,6 +83,19 @@ npm run build
 # Edita src/assets/config.json con tu URL
 ng serve --configuration production --serve-path=/
 ```
+
+---
+
+## SPA redirect
+
+Cloudflare Pages debe servir `index.html` para las rutas de Angular. En
+`frontend/app/public/_redirects`:
+
+```
+/* /index.html 200
+```
+
+Sin esto, un refresh en una ruta interna devuelve 404.
 
 ---
 

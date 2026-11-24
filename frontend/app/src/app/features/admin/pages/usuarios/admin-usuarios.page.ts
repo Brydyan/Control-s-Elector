@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Dialog } from 'primeng/dialog';
 import { InputText } from 'primeng/inputtext';
@@ -33,6 +33,11 @@ import {
  * alguna de las cuentas ya esta activa, asi que la pantalla solo deja marcar estas.
  */
 const ESTADO_INVITABLE = 'PENDIENTE_INVITACION';
+
+/** LocalStorage key para persistir seleccion de invitaciones. */
+const STORAGE_KEY_SELECTION = 'admin-usuarios:selection';
+/** LocalStorage key para persistir resultado del ultimo envio. */
+const STORAGE_KEY_RESULTADO = 'admin-usuarios:resultado';
 
 /**
  * Como quedo el ultimo envio de invitaciones. Lo que se muestra en la pantalla, no un toast:
@@ -129,6 +134,22 @@ export class AdminUsuariosPage implements OnInit {
   /** Cache de items de menú por usuario para evitar re-cálculos en cada render. */
   private accionesCache = new Map<string, MenuItem[]>();
 
+  constructor() {
+    // Persist selection to localStorage whenever it changes
+    effect(() => {
+      const sel = this.seleccion();
+      localStorage.setItem(STORAGE_KEY_SELECTION, JSON.stringify([...sel]));
+    });
+
+    // Persist resultado to localStorage whenever it changes
+    effect(() => {
+      const resultado = this.resultadoInvitacion();
+      if (resultado) {
+        localStorage.setItem(STORAGE_KEY_RESULTADO, JSON.stringify(resultado));
+      }
+    });
+  }
+
   /** Filter options for the enabled state. */
   readonly estadoOptions: Array<{ label: string; value: string }> = [
     { label: 'Todos', value: 'TODOS' },
@@ -147,6 +168,27 @@ export class AdminUsuariosPage implements OnInit {
     ];
 
   ngOnInit(): void {
+    // Restore selection and resultado from localStorage if available
+    const savedSelection = localStorage.getItem(STORAGE_KEY_SELECTION);
+    if (savedSelection) {
+      try {
+        const ids = JSON.parse(savedSelection);
+        this.seleccion.set(new Set(ids));
+      } catch (e) {
+        // Ignore parse errors, start fresh
+      }
+    }
+
+    const savedResultado = localStorage.getItem(STORAGE_KEY_RESULTADO);
+    if (savedResultado) {
+      try {
+        const resultado = JSON.parse(savedResultado);
+        this.resultadoInvitacion.set(resultado);
+      } catch (e) {
+        // Ignore parse errors, start fresh
+      }
+    }
+
     this.cargarUsuarios();
   }
 
@@ -237,6 +279,7 @@ export class AdminUsuariosPage implements OnInit {
     this.modalDetalles = false;
   }
   guardar(): void {
+    if (this.submitting()) return;
     if (!this.nombre.trim() || !this.apellido.trim()) {
       this.error.set('Nombre y apellido son obligatorios.');
       return;
@@ -325,6 +368,11 @@ export class AdminUsuariosPage implements OnInit {
       return 'Usuario creado. Puedes enviar invitación después.';
     }
     return `Invitación enviada a ${invitacion.emailPersonal}`;
+  }
+
+  /** El boton de guardar se deshabilita si ya hay una operacion en vuelo. */
+  puedeGuardar(): boolean {
+    return !this.submitting() && !this.invitaando();
   }
 
   /** El boton de invitar solo se habilita con los tres datos y un email valido. */
@@ -552,6 +600,8 @@ export class AdminUsuariosPage implements OnInit {
         this.enviandoInvitaciones.set(false);
         this.resultadoInvitacion.set(this.resumenDeEnvio(respuesta));
         this.limpiarSeleccion();
+        // Clear localStorage after successful send
+        localStorage.removeItem(STORAGE_KEY_SELECTION);
         this.cargarUsuarios();
       },
       error: (err) => {

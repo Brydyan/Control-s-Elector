@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.evidencia.domain.RlsContexto;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -27,6 +28,8 @@ public class EliminarJrvUseCase {
   @Inject ConfiguracionAuditService audit;
   @Inject RlsContexto rls;
   @Inject EntityManager entityManager;
+
+  @Inject InvalidadorDeCache invalidador;
 
   /** Elimina la JRV y deja rastro en la auditoria. */
   @Transactional
@@ -57,5 +60,8 @@ public class EliminarJrvUseCase {
 
     audit.registrarConIp(
         masterId, "ELIMINAR_JRV", "jrv", id, "JRV eliminada: " + jrv.getNumero(), ipAddress);
+    // La invalidacion se aplica despues del commit (ver InvalidadorDeCache): invalidar
+    // antes dejaria una ventana en la que un lector concurrente recachea el dato viejo.
+    invalidador.invalidar("geografia");
   }
 }

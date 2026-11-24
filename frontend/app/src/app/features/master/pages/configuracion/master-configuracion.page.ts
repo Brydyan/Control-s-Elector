@@ -13,6 +13,10 @@ import {
   TableColumn,
   TableComponent,
 } from '../../../../shared/ui';
+import {
+  esRateLimit,
+  esperaDeRateLimit,
+} from '../../../../core/http/rate-limit';
 import { ConfiguracionApi } from '../../data/configuracion.api';
 import {
   CargoDto,
@@ -54,10 +58,6 @@ import { ConfirmDialogComponent } from './dialogs/confirm-dialog/confirm-dialog.
     KpiCardComponent,
     LoadingStateComponent,
     ErrorStateComponent,
-    CargoModalComponent,
-    PartidoModalComponent,
-    CandidatoModalComponent,
-    ConfirmDialogComponent,
     TableComponent,
     TableCellTemplate,
   ],
@@ -233,7 +233,9 @@ export class MasterConfiguracionPage implements OnInit, OnDestroy {
         error: (err) => {
           console.error('Error al cargar configuración:', err);
           this.error.set(
-            'No se pudo cargar la configuración electoral. Por favor intenta nuevamente.',
+            esRateLimit(err)
+              ? `Demasiadas consultas en poco tiempo. Intenta de nuevo ${esperaDeRateLimit(err)}.`
+              : 'No se pudo cargar la configuración electoral. Por favor intenta nuevamente.',
           );
           this.loading.set(false);
         },

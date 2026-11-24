@@ -253,11 +253,12 @@
         @if (botonEnvioBloqueado && !submitting()) {
         <p
           id="checksum-error-msg"
-          class="text-red-600 text-sm mt-2"
+          class="text-red-600 text-sm mt-2 flex items-center gap-1"
           role="alert"
         >
-          ⚠️ Corrige la suma de votos para poder enviar. Suma actual: {{
-          sumaVotos }}, Sufragantes: {{ totalSufragantes() }}, Diferencia: {{
+          <i class="pi pi-exclamation-triangle"></i>
+          Corrige la suma de votos para poder enviar. Suma actual: {{ sumaVotos
+          }}, Sufragantes: {{ totalSufragantes() }}, Diferencia: {{
           diferenciaChecksum > 0 ? '+' : '' }}{{ diferenciaChecksum }}
         </p>
         }

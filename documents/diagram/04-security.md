@@ -17,7 +17,7 @@ graph TD
         GUARD -->|ADMIN · MASTER · COORDINATOR| V_DASH
     end
 
-    subgraph API_SEC["Capa API — Spring Security RBAC"]
+    subgraph API_SEC["Capa API — Quarkus Security RBAC"]
         JWT[JWT Filter<br/>Validación de Token]
         ROLES{Roles}
         R_MASTER[ROLE_MASTER<br/>Acceso total + anulación]
@@ -92,6 +92,29 @@ graph TD
 | Revocar tokens de sesión | ✅ | ❌ | ❌ | ❌ |
 | Ver dashboard y estadísticas | ✅ | ✅ | ✅ | ❌ |
 | Recibir notificación de corrección | ❌ | ❌ | ❌ | ✅ |
+
+> La fuente de verdad de los permisos atómicos es el seed de Liquibase
+> (`002-rbac-seed.sql`, `008-configuracion.sql`, `009-acta-observer-permisos.sql`).
+
+### Endpoint → permiso y rate limit
+
+Matriz por endpoint (guardrail: todo endpoint declara sus roles). Se completa a
+medida que se tocan endpoints; hoy cubre los del rate limiting (sc-521).
+
+| Endpoint | Permiso exigido | Roles con ese permiso (seed) | Rate limit |
+|---|---|---|---|
+| `POST /api/v1/auth/login` | público | — | `login-ip` + `login-account(-ip)` |
+| `PUT /api/v1/user/update-personal-email` | autenticado | todos | `reauth` |
+| `POST /api/v1/legal/contact-dpo` | público | — | `contact-dpo` |
+| `GET /api/v1/observer/jrvs` | `acta:read` | OBSERVER, COORDINATOR, ADMIN, MASTER | `observer-jrvs` |
+| `GET /api/v1/observer/jrv/{id}/cargos` | `acta:read` | OBSERVER, COORDINATOR, ADMIN, MASTER | `observer-jrvs` |
+| `POST /api/v1/observer/actas` | `acta:upload` | OBSERVER, MASTER | `observer-actas` |
+| `GET /api/v1/configuracion/{cargos,partidos,candidatos}` | autenticado | todos | `config-read` |
+| `GET /api/v1/admin/usuarios` | `usuario:read` o MASTER | MASTER, COORDINATOR, ADMIN | `admin-usuarios` |
+| cualquier endpoint autenticado | — | — | `user-global` |
+
+Pendiente de decisión: el seed da `acta:upload` a MASTER, pero la matriz de
+arriba dice "Registrar acta: MASTER ❌".
 
 ---
 

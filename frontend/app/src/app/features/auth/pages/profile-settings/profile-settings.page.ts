@@ -1,9 +1,11 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
+import { DialogModule } from 'primeng/dialog';
 import { ButtonComponent } from '../../../../shared/ui';
 import { MessageService } from 'primeng/api';
 import {
@@ -42,6 +44,7 @@ export interface PasswordRequirements {
     InputTextModule,
     ButtonModule,
     MessageModule,
+    DialogModule,
     ButtonComponent,
   ],
   templateUrl: './profile-settings.page.html',
@@ -50,6 +53,7 @@ export interface PasswordRequirements {
 export class ProfileSettingsPage implements OnInit {
   private readonly userApi = inject(UserApi);
   private readonly messages = inject(MessageService);
+  private readonly route = inject(ActivatedRoute);
 
   // Tab control
   readonly activeTab = signal<'profile' | 'password' | 'email'>('profile');
@@ -76,6 +80,10 @@ export class ProfileSettingsPage implements OnInit {
   readonly emailError = signal<string | null>(null);
   readonly emailSuccess = signal(false);
   readonly showEmailPassword = signal(false);
+
+  // Confirmation modal
+  readonly showConfirmModal = signal(false);
+  readonly confirmAction = signal<'password' | 'email' | null>(null);
 
   // Real-time password requirements validation
   readonly passwordRequirements = computed(() => {
@@ -130,6 +138,14 @@ export class ProfileSettingsPage implements OnInit {
   );
 
   ngOnInit(): void {
+    // Check for tab query param and set active tab
+    this.route.queryParams.subscribe((params) => {
+      const tab = params['tab'];
+      if (tab === 'profile' || tab === 'password' || tab === 'email') {
+        this.activeTab.set(tab);
+      }
+    });
+
     this.loadProfile();
   }
 
@@ -160,16 +176,30 @@ export class ProfileSettingsPage implements OnInit {
   }
 
   /**
-   * Submit password change form
+   * Open confirmation modal for password change
    */
-  submitChangePassword(): void {
-    // Validate passwords match first (before checking disabled state)
+  openChangePasswordConfirm(): void {
+    // Validate passwords match first (before showing modal)
     if (this.newPassword() !== this.newPasswordConfirm()) {
       this.changePasswordError.set('Las contraseñas no coinciden');
       return;
     }
 
     if (this.changePasswordDisabled()) return;
+
+    this.confirmAction.set('password');
+    this.showConfirmModal.set(true);
+  }
+
+  /**
+   * Submit password change form after confirmation
+   */
+  submitChangePassword(): void {
+    // Validate passwords match (double-check before submitting)
+    if (this.newPassword() !== this.newPasswordConfirm()) {
+      this.changePasswordError.set('Las contraseñas no coinciden');
+      return;
+    }
 
     this.changePasswordLoading.set(true);
     this.changePasswordError.set(null);
@@ -184,6 +214,7 @@ export class ProfileSettingsPage implements OnInit {
       next: (response) => {
         this.changePasswordSuccess.set(true);
         this.changePasswordLoading.set(false);
+        this.showConfirmModal.set(false);
         this.messages.add({
           severity: 'success',
           summary: 'Éxito',
@@ -196,6 +227,7 @@ export class ProfileSettingsPage implements OnInit {
         const message = err?.error?.message || 'Error al cambiar la contraseña';
         this.changePasswordError.set(message);
         this.changePasswordLoading.set(false);
+        this.showConfirmModal.set(false);
         this.messages.add({
           severity: 'error',
           summary: 'Error',
@@ -207,16 +239,30 @@ export class ProfileSettingsPage implements OnInit {
   }
 
   /**
-   * Submit email update form
+   * Open confirmation modal for email update
    */
-  submitUpdateEmail(): void {
-    // Validate email format first (before checking disabled state)
+  openUpdateEmailConfirm(): void {
+    // Validate email format first (before showing modal)
     if (!this.emailFormatValid()) {
       this.emailError.set('El formato del email no es válido');
       return;
     }
 
     if (this.updateEmailDisabled()) return;
+
+    this.confirmAction.set('email');
+    this.showConfirmModal.set(true);
+  }
+
+  /**
+   * Submit email update form after confirmation
+   */
+  submitUpdateEmail(): void {
+    // Validate email format (double-check before submitting)
+    if (!this.emailFormatValid()) {
+      this.emailError.set('El formato del email no es válido');
+      return;
+    }
 
     this.emailLoading.set(true);
     this.emailError.set(null);
@@ -230,6 +276,7 @@ export class ProfileSettingsPage implements OnInit {
       next: (response) => {
         this.emailSuccess.set(true);
         this.emailLoading.set(false);
+        this.showConfirmModal.set(false);
         this.messages.add({
           severity: 'success',
           summary: 'Éxito',
@@ -243,6 +290,7 @@ export class ProfileSettingsPage implements OnInit {
         const message = err?.error?.message || 'Error al actualizar el email';
         this.emailError.set(message);
         this.emailLoading.set(false);
+        this.showConfirmModal.set(false);
         this.messages.add({
           severity: 'error',
           summary: 'Error',
@@ -282,5 +330,24 @@ export class ProfileSettingsPage implements OnInit {
    */
   toggleEmailPasswordVisibility(): void {
     this.showEmailPassword.set(!this.showEmailPassword());
+  }
+
+  /**
+   * Cancel confirmation modal
+   */
+  cancelConfirm(): void {
+    this.showConfirmModal.set(false);
+    this.confirmAction.set(null);
+  }
+
+  /**
+   * Confirm action from modal
+   */
+  confirmActionSubmit(): void {
+    if (this.confirmAction() === 'password') {
+      this.submitChangePassword();
+    } else if (this.confirmAction() === 'email') {
+      this.submitUpdateEmail();
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, map, throwError } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import { mapError } from '../../../shared/errors/error-handler';
 import type { PagedResponse } from '../../../shared/models/page.model';
 import {
@@ -21,7 +21,8 @@ import {
 @Injectable({ providedIn: 'root' })
 export class AdminApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/admin`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/admin`;
 
   listarUsuarios(
     filtros: UsuarioFiltros = { page: 0, size: 20 },
@@ -85,7 +86,7 @@ export class AdminApi {
   ): Observable<EnviarInvitacionResponse> {
     return this.http
       .post<EnviarInvitacionResponse>(
-        `${environment.apiUrl}/auth/invitaciones`,
+        `${this.configService.getApiUrlSafe()}/auth/invitaciones`,
         { usuarioIds },
       )
       .pipe(catchError((err) => this.handleError(err)));
@@ -102,7 +103,7 @@ export class AdminApi {
   ): Observable<UserInvitationResponse> {
     return this.http
       .post<UserInvitationResponse>(
-        `${environment.apiUrl}/users/invite`,
+        `${this.configService.getApiUrlSafe()}/users/invite`,
         payload,
       )
       .pipe(catchError((err) => this.handleError(err)));
@@ -118,7 +119,7 @@ export class AdminApi {
   reenviarInvitacion(publicId: string): Observable<ResendInvitationResponse> {
     return this.http
       .post<ResendInvitationResponse>(
-        `${environment.apiUrl}/users/${publicId}/resend-invitation`,
+        `${this.configService.getApiUrlSafe()}/users/${publicId}/resend-invitation`,
         {},
       )
       .pipe(catchError((err) => this.handleError(err)));

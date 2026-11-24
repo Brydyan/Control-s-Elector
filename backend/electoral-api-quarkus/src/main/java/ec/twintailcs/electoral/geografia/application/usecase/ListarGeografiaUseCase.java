@@ -1,14 +1,16 @@
 package ec.twintailcs.electoral.geografia.application.usecase;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import ec.twintailcs.electoral.geografia.web.dto.GeografiaTreeDto;
+import ec.twintailcs.electoral.shared.cache.CacheDeLectura;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Lectura del arbol geografico completo (provincia → canton → parroquia → JRV).
@@ -20,11 +22,39 @@ import java.util.Map;
 @ApplicationScoped
 public class ListarGeografiaUseCase {
 
-  @Inject EntityManager entityManager;
+  private static final TypeReference<GeografiaTreeDto> TIPO_GEOGRAFIA = new TypeReference<>() {};
 
-  /** Devuelve el arbol completo, con listas vacias en los niveles sin hijos. */
-  @Transactional
+  @Inject EntityManager entityManager;
+  @Inject CacheDeLectura cache;
+
+  /**
+   * Devuelve el arbol completo, con listas vacias en los niveles sin hijos. Cacheado con TTL de 2
+   * minutos.
+   *
+   * <p><b>Sin transaccion.</b> Es una lectura: no escribe en la base. Y la transaccion de JTA era
+   * un problema, no una ayuda: la llamada a la cache va dentro del caso de uso, y con la
+   * transaccion abierta un backend de cache lento (el contenedor del CI que aun no esta listo)
+   * hacia esperar hasta que Narayana cancelaba la transaccion a los 60 s; el commit fallaba con
+   * {@code RollbackException} y el arbol respondia 500 en vez de degradarse a "se sirve desde la
+   * base". Sin transaccion, la cache es una degradacion y punto.
+   */
   public GeografiaTreeDto execute() {
+    Optional<GeografiaTreeDto> cacheado = cache.leer("geografia", "todos", TIPO_GEOGRAFIA);
+    if (cacheado.isPresent()) {
+      return cacheado.get();
+    }
+    GeografiaTreeDto arbol = armarArbol();
+    cache.guardar("geografia", "todos", arbol);
+    return arbol;
+  }
+
+  /**
+   * Arma el arbol con una sola consulta.
+   *
+   * <p>El acceso a la cache va explicito (y no con {@code @CacheResult}) para que el hit ratio
+   * quede medido: ver {@link CacheDeLectura}.
+   */
+  private GeografiaTreeDto armarArbol() {
     List<Object[]> filas =
         entityManager
             .createNativeQuery(

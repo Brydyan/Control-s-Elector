@@ -118,3 +118,12 @@ databaseChangeLog:
   - include: { file: database/changelog/043-jrv-migrate-to-recintos.sql }
   - include: { file: database/changelog/044-acta-add-approval-fields.sql }
   - include: { file: database/changelog/045-notificacion-create.sql }
+  # Asignaciones de usuarios a recintos (Coordinators + Observers) para Phase G
+  # de la SDD 2026-11-19-recintos-notificaciones. Tabla N-N usuario_recinto con
+  # rol_en_recinto (COORDINATOR | OBSERVER) para gestión granular de permisos y RLS.
+  - include: { file: database/changelog/047-usuario-recinto-asignaciones.sql }
+  # Performance (T-PERF-OPT-01, SDD 2026-11-19-performance-optimization): indices
+  # que faltaban para las consultas del escrutinio. Van al final porque solo
+  # tocan tablas que ya existen (acta y acta_detalle) y no alteran su forma.
+  - include: { file: database/changelog/048-add-acta-indices.sql }
+  - include: { file: database/changelog/049-add-acta-detalle-indices.sql }

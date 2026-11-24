@@ -133,6 +133,18 @@ export const routes: Routes = [
         },
       },
       {
+        path: 'observer/acta/:id/modificar',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/observer/pages/modificar-acta/modificar-acta.page').then(
+            (m) => m.ModificarActaPage,
+          ),
+        data: {
+          roles: ['OBSERVER', 'MASTER'],
+          title: 'Modificar Acta de Escrutinio',
+        },
+      },
+      {
         path: 'dashboard/resultados',
         canActivate: [roleGuard],
         loadComponent: () =>
@@ -291,6 +303,21 @@ export const routes: Routes = [
           description:
             'Supervisión y revocación de sesiones concurrentes del sistema.',
           icon: 'pulse-outline',
+        },
+      },
+      {
+        path: 'admin/recintos',
+        canActivate: [roleGuard],
+        loadComponent: () =>
+          import('./features/admin/pages/recintos/recintos-list.page').then(
+            (m) => m.RecintosListPage,
+          ),
+        data: {
+          roles: ['MASTER'],
+          title: 'Gestión de Recintos',
+          description:
+            'Administración de centros de recepción de votos y zonas electorales.',
+          icon: 'location-outline',
         },
       },
       {

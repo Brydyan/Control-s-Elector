@@ -10,7 +10,7 @@ MASTER detecta fraude o irregularidad grave en acta `APROBADA`. Cambia estado a 
 ```mermaid
 sequenceDiagram
     actor MASTER as Master
-    participant API as Spring Boot API
+    participant API as Quarkus API
     participant SVC as ActaService
     participant AUDIT as AuditLogService
     participant NOTIF as NotificacionService

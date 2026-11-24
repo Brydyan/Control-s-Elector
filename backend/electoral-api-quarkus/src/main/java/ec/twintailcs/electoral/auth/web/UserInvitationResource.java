@@ -6,6 +6,7 @@ import ec.twintailcs.electoral.auth.security.InvitationRateLimiter;
 import ec.twintailcs.electoral.auth.web.dto.InviteUserRequest;
 import ec.twintailcs.electoral.auth.web.dto.ResendInvitationResponse;
 import ec.twintailcs.electoral.auth.web.dto.UserInvitationResponse;
+import ec.twintailcs.electoral.common.web.ClientAddressResolver;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -41,6 +42,7 @@ public class UserInvitationResource {
   @Inject UserInvitationService invitationService;
   @Inject InvitationRateLimiter rateLimiter;
   @Inject ContextoSolicitud contexto;
+  @Inject ClientAddressResolver clientAddress;
 
   /**
    * Invita a una persona: crea la cuenta y manda el email de activacion.
@@ -59,7 +61,8 @@ public class UserInvitationResource {
     autorizador.exigir("usuario:create", "MASTER");
 
     String ip = contexto.ip(xForwardedFor);
-    rateLimiter.registrar(ip);
+    // Solo con IP confiable: sobre la IP del proxy todos compartirian contador.
+    clientAddress.trustedIp().ifPresent(rateLimiter::registrar);
 
     UserInvitationResponse response = invitationService.invitar(pedido, ip, userAgent);
     return Response.ok(response).build();
@@ -88,7 +91,7 @@ public class UserInvitationResource {
     // Ventana propia: invitar y reenviar seguido es un flujo legitimo (se
     // acaba de crear la cuenta y hay que reenviarle el correo), y un limite
     // compartido lo dejaria trabado a mitad de camino.
-    rateLimiter.registrar("resend:" + ip);
+    clientAddress.trustedIp().ifPresent(trusted -> rateLimiter.registrar("resend:" + trusted));
 
     ResendInvitationResponse response = invitationService.reenviar(publicId, ip, userAgent);
     return Response.ok(response).build();

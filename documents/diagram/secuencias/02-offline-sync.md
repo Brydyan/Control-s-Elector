@@ -6,11 +6,11 @@ Escenario: observador sin cobertura de red guarda el acta localmente y la sincro
 ```mermaid
 sequenceDiagram
     actor OBS as Observador
-    participant APP as App Angular/Ionic
+    participant APP as App Angular
     participant IDB as IndexedDB (Cola Local)
     participant FS as Private Storage
     participant NET as Monitor de Red
-    participant API as Spring Boot API
+    participant API as Quarkus API
 
     OBS->>APP: Completa formulario del acta (JRV + cargo + votos por candidato)
     APP->>APP: Comprime imagen a WebP

@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.electoral.web;
 
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.security.CurrentUser;
+import ec.twintailcs.electoral.common.web.ClientAddressResolver;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -15,6 +16,8 @@ import jakarta.inject.Inject;
 public class ContextoSolicitud {
 
   @Inject CurrentUser currentUser;
+
+  @Inject ClientAddressResolver clientAddress;
 
   /**
    * Id interno del usuario autenticado. Es el que va en la auditoria ({@code registrado_por}).
@@ -30,13 +33,15 @@ public class ContextoSolicitud {
   }
 
   /**
-   * IP del cliente. Toma el primer valor de {@code X-Forwarded-For} (el que deja el proxy) y, si no
-   * viene, deja {@code sistema}.
+   * IP del cliente para auditoria. La resuelve {@link ClientAddressResolver#auditIp()}.
+   *
+   * <p>El parametro se ignora a proposito: el primer valor de {@code X-Forwarded-For} lo escribe el
+   * cliente y tomarlo permitia falsificar la IP auditada. Se mantiene la firma para no tocar los
+   * endpoints que la usan; quitarla es una limpieza pendiente.
+   *
+   * @param xForwardedFor ignorado
    */
   public String ip(String xForwardedFor) {
-    if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-      return xForwardedFor.split(",")[0].trim();
-    }
-    return "sistema";
+    return clientAddress.auditIp();
   }
 }

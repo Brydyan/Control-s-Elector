@@ -5,6 +5,7 @@ import ec.twintailcs.electoral.electoral.domain.ConfiguracionConflictException;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.web.dto.PartidoRequest;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -14,6 +15,8 @@ import jakarta.transaction.Transactional;
 public class ActualizarPartidoUseCase {
 
   @Inject ConfiguracionAuditService audit;
+
+  @Inject InvalidadorDeCache invalidador;
 
   /**
    * Actualiza el partido. El numero de lista sigue siendo unico: si el numero pedido ya lo tiene
@@ -43,6 +46,9 @@ public class ActualizarPartidoUseCase {
         id,
         "Partido actualizado: " + dto.siglas(),
         ipAddress);
+    // La invalidacion se aplica despues del commit (ver InvalidadorDeCache): invalidar
+    // antes dejaria una ventana en la que un lector concurrente recachea el dato viejo.
+    invalidador.invalidar("partidos");
     return partido;
   }
 }

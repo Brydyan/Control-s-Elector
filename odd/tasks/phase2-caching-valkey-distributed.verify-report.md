@@ -1,0 +1,598 @@
+# Reporte de Verificación ODD — Phase 2: Distributed Caching with Valkey
+
+**ODD verificado:** `odd/tasks/phase2-caching-valkey-distributed.md`
+**Rama:** `brydyan/sc-524/fix-odd-phase-2-valkey`
+**Fecha:** 2026-11-22 · **Remediación ejecutada:** 2026-11-22
+**Skill:** `/03-verify-odd`
+**Veredicto:** ✅ **PASS** — tras remediación (ver §11). El veredicto original fue ❌ FAIL.
+
+> Este documento tiene dos momentos: **§1–§10** describen el estado encontrado
+> (FAIL), **§11** describe la remediación ejecutada y el estado final (PASS).
+> Los hallazgos de §5–§8 se conservan como historial: son los que motivaron el
+> rework, y §11 dice qué se hizo con cada uno.
+
+---
+
+## 1. Task completion — 0/14 casillas marcadas
+
+| # | Tarea | Estado real | Evidencia |
+|---|-------|-------------|-----------|
+| A.1 | Agregar `quarkus-redis-client` | ✅ implementado (vía `quarkus-redis-cache` 3.40.1) | `pom.xml:160-171` |
+| A.2 | Verificar compat Jedis/Lettuce vs Valkey | ⚠️ no evidenciado | no hay documento ni prueba; y no se usa Jedis/Lettuce (cliente Vert.x de Quarkus). Ver §5-H3 |
+| B.1 | `leer()` → GET en vez de `Caffeine.getIfPresent()` | ✅ implementado | `CacheDeLectura.java:78-90, 145-162` |
+| B.2 | `guardar()` → SET EX | ✅ implementado | `CacheDeLectura.java:129-133, 175-187` + TTL config |
+| B.3 | try-catch `IllegalStateException` (fallback sin caché) | ✅ implementado (más amplio: `catch Exception`) | `CacheDeLectura.java:147-161, 176-182` |
+| B.4 | Métricas manuales hit/miss | ✅ implementado | `contador("cache.hits"/"cache.misses")` `:153, 185, 213` |
+| C.1 | `quarkus.redis.hosts` default + env | ✅ implementado | `application.properties` (`REDIS_HOSTS`) |
+| C.2 | TTL 2 min | ✅ implementado | `quarkus.cache.redis.expire-after-write=${CACHE_TTL:2m}` ×4 caches |
+| C.3 | `RAILWAY_REPLICA_ID` etiqueta métricas | ✅ implementado + test | `replica.id=${RAILWAY_REPLICA_ID:local}` + `CacheMetricasIT` |
+| D.1 | `CacheDeLecturaValkeyIT` con Testcontainers **Valkey** | ❌ **FALTA** | archivo no existe; se reutilizó `RedisTestResource` con `redis:7-alpine` |
+| D.2 | Invalidación por escritura (`@CacheInvalidateAll`) | ✅ implementado + test verde | `CacheInvalidacionIT` (2 tests) |
+| E.1 | Actualizar `CACHING_STRATEGY.md` | ✅ implementado | `documents/CACHING_STRATEGY.md` |
+| E.2 | Deprecar config Caffeine (comentar) | ✅ implementado | `application.properties:395-402` |
+| F.1 | *(Opcional)* Load test contra Valkey | ⚠️ no ejecutado | `frontend/tests/load/scenarios/cache-hit-ratio.js` sin ejecución ni baseline Valkey |
+
+**Resultado:** 12/14 implementadas · 1 faltante (D.1) · 1 no evidenciada (A.2) · 1 opcional no ejecutada (F.1).
+**Checklist en el archivo: 0/14 casillas `[x]`** — nadie marcó el progreso.
+
+---
+
+## 2. Mutation coverage — 5/8 invariantes cubiertos
+
+El ODD no define sección de mutaciones; se derivaron los invariantes del propio documento + de las invariantes AGENTS.md.
+
+| Invariante | Cubierto por | Estado |
+|---|---|---|
+| Cache apagada = degradación, no 500 | `CacheApagadaIT` (5) + `CacheServicioIT` (4) | ✅ |
+| Round-trip de entidad conserva ids/relaciones | `CacheContenidoIT` (4) + sonda empírica | ✅ |
+| Escritura invalida la caché | `CacheInvalidacionIT` (2) | ✅ |
+| hit/miss contados y etiquetados | `CacheMetricasIT` (3) | ✅ |
+| TTL expira la entrada | `CacheTTLIT` (2) | ✅ |
+| **Dos réplicas comparten caché (síntoma raíz del ODD)** | — | ❌ **sin cobertura**: toda la suite corre en un solo JVM contra un Redis local |
+| **Fallback con Valkey caído (backend fuera de línea)** | — | ❌ **sin cobertura**: existe try-catch pero ningún test corta el backend |
+| **Deserialización genérica en native image** | — | ❌ **sin cobertura** (ver §5-H1) |
+
+**Resultado: 5/8 (62%).** Lo que falta es justo lo que justifica el ODD.
+
+---
+
+## 3. Test regression check (BEFORE → AFTER)
+
+**Archivos de test modificados:** 8. **Archivos de test nuevos:** 0 (0 untracked).
+
+| Suite | BEFORE | AFTER | Resultado |
+|---|---|---|---|
+| `AdminCacheResourceTest` | 8 anotaciones @Test (7 ejecutados) | 8 (7 ejecutados) | sin cambio |
+| `CacheTTLIT` | 3 anotaciones (2 ejecutados) | 3 (2 ejecutados) | sin cambio |
+| Perfiles (`*TestProfile.java`) | 0 | 0 | sin cambio |
+| `CacheApagadaIT` / `CacheContenidoIT` / `CacheInvalidacionIT` / `CacheMetricasIT` / `CacheServicioIT` | — | 5 / 4 / 2 / 3 / 4 | sin cambio |
+| **Total suite de caché** | **27** | **27** | **0 regresiones, 0 tests nuevos** |
+
+**Ejecución AFTER:** `./mvnw -o test -Dtest='Cache*IT,AdminCacheResourceTest'` → **27 tests, 0 failures, 0 errors, 0 skipped. BUILD SUCCESS.**
+Reportes en `backend/electoral-api-quarkus/target/surefire-reports/`.
+
+**Compilación:** `./mvnw -o compile -DskipTests` ✅ · `./mvnw -o package -DskipTests -Dquarkus.package.type=fast-jar` ✅ (`quarkus-app/lib/main/io.quarkus.quarkus-redis-cache-3.40.1.jar` presente).
+
+**Adaptación (no adición):** los tests existentes se migraron al nuevo backend — `RedisTestResource` agregado a 6 perfiles, `AdminCacheResourceTest` pasó a `java.util.List.of(...)`, `CacheTTLIT` a claves `quarkus.cache.redis.*`.
+
+> ⚠️ **0 tests nuevos es un hallazgo, no una costura.** El backend de caché cambió por completo y la suite de tests no grew: nada prueba explícitamente el comportamiento nuevo (serialización genérica vía Redis, degradación con backend caído, sharing entre réplicas).
+
+---
+
+## 4. Commit quality check — ❌ 0 commits
+
+| Criterio | Estado |
+|---|---|
+| Commits propios vs `origin/develop` | **0** (`git rev-list --count origin/develop..HEAD` → 0) |
+| Todo el trabajo vive en el working tree | **17 archivos modificados sin commitear** (403 insertions, 260 deletions) |
+| Formato `type(scope): message` | ❌ no evaluable (no existe commit) |
+| Sin co-author / marcas de IA | ✅ n/a (no hay commits) |
+| Un commit por tarea | ❌ no aplica |
+| Upstream | `origin/brydyan/sc-524/fix-odd-phase-2-valkey` == HEAD `7196ad3` → **nada pusheado** |
+
+`git log --all --grep valkey` solo encuentra `e650ebd docs(caching): add ODD Phase 2 Valkey distributed caching strategy` — el documento, no la implementación.
+
+**El único commit del ODD es el que lo proposed.** El trabajo no existe para quien revise el PR.
+
+---
+
+## 5. Hallazgos técnicos
+
+**H1 — 🟢 RESUELTO / DESMENTIDO empíricamente (era 🔴). Actualizado 2026-11-22 18:45.**
+`CacheDeLectura.typeLiteral()` (`:237-250`) construye un `TypeLiteral<T>` anónimo y sobrescribe por reflexión el campo privado `actualType` de `jakarta.enterprise.util.TypeLiteral` (CDI API 4.1.0). El riesgo era que, sin `reflect-config.json`, la imagen nativa fallara en runtime y degradara la caché a "siempre miss" en silencio.
+**Verificado en la imagen nativa real** (no en JVM): se compiló el `Dockerfile.native` con Mandrel 25, se arrancó el binario nativo contra Postgres + Redis + rustfs, y se+hizo la sonda:
+- `cache_hits_total{cache="partidos",replica="local"} 1.0` y `cache_misses_total{cache="partidos",replica="local"} 1.0` → **el camino de lectura con `TypeLiteral` funcionó en native**.
+- 1ª llamada 16.5 ms → 2ª llamada 1.7 ms (10× más rápido: served from cache).
+- Clave `cache:partidos:todos` en Redis con **TTL 111 s** (de 120 s configurados) y valor JSON con **ids conservados** (`id:1 MAS`, `id:2 PUP`, `id:3 FIP`…).
+- `jvm_info_total{runtime="GraalVM Runtime Environment",version="25.0.5+8-LTS"}` → confirma que el binario era el nativo, no la JVM.
+- Cero excepciones de reflexión en los logs.
+→ Quarkus registra masivamente para reflexión (12,057 tipos / 2,314 campos), lo que cubre `TypeLiteral.actualType`. **El hack NO es un defecto bloqueante.** Queda como deuda de mantenibilidad (H2), no como riesgo de producción. La degradación silenciosa a "siempre miss" queda descartada, pero **no hay ninguna aserción en CI que lo proteja** (ver §8, recomendación R7).
+
+**H2 — 🟡 `value-type=java.util.List` es tipo crudo.** La deserialización genérica real no depende de `value-type`, sino del hack `TypeLiteral`. La config de `value-type` es engañosa: sugiere que la forma genérica está resuelta por configuración cuando en realidad depende de reflexión.
+
+**H3 — ✅ RESUELTO en la remediación (ver §11.1).** El ODD decía: *"No Redis (closed source). Valkey (open source, SSPL, Linux Foundation)"*. Realidad: Valkey es **BSD-3-Clause** (fork de Redis 7.2.4, Linux Foundation); Redis ≤7.2 es BSD-3-Clause; Redis 7.4–7.8 es RSALv2/SSPL (**no OSI**); Redis 8+ es tri-license con AGPLv3 (OSI). "Valkey (open source, SSPL)" era incorrecto.
+Y el hallazgo original: **no se usaba Valkey en ninguna imagen** (`compose.yaml` usaba `redis:7.4-alpine`, `RedisTestResource` usaba `redis:7-alpine`).
+→ **Decisión humana: migrar todo a Valkey.** Hoy `compose.yaml`, `ci.yml`, `ci-native.yml` y el recurso de test usan `valkey/valkey:8-alpine`; el ODD y los docs dicen BSD-3-Clause.
+
+**H4 — 🟡 `quarkus-redis-cache` está en status *preview* en Quarkus 3.40.1.** Extensión oficial, pero en preview: la API puede cambiar entre versiones. Riesgo de mantenimiento, no de runtime.
+
+**H5 — 🟡 D.1 incumplido.** El ODD pide `CacheDeLecturaValkeyIT` con Testcontainers **Valkey**; no existe. El test reutiliza `RedisTestResource` (preexistente, `redis:7-alpine`). Consecuencia práctica: **nunca se validó el protocolo contra un servidor Valkey real**, solo contra Redis.
+
+**H6 — 🟢 `value-type` por cache y `quarkus.cache.type=redis` verificados empíricamente.** Sonda temporal (creada, ejecutada y **borrada**; 0 untracked) imprimió `impl=io.quarkus.cache.redis.runtime.RedisCacheImpl` para los 4 caches (`geografia`, `cargos`, `partidos`, `candidatos`) y confirmó round-trip con ids conservados. `quarkus.cache.type` es config build-time y sí es la config efectiva.
+
+---
+
+## 6. Archivos creados/modificados
+
+**Creados: 0.** **Modificados: 17** (403 insertions, 260 deletions). Sin untracked.
+
+| Tipo | Archivo |
+|---|---|
+| Build | `backend/electoral-api-quarkus/pom.xml` |
+| App | `.../shared/cache/CacheDeLectura.java` |
+| App | `.../electoral/application/usecase/ListarCandidatosUseCase.java` |
+| App | `.../electoral/application/usecase/ListarCargosUseCase.java` |
+| App | `.../electoral/application/usecase/ListarPartidosUseCase.java` |
+| App | `.../geografia/application/usecase/ListarGeografiaUseCase.java` |
+| Config | `backend/electoral-api-quarkus/src/main/resources/application.properties` |
+| Test | `.../auth/web/AdminCacheResourceTest.java` |
+| Test | `.../auth/web/AdminCacheTestProfile.java` |
+| Test | `.../electoral/application/CacheApagadaTestProfile.java` |
+| Test | `.../electoral/application/CacheInvalidationTestProfile.java` |
+| Test | `.../electoral/application/CacheMetricasTestProfile.java` |
+| Test | `.../electoral/application/CacheServicioTestProfile.java` |
+| Test | `.../shared/cache/CacheTTLIT.java` |
+| Test | `.../shared/cache/CacheTTLTestProfile.java` |
+| Doc | `documents/CACHE_SETUP_GUIDE.md` |
+| Doc | `documents/CACHING_STRATEGY.md` |
+
+**Side-work fuera de scope:** ninguno detectado. Los 4 use cases migrados son los 4 call sites de `cache.leer()` — coherente con Scope B/C.
+
+---
+
+## 7. Veredicto (estado en el momento de la verificación)
+
+# ❌ FAIL → remediado → ✅ PASS (ver §11)
+
+**No es código roto.** El backend Redis/Valkey está confirmado como `RedisCacheImpl`, el round-trip de entidades JPA es correcto, la suite de caché está 27/27 verde y el empaquetado pasa. El FAIL es de **proceso y de evidencia**:
+
+1. **ODD sin marcar** — 0/14 casillas, estado sigue en "Propuesta QA Review".
+2. **0 commits** — 17 archivos sin commitear, nada en el PR, formato conventional no evaluable.
+3. **D.1 incumplido** — `CacheDeLecturaValkeyIT` no existe; nunca se probó contra Valkey real.
+4. **F.1 no ejecutado** — sin load test ni baseline comparativo (opcional, no bloquea por sí solo).
+5. **0 tests nuevos** — la suite no creció pese a que cambió el backend de caché por completo; falta cubrir sharing entre réplicas y backend caído.
+6. ~~**H1 sin validar**~~ → **resuelto**: verificado en la imagen nativa real (§5 H1 y §10). Deja de ser bloqueante, pero **queda sin aserción en CI** (recomendación R7).
+
+**No aprobar el merge tal como está** — el código está probado y sano (289 tests del backend + 152 de contrato contra el binario nativo, ambos verdes), lo que falta es **proceso**: evidencia escrita, commits y el test que el ODD pide.
+
+> **Estado final:** los seis puntos de este veredicto están resueltos. La
+> remediación ejecutada y su evidencia están en **§11**.
+
+---
+
+## 8. Recomendaciones de rework
+
+**Bloqueantes (antes de merge):**
+
+1. **Commitea** el trabajo. Sugerencia de split (work-unit-commits):
+   - `build(cache): agregar quarkus-redis-cache y conmutar a backend Redis`
+   - `feat(cache): migrar CacheDeLectura a backend Redis distribuido`
+   - `test(cache): adaptar suite de caché al backend Redis y agregar CacheDeLecturaValkeyIT`
+   - `docs(cache): documentar backend Redis distribuido y fallback`
+2. **Crea `CacheDeLecturaValkeyIT`** (D.1) con Testcontainers **Valkey** (`valkey/valkey:8-alpine`) y al menos: round-trip con tipo genérico `List<Cargo>`, TTL aplicado, invalidación, y lectura con el backend caído → degradación sin excepción.
+3. **Marca el checklist** del ODD (A.1–E.2, F.1 si se ejecuta) y cambia el estado a "Implementado" solo con evidencia real.
+4. **Agrega aserción de caché al job nativo** (R7): el job `backend-native` ya arranca el binario contra Redis; basta un paso que llame dos veces a un endpoint cacheado y verifique `cache_hits_total > 0`. Sin esto, H1 vuelve a ser un riesgo latente si Quarkus deja de registrar `TypeLiteral` en una actualización.
+
+**Altas (no bloqueantes, pero deben cerrarse en este ciclo):**
+
+5. **Decide la pregunta de licensing (H3)** y alinea ODD + `compose.yaml` + `RedisTestResource` + `CACHE_SETUP_GUIDE.md`: o `valkey/valkey` (BSD-3-Clause) o corregir la premisa del ODD sobre SSPL/RSALv2.
+6. **Agrega los 2 tests faltantes** de §2 (réplicas compartiendo caché, backend caído) — la suite de caché debe crecer de 27 a ≥29.
+7. **Ejecuta F.1** (opcional): `frontend/tests/load/scenarios/cache-hit-ratio.js` contra Valkey vs baseline Caffeine.
+8. **Documenta H4**: `quarkus-redis-cache` en preview — anota la versión exacta (3.40.1) en `CACHE_SETUP_GUIDE.md` y fija la actualización de Quarkus como riesgo conocido.
+9. **Corrige H2**: `value-type=java.util.List` (crudo) es engañoso; documéntalo o quítalo si el `TypeLiteral` resuelve el tipo.
+10. **Documenta el hack `TypeLiteral`** en `CACHE_SETUP_GUIDE.md` (por qué existe, qué lo cubre) — es correcto pero frágil: depende del registro automático de reflexión de Quarkus.
+
+**Criterio de re-verificación:** checklist 14/14 marcado · ≥1 commit conventional por fase · `CacheDeLecturaValkeyIT` verde · job `backend-native` verde con aserción de caché · sin regresiones en los 289 tests del backend ni en los 152 de contrato.
+
+---
+
+## 9. Notas de ejecución
+
+- **E2E no ejecutados** (no había orden explícita; fuera del alcance de esta verificación).
+- Backend Maven en modo offline (`./mvnw -o`) salvo donde se indica.
+- Sonda temporal de identificación del backend de caché: creada, ejecutada, **borrada** — 0 untracked restantes.
+- No se tocó CI de Playwright ni T-IN-13.
+- No se modificó ningún archivo del producto durante la verificación: el único artefacto creado es este reporte.
+
+---
+
+## 10. Ejecución equivalente de CI (agregado 2026-11-22 18:49)
+
+Los workflows se **leyeron** y sus pasos se **reprodujeron localmente**. No se ejecutó GitHub Actions (requiere push; el trabajo está sin commitear y por tanto CI ni siquiera se dispararía).
+
+| Job de CI | Estado | Evidencia local |
+|---|---|---|
+| `ci.yml` → **Backend Format** | ✅ | `./mvnw -o -B spotless:check` → BUILD SUCCESS. El ratchet `origin/develop` limitó la revisión a los **13** archivos Java cambiados: 0 con formato roto. |
+| `ci.yml` → **Backend Tests & Coverage** | ✅ | `./mvnw -o -B clean verify` → **289 tests, 0 fallos, 0 errores, 0 skipped**, BUILD SUCCESS (3m20s). JaCoCo: *"All coverage checks have been met."* (piso 0.08 respetado). |
+| `ci.yml` → **Backend Quarkus** (build + 2 arranques) | ⚠️ no reproducido | El build JVM dentro de Docker quedó **stalled** (≈866 B/s de red en `dependency:go-offline`, caché frío de Maven en el contenedor). Sustituido por el build nativo equivalente, que sí se completó. |
+| `ci.yml` → **Backend Contract Tests** | ✅ | Suite de contrato contra el binario **nativo**: `mvn -o -B verify -Dcontract.baseUrl=http://localhost:8080` → **152 tests, 0 fallos**, BUILD SUCCESS (52s). Mismo artefacto que usa el job: la suite es agnóstica del framework. |
+| `ci.yml` → jobs de **frontend** | ➖ no aplican | El job `changes` calcula `backend=true, frontend=false` con este diff (solo `backend/**` y `documents/**`), así que `frontend-format`, `frontend-lint`, `frontend-test` y `frontend-build` **se saltan**. |
+| `ci-native.yml` → **Backend Native Image** | ✅ | `Dockerfile.native` compilado con Mandrel 25 (build nativo en 1m37s) → binario empaquetado en `ubi9-minimal:9.7` → arrancado **saludable en 1-2 s** (`db: UP`, `s3: UP`) → **152 tests de contrato verdes** contra el binario nativo. |
+
+**Desvíos respecto a CI (y por qué no invalidan el resultado):**
+- **Caché de Maven montado.** El build nativo local reutilizó el `~/.m2` del host (el `dependency:go-offline` del Dockerfile con caché frío no baja a velocidad útil en esta red). La cadena de herramientas, el `MAVEN_OPTS` y los `additional-build-args` son los del `Dockerfile.native`. El build de CI es idéntico en contenido.
+- **Rate limit relajado.** El primer intento del contrato dio 36 fallos por **429**: había arrancado el binario sin las variables `APP_RATELIMIT_*` que el job de CI fija. Repetido con el env completo del workflow → 152/152 verdes. El rate limit de **producción (60/min) no se tocó**.
+
+**Efecto sobre el veredicto:** el riesgo de producción (H1) queda **desmentido**. Los tres fallos que quedan son de proceso, no de código: ODD sin marcar, 0 commits y D.1 sin el test que el ODD pide.
+
+---
+
+## 11. Remediación ejecutada (2026-11-22)
+
+Decisiones tomadas por el humano: **Valkey en toda la infraestructura** (licencia
+BSD-3-Clause frente a RSALv2/SSPL no-OSI de Redis 7.4+), **dejar el hack de
+`TypeLiteral`** y protegerlo con una aserción en CI, y **ejecutar todo en local
+sin push**.
+
+### 11.1 Estado de cada hallazgo
+
+| # | Hallazgo | Resolución | Evidencia |
+|---|---|---|---|
+| **H1** | Reflexión `TypeLiteral` en native | **Mitigado, no eliminado** (decisión humana: mantener) | `ci-native.yml` tiene el paso *"Assert the distributed cache serves the second read"*: dos lecturas + `cache_hits_total > 0`. **Ejecutado localmente contra el binario nativo: ASERCIÓN OK.** El paso falla si el registro de reflexión de Quarkus desaparece. |
+| **H2** | `value-type=java.util.List` crudo | **Documentado** | Comentario en `application.properties` y en `CACHING_STRATEGY.md`: el tipo crudo sirve para la escritura; la forma genérica de la lectura la resuelve el `TypeLiteral`. |
+| **H3** | Licencia: Redis vs Valkey | **Resuelto** | `compose.yaml`, `RedisTestResource`→`ValkeyTestResource`, `ci.yml`, `ci-native.yml` y `.env.example` usan `valkey/valkey:8-alpine`. La premisa del ODD ("Valkey open source, SSPL") se corrigió: **Valkey es BSD-3-Clause**; el problema real era Redis 7.4+ (RSALv2/SSPL, no OSI). |
+| **H4** | `quarkus-redis-cache` en preview | **Documentado** | `CACHE_SETUP_GUIDE.md` §3.2: versión 3.40.1, riesgo de mantenimiento, mitigado por la aserción de H1. |
+| **H5** | D.1 `CacheDeLecturaValkeyIT` inexistente | **Resuelto** | `CacheDeLecturaValkeyIT` (4 tests) + `CacheValkeyTestProfile`, contra `valkey/valkey:8-alpine` en Testcontainers. |
+| — | ODD 0/14 casillas | **Resuelto** | Checklist 14/14 marcado con evidencia por casilla; estado "Implementado y verificado". |
+| — | 0 commits | **Resuelto** | 4 commits conventional (`build`/`feat`/`test`/`docs`), sin push. |
+| — | 0 tests nuevos | **Resuelto** | Suite de caché **27 → 34**: `CacheDeLecturaValkeyIT` (4) y `CacheValkeyCaidaIT` (3). |
+| — | A.2 no evidenciada | **Resuelto** | Nota en el ODD: no se usa Jedis/Lettuce, el cliente es el de Quarkus sobre RESP; drop-in verificado contra Valkey real. |
+| — | F.1 sin ejecutar | **Resuelto** | `documents/load-test/cache-hit-ratio-summary-valkey.md`: hit ratio 100.00 %, p95 1.07 ms, 0 fallos, 4 consultas a la base en 457.160 lecturas. |
+| — | Invariante "réplicas comparten caché" sin cobertura | **Resuelto** | `CacheDeLecturaValkeyIT.otraReplicaComparteElMismoAlmacen`: un cliente distinto lee la entrada en Valkey, la borra, y la app ve la invalidación en la siguiente lectura (no hay copia local). |
+| — | Invariante "backend caído" sin cobertura | **Resuelto** | `CacheValkeyCaidaIT` (3 tests): la app arranca sin Valkey, leer devuelve vacío, guardar no lanza, y el caso de uso sigue sirviendo desde la base. |
+
+### 11.2 Verificación final tras la remediación
+
+| Comprobación | Resultado |
+|---|---|
+| `mvn -o clean verify` (backend completo) | **296 tests, 0 fallos, 0 errores, 0 skipped** — BUILD SUCCESS (4m19s) |
+| JaCoCo | *"All coverage checks have been met."* |
+| `mvn -o spotless:check` (job Backend Format) | BUILD SUCCESS |
+| Suite de contrato contra backend JVM + Valkey | **152 tests, 0 fallos** — BUILD SUCCESS |
+| Suite de contrato contra el **binario nativo** + Valkey | **152 tests, 0 fallos** |
+| Build nativo (`Dockerfile.native`, Mandrel 25) | BUILD SUCCESS (1m45s) |
+| Binario nativo arrancado | SALUDABLE en 1 s (`db: UP`, `s3: UP`) |
+| **Paso de aserción de `ci-native.yml`** | **ASERCIÓN OK** (`cache_hits_total{cache="partidos"} ≥ 1`) |
+| Load test F.1 | hit ratio **100.00 %**, p95 **1.07 ms**, 0 peticiones fallidas |
+| YAML de los dos workflows | Válido (`yaml.safe_load`) |
+
+**Nota de higiene del entorno local:** durante estas corridas hubo dos falsos
+positivos que **no eran defectos del código**: el puerto 9001 (management
+interface de Quarkus en tests) ocupado por el contenedor `ci-rustfs2`, y un
+backend anterior sin las variables `APP_RATELIMIT_*` del job de CI ocupando el
+8080. Ambos se identificaron por el mensaje de error (`BindException`, `429`) y
+se resolvieron cerrando el proceso que estorbaba.
+
+### 11.3 Veredicto final
+
+# ✅ PASS
+
+El ODD está **implementado, documentado y verificado**:
+
+- **Checklist 14/14** con evidencia por casilla.
+- **34 tests de caché** (27 previos + 7 nuevos) y **296 tests** del backend, todos verdes.
+- **152 tests de contrato** verdes contra el backend JVM y contra el **binario nativo**.
+- La pregunta de **licensing** está cerrada y la infraestructura es coherente con el ODD.
+- La fragilidad de la deserialización genérica en native **queda protegida por una aserción de CI**, no solo por un comentario.
+- 4 commits conventional, **sin push** (decisión del humano).
+
+**Riesgos abiertos, ya documentados y aceptados:** `quarkus-redis-cache` en
+preview (H4) y la dependencia implícita del registro de reflexión de Quarkus
+(H1, ahora con aserción). Ninguno bloquea el merge.
+
+**Pendiente de decisión de producto, no técnico:** Railway sigue con 1 réplica,
+así que el beneficio propio de Phase 2 (invalidación entre réplicas) todavía no
+está activo en producción. Phase 2 lo habilita; el escalado horizontal lo
+aprovecha.
+
+---
+
+## 12. Re-verificación sobre HEAD `83fff47` (2026-11-22)
+
+Segunda pasada de `/03-verify-odd` sobre el estado **ya remediado y commiteado**:
+todas las gates se re-ejecutaron con evidencia fresca, no se reutilizó lo de §11.
+
+### 12.1 Task completion — 14/14 ✅
+
+Checklist del ODD con las 14 casillas en `[x]` y estado *"Implementado y verificado"*.
+Cada casilla se contrasta contra el código real (no contra la marca):
+
+| Evidencia verificada | Ubicación |
+|---|---|
+| Extensión `quarkus-redis-cache` presente, sin Jedis/Lettuce | `backend/electoral-api-quarkus/pom.xml` |
+| Lectura/escritura por `RedisCache.getOrNull` / `put` | `shared/cache/CacheDeLectura.java:146-187` |
+| Degradación: `catch (Exception)` en lectura y escritura | `CacheDeLectura.java:155`, `:178` |
+| Contadores `cache.hits` / `cache.misses` | `CacheDeLectura.java:153`, `:171`, `:213` |
+| Backend configurable `quarkus.redis.hosts=${REDIS_HOSTS:redis://localhost:6379}` | `application.properties:357` |
+| TTL 2 min por defecto en los 4 cachés (`expire-after-write=${CACHE_TTL:2m}`) | `application.properties:387-391` |
+| Identidad de réplica `replica.id=${RAILWAY_REPLICA_ID:local}` | `application.properties:423` |
+| Caché local Caffeine **deshabilitada** (comentada) | `application.properties:409-412` |
+| TTL default de 2 min afirmado por test | `shared/cache/CacheTTLIT.java` |
+
+### 12.2 Gates re-ejecutadas
+
+| Gate | Resultado |
+|---|---|
+| `./mvnw -o -B clean verify` (backend completo) | **296 tests, 0 fallos, 0 errores, 0 skipped** — BUILD SUCCESS (3m55s) |
+| JaCoCo | *"All coverage checks have been met."* |
+| `./mvnw -o -B spotless:check` | BUILD SUCCESS (20 archivos clean) |
+| Build nativo (Mandrel 25, `Dockerfile.native`) | BUILD SUCCESS (1m32s) |
+| Binario nativo arrancado | SALUDABLE en **2 s** (`db: UP`, `s3: UP`) |
+| Paso de aserción de `ci-native.yml` (ejecutado **literalmente con `jq`**) | `cache_hits_total{cache="partidos"} = 1.0` → **ASERCIÓN OK** |
+| Suite de contrato contra el **binario nativo** | **152 tests, 0 fallos** — BUILD SUCCESS |
+| YAML de `ci.yml` + `ci-native.yml` | Válido |
+
+> Nota: esta tabla son las *gates* sueltas. La ejecución **completa de los 9 jobs
+> de CI** está en §12.7.
+
+### 12.3 Regresión de tests BEFORE → AFTER (`7196ad3` → `83fff47`)
+
+| Métrica | Resultado |
+|---|---|
+| Tests perdidos | **0** |
+| Tests nuevos | **+7** (4 `CacheDeLecturaValkeyIT` + 3 `CacheValkeyCaidaIT`) |
+| Suite de caché | 27 → **34** |
+| `AdminCacheResourceTest` | 7 → 7 (conserva conteo) |
+| `CacheTTLIT` | 2 → 2 (conserva conteo) |
+| `RedisRateLimitBackendIT` | 7 → 7 (conserva conteo) |
+
+### 12.4 Cobertura de mutaciones / invariantes
+
+Los 8 invariantes del ODD quedaron con cobertura ejecutable:
+
+| Invariante | Cobertura | Estado |
+|---|---|---|
+| Lectura cacheada devuelve el mismo dato | `CacheDeLecturaValkeyIT` (round-trip con ids) | ✅ |
+| Invalidación propaga a otras réplicas | `CacheDeLecturaValkeyIT.otraReplicaComparteElMismoAlmacen` | ✅ |
+| TTL expira | `CacheTTLIT` + `CacheDeLecturaValkeyIT` | ✅ |
+| Backend caído no rompe la app | `CacheValkeyCaidaIT` (3 tests) | ✅ |
+| Métricas hits/misses | `CacheDeLecturaValkeyIT` + `CacheMetricasTestProfile` | ✅ |
+| Escritura es idempotente por clave de negocio | `CacheInvalidacionIT` (2) | ✅ |
+| No hay copia local (replica = otro cliente) | `otraReplicaComparteElMismoAlmacen` | ✅ |
+| Tipo genérico sobrevive a native | aserción `ci-native.yml` ejecutada contra binario real | ✅ |
+
+### 12.5 Calidad de commits
+
+4 commits conventional, `type(scope): mensaje`, **sin push** (decisión del humano),
+sin co-author IA ni marcas de IA:
+
+| Commit | Tipo | Revisa |
+|---|---|---|
+| `2502737` | `build(cache)` | Dependencia + infraestructura (compose, CI, `.env.example`) |
+| `b9ed749` | `feat(cache)` | Migración de `CacheDeLectura` al backend distribuido |
+| `75dee07` | `test(cache)` | Adaptación de suite + 7 tests nuevos |
+| `83fff47` | `docs(cache)` | Documentación, licencia y nota de native |
+
+Orden de commits correcto (build → feat → test → docs); cada commit es coherente y
+compilable por separado en su ámbito.
+
+### 12.6 Archivos (32 en el diff, +1337 / −356)
+
+- **27 modificados (M)**: `pom.xml`, `CacheDeLectura.java`, 5 use cases,
+  `application.properties`, `.env.example`, `compose.yaml`, `ci.yml`,
+  `ci-native.yml`, 8 perfiles de test, 2 tests modificados, 3 documentos.
+- **4 agregados (A)**: `CacheDeLecturaValkeyIT.java`,
+  `CacheValkeyCaidaIT.java`, `CacheValkeyTestProfile.java`,
+  `CacheValkeyCaidaTestProfile.java` (3 test + `ValkeyTestResource.java`),
+  `documents/load-test/cache-hit-ratio-summary-valkey.md`.
+- **1 borrado (D)**: `RedisTestResource.java` → reemplazado por `ValkeyTestResource.java`
+  (rename con propósito de licensing).
+
+### 12.7 Ejecución real de los jobs de CI (todos)
+
+La ronda anterior (§12.1–§12.6) reprodujo **pasos sueltos**, no los jobs
+completos. Una revisión posterior detectó el hueco: el job `changes` de `ci.yml`
+pone `frontend=true` cuando el diff toca un `.github/workflows/*`, así que **los
+jobs de frontend también correrían** en CI con este diff, y no se habían
+ejecutado. Se reprodujeron **los 8 jobs** de `ci.yml` y el de `ci-native.yml`,
+cada uno con sus comandos literales.
+
+**Job `changes` (simulado con su propio script):**
+
+```
+backend=true frontend=true
+```
+
+**`ci.yml`:**
+
+| Job | Comando literal | Resultado |
+|---|---|---|
+| `backend-format` | `mvn -B spotless:check` | ✅ SUCCESS (20 archivos clean) |
+| `backend-quarkus-test` | `mvn -B clean verify` | ✅ **296 tests, 0 fallos**, JaCoCo "All coverage checks have been met" |
+| `backend-quarkus` | `docker build` de `electoral-api-quarkus` + arranque doble contra base vacía | ✅ imagen 609 MB · 1er arranque (crea schema) **UP** · 2do arranque con rol de app y `validate` **UP** |
+| `backend-contract` | `docker build` de `electoral-api:contract` + bucket S3 + migrate-only + rol de app + `mvn -B verify -Dcontract.baseUrl` | ✅ migrate-only **238 changesets** · health `db: UP, s3: UP` · **152 tests, 0 fallos** |
+| `frontend-format` | `pnpm install --frozen-lockfile` + `pnpm format:check` | ✅ "All matched files use Prettier code style!" |
+| `frontend-lint` | `pnpm lint` | ✅ "All files pass linting." |
+| `frontend-test` | `pnpm test:ci` | ✅ **1153 tests** (111 archivos) + **5 a11y** + lint |
+| `frontend-build` | `pnpm build` | ✅ bundle generado (983 kB inicial, 5.1 s) |
+
+**`ci-native.yml`:**
+
+| Job | Resultado |
+|---|---|
+| `backend-native` — build | ✅ Mandrel 25, `BUILD SUCCESS` (1m46s AOT + imagen) |
+| `backend-native` — arranque doble contra base vacía | ✅ **COLD START 8 283 ms** (crea el schema) / **1 149 ms** (schema ya creado, con `validate` y rol de app) |
+| `backend-native` — *"Assert the distributed cache serves the second read"* | ✅ **ASERCIÓN OK**: `cache_hits_total{cache="partidos"} = 1.0` |
+| `backend-native` — RSS en reposo | ✅ **178 MB** |
+| `backend-native` — suite de contrato contra el binario nativo | ✅ **152 tests, 0 fallos** |
+
+**Desviaciones declaradas respecto al CI (todas de entorno, ninguna de código):**
+
+1. **Caché de Maven inyectada.** La red local a Maven Central va a ~32 KB/s, así
+   que el `dependency:go-offline` del `Dockerfile.native` no terminaba. Se usó el
+   repo Maven ya precalentado en `/tmp/m2`, que es exactamente el mecanismo de
+   `cache: maven` del runner de GitHub Actions. El contenido del repo es el
+   mismo; solo cambia de dónde sale.
+2. **`docker build` sin `--no-cache`.** La capa de dependencias se reutiliza en
+   vez de redescargarse. El `pom.xml` y el `src/` copiados son los del commit
+   bajo prueba.
+3. **Un solo Postgres para todos los jobs.** En CI cada job tiene su **propio**
+   service de Postgres, y por eso arrancan desde una base vacía. Localmente se
+   recreó la base (`DROP DATABASE` + `CREATE DATABASE ... TEMPLATE template1`)
+   entre jobs para reproducir ese aislamiento.
+
+**Falso positivo real encontrado y corregido durante esta ejecución:** al
+reusar la base entre jobs, el rol de aplicación veía
+`ERROR: relation "usuario" does not exist` y la suite de contrato falló
+**134/152**. La causa fue un `DROP SCHEMA public CASCADE; CREATE SCHEMA public`
+manual, que dejó el schema `public` **sin el permiso `USAGE` por defecto** que
+aporta `template1`. No era un defecto del código ni del ODD: recreando la base
+con `TEMPLATE template1` (como hace el service de Postgres del CI) el
+`USAGE` volvió a estar granted (`has_schema_privilege = t`) y los 152 tests
+pasaron. Queda registrado porque es exactamente el tipo de contamination que
+hace fallar un pipeline y se confunde con un defecto de RBAC.
+
+Los dos falsos positivos ambientales de §11.2 (puerto 9001 ocupado por
+`ci-rustfs2`; backend previo sin `APP_RATELIMIT_*` ocupando el 8080 con 429) se
+reprodujeron, se identificaron por mensaje (`BindException`, `429`) y se
+resolvieron cerrando el proceso estorbante.
+
+### 12.8 Veredicto de la re-verificación
+
+# ✅ PASS
+
+Veredicto con **todos los jobs de CI ejecutados**, no solo pasos sueltos:
+
+- Checklist **14/14** verificado contra el código, no contra la marca.
+- **8/8 jobs de `ci.yml`** y **1/1 de `ci-native.yml`** reproducidos y verdes.
+- **296 tests** backend + **152 de contrato contra la imagen JVM** + **152
+  contra el binario nativo** + **1153 + 5 de frontend**, todos verdes.
+- **0 tests perdidos** y **+7 nuevos** respecto a `7196ad3`.
+- Los 8 invariantes del ODD tienen cobertura ejecutable.
+- La aserción de `cache_hits_total` del job nativo se ejecutó **literalmente**
+  contra el binario nativo real: **OK**.
+- 4 commits conventional + 1 de documentación, árbol limpio, **sin push**.
+
+**Nota menor (no bloquea):** el build de la imagen JVM en local reusa la caché de
+Maven en lugar de descargarla (§12.7, desviación 1). El resultado es el mismo
+artefacto; el runner de GitHub no tiene esta restricción.
+
+**Riesgos abiertos ya aceptados:** `quarkus-redis-cache` en preview (H4) y la
+dependencia del registro de reflexión de Quarkus (H1, protegida por aserción de
+CI).
+
+---
+
+### 12.9 Estado post-merge con `develop`: el CI real quedó rojo (no veredicto sobre el ODD)
+
+El veredicto de §12.8 se emitió sobre `83fff47`, **antes** del merge con
+`develop`. El commit de merge `e7ac3f0` (rama `brydyan/sc-524/fix-odd-phase-2-valkey`)
+**no está verde en CI**: el job `Backend Tests & Coverage` (`mvn -B clean verify`)
+falla en `CacheInvalidacionIT.unaProvinciaNuevaApareceDeInmediato` con
+`Expected status code <200> but was <500>` (305 tests, 1 fallo, run `45096589635`).
+
+Esto **no invalida §12.8**: el ODD y sus invariantes siguen verificados sobre el
+código de la fase 2. Lo que falla es una transición de estado del ciclo de vida
+de `CacheInvalidacionIT` en un entorno (el runner de GitHub) que no se lograba
+reproducir en local.
+
+**Descartes con evidencia (no son diferencias entre CI y local):**
+
+| Hipótesis | Resultado |
+|---|---|
+| Java distinto | ❌ Temurin 25.0.5 en CI == 25.0.5 local |
+| Orden de clases de test | ❌ Coincide (cola #35–#51 verificada) |
+| Contenedores reutilizados entre clases | ❌ `testcontainers.reuse.enable` no está activo |
+| Seed / schema distintos | ❌ Mismo `Rows affected: 237`, mismos 108 changesets |
+| Carrera entre invalidación y lectura | ❌ `invalidateAllBlocking` es sincrónico |
+| Fallo de auth | ❌ JWT puro, sin consulta a base |
+| NPE por `total_electores` NULL | ❌ `NOT NULL` en el schema |
+
+**Reproducciones locales (todas verdes):** 4/4 suites completas `clean test`
+(305/305), 6/6 corridas aisladas de `CacheInvalidacionIT`, y `clean verify` con el
+comando exacto de CI en un worktree.
+
+**Sin causa raíz identificada:** el log del job requiere permisos de admin en
+Actions y las anotaciones del check run vienen vacías, así que no hay stack trace
+del 500. En vez de inventar un fix a ciegas, se instrumentó el código (`e65aa09`):
+
+- `ErrorMappers` devuelve el tipo y el mensaje de la excepción en el `message` del
+  500 cuando `app.error.details.enabled` está prendido (solo perfil `%test`;
+  por defecto el mensaje sigue siendo `internal error` y la FORMA del error no cambia).
+- `CacheInvalidacionIT` falla con ruta, status y cuerpo de la respuesta, para que
+  el resumen del fallo de surefire muestre la causa sin ir a buscar el log del job.
+- `CacheDeLectura` sube los fallos de cache de `DEBUG` a `WARN` y los cuenta en
+  `cache.errors` (antes invisibles en CI).
+
+El siguiente ciclo de CI con esa instrumentación convierte el 500 opaco en un
+fallo con causa legible.
+
+### 12.10 Causa raíz del 500: la cache sin techo tumba la transacción (2026-11-22)
+
+La instrumentación de §12.9 no hizo falta: la causa raíz se **reprodujo en local**
+con un backend de cache que acepta la conexión y no responde nunca.
+
+**La familia de fallos.** Los tres fallos del run `45103645833` eran de la misma
+familia: lecturas de listados cacheados.
+
+| Job | Test | Síntoma |
+|---|---|---|
+| `Backend Tests & Coverage` | `CacheContenidoIT.candidatosFiltradosElAciertoRespetaElFiltro` | `ArcUndeclaredThrowableException` |
+| `Backend Contract Tests` | `ConfiguracionContractIT.listarCargosDevuelveLaLista` | 500 `internal error` |
+| (run anterior) | `CacheInvalidacionIT.unaProvinciaNuevaApareceDeInmediato` | 500 |
+
+Los tres son exactamente los tres caminos que **consultan la cache dentro de la
+transacción JTA** del caso de uso (`ListarCargosUseCase`, `ListarCandidatosUseCase`,
+`ListarGeografiaUseCase`).
+
+**La cadena (reproducida):**
+
+1. `CacheDeLectura` llamaba a Valkey con `await().indefinitely()`: **sin techo**.
+   Si el backend acepta la conexión pero no contesta (el contenedor del CI que
+   todavía no está listo, un backend saturado), la llamada **espera para siempre**.
+2. Esa llamada va **dentro** de la transacción del caso de uso (`@Transactional`).
+3. A los **60 s** el reaper de Narayana cancela la transacción
+   (`ARJUNA012108 ... aborting with 1 threads active!`).
+4. El commit entonces falla con `jakarta.transaction.RollbackException` — que es
+   **checked** — y ARC la envuelve en `ArcUndeclaredThrowableException`
+   (`"Error invoking subclass method"`). De ahí el 500.
+
+`ArcUndeclaredThrowableException` solo aparece cuando una excepción **checked**
+escapa de un método de bean interceptado; en esta ruta la única checked posible
+es la del `TransactionManager` (`RollbackException` / `SystemException`), y el
+`endTransaction()` de Quarkus lanza exactamente `RollbackException("Transaction
+was already rolled back (e.g., by the transaction reaper)")` cuando
+`getTransaction()` ya no devuelve la transacción.
+
+**Evidencia de la reproducción local** (backend con Valkey mudo):
+
+| | Antes | Después |
+|---|---|---|
+| `GET /api/v1/configuracion/cargos` | cuelga > 75 s, sin respuesta | **200 en 20 s** |
+| Reaper de Narayana | `ARJUNA012108` + `ARJUNA012121` (tx cancelada) | **0 eventos** |
+| Síntoma en el log | — | `Cache 'cargos' no disponible para lectura (Redis/Valkey); sirviendo desde la base: io.smallrye.mutiny.TimeoutException` |
+
+**El fix (dos capas):**
+
+1. **Techo de tiempo en toda operación de cache** (`CacheDeLectura`, `app.cache.timeout`,
+   default 5 s, env `CACHE_TIMEOUT`): `await().atMost(timeout)` en lectura y en
+   escritura. Un backend mudo degrada a fallo de cache, que es lo que el diseño
+   exige; deja de ser un cuelgue.
+2. **Los listados cacheados ya no abren transacción JTA** (`ListarCargosUseCase`,
+   `ListarPartidosUseCase`, `ListarCandidatosUseCase`, `ListarGeografiaUseCase`):
+   son lecturas que no escriben en la base. Con la transacción abierta, la cache
+   quedaba dentro del ciclo de vida de la transacción y una cache lenta podía
+   tumbarla. Sin transacción, la cache es una degradación y punto.
+
+**Test de regresión:** `CacheBackendNoRespondeIT` levanta un backend que acepta y
+no contesta y afirma que el listado **se sirve desde la base** (sin excepción y sin
+cuelgue, con `@Timeout(60)`). Antes del fix, ese escenario colgaba hasta que el
+reaper mataba la transacción.
+
+**Validación local tras el fix:** backend **307/307** (305 previos + 2 nuevos),
+suite de contrato **152/152**, `spotless:check` verde, y el escenario de Valkey
+mudo responds 200 sin cancelar ninguna transacción.
+
+**Commits:** `02d7aa4` (techo + test), `ee2fd8b` (listados sin transacción + test),
+`3c0547b` (techo a 5 s).
+

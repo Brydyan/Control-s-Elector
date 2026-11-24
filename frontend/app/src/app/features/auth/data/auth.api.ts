@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import { CurrentUser } from '../domain/models/user.model';
 import {
   ActivarRequestDto,
@@ -35,7 +35,8 @@ export interface Session {
 @Injectable({ providedIn: 'root' })
 export class AuthApi {
   private readonly http = inject(HttpClient);
-  private readonly base = `${environment.apiUrl}/auth`;
+  private readonly configService = inject(ConfigService);
+  private readonly base = `${this.configService.getApiUrlSafe()}/auth`;
 
   login(credentials: LoginRequestDto): Observable<Session> {
     return this.http

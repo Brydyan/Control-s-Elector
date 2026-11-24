@@ -1,15 +1,27 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, forkJoin, map } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { Observable, forkJoin, map, shareReplay } from 'rxjs';
+import { ConfigService } from '../../../core/config/config.service';
 import type { OpcionesTransmision } from '../../../core/offline/sync.service';
 import {
   ActaRequest,
   ActaResponse,
   CandidatoInfo,
+  CargoCatalogo,
   CargoConEstado,
   JrvConEstado,
 } from '../domain/models/observer.model';
+
+interface CargoCatalogoDto {
+  id: number;
+  nombre: string;
+  candidatos: CandidatoDto[];
+  partidos: PartidoDto[];
+}
+
+interface CatalogoJrvResponse {
+  cargos: CargoCatalogoDto[];
+}
 
 interface PartidoDto {
   id: number;
@@ -31,8 +43,10 @@ interface CandidatoDto {
 })
 export class ObserverApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/observer`;
-  private readonly configUrl = `${environment.apiUrl}/configuracion`;
+  private readonly configService = inject(ConfigService);
+  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/observer`;
+  private readonly configUrl = `${this.configService.getApiUrlSafe()}/configuracion`;
+  private partidosCache$: Observable<PartidoDto[]> | null = null;
 
   getMisJrvs(): Observable<JrvConEstado[]> {
     return this.http.get<any[]>(`${this.baseUrl}/jrvs`).pipe(
@@ -63,12 +77,50 @@ export class ObserverApi {
     );
   }
 
+  /**
+   * Full JRV catalog in one request (T-PERF-OPT-01 B.2).
+   * Replaces the N per-cargo candidatos requests + partidos request.
+   */
+  getCatalogoDeJrv(jrvId: number): Observable<CargoCatalogo[]> {
+    return this.http
+      .get<CatalogoJrvResponse>(
+        `${this.baseUrl}/cargos-with-candidatos?jrvId=${jrvId}`,
+      )
+      .pipe(
+        map((res) =>
+          res.cargos.map((cargo) => {
+            const partidosPorId = new Map(cargo.partidos.map((p) => [p.id, p]));
+            return {
+              id: cargo.id,
+              nombre: cargo.nombre,
+              candidatos: cargo.candidatos.map((c) => ({
+                id: c.id,
+                nombre: c.nombre,
+                orden: c.orden,
+                cargoId: c.cargoId,
+                partidoId: c.partidoId,
+                partidoNombre: partidosPorId.get(c.partidoId)?.nombre,
+                partidoSiglas: partidosPorId.get(c.partidoId)?.siglas,
+                partidoNumeroLista: partidosPorId.get(c.partidoId)?.numeroLista,
+              })),
+            };
+          }),
+        ),
+      );
+  }
+
   getCandidatosPorCargo(cargoId: number): Observable<CandidatoInfo[]> {
+    if (!this.partidosCache$) {
+      this.partidosCache$ = this.http
+        .get<PartidoDto[]>(`${this.configUrl}/partidos`)
+        .pipe(shareReplay(1));
+    }
+
     return forkJoin({
       candidatos: this.http.get<CandidatoDto[]>(
         `${this.configUrl}/candidatos?cargoId=${cargoId}`,
       ),
-      partidos: this.http.get<PartidoDto[]>(`${this.configUrl}/partidos`),
+      partidos: this.partidosCache$,
     }).pipe(
       map(({ candidatos, partidos }) => {
         const partidosMap = new Map(partidos.map((p) => [p.id, p]));
@@ -158,5 +210,16 @@ export class ObserverApi {
       `${this.baseUrl}/actas/${actaId}/corregir`,
       payload,
     );
+  }
+
+  /**
+   * T-CACHE-STRAT-01: invalida la cache de partidos.
+   *
+   * <p>Los partidos se cachean para toda la sesion con `shareReplay(1)`: sin esto, un MASTER que
+   * actualiza un partido no lo veria aqui hasta que la persona recargara la pagina. Es el
+   * equivalente frontend del vaciado manual del backend.
+   */
+  invalidateCache(): void {
+    this.partidosCache$ = null;
   }
 }

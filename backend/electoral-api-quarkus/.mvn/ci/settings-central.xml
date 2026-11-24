@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <!--
+    Maven Central directo (repo.maven.apache.org / repo1.maven.org).
+
+    Es el ULTIMO recurso del Dockerfile: es el host que devuelve 429 en los
+    runners de GitHub Actions. Se deja porque es el origen canonico y para
+    builds locales donde Central responde bien; en CI los dos mirrors de
+    arriba lo anteceden.
+  -->
+  <mirrors>
+    <mirror>
+      <id>central-direct</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Maven Central (directo)</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <blocked>false</blocked>
+    </mirror>
+  </mirrors>
+</settings>

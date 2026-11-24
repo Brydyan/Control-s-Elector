@@ -1,0 +1,12 @@
+[
+  {
+    "name": "jakarta.enterprise.util.TypeLiteral",
+    "fields": [
+      {
+        "name": "actualType",
+        "allowRead": true,
+        "allowWrite": true
+      }
+    ]
+  }
+]

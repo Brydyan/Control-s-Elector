@@ -7,6 +7,7 @@ import ec.twintailcs.electoral.auth.application.JwtService;
 import ec.twintailcs.electoral.auth.application.PasswordHasher;
 import ec.twintailcs.electoral.auth.domain.Rol;
 import ec.twintailcs.electoral.auth.domain.Usuario;
+import ec.twintailcs.electoral.shared.testing.ClientIpHeaders;
 import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
@@ -32,7 +33,7 @@ import org.junit.jupiter.api.Test;
  * la base y dura 24 horas, asi que un usuario compartido haría que el primer export pasara solo en
  * la primera corrida.
  *
- * <p>Las IPs del formulario del DPO se fijan por test con {@code X-Forwarded-For}: el limitador
+ * <p>Las IPs del formulario del DPO se fijan por test con {@link ClientIpHeaders}: el limitador
  * cuenta por IP, y sin separarlos los tests se pisan entre si.
  */
 @QuarkusTest
@@ -85,7 +86,7 @@ class LegalFlowIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + token)
-            .header("X-Forwarded-For", "198.51.100.10")
+            .headers(ClientIpHeaders.from("198.51.100.10"))
             .when()
             .post("/api/v1/user/accept-terms")
             .then()
@@ -164,7 +165,7 @@ class LegalFlowIT {
     Response res =
         given()
             .header("Authorization", "Bearer " + token)
-            .header("X-Forwarded-For", "198.51.100.11")
+            .headers(ClientIpHeaders.from("198.51.100.11"))
             .when()
             .get("/api/v1/user/export-data")
             .then()
@@ -228,7 +229,7 @@ class LegalFlowIT {
 
     given()
         .header("Authorization", "Bearer " + token)
-        .header("X-Forwarded-For", "198.51.100.99")
+        .headers(ClientIpHeaders.from("198.51.100.99"))
         .when()
         .get("/api/v1/user/export-data")
         .then()
@@ -254,7 +255,7 @@ class LegalFlowIT {
             {"name":"Juan García","email":"juan@example.com","subject":"Ejercer derecho al olvido","message":"Quiero borrar mi cuenta y todos mis datos."}
             """)
         .contentType("application/json")
-        .header("X-Forwarded-For", "203.0.113.1")
+        .headers(ClientIpHeaders.from("203.0.113.1"))
         .when()
         .post("/api/v1/legal/contact-dpo")
         .then()
@@ -283,7 +284,7 @@ class LegalFlowIT {
             {"name":"Ana","email":"ana@example.com","subject":"Consulta","message":"Mensaje de prueba."}
             """)
         .contentType("application/json")
-        .header("X-Forwarded-For", "203.0.113.2")
+        .headers(ClientIpHeaders.from("203.0.113.2"))
         .when()
         .post("/api/v1/legal/contact-dpo")
         .then()
@@ -296,7 +297,7 @@ class LegalFlowIT {
                 {"name":"Ana","email":"ana@example.com","subject":"Consulta","message":"Mensaje de prueba."}
                 """)
             .contentType("application/json")
-            .header("X-Forwarded-For", "203.0.113.2")
+            .headers(ClientIpHeaders.from("203.0.113.2"))
             .when()
             .post("/api/v1/legal/contact-dpo")
             .then()
@@ -316,7 +317,7 @@ class LegalFlowIT {
             {"name":"Luis","email":"luis@example.com","subject":"Consulta","message":"Mensaje de prueba."}
             """)
         .contentType("application/json")
-        .header("X-Forwarded-For", "203.0.113.3")
+        .headers(ClientIpHeaders.from("203.0.113.3"))
         .when()
         .post("/api/v1/legal/contact-dpo")
         .then()
@@ -328,7 +329,7 @@ class LegalFlowIT {
             {"name":"Luis","email":"luis@example.com","subject":"Consulta","message":"Mensaje de prueba."}
             """)
         .contentType("application/json")
-        .header("X-Forwarded-For", "203.0.113.4")
+        .headers(ClientIpHeaders.from("203.0.113.4"))
         .when()
         .post("/api/v1/legal/contact-dpo")
         .then()
@@ -344,7 +345,7 @@ class LegalFlowIT {
             {"name":"","email":"no-es-un-email","subject":"","message":""}
             """)
         .contentType("application/json")
-        .header("X-Forwarded-For", "203.0.113.5")
+        .headers(ClientIpHeaders.from("203.0.113.5"))
         .when()
         .post("/api/v1/legal/contact-dpo")
         .then()

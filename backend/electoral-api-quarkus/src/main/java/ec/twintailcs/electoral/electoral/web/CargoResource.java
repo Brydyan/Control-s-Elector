@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.electoral.web;
 
 import ec.twintailcs.electoral.auth.security.Autorizador;
+import ec.twintailcs.electoral.common.web.RateLimited;
 import ec.twintailcs.electoral.electoral.application.ConfiguracionService;
 import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.web.dto.CargoRequest;
@@ -41,6 +42,7 @@ public class CargoResource {
 
   /** Listar cargos electorales. */
   @GET
+  @RateLimited("config-read")
   public List<CargoResponse> listar() {
     return service.listCargos().stream().map(mapper::toDto).toList();
   }

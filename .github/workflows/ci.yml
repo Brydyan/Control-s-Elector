@@ -141,7 +141,21 @@ jobs:
 
       - name: Check Java formatting
         working-directory: backend/electoral-api-quarkus
-        run: mvn -B spotless:check
+        run: |
+          # Retry with exponential backoff for Maven Central rate limiting (429)
+          # Use alternative mirrors configured in .maven/settings.xml
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: Running spotless:check"
+            if mvn -s ../../.maven/settings.xml -B spotless:check; then
+              exit 0
+            fi
+            if [ $attempt -lt 3 ]; then
+              wait_time=$((2 ** attempt * 10))
+              echo "Failed. Waiting ${wait_time}s before retry..."
+              sleep $wait_time
+            fi
+          done
+          exit 1
 
   # El backend es UNO solo. Antes estos dos jobs eran `backend-format` (Spring)
   # y `backend-test` (Spring), y `backend-quarkus-test` corria los tests del
@@ -180,7 +194,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
       redis:
-        image: redis:7-alpine
+        image: valkey/valkey:8-alpine
         ports:
           - 6379:6379
         options: >-
@@ -283,11 +297,24 @@ jobs:
             electoral-api:contract
 
       # --network host para que el contenedor alcance los services de GitHub
-      # Actions por los puertos publicados en el host (5432 y 9000). Asi no
+      # Actions por los puertos publicados en el host (5432, 6379 y 9000). Asi no
       # hay que adivinar el nombre de la red de los services.
+      #
+      # OJO con Valkey: el service se declara con id `redis`, pero con --network
+      # host el contenedor NO resuelve nombres de service: la conexion va al
+      # puerto publicado en el host, o sea `localhost:6379`. Con `redis://valkey:6379`
+      # el host no existia y TODA escritura que invalida cache respondia 500.
       #
       # El backend entra con el rol de APLICACION: el schema ya esta migrado y
       # el contenedor no lleva las credenciales del dueno.
+      #
+      # Los limites de rate limiting se relajan SOLO en este job. La suite de
+      # contrato es un cliente que lee mas rapido que un observador real: con los
+      # limites de produccion (60/min para /observer/jrvs) se come su propia
+      # cuota y falla con 429 sin que haya ningun defecto en la API. Los limites
+      # de produccion NO cambian (siguen en application.properties y Railway los
+      # ajusta por variable de entorno); la cobertura del 429 vive en
+      # RateLimitingIT, dentro del modulo del backend.
       - name: Run the backend
         run: |
           docker run -d --name electoral-api --network host \
@@ -309,6 +336,17 @@ jobs:
             -e AWS_S3_REGION=us-east-1 \
             -e AWS_S3_BUCKET=electoral-evidences \
             -e AWS_S3_PATH_STYLE=true \
+            -e APP_RATELIMIT_OBSERVER_JRVS_LIMIT=100000 \
+            -e APP_RATELIMIT_OBSERVER_ACTAS_LIMIT=100000 \
+            -e APP_RATELIMIT_CONFIG_READ_LIMIT=100000 \
+            -e APP_RATELIMIT_ADMIN_USUARIOS_LIMIT=100000 \
+            -e APP_RATELIMIT_USER_GLOBAL_LIMIT=1000000 \
+            -e APP_RATELIMIT_LOGIN_IP_LIMIT=100000 \
+            -e APP_RATELIMIT_LOGIN_ACCOUNT_LIMIT=100000 \
+            -e APP_RATELIMIT_LOGIN_ACCOUNT_IP_LIMIT=100000 \
+            -e APP_RATELIMIT_REAUTH_LIMIT=100000 \
+            -e APP_RATELIMIT_CONTACT_DPO_LIMIT=100000 \
+            -e REDIS_HOSTS=redis://localhost:6379 \
             electoral-api:contract
 
       - name: Wait for the backend to be healthy
@@ -327,7 +365,21 @@ jobs:
 
       - name: Run the contract suite
         working-directory: backend/contract-tests
-        run: mvn -B verify -Dcontract.baseUrl=http://localhost:8080
+        run: |
+          # Retry with exponential backoff for Maven Central rate limiting (429)
+          # Use alternative mirrors configured in .maven/settings.xml
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: Running contract suite"
+            if mvn -s ../../.maven/settings.xml -B verify -Dcontract.baseUrl=http://localhost:8080; then
+              exit 0
+            fi
+            if [ $attempt -lt 3 ]; then
+              wait_time=$((2 ** attempt * 10))
+              echo "Failed. Waiting ${wait_time}s before retry..."
+              sleep $wait_time
+            fi
+          done
+          exit 1
 
       - name: Backend logs on failure
         if: failure()
@@ -360,7 +412,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
       redis:
-        image: redis:7-alpine
+        image: valkey/valkey:8-alpine
         ports:
           - 6379:6379
         options: >-
@@ -499,7 +551,21 @@ jobs:
       # y ademas arma la app, asi que el job tambien cubre el packaging.
       - name: Run the Quarkus backend tests
         working-directory: backend/electoral-api-quarkus
-        run: mvn -B clean verify
+        run: |
+          # Retry with exponential backoff for Maven Central rate limiting (429)
+          # Use alternative mirrors configured in .maven/settings.xml
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: Running mvn clean verify"
+            if mvn -s ../../.maven/settings.xml -B clean verify; then
+              exit 0
+            fi
+            if [ $attempt -lt 3 ]; then
+              wait_time=$((2 ** attempt * 10))
+              echo "Failed. Waiting ${wait_time}s before retry..."
+              sleep $wait_time
+            fi
+          done
+          exit 1
 
       # El plugin de JaCoCo ya corre DENTRO de `clean verify`: la ejecucion
       # `report` genera target/site/jacoco/ y la `check` aplica el piso de
