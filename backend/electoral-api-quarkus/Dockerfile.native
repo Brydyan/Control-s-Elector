@@ -80,7 +80,8 @@ COPY --chown=quarkus:quarkus src ./src
 # dependencias en la imagen, que no es lo que queremos.
 # Misma rotacion de mirrors que en la descarga de dependencias: el build
 # nativo tambien pide artifacts a Central.
-RUN attempt=1; \
+RUN echo "Build timestamp: 2026-11-24T15:30:00Z (force cache invalidation)" && \
+    attempt=1; \
     for mirror in google aliyun central google aliyun; do \
       echo "Intento $attempt: compilando imagen nativa (mirror $mirror)..."; \
       if env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \

@@ -30,7 +30,8 @@ COPY src ./src
 # vivo), asi que cada reintento rota de mirror: Google GCS -> Aliyun ->
 # Central. Cada mirror tiene su propio settings porque Maven usa solo el
 # PRIMERO que coincide con `mirrorOf` y no hace fallback entre ellos.
-RUN attempt=1; \
+RUN echo "Build timestamp: 2026-11-24T15:30:00Z (force cache invalidation)" && \
+    attempt=1; \
     for mirror in google aliyun central google aliyun; do \
       echo "Maven build attempt $attempt (mirror: $mirror)..."; \
       if env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B \
@@ -70,5 +71,4 @@ ENV DB_HOST=postgres \
 HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=5 \
   CMD curl -sf http://localhost:8080/actuator/health || exit 1
 
-# Cache invalidation: force fresh Maven build - 2026-11-24T15:30:00Z
 CMD ["java", "-jar", "quarkus-run.jar"]
