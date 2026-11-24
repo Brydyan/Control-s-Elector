@@ -53,9 +53,11 @@ export class ConfigService {
         '[Config] Failed to load config.json, using defaults',
         error,
       );
+      // Fallback: environment.prod.ts. En Cloudflare Pages la API vive en otro
+      // origen (Railway); una ruta relativa iria a Pages y recibiria 405.
       this.config = {
-        apiUrl: '/api/v1',
-        sentryDsn: '',
+        apiUrl: environment.apiUrl,
+        sentryDsn: environment.sentryDsn,
       };
     }
   }
