@@ -75,8 +75,7 @@ public class AdminCacheResource {
     String ip = contexto.ip(xForwardedFor);
 
     if (cacheName == null || cacheName.isBlank()) {
-      List<String> nombres =
-          Arrays.stream(CacheInitializer.CACHE_NAMES).sorted().toList();
+      List<String> nombres = Arrays.stream(CacheInitializer.CACHE_NAMES).sorted().toList();
       List<String> fallidos = new ArrayList<>();
       for (String nombre : nombres) {
         if (!invalidador.invalidarAhora(nombre)) {
