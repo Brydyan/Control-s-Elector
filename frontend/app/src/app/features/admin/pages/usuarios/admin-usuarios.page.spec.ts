@@ -77,6 +77,48 @@ describe('AdminUsuariosPage', () => {
     page.guardar();
     expect(page.passwordTemporal).toBeNull();
   });
+
+  it('guardar_noDisparaSegundoRequestCuandoSubmitting', () => {
+    loginAs('MASTER');
+    const crearUsuario = vi.fn().mockReturnValue(
+      of({
+        publicId: 'u-new',
+        email: 'a.b@control.ttcs',
+        nombre: 'A',
+        apellido: 'B',
+        rolNombre: 'OBSERVER',
+        habilitado: true,
+        creadoEn: '2026-11-08T10:00:00Z',
+      }),
+    );
+    (TestBed.inject(AdminApi) as any).crearUsuario = crearUsuario;
+    page.abrirCrear();
+    page.nombre = 'A';
+    page.apellido = 'B';
+    page.submitting.set(true);
+
+    page.guardar();
+
+    expect(crearUsuario).not.toHaveBeenCalled();
+  });
+
+  it('puedeGuardar_falseCuandoSubmitting', () => {
+    page.submitting.set(true);
+    page.invitaando.set(false);
+    expect(page.puedeGuardar()).toBe(false);
+  });
+
+  it('puedeGuardar_falseCuandoInvitaando', () => {
+    page.submitting.set(false);
+    page.invitaando.set(true);
+    expect(page.puedeGuardar()).toBe(false);
+  });
+
+  it('puedeGuardar_trueCuandoNoHayOperacionEnVuelo', () => {
+    page.submitting.set(false);
+    page.invitaando.set(false);
+    expect(page.puedeGuardar()).toBe(true);
+  });
 });
 
 /**
