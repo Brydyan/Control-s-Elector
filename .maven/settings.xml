@@ -4,45 +4,37 @@
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                               http://maven.apache.org/xsd/settings-1.0.0.xsd">
   <!--
-    Maven settings for CI: Configure multiple mirrors for Maven Central to handle
-    rate limiting (429 Too Many Requests) from primary repository.
+    Maven settings para CI: mirror de Maven Central contra el rate limit (429).
 
-    Priority order:
-    1. repo1.maven.org/maven2 — official Maven Central mirror
-    2. maven.aliyun.com — fast Alibaba mirror (global CDN)
-    3. central.maven.org — additional Maven Central mirror
+    El problema: los runners de GitHub Actions comparten IP publica y
+    repo.maven.apache.org / repo1.maven.org responden "429 Too Many Requests" a
+    ese trafico. El rate limit es POR IP: no hay credencial ni repositorio
+    privado que lo resuelva, solo dejar de depender de ese host.
+
+    OJO — Maven NO hace fallback entre mirrors. `DefaultMirrorSelector` devuelve
+    el PRIMERO que coincide con `mirrorOf` y descarta el resto. Antes este
+    archivo declaraba tres mirrors con un "orden de prioridad" que en la
+    practica no existia: solo se usaba el primero (repo1), o sea, el host que
+    mas falla. Por eso aqui hay UN solo mirror, el que no tiene rate limit.
+
+    Alternos (Aliyun, Central directo) viven en archivos separados, uno por
+    mirror, y los Dockerfiles rotan entre ellos en cada reintento:
+        backend/electoral-api-quarkus/.mvn/ci/settings-*.xml
+
+    Contexto: el build de Docker usa el contexto del modulo, asi que no alcanza
+    este archivo de la raiz; por eso existen las copias en `.mvn/ci/`.
   -->
-
   <mirrors>
-    <!-- Primary: Official Maven Central mirror -->
     <mirror>
-      <id>central-mirror-1</id>
+      <id>central-google</id>
       <mirrorOf>central</mirrorOf>
-      <name>Maven Central Mirror (repo1)</name>
-      <url>https://repo1.maven.org/maven2</url>
-      <blocked>false</blocked>
-    </mirror>
-
-    <!-- Secondary: Fast Alibaba mirror (global CDN) -->
-    <mirror>
-      <id>central-mirror-2</id>
-      <mirrorOf>central</mirrorOf>
-      <name>Aliyun Maven Mirror</name>
-      <url>https://maven.aliyun.com/repository/public</url>
-      <blocked>false</blocked>
-    </mirror>
-
-    <!-- Tertiary: Additional Central mirror -->
-    <mirror>
-      <id>central-mirror-3</id>
-      <mirrorOf>central</mirrorOf>
-      <name>Maven Central Mirror (central.maven.org)</name>
-      <url>https://central.maven.org/maven2</url>
+      <name>Maven Central (mirror GCS de Google)</name>
+      <url>https://maven-central.storage-download.googleapis.com/maven2</url>
       <blocked>false</blocked>
     </mirror>
   </mirrors>
 
-  <!-- Configure parallel downloading for faster builds -->
+  <!-- Descarga en paralelo: acorta el build sin cambiar lo que se resuelve. -->
   <properties>
     <maven.artifact.threads>8</maven.artifact.threads>
   </properties>

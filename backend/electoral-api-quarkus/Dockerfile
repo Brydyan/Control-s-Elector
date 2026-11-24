@@ -13,23 +13,36 @@ WORKDIR /app
 # Primero el pom, para que la capa de dependencias se cachee sola.
 COPY pom.xml ./pom.xml
 
+# Settings de mirror de Maven Central. Vienen DENTRO del modulo porque el
+# contexto de build es el modulo: el `.maven/settings.xml` de la raiz del repo
+# no existe para Docker. Ver .mvn/ci/settings-google.xml.
+COPY .mvn/ci /tmp/ci-settings
+
 COPY src ./src
 
 # Build. Use system Maven 3.9 from base image (avoid mvnw rate limiting on GitHub Actions).
 # -B = batch mode (no interactivity), -DskipTests = skip unit/integration tests in Docker.
 # env -i isolates Maven from corrupted environment variables (MAVEN_OPTS, etc).
-# Retry with exponential backoff on 429 rate limit errors from Maven Central.
-# GitHub Actions CI runners hit rate limits; use multiple retries with increasing delays.
-RUN for attempt in 1 2 3; do \
-      echo "Maven build attempt $attempt..."; \
-      env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B \
-        -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
-        clean package -DskipTests && exit 0; \
-      if [ $attempt -lt 3 ]; then \
-        delay=$((30 * attempt)); \
-        echo "Attempt $attempt failed. Retrying in ${delay}s..."; \
-        sleep $delay; \
+#
+# El 429 de Maven Central NO es un fallo del codigo: los runners de GitHub
+# Actions comparten IP publica y Central responde "429 Too Many Requests" a ese
+# trafico. Reintentar contra el MISMO host no lo arregla (el rate limit sigue
+# vivo), asi que cada reintento rota de mirror: Google GCS -> Aliyun ->
+# Central. Cada mirror tiene su propio settings porque Maven usa solo el
+# PRIMERO que coincide con `mirrorOf` y no hace fallback entre ellos.
+RUN attempt=1; \
+    for mirror in google aliyun central google aliyun; do \
+      echo "Maven build attempt $attempt (mirror: $mirror)..."; \
+      if env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME /usr/bin/mvn -B \
+           -s /tmp/ci-settings/settings-$mirror.xml \
+           -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
+           clean package -DskipTests; then \
+        exit 0; \
       fi; \
+      attempt=$((attempt + 1)); \
+      delay=$((30 * attempt)); \
+      echo "Attempt with mirror $mirror failed. Retrying in ${delay}s..."; \
+      sleep $delay; \
     done; \
     exit 1
 

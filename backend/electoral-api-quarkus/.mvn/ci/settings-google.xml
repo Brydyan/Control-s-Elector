@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <!--
+    Mirror de Maven Central hospedado en Google Cloud Storage.
+
+    Por que existe: los runners de GitHub Actions comparten IP publica y Maven
+    Central (repo.maven.apache.org) responde 429 Too Many Requests a ese trafico.
+    Es un rate limit POR IP, no por proyecto: no hay credencial ni repositorio
+    privado que lo resuelva, solo dejar de depender de ese host.
+
+    Este mirror es la copia de solo lectura de Central en GCS: mismo contenido,
+    misma version, sin limite de peticiones por IP.
+
+    OJO: Maven NO hace fallback entre mirrors. Usa el PRIMERO que coincide con
+    `mirrorOf` y descarta los demas. Por eso hay un archivo por mirror y el
+    Dockerfile rota entre ellos en cada reintento: un solo `<mirrors>` con tres
+    entradas seria equivalente a tener solo la primera.
+  -->
+  <mirrors>
+    <mirror>
+      <id>central-google</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Maven Central (mirror GCS de Google)</name>
+      <url>https://maven-central.storage-download.googleapis.com/maven2</url>
+      <blocked>false</blocked>
+    </mirror>
+  </mirrors>
+</settings>
