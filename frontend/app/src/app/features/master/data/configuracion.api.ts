@@ -28,19 +28,8 @@ export class ConfiguracionApi {
   private readonly configService = inject(ConfigService);
   private readonly observerApi = inject(ObserverApi);
   private readonly dashboardApi = inject(DashboardApi);
-  private baseUrl: string;
-
-  constructor() {
-    // En producción: usa apiUrl de config.json (cargado en APP_INITIALIZER)
-    // En desarrollo: usa URL relativa (el proxy redirige)
-    // En tests: usa URL relativa (sin config disponible)
-    try {
-      const apiUrl = this.configService.getApiUrl();
-      this.baseUrl = `${apiUrl}/configuracion`;
-    } catch {
-      // Fallback si ConfigService no está inicializado (dev/tests)
-      this.baseUrl = '/api/v1/configuracion';
-    }
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/configuracion`;
   }
 
   // ============================================================================

@@ -27,7 +27,9 @@ export interface NotificacionResponse {
 export class NotificacionApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/notifications`;
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/notifications`;
+  }
 
   obtenerPendientes(limit: number = 10): Observable<NotificacionResponse> {
     return this.http

@@ -30,8 +30,12 @@ export interface DeleteAccountResponseDto {
 export class DeleteAccountApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUser = `${this.configService.getApiUrlSafe()}/user`;
-  private readonly baseAuth = `${this.configService.getApiUrlSafe()}/auth`;
+  private get baseUser(): string {
+    return `${this.configService.getApiUrlSafe()}/user`;
+  }
+  private get baseAuth(): string {
+    return `${this.configService.getApiUrlSafe()}/auth`;
+  }
 
   /**
    * Solicita eliminación de cuenta (soft-delete con 30d grace).

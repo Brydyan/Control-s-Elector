@@ -62,7 +62,9 @@ export interface ActaFilters {
 export class MisActasService {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/observer/mis-actas`;
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/observer/mis-actas`;
+  }
 
   getMisActas(filters: ActaFilters): Observable<PageResult<ActaDTO>> {
     let params = new HttpParams()

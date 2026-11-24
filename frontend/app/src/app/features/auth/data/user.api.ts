@@ -60,7 +60,9 @@ export interface UpdateEmailResponse {
 export class UserApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUrl = this.configService.getApiUrlSafe();
+  private get baseUrl(): string {
+    return this.configService.getApiUrlSafe();
+  }
 
   /**
    * Fetches the current user profile
