@@ -22,7 +22,9 @@ import {
 export class DashboardApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/dashboard`;
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/dashboard`;
+  }
 
   /** T-CACHE-STRAT-01 B.1: Cache de resultados con detalles. Nunca refetch, compartir entre suscriptores. */
   private resultadosDetalles$: Observable<ResultadoCargoDto[]> | null = null;

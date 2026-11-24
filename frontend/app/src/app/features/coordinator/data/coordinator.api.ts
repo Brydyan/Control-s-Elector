@@ -80,9 +80,15 @@ export class CoordinatorApi {
     error: console.error,
     warn: console.warn,
   };
-  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/coordinator`;
-  private readonly configUrl = `${this.configService.getApiUrlSafe()}/configuracion`;
-  private readonly observerUrl = `${this.configService.getApiUrlSafe()}/observer`;
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/coordinator`;
+  }
+  private get configUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/configuracion`;
+  }
+  private get observerUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/observer`;
+  }
 
   getActas(filtros?: ActaFiltros): Observable<PagedResponse<ActaItem>> {
     let params = new HttpParams();

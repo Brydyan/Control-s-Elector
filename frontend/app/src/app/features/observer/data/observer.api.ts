@@ -44,8 +44,12 @@ interface CandidatoDto {
 export class ObserverApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/observer`;
-  private readonly configUrl = `${this.configService.getApiUrlSafe()}/configuracion`;
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/observer`;
+  }
+  private get configUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/configuracion`;
+  }
   private partidosCache$: Observable<PartidoDto[]> | null = null;
 
   getMisJrvs(): Observable<JrvConEstado[]> {

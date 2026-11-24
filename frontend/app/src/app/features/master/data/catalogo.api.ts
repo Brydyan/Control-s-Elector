@@ -16,7 +16,9 @@ import {
 export class CatalogoApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/configuracion`;
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/configuracion`;
+  }
 
   // --- CARGOS ---
   listarCargos(): Observable<CargoResponseDto[]> {

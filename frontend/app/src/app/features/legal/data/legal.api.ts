@@ -22,7 +22,9 @@ import {
 export class LegalApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly base = this.configService.getApiUrlSafe();
+  private get base(): string {
+    return this.configService.getApiUrlSafe();
+  }
 
   /**
    * Version vigente de los documentos legales.

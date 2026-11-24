@@ -2,6 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+import { ConfigService } from '../../../core/config/config.service';
+
 import {
   CantonRequestDto,
   CantonResponseDto,
@@ -26,7 +28,10 @@ import {
 @Injectable({ providedIn: 'root' })
 export class GeografiaApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1/master';
+  private readonly configService = inject(ConfigService);
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/master`;
+  }
 
   // ---------------------------------------------------------------------------
   // Lectura

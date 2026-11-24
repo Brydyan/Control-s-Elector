@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, throwError } from 'rxjs';
-import { environment } from '../../../../environments/environment';
+import { ConfigService } from '../../../core/config/config.service';
 import { mapError } from '../../../shared/errors/error-handler';
 
 export interface JrvNode {
@@ -39,7 +39,10 @@ export interface GeografiaTreeDto {
 @Injectable({ providedIn: 'root' })
 export class GeografiaApi {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/master`;
+  private readonly configService = inject(ConfigService);
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/master`;
+  }
 
   /**
    * Obtiene el árbol completo de geografía (provincia → canton → parroquia).

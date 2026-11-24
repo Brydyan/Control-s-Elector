@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpBackend, HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
@@ -25,7 +25,15 @@ export interface AppConfig {
 export class ConfigService {
   private config: AppConfig | null = null;
 
-  constructor(private http: HttpClient) {}
+  /**
+   * HttpClient sin interceptores: el `authInterceptor` inyecta AuthService y
+   * construiria AuthApi (y otras APIs) antes de que exista la configuracion.
+   */
+  private readonly http: HttpClient;
+
+  constructor(httpBackend: HttpBackend) {
+    this.http = new HttpClient(httpBackend);
+  }
 
   /**
    * Carga configuración desde assets/config.json
@@ -89,7 +97,8 @@ export class ConfigService {
    */
   getApiUrlSafe(): string {
     if (!this.config) {
-      return '/api/v1';
+      // Antes de load(): el valor del build (prod: API de Railway, dev: proxy).
+      return environment.apiUrl;
     }
     return this.config.apiUrl;
   }
