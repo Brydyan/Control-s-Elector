@@ -50,18 +50,27 @@ COPY --chown=quarkus:quarkus .mvn ./.mvn
 COPY --chown=quarkus:quarkus pom.xml ./
 # GitHub Actions hereda MAVEN_OPTS y otras vars que corrompen Maven (mismo problema que en Dockerfile).
 # Usar env -i para limpiar completamente el ambiente, preservando lo esencial + proxy settings.
-# Agregar retry con backoff exponencial para manejar 429 Too Many Requests de Maven Central.
-RUN for attempt in 1 2 3; do \
-      echo "Intento $attempt: descargando dependencias"; \
-      env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \
-        http_proxy=${http_proxy:-} https_proxy=${https_proxy:-} \
-        HTTP_PROXY=${HTTP_PROXY:-} HTTPS_PROXY=${HTTPS_PROXY:-} \
-        ./mvnw -B -ntp dependency:go-offline -DskipTests && exit 0; \
-      if [ $attempt -lt 3 ]; then \
-        wait_time=$((2 ** attempt * 10)); \
-        echo "Falló. Esperando ${wait_time}s antes de reintentar..."; \
-        sleep $wait_time; \
+#
+# El 429 de Maven Central NO es un fallo del codigo: los runners de GitHub
+# Actions comparten IP publica y Central responde "429 Too Many Requests" a ese
+# trafico. Reintentar contra el MISMO host no lo arregla, asi que cada reintento
+# rota de mirror: Google GCS -> Aliyun -> Central. Cada mirror tiene su propio
+# settings porque Maven usa solo el PRIMERO que coincide con `mirrorOf` y no hace
+# fallback entre ellos.
+RUN attempt=1; \
+    for mirror in google aliyun central google aliyun; do \
+      echo "Intento $attempt: descargando dependencias (mirror $mirror)..."; \
+      if env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \
+           http_proxy=${http_proxy:-} https_proxy=${https_proxy:-} \
+           HTTP_PROXY=${HTTP_PROXY:-} HTTPS_PROXY=${HTTPS_PROXY:-} \
+           ./mvnw -B -ntp -s .mvn/ci/settings-$mirror.xml \
+           dependency:go-offline -DskipTests; then \
+        exit 0; \
       fi; \
+      attempt=$((attempt + 1)); \
+      wait_time=$((30 * attempt)); \
+      echo "Falló con el mirror $mirror. Esperando ${wait_time}s antes de reintentar..."; \
+      sleep $wait_time; \
     done; \
     exit 1
 
@@ -69,20 +78,24 @@ COPY --chown=quarkus:quarkus src ./src
 
 # `sources-only=false`: el builder por defecto mete los fuentes de las
 # dependencias en la imagen, que no es lo que queremos.
-# Agregar retry con backoff exponencial para manejar 429 Too Many Requests de Maven Central.
-RUN for attempt in 1 2 3; do \
-      echo "Intento $attempt: compilando imagen nativa"; \
-      env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \
-        http_proxy=${http_proxy:-} https_proxy=${https_proxy:-} \
-        HTTP_PROXY=${HTTP_PROXY:-} HTTPS_PROXY=${HTTPS_PROXY:-} \
-        ./mvnw -B -ntp package -Dnative -DskipTests \
-        -Dquarkus.native.sources-only=false \
-        -Dquarkus.native.container-build=false && exit 0; \
-      if [ $attempt -lt 3 ]; then \
-        wait_time=$((2 ** attempt * 10)); \
-        echo "Falló. Esperando ${wait_time}s antes de reintentar..."; \
-        sleep $wait_time; \
+# Misma rotacion de mirrors que en la descarga de dependencias: el build
+# nativo tambien pide artifacts a Central.
+RUN attempt=1; \
+    for mirror in google aliyun central google aliyun; do \
+      echo "Intento $attempt: compilando imagen nativa (mirror $mirror)..."; \
+      if env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \
+           http_proxy=${http_proxy:-} https_proxy=${https_proxy:-} \
+           HTTP_PROXY=${HTTP_PROXY:-} HTTPS_PROXY=${HTTPS_PROXY:-} \
+           ./mvnw -B -ntp -s .mvn/ci/settings-$mirror.xml \
+           package -Dnative -DskipTests \
+           -Dquarkus.native.sources-only=false \
+           -Dquarkus.native.container-build=false; then \
+        exit 0; \
       fi; \
+      attempt=$((attempt + 1)); \
+      wait_time=$((30 * attempt)); \
+      echo "Falló con el mirror $mirror. Esperando ${wait_time}s antes de reintentar..."; \
+      sleep $wait_time; \
     done; \
     exit 1
 

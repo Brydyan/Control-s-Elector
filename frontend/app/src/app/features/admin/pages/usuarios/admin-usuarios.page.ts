@@ -279,6 +279,7 @@ export class AdminUsuariosPage implements OnInit {
     this.modalDetalles = false;
   }
   guardar(): void {
+    if (this.submitting()) return;
     if (!this.nombre.trim() || !this.apellido.trim()) {
       this.error.set('Nombre y apellido son obligatorios.');
       return;
@@ -367,6 +368,11 @@ export class AdminUsuariosPage implements OnInit {
       return 'Usuario creado. Puedes enviar invitación después.';
     }
     return `Invitación enviada a ${invitacion.emailPersonal}`;
+  }
+
+  /** El boton de guardar se deshabilita si ya hay una operacion en vuelo. */
+  puedeGuardar(): boolean {
+    return !this.submitting() && !this.invitaando();
   }
 
   /** El boton de invitar solo se habilita con los tres datos y un email valido. */

@@ -368,7 +368,7 @@
     >
       Cancelar
     </app-button>
-    <app-button [disabled]="submitting()" (clicked)="guardar()">
+    <app-button [disabled]="!puedeGuardar()" (clicked)="guardar()">
       {{ submitting() ? 'Guardando…' : 'Guardar' }}
     </app-button>
   </ng-template>
