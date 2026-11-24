@@ -33,6 +33,15 @@
   ],
   "dataGroups": [
     {
+      "name": "auth-api",
+      "urls": ["/api/v1/auth/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxAge": "1m",
+        "maxSize": 10
+      }
+    },
+    {
       "name": "observer-api",
       "urls": ["/api/v1/observer/**"],
       "cacheConfig": {
