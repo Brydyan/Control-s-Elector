@@ -32,6 +32,10 @@ WORKDIR /home/quarkus/proj
 ARG MAVEN_OPTS="-Dquarkus.native.native-image-xmx=7g -Dquarkus.native.additional-build-args=-H:-AOTSingleCallsiteInline,--initialize-at-run-time=org.apache.http.impl.auth.NTLMEngineImpl,--initialize-at-run-time=ec.twintailcs.electoral.auth.application.UsuarioAdminService"
 ENV MAVEN_OPTS=${MAVEN_OPTS}
 
+# ARG BUILD_ID para invalidar cache de BuildKit cuando sea necesario.
+# Usar en Railway: Variables → BUILD_ID=<unique_timestamp o valor>
+ARG BUILD_ID=unknown
+
 # El builder de Mandrel trae `native-image` pero NO trae Maven, y el repo no
 # tiene un wrapper global: invocar `mvn` acá moría con
 # `/bin/sh: mvn: command not found`. Se usa el Maven Wrapper del modulo, que
@@ -80,7 +84,7 @@ COPY --chown=quarkus:quarkus src ./src
 # dependencias en la imagen, que no es lo que queremos.
 # Misma rotacion de mirrors que en la descarga de dependencias: el build
 # nativo tambien pide artifacts a Central.
-RUN echo "Build timestamp: 2026-11-24T15:30:00Z (force cache invalidation)" && \
+RUN echo "Build ID: ${BUILD_ID}" && \
     attempt=1; \
     for mirror in google aliyun central google aliyun; do \
       echo "Intento $attempt: compilando imagen nativa (mirror $mirror)..."; \
