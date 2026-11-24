@@ -36,7 +36,9 @@ export interface Session {
 export class AuthApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly base = `${this.configService.getApiUrlSafe()}/auth`;
+  private get base(): string {
+    return `${this.configService.getApiUrlSafe()}/auth`;
+  }
 
   login(credentials: LoginRequestDto): Observable<Session> {
     return this.http

@@ -69,7 +69,9 @@ export interface RecintoFiltros {
 export class RecintoApi {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/admin/recintos`;
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/admin/recintos`;
+  }
 
   listarRecintos(
     filtros: RecintoFiltros = { page: 0, size: 20 },

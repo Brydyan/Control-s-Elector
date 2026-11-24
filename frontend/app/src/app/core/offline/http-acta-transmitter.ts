@@ -13,13 +13,14 @@ import { ActaTransmitter, OpcionesTransmision } from './sync.service';
  * transmisor propio, éste no se usa.
  */
 export class HttpActaTransmitter implements ActaTransmitter {
-  private readonly baseUrl: string;
-
   constructor(
     private readonly http: HttpClient,
-    configService: ConfigService,
-  ) {
-    this.baseUrl = `${configService.getApiUrlSafe()}/observer`;
+    private readonly configService: ConfigService,
+  ) {}
+
+  /** Se resuelve en cada envio: el transmisor se crea antes de cargar config.json. */
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/observer`;
   }
 
   /**

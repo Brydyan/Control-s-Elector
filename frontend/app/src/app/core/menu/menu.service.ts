@@ -10,7 +10,9 @@ import { MenuNode, MenuResponse } from './menu.model';
 export class MenuService {
   private readonly http = inject(HttpClient);
   private readonly configService = inject(ConfigService);
-  private readonly baseUrl = `${this.configService.getApiUrlSafe()}/menus`;
+  private get baseUrl(): string {
+    return `${this.configService.getApiUrlSafe()}/menus`;
+  }
 
   private readonly _menus = signal<MenuNode[]>([]);
   private readonly _loading = signal<boolean>(false);
