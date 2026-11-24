@@ -15,6 +15,8 @@ import ec.twintailcs.electoral.auth.domain.Usuario;
 import io.quarkus.cache.Cache;
 import io.quarkus.cache.CacheManager;
 import io.quarkus.narayana.jta.QuarkusTransaction;
+import io.quarkus.redis.datasource.ReactiveRedisDataSource;
+import io.quarkus.redis.datasource.value.ReactiveValueCommands;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
@@ -51,6 +53,7 @@ class AdminCacheResourceTest {
   @Inject JwtService jwt;
   @Inject EntityManager em;
   @Inject CacheManager cacheManager;
+  @Inject ReactiveRedisDataSource redis;
 
   private String tokenMaster;
   private String tokenObservador;
@@ -102,12 +105,18 @@ class AdminCacheResourceTest {
   @DisplayName("el vaciado deja el cache realmente vacio, no solo dice OK")
   void elVaciadoDejaElCacheVacio() {
     leer("/api/v1/configuracion/partidos");
-    Cache cache = cacheManager.getCache("partidos").orElseThrow();
+
+    // En Phase 2 (Valkey), accedemos Redis directamente para verificar el cache.
+    // La clave para "partidos" con clave "sentinel-de-prueba" es "partidos:sentinel-de-prueba"
+    String claveRedis = "partidos:" + CLAVE;
+    ReactiveValueCommands<String, String> valores = redis.value(String.class);
 
     // Se siembra una entrada y se comprueba que sobrevive: si el valor se perdiera solo, el test
     // pasaria sin comprobar nada.
-    assertThat(valorEnCache(cache, "valor")).isEqualTo("valor");
-    assertThat(valorEnCache(cache, "otro")).as("la entrada esta en la cache").isEqualTo("valor");
+    valores.set(claveRedis, "valor-de-prueba").await().indefinitely();
+    assertThat(valores.get(claveRedis).await().indefinitely())
+        .as("la entrada esta en la cache")
+        .isEqualTo("valor-de-prueba");
 
     given()
         .header("Authorization", "Bearer " + tokenMaster)
@@ -117,9 +126,9 @@ class AdminCacheResourceTest {
         .then()
         .statusCode(200);
 
-    assertThat(valorEnCache(cache, "otro"))
-        .as("tras el vaciado la entrada ya no esta, y el cache vuelve a pedir el dato")
-        .isEqualTo("otro");
+    assertThat(valores.get(claveRedis).await().indefinitely())
+        .as("tras el vaciado la entrada ya no esta")
+        .isNull();
   }
 
   @Test
@@ -147,8 +156,11 @@ class AdminCacheResourceTest {
   @DisplayName("un rol sin permiso recibe 403 y no vacia nada")
   void unRolSinPermisoRecibe403() {
     leer("/api/v1/configuracion/partidos");
-    Cache cache = cacheManager.getCache("partidos").orElseThrow();
-    valorEnCache(cache, "valor");
+
+    // En Phase 2 (Valkey), accedemos Redis directamente.
+    String claveRedis = "partidos:" + CLAVE;
+    ReactiveValueCommands<String, String> valores = redis.value(String.class);
+    valores.set(claveRedis, "valor").await().indefinitely();
 
     given()
         .header("Authorization", "Bearer " + tokenObservador)
@@ -157,7 +169,9 @@ class AdminCacheResourceTest {
         .then()
         .statusCode(403);
 
-    assertThat(valorEnCache(cache, "otro")).as("un 403 no toca la cache").isEqualTo("valor");
+    assertThat(valores.get(claveRedis).await().indefinitely())
+        .as("un 403 no toca la cache")
+        .isEqualTo("valor");
   }
 
   @Test
@@ -214,9 +228,12 @@ class AdminCacheResourceTest {
    *
    * <p>Usa la API de la cache con su cargador: si la clave esta, devuelve lo que hay; si no, carga
    * y guarda. Asi el test puede distinguir "la entrada sigue en la cache" de "la cache se vacio".
+   *
+   * <p>Phase 2 (Valkey): el cache "partidos" tiene value-type configurado como List, asi que el
+   * sentinel debe ser compatible con ese tipo.
    */
   private Object valorEnCache(Cache cache, String valorSiNoEsta) {
-    return cache.get(CLAVE, (Object k) -> valorSiNoEsta).await().indefinitely();
+    return cache.get(CLAVE, (Object k) -> java.util.List.of(valorSiNoEsta)).await().indefinitely();
   }
 
   /** Lee un endpoint protegido con el token del MASTER. */

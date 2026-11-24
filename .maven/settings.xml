@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                              http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <!--
+    Maven settings for CI: Configure multiple mirrors for Maven Central to handle
+    rate limiting (429 Too Many Requests) from primary repository.
+
+    Priority order:
+    1. repo1.maven.org/maven2 — official Maven Central mirror
+    2. maven.aliyun.com — fast Alibaba mirror (global CDN)
+    3. central.maven.org — additional Maven Central mirror
+  -->
+
+  <mirrors>
+    <!-- Primary: Official Maven Central mirror -->
+    <mirror>
+      <id>central-mirror-1</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Maven Central Mirror (repo1)</name>
+      <url>https://repo1.maven.org/maven2</url>
+      <blocked>false</blocked>
+    </mirror>
+
+    <!-- Secondary: Fast Alibaba mirror (global CDN) -->
+    <mirror>
+      <id>central-mirror-2</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Aliyun Maven Mirror</name>
+      <url>https://maven.aliyun.com/repository/public</url>
+      <blocked>false</blocked>
+    </mirror>
+
+    <!-- Tertiary: Additional Central mirror -->
+    <mirror>
+      <id>central-mirror-3</id>
+      <mirrorOf>central</mirrorOf>
+      <name>Maven Central Mirror (central.maven.org)</name>
+      <url>https://central.maven.org/maven2</url>
+      <blocked>false</blocked>
+    </mirror>
+  </mirrors>
+
+  <!-- Configure parallel downloading for faster builds -->
+  <properties>
+    <maven.artifact.threads>8</maven.artifact.threads>
+  </properties>
+</settings>

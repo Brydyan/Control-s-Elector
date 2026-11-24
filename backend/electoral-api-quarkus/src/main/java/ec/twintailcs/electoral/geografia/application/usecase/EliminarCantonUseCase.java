@@ -4,7 +4,7 @@ import ec.twintailcs.electoral.electoral.application.ConfiguracionAuditService;
 import ec.twintailcs.electoral.geografia.domain.Canton;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
-import io.quarkus.cache.CacheInvalidateAll;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -24,8 +24,9 @@ public class EliminarCantonUseCase {
   @Inject ConfiguracionAuditService audit;
   @Inject EntityManager entityManager;
 
+  @Inject InvalidadorDeCache invalidador;
+
   /** Elimina el canton y deja rastro en la auditoria. */
-  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public void execute(Long id, Long masterId, String ipAddress) {
     Canton canton = entityManager.find(Canton.class, id);
@@ -58,5 +59,8 @@ public class EliminarCantonUseCase {
         id,
         "Canton eliminado: " + canton.getNombre(),
         ipAddress);
+    // La invalidacion se aplica despues del commit (ver InvalidadorDeCache): invalidar
+    // antes dejaria una ventana en la que un lector concurrente recachea el dato viejo.
+    invalidador.invalidar("geografia");
   }
 }

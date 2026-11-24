@@ -3,6 +3,8 @@ package ec.twintailcs.electoral.auth.web;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
+import ec.twintailcs.electoral.shared.cache.CacheInitializer;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import io.quarkus.cache.CacheManager;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -13,6 +15,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +52,7 @@ import java.util.Map;
 public class AdminCacheResource {
 
   @Inject CacheManager cacheManager;
+  @Inject InvalidadorDeCache invalidador;
   @Inject Autorizador autorizador;
   @Inject ContextoSolicitud contexto;
   @Inject AuditLogService audit;
@@ -57,7 +62,8 @@ public class AdminCacheResource {
    *
    * @param cacheName nombre del cache a limpiar; si es null o vacio, limpia todos
    * @param xForwardedFor IP del cliente, la que deja el proxy
-   * @return 200 con el detalle de lo limpiado, 404 si el cache pedido no existe
+   * @return 200 con el detalle de lo limpiado, 404 si el cache pedido no existe, 503 si el backend
+   *     de cache no respondio y el vaciado no se pudo hacer
    */
   @GET
   @Path("/clear")
@@ -69,31 +75,62 @@ public class AdminCacheResource {
     String ip = contexto.ip(xForwardedFor);
 
     if (cacheName == null || cacheName.isBlank()) {
-      List<String> nombres = cacheManager.getCacheNames().stream().sorted().toList();
+      List<String> nombres = Arrays.stream(CacheInitializer.CACHE_NAMES).sorted().toList();
+      List<String> fallidos = new ArrayList<>();
       for (String nombre : nombres) {
-        cacheManager
-            .getCache(nombre)
-            .ifPresent(cache -> cache.invalidateAll().await().indefinitely());
+        if (!invalidador.invalidarAhora(nombre)) {
+          fallidos.add(nombre);
+        }
       }
       audit.record(
           "CACHE",
           0L,
           contexto.usuarioId(),
           "LIMPIAR_CACHE",
-          Map.of("cacheName", "*", "cachesCleared", nombres),
+          Map.of("cacheName", "*", "cachesCleared", nombres, "failedCaches", fallidos),
           ip);
+      if (!fallidos.isEmpty()) {
+        // El vaciado no se pudo hacer: el backend de cache no respondio. Contestar 200 seria
+        // mentir sobre el estado del sistema.
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+            .entity(
+                new CacheClearResponse(false, "Cache backend unavailable: " + fallidos, nombres))
+            .build();
+      }
       return Response.ok(new CacheClearResponse(true, "All caches cleared successfully", nombres))
           .build();
     }
 
-    var cache = cacheManager.getCache(cacheName);
-    if (cache.isEmpty()) {
+    // Valida que el nombre de cache pedido exista en la configuración conocida.
+    // En Quarkus 3.40.1, cacheManager.getCache() devuelve empty porque los caches se crean
+    // on-demand cuando se acceden via @CacheResult, no cuando se crean via API.
+    if (!Arrays.asList(CacheInitializer.CACHE_NAMES).contains(cacheName)) {
       return Response.status(Response.Status.NOT_FOUND)
           .entity(new CacheClearResponse(false, "Cache '" + cacheName + "' not found", List.of()))
           .build();
     }
 
-    cache.get().invalidateAll().await().indefinitely();
+    if (!invalidador.invalidarAhora(cacheName)) {
+      audit.record(
+          "CACHE",
+          0L,
+          contexto.usuarioId(),
+          "LIMPIAR_CACHE",
+          Map.of(
+              "cacheName",
+              cacheName,
+              "cachesCleared",
+              List.of(),
+              "failedCaches",
+              List.of(cacheName)),
+          ip);
+      return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+          .entity(
+              new CacheClearResponse(
+                  false, "Cache backend unavailable: " + cacheName, List.of(cacheName)))
+          .build();
+    }
+
     audit.record(
         "CACHE",
         0L,

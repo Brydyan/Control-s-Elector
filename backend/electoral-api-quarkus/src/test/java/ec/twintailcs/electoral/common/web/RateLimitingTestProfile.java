@@ -1,7 +1,7 @@
 package ec.twintailcs.electoral.common.web;
 
 import ec.twintailcs.electoral.shared.testing.PostgresTestResource;
-import ec.twintailcs.electoral.shared.testing.RedisTestResource;
+import ec.twintailcs.electoral.shared.testing.ValkeyTestResource;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ public class RateLimitingTestProfile implements QuarkusTestProfile {
   public List<TestResourceEntry> testResources() {
     return List.of(
         new TestResourceEntry(PostgresTestResource.class),
-        new TestResourceEntry(RedisTestResource.class));
+        new TestResourceEntry(ValkeyTestResource.class));
   }
 
   @Override
@@ -29,6 +29,10 @@ public class RateLimitingTestProfile implements QuarkusTestProfile {
         "quarkus.liquibase.migrate-at-start", "true",
         "quarkus.liquibase.contexts", "seed",
         "quarkus.hibernate-orm.database.generation", "validate",
-        "app.ratelimit.policies.user-global.limit", String.valueOf(USER_GLOBAL_LIMIT));
+        "app.ratelimit.policies.user-global.limit", String.valueOf(USER_GLOBAL_LIMIT),
+        "quarkus.redis.client-type", "standalone",
+        "quarkus.cache.type", "redis",
+        "quarkus.cache.redis.client-name", "default",
+        "quarkus.cache.redis.default-client-type", "standalone");
   }
 }

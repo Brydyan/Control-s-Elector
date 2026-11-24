@@ -6,7 +6,7 @@ import ec.twintailcs.electoral.electoral.domain.Cargo;
 import ec.twintailcs.electoral.electoral.domain.ConfiguracionNotFoundException;
 import ec.twintailcs.electoral.electoral.domain.Partido;
 import ec.twintailcs.electoral.electoral.web.dto.CandidatoRequest;
-import io.quarkus.cache.CacheInvalidateAll;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -17,11 +17,12 @@ public class ActualizarCandidatoUseCase {
 
   @Inject ConfiguracionAuditService audit;
 
+  @Inject InvalidadorDeCache invalidador;
+
   /**
    * Actualiza el candidato. El cargo y el partido tienen que existir: si no, la operacion se
    * rechaza con 404.
    */
-  @CacheInvalidateAll(cacheName = "candidatos")
   @Transactional
   public Candidato execute(Long id, CandidatoRequest dto, Long masterId, String ipAddress) {
     Candidato candidato = Candidato.findById(id);
@@ -51,6 +52,9 @@ public class ActualizarCandidatoUseCase {
         id,
         "Candidato actualizado: " + dto.nombre(),
         ipAddress);
+    // La invalidacion se aplica despues del commit (ver InvalidadorDeCache): invalidar
+    // antes dejaria una ventana en la que un lector concurrente recachea el dato viejo.
+    invalidador.invalidar("candidatos");
     return candidato;
   }
 }

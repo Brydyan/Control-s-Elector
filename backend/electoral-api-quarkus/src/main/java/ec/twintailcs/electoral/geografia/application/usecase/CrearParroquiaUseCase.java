@@ -6,7 +6,7 @@ import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.web.dto.ParroquiaRequest;
-import io.quarkus.cache.CacheInvalidateAll;
+import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -24,8 +24,9 @@ public class CrearParroquiaUseCase {
   @Inject ConfiguracionAuditService audit;
   @Inject EntityManager entityManager;
 
+  @Inject InvalidadorDeCache invalidador;
+
   /** Crea la parroquia y deja rastro en la auditoria. */
-  @CacheInvalidateAll(cacheName = "geografia")
   @Transactional
   public Parroquia execute(ParroquiaRequest dto, Long masterId, String ipAddress) {
     if (entityManager.find(Canton.class, dto.cantonId()) == null) {
@@ -48,6 +49,9 @@ public class CrearParroquiaUseCase {
         parroquia.getId(),
         "Parroquia creada: " + dto.nombre(),
         ipAddress);
+    // La invalidacion se aplica despues del commit (ver InvalidadorDeCache): invalidar
+    // antes dejaria una ventana en la que un lector concurrente recachea el dato viejo.
+    invalidador.invalidar("geografia");
     return parroquia;
   }
 

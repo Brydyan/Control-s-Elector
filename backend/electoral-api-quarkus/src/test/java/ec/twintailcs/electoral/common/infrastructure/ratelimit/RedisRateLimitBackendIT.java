@@ -9,7 +9,7 @@ import ec.twintailcs.electoral.common.application.ratelimit.RateLimitPolicy.Fail
 import ec.twintailcs.electoral.common.application.ratelimit.RateLimitPolicy.KeyType;
 import ec.twintailcs.electoral.common.application.ratelimit.RateLimiter;
 import ec.twintailcs.electoral.shared.testing.PostgresTestResource;
-import ec.twintailcs.electoral.shared.testing.RedisTestResource;
+import ec.twintailcs.electoral.shared.testing.ValkeyTestResource;
 import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -34,7 +34,7 @@ import org.junit.jupiter.api.Test;
  */
 @QuarkusTest
 @QuarkusTestResource(PostgresTestResource.class)
-@QuarkusTestResource(RedisTestResource.class)
+@QuarkusTestResource(ValkeyTestResource.class)
 @DisplayName("Rate limiting con Redis")
 class RedisRateLimitBackendIT {
 
