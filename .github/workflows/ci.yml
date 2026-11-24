@@ -141,7 +141,21 @@ jobs:
 
       - name: Check Java formatting
         working-directory: backend/electoral-api-quarkus
-        run: mvn -B spotless:check
+        run: |
+          # Retry with exponential backoff for Maven Central rate limiting (429)
+          # Use alternative mirrors configured in .maven/settings.xml
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: Running spotless:check"
+            if mvn -s ../../.maven/settings.xml -B spotless:check; then
+              exit 0
+            fi
+            if [ $attempt -lt 3 ]; then
+              wait_time=$((2 ** attempt * 10))
+              echo "Failed. Waiting ${wait_time}s before retry..."
+              sleep $wait_time
+            fi
+          done
+          exit 1
 
   # El backend es UNO solo. Antes estos dos jobs eran `backend-format` (Spring)
   # y `backend-test` (Spring), y `backend-quarkus-test` corria los tests del
@@ -351,7 +365,21 @@ jobs:
 
       - name: Run the contract suite
         working-directory: backend/contract-tests
-        run: mvn -B verify -Dcontract.baseUrl=http://localhost:8080
+        run: |
+          # Retry with exponential backoff for Maven Central rate limiting (429)
+          # Use alternative mirrors configured in .maven/settings.xml
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: Running contract suite"
+            if mvn -s ../../.maven/settings.xml -B verify -Dcontract.baseUrl=http://localhost:8080; then
+              exit 0
+            fi
+            if [ $attempt -lt 3 ]; then
+              wait_time=$((2 ** attempt * 10))
+              echo "Failed. Waiting ${wait_time}s before retry..."
+              sleep $wait_time
+            fi
+          done
+          exit 1
 
       - name: Backend logs on failure
         if: failure()
@@ -523,7 +551,21 @@ jobs:
       # y ademas arma la app, asi que el job tambien cubre el packaging.
       - name: Run the Quarkus backend tests
         working-directory: backend/electoral-api-quarkus
-        run: mvn -B clean verify
+        run: |
+          # Retry with exponential backoff for Maven Central rate limiting (429)
+          # Use alternative mirrors configured in .maven/settings.xml
+          for attempt in 1 2 3; do
+            echo "Attempt $attempt: Running mvn clean verify"
+            if mvn -s ../../.maven/settings.xml -B clean verify; then
+              exit 0
+            fi
+            if [ $attempt -lt 3 ]; then
+              wait_time=$((2 ** attempt * 10))
+              echo "Failed. Waiting ${wait_time}s before retry..."
+              sleep $wait_time
+            fi
+          done
+          exit 1
 
       # El plugin de JaCoCo ya corre DENTRO de `clean verify`: la ejecucion
       # `report` genera target/site/jacoco/ y la `check` aplica el piso de
