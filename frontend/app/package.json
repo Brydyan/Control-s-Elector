@@ -6,7 +6,7 @@
   "scripts": {
     "ng": "ng",
     "start": "npm run licenses:build && ng serve",
-    "build": "npm run licenses:build && ng build",
+    "build": "npm run licenses:build && ng build && node scripts/write-runtime-config.mjs",
     "watch": "npm run licenses:build && ng build --watch --configuration development",
     "licenses:build": "node scripts/generate-licenses.js",
     "test": "vitest",

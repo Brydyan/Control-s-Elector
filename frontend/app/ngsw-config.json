@@ -8,12 +8,7 @@
       "installMode": "prefetch",
       "updateMode": "prefetch",
       "resources": {
-        "files": [
-          "/index.html",
-          "/manifest.webmanifest",
-          "/*.css",
-          "/*.js"
-        ]
+        "files": ["/index.html", "/manifest.webmanifest", "/*.css", "/*.js"]
       }
     },
     {
@@ -21,29 +16,15 @@
       "installMode": "lazy",
       "updateMode": "prefetch",
       "resources": {
-        "files": [
-          "/assets/**",
-          "/*.(svg|png|jpg|jpeg|webp|ico|woff2)"
-        ],
-        "excludeFiles": [
-          "/assets/config.json"
-        ]
+        "files": ["/assets/**", "/*.(svg|png|jpg|jpeg|webp|ico|woff2)"],
+        "excludeFiles": ["/assets/config.json"]
       }
     }
   ],
   "dataGroups": [
     {
-      "name": "auth-api",
-      "urls": ["/api/v1/auth/**"],
-      "cacheConfig": {
-        "strategy": "freshness",
-        "maxAge": "1m",
-        "maxSize": 10
-      }
-    },
-    {
       "name": "observer-api",
-      "urls": ["/api/v1/observer/**"],
+      "urls": ["/api/v1/observer/**", "https://*/api/v1/observer/**"],
       "cacheConfig": {
         "strategy": "freshness",
         "maxAge": "1h",
@@ -52,7 +33,7 @@
     },
     {
       "name": "coordinator-api",
-      "urls": ["/api/v1/coordinator/**"],
+      "urls": ["/api/v1/coordinator/**", "https://*/api/v1/coordinator/**"],
       "cacheConfig": {
         "strategy": "freshness",
         "maxAge": "30m",
@@ -61,7 +42,7 @@
     },
     {
       "name": "configuracion-api",
-      "urls": ["/api/v1/configuracion/**"],
+      "urls": ["/api/v1/configuracion/**", "https://*/api/v1/configuracion/**"],
       "cacheConfig": {
         "strategy": "performance",
         "maxAge": "24h",

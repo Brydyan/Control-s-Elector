@@ -14,6 +14,9 @@ COPY package.json pnpm-lock.yaml* ./
 RUN pnpm install --frozen-lockfile || pnpm install
 
 # Build de la aplicación
+# Detras de nginx la API se sirve por el proxy /api/ (nginx.conf): ruta relativa.
+ARG API_URL=/api/v1
+ENV API_URL=${API_URL}
 COPY . .
 RUN pnpm build
 
