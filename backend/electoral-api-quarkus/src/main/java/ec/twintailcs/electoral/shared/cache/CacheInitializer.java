@@ -18,7 +18,7 @@ public class CacheInitializer {
 
   private static final Logger LOG = Logger.getLogger(CacheInitializer.class);
 
-  private static final String[] CACHE_NAMES = {"cargos", "partidos", "candidatos", "geografia"};
+  public static final String[] CACHE_NAMES = {"cargos", "partidos", "candidatos", "geografia"};
 
   /**
    * Registra el estado de inicialización de los caches en el log.

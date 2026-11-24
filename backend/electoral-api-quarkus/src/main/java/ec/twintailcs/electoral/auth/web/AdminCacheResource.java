@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.auth.web;
 import ec.twintailcs.electoral.auditlog.application.AuditLogService;
 import ec.twintailcs.electoral.auth.security.Autorizador;
 import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
+import ec.twintailcs.electoral.shared.cache.CacheInitializer;
 import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import io.quarkus.cache.CacheManager;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -15,6 +16,7 @@ import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -73,7 +75,8 @@ public class AdminCacheResource {
     String ip = contexto.ip(xForwardedFor);
 
     if (cacheName == null || cacheName.isBlank()) {
-      List<String> nombres = cacheManager.getCacheNames().stream().sorted().toList();
+      List<String> nombres =
+          Arrays.stream(CacheInitializer.CACHE_NAMES).sorted().toList();
       List<String> fallidos = new ArrayList<>();
       for (String nombre : nombres) {
         if (!invalidador.invalidarAhora(nombre)) {
@@ -99,8 +102,10 @@ public class AdminCacheResource {
           .build();
     }
 
-    var cache = cacheManager.getCache(cacheName);
-    if (cache.isEmpty()) {
+    // Valida que el nombre de cache pedido exista en la configuración conocida.
+    // En Quarkus 3.40.1, cacheManager.getCache() devuelve empty porque los caches se crean
+    // on-demand cuando se acceden via @CacheResult, no cuando se crean via API.
+    if (!Arrays.asList(CacheInitializer.CACHE_NAMES).contains(cacheName)) {
       return Response.status(Response.Status.NOT_FOUND)
           .entity(new CacheClearResponse(false, "Cache '" + cacheName + "' not found", List.of()))
           .build();
