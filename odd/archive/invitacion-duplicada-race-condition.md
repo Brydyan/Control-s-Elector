@@ -1,6 +1,6 @@
 # ODD — Fix: Invitación Duplicada (Race Condition)
 
-**Status:** 📋 Ready for Builder  
+**Status:** ✅ Verificado y archivado (2026-11-23)  
 **Ticket:** SC-522 (admin/usuarios)  
 **Bug:** Se crean 2 invitaciones cuando usuario presiona "Guardar" dos veces  
 **Root Cause:** Race condition + falta validación preventiva + estado de UI inconsistente
@@ -67,14 +67,14 @@ ALTER TABLE usuario ADD CONSTRAINT unique_email_personal_not_null
 
 ## 🎯 Checklist
 
-- [ ] **A1:** Frontend `puedeGuardar()` verifica `submitting`
-- [ ] **A2:** Test: botón desactiva al presionar dos veces
-- [ ] **B1:** Backend agrega `existsByEmailPersonal()` check
-- [ ] **B2:** Test: segunda invitación recibe 409 Conflict
-- [ ] **B3:** Test: mensaje de error es claro para usuario
-- [ ] **C1:** (Opcional) DB migration para eliminar DEFERRABLE
-- [ ] **C2:** Spotless check pasa
-- [ ] **C3:** 224 backend tests pasan
+- [x] **A1:** Frontend `puedeGuardar()` verifica `submitting` — `admin-usuarios.page.ts:374-375` (`!this.submitting() && !this.invitaando()`); template `[disabled]="!puedeGuardar()"`
+- [x] **A2:** Test: botón desactiva al presionar dos veces — `admin-usuarios.page.spec.ts`: `guardar_noDisparaSegundoRequestCuandoSubmitting`, `puedeGuardar_falseCuandoSubmitting`, `puedeGuardar_falseCuandoInvitaando`, `puedeGuardar_trueCuandoNoHayOperacionEnVuelo`
+- [x] **B1:** Backend valida emailPersonal no duplicado — `UserInvitationService.invitar()`: `Usuario.count("emailPersonal", …) > 0` → 409; además la violación de unicidad de BD (SQLState 23505) se traduce al mismo 409 en `persistirUsuario()`
+- [x] **B2:** Test: segunda invitación recibe 409 Conflict — `UserInvitationIT.unEmailPersonalYaUsadoResponde409` (secuencial) y `dosInvitacionesParalelasMismoEmailPersonal` (paralelo: nunca 500, nunca más de una fila)
+- [x] **B3:** Test: mensaje de error es claro para usuario — el mensaje "Ya existe usuario con email personal: `<email>`" viaja en el body (`message`) y el frontend lo muestra tal cual (`readBackendMessage` en `shared/errors/error-handler.ts`)
+- [x] **C1:** (Opcional) DB migration para eliminar DEFERRABLE — no aplicada: el índice único parcial `idx_usuario_email_personal` ya impide el duplicado en BD y la capa de aplicación traduce esa violación a 409; el schema no se toca
+- [x] **C2:** Spotless check pasa — `spotless:check` BUILD SUCCESS · `prettier --check` OK · `pnpm lint` OK
+- [x] **C3:** 224 backend tests pasan — la suite de hoy: **310 backend** (0 fallos, 0 errores) + **1158 frontend** (111 archivos) en verde
 
 ---
 
@@ -157,10 +157,14 @@ ALTER TABLE usuario ADD CONSTRAINT unique_email_personal_not_null
 
 ## ✅ Próximos Pasos
 
-**→ Listo para `/02-build-odd`**
+**→ Cerrado. ODD verificado y archivado en `odd/archive/`.**
 
-Builder:
-1. Implementar fixes A, B (C es opcional)
-2. Pasar checklist
-3. Crear PR con tests verdes
-4. Merge cuando AC's pasen
+Resultado de la verificación (2026-11-23):
+- Tareas A y B implementadas y verificadas contra el spec.
+- Backend: `UserInvitationIT` 16/16 verde; suite completa 310/310; `spotless:check` OK.
+- Frontend: spec 16/16 verde; suite completa 1158 tests; `prettier --check` y `pnpm lint` OK.
+- Mutaciones M-A1, M-A2, M-B1 y M-C1 cubiertas.
+- Tarea C (eliminar el constraint `DEFERRABLE`) no se ejecuta: el índice único parcial
+  `idx_usuario_email_personal` ya garantiza la integridad y el mapeo 23505 → 409 vive en
+  `UserInvitationService.persistirUsuario()`. Sin cambios de schema (Liquibase es el único dueño).
+- Commits: `73ff08b`, `d00c0fe`, `b1460f8`.
