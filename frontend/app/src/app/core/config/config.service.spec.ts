@@ -68,7 +68,7 @@ describe('ConfigService', () => {
     expect(service.getApiUrl()).toBe('https://api.brydyan.me/api/v1');
   });
 
-  it('en produccion cae a la URL de produccion si falla el config.json', async () => {
+  it('en produccion cae a la URL relativa si falla el config.json', async () => {
     envMock.production = true;
 
     const carga = service.load();
@@ -76,6 +76,6 @@ describe('ConfigService', () => {
     req.error(new ProgressEvent('error'));
     await carga;
 
-    expect(service.getApiUrl()).toBe('https://api.brydyan.me/api/v1');
+    expect(service.getApiUrl()).toBe('/api/v1');
   });
 });

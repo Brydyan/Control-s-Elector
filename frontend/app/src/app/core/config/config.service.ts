@@ -54,7 +54,7 @@ export class ConfigService {
         error,
       );
       this.config = {
-        apiUrl: 'https://api.brydyan.me/api/v1',
+        apiUrl: '/api/v1',
         sentryDsn: '',
       };
     }
