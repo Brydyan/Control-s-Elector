@@ -48,10 +48,6 @@ COPY --chown=quarkus:quarkus .mvn ./.mvn
 
 # Primero el pom y el wrapper, para que la capa de dependencias se cachee sola.
 COPY --chown=quarkus:quarkus pom.xml ./
-
-# Copiar la configuración de Maven con mirrors alternativos para manejar rate limiting de Maven Central (429)
-COPY --chown=quarkus:quarkus ../.maven ./.maven
-
 # GitHub Actions hereda MAVEN_OPTS y otras vars que corrompen Maven (mismo problema que en Dockerfile).
 # Usar env -i para limpiar completamente el ambiente, preservando lo esencial + proxy settings.
 # Agregar retry con backoff exponencial para manejar 429 Too Many Requests de Maven Central.
@@ -60,7 +56,7 @@ RUN for attempt in 1 2 3; do \
       env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \
         http_proxy=${http_proxy:-} https_proxy=${https_proxy:-} \
         HTTP_PROXY=${HTTP_PROXY:-} HTTPS_PROXY=${HTTPS_PROXY:-} \
-        ./mvnw -s ./.maven/settings.xml -B -ntp dependency:go-offline -DskipTests && exit 0; \
+        ./mvnw -B -ntp dependency:go-offline -DskipTests && exit 0; \
       if [ $attempt -lt 3 ]; then \
         wait_time=$((2 ** attempt * 10)); \
         echo "Falló. Esperando ${wait_time}s antes de reintentar..."; \
@@ -79,7 +75,7 @@ RUN for attempt in 1 2 3; do \
       env -i PATH=$PATH HOME=$HOME JAVA_HOME=$JAVA_HOME MAVEN_OPTS="${MAVEN_OPTS}" \
         http_proxy=${http_proxy:-} https_proxy=${https_proxy:-} \
         HTTP_PROXY=${HTTP_PROXY:-} HTTPS_PROXY=${HTTPS_PROXY:-} \
-        ./mvnw -s ./.maven/settings.xml -B -ntp package -Dnative -DskipTests \
+        ./mvnw -B -ntp package -Dnative -DskipTests \
         -Dquarkus.native.sources-only=false \
         -Dquarkus.native.container-build=false && exit 0; \
       if [ $attempt -lt 3 ]; then \
