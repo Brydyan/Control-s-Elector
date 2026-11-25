@@ -61,7 +61,7 @@ public class ListarGeografiaUseCase {
                 "select p.id, p.nombre, p.codigo, "
                     + "c.id, c.nombre, c.codigo, "
                     + "pa.id, pa.nombre, pa.es_urbana, "
-                    + "j.id, j.numero, j.recinto, j.total_electores "
+                    + "j.id, j.numero, j.recinto, j.total_electores, j.recinto_id "
                     + "from provincia p "
                     + "left join canton c on c.provincia_id = p.id "
                     + "left join parroquia pa on pa.canton_id = c.id "
@@ -96,7 +96,11 @@ public class ListarGeografiaUseCase {
       }
       parroquia.jrvs.add(
           new GeografiaTreeDto.JrvNode(
-              id(fila, 9), txt(fila, 10), txt(fila, 11), ((Number) fila[12]).intValue()));
+              id(fila, 9),
+              txt(fila, 10),
+              txt(fila, 11),
+              ((Number) fila[12]).intValue(),
+              fila[13] == null ? null : id(fila, 13)));
     }
 
     List<GeografiaTreeDto.ProvinciaNode> nodosProvincia = new ArrayList<>(provincias.size());

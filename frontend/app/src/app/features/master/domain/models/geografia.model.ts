@@ -12,6 +12,7 @@ export interface JrvNodoDto {
   numero: string;
   recinto: string;
   totalElectores: number;
+  recintoId: number | null;
 }
 
 /** Parroquia: tercer nivel. `esUrbana` distingue la parroquia urbana de la rural. */
@@ -101,4 +102,5 @@ export interface JrvResponseDto {
   recinto: string;
   totalElectores: number;
   parroquiaId: number;
+  recintoId: number | null;
 }

@@ -127,3 +127,6 @@ databaseChangeLog:
   # tocan tablas que ya existen (acta y acta_detalle) y no alteran su forma.
   - include: { file: database/changelog/048-add-acta-indices.sql }
   - include: { file: database/changelog/049-add-acta-detalle-indices.sql }
+  # RLS para la gestión de recintos y JRVs: lectura del catálogo geográfico compartido y escritura
+  # reservada al rol MASTER, con el contexto PostgreSQL activado desde la aplicación.
+  - include: { file: database/changelog/050-recinto-jrv-rls.sql }
