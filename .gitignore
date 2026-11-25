@@ -279,3 +279,4 @@ documents/data
 # Lo que si es transitorio y no se versiona es el estado local de la
 # herramienta, que vive fuera del repositorio (~/.pandorx/projects/).
 # Ver issue #171.
+test-results.txt

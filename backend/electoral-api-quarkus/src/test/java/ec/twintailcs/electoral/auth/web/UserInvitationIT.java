@@ -827,6 +827,98 @@ class UserInvitationIT {
             });
   }
 
+  // -------------------------------------------------------------------------
+  // Diagnóstico: Resend + fallback
+  // -------------------------------------------------------------------------
+
+  @Test
+  @DisplayName("DIAG: invitación con Resend real + fallback (diagnóstico)")
+  void diagnosticoResendConFallback() throws Exception {
+    // Este test es para diagnosticar problemas de envío.
+    // Corre CON tu RESEND_API_KEY si está configurada en .env.
+    // Si falla, los logs de ResendEmailProvider dirán por qué.
+
+    Response res = invitarDesde(IP_RESEND_ACTIVA, "DiagResend");
+
+    // La invitación debe aceptarse
+    assertThat(res.getStatusCode())
+        .as("POST /users/invite responde 200")
+        .isEqualTo(200);
+
+    String usuarioId = res.jsonPath().getString("usuarioId");
+    String username = res.jsonPath().getString("username");
+    String emailPersonal = res.jsonPath().getString("emailPersonal");
+
+    System.out.println("✓ Invitación aceptada");
+    System.out.println("  - usuarioId: " + usuarioId);
+    System.out.println("  - username: " + username);
+    System.out.println("  - emailPersonal: " + emailPersonal);
+
+    // Espera a que la cola procese (worker thread)
+    System.out.println("⏳ Esperando a que el worker procese la cola...");
+    Thread.sleep(2000);
+
+    // RecordingEmailService captura TODOS los envíos (mock o real pasados por aquí)
+    List<EmailAEnviar> enviados = RecordingEmailService.enviados();
+
+    if (enviados.isEmpty()) {
+      System.out.println("❌ PROBLEMA: Cola vacía después de 2s");
+      System.out.println("   Causas probables:");
+      System.out.println("   1. Worker thread no procesa (revisar app logs)");
+      System.out.println("   2. Queue encolado pero timeout SMTP/Resend");
+      System.out.println("   3. RESEND_API_KEY inválida (401 → reintento → timeout)");
+
+      // Chequea auditoria de fallos
+      List<Object[]> fallos =
+          leer(
+              "select usuario_id, email, reason from invitation_audit where reason NOT LIKE '%exito%' order by id desc limit 5");
+      if (!fallos.isEmpty()) {
+        System.out.println("\n   Fallos registrados en auditoria:");
+        for (Object[] fila : fallos) {
+          System.out.println("   - " + fila[0] + " (" + fila[1] + "): " + fila[2]);
+        }
+      }
+    } else {
+      System.out.println("✓ Email capturado por RecordingEmailService");
+      EmailAEnviar email = enviados.get(0);
+      System.out.println("  - destinatario: " + email.destinatario());
+      System.out.println("  - tipo: " + email.tipo());
+      System.out.println("  - activationLink: " + email.activationLink());
+    }
+
+    // Verifica que la invitación quedó registrada
+    List<Object[]> invitacion =
+        leer(
+            "select status, invited_at, expiry_at from user_invitations where email_personal = '"
+                + emailPersonal
+                + "' order by id desc limit 1");
+
+    assertThat(invitacion)
+        .as("user_invitations debe tener la invitación")
+        .hasSize(1);
+
+    Object[] fila = invitacion.get(0);
+    System.out.println("\n✓ Invitación registrada en BD");
+    System.out.println("  - status: " + fila[0]);
+    System.out.println("  - invited_at: " + fila[1]);
+    System.out.println("  - expiry_at: " + fila[2]);
+
+    // La invitación debe estar INVITED
+    assertThat(fila[0])
+        .as("status debe ser INVITED")
+        .isEqualTo("INVITED");
+
+    assertThat(fila[1])
+        .as("invited_at debe estar lleno")
+        .isNotNull();
+
+    System.out.println("\n✅ DIAGNÓSTICO OK: invitación completa");
+    System.out.println("   Si no recibes el email en la bandeja:");
+    System.out.println("   1. Resend dashboard: https://resend.com/dashboard");
+    System.out.println("   2. Revisa Activity tab (últimos 10 requests)");
+    System.out.println("   3. Si no hay requests: APP_EMAIL_PROVIDER=smtp? O RESEND_API_KEY vacía?");
+  }
+
   /** El token de activacion viaja en el link del email. */
   private String tokenDe(EmailAEnviar email) {
     String link = email.activationLink();
