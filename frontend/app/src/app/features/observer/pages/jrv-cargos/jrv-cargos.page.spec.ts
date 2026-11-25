@@ -5,6 +5,7 @@ import { JrvCargosPage } from './jrv-cargos.page';
 import { ObserverApi } from '../../data/observer.api';
 import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
 import { ImageCompressionService } from '../../../../core/services/image-compression.service';
+import { AuthStore } from '../../../auth/services/auth.store';
 
 describe('JrvCargosPage', () => {
   let component: JrvCargosPage;
@@ -85,6 +86,27 @@ describe('JrvCargosPage', () => {
       'cargo',
       1,
       'registrar',
+    ]);
+  });
+
+  it('debe navegar al detalle de coordinador/master si el usuario es MASTER', () => {
+    // Simular que el usuario es MASTER
+    const authStore = TestBed.inject(AuthStore);
+    vi.spyOn(authStore, 'isMaster').mockReturnValue(true);
+
+    const cargoRegistrado = {
+      cargoId: 2,
+      nombre: 'Prefecto',
+      nivel: 'PROVINCIAL',
+      registrado: true,
+      actaId: 105,
+      estadoActa: 'ENVIADA' as const,
+    };
+
+    component.registrarActa(cargoRegistrado);
+    expect(routerSpy.navigate).toHaveBeenCalledWith([
+      '/coordinator/actas',
+      105,
     ]);
   });
 

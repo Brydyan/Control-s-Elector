@@ -12,6 +12,7 @@ import {
 } from '../../../../shared/ui';
 import { OfflineStorageService } from '../../../../core/offline/offline-storage.service';
 import { ImageCompressionService } from '../../../../core/services/image-compression.service';
+import { AuthStore } from '../../../auth/services/auth.store';
 import { CargoConEstado } from '../../domain/models/observer.model';
 import { ObserverApi } from '../../data/observer.api';
 
@@ -37,6 +38,7 @@ export class JrvCargosPage implements OnInit, OnDestroy {
   private readonly observerService = inject(ObserverApi);
   private readonly offlineStorage = inject(OfflineStorageService);
   private readonly imageCompression = inject(ImageCompressionService);
+  readonly authStore = inject(AuthStore);
 
   jrvId!: number;
   readonly cargos = signal<CargoConEstado[]>([]);
@@ -92,6 +94,22 @@ export class JrvCargosPage implements OnInit, OnDestroy {
   }
 
   registrarActa(cargo: CargoConEstado): void {
+    const isMasterOrAdmin =
+      this.authStore.isMaster() ||
+      this.authStore.role() === 'ADMIN' ||
+      this.authStore.role() === 'COORDINATOR';
+
+    if (
+      cargo.registrado &&
+      cargo.actaId &&
+      isMasterOrAdmin &&
+      cargo.estadoActa !== 'EN_DISPUTA'
+    ) {
+      // MASTER / COORDINATOR / ADMIN consultan el detalle y auditoría del acta
+      this.router.navigate(['/coordinator/actas', cargo.actaId]);
+      return;
+    }
+
     const route = [
       '/observer/jrv',
       this.jrvId,
