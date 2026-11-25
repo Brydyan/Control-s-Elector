@@ -395,14 +395,44 @@ public class ActaRepository {
 
   /** Todas las JRVs con su resumen de cargos pendientes y registrados. */
   public List<FilaJrv> listarJrvs() {
+    return listarJrvs(null, null);
+  }
+
+  /** JRVs visibles por el usuario autenticado; el OBSERVER con asignaciones solo ve las suyas. */
+  public List<FilaJrv> listarJrvs(Long usuarioId, String rol) {
+    boolean tieneAsignaciones = false;
+    if ("OBSERVER".equals(rol) && usuarioId != null) {
+      Number count =
+          (Number)
+              entityManager
+                  .createNativeQuery(
+                      "select (select count(*) from observer_jrv_asignacion where usuario_id = :uid)"
+                          + " + (select count(*) from usuario_recinto where usuario_id = :uid and rol_en_recinto = 'OBSERVER')")
+                  .setParameter("uid", usuarioId)
+                  .getSingleResult();
+      tieneAsignaciones = count != null && count.longValue() > 0;
+    }
+
+    boolean filtrarObserver = tieneAsignaciones;
     String sql =
         "select j.id, j.numero, p.nombre,"
             + " (select count(*) from jrv_cargo jc where jc.jrv_id = j.id and jc.activo),"
             + " (select count(distinct a.cargo_id) from acta a"
             + "  where a.jrv_id = j.id and a.estado <> 'ANULADA')"
             + " from jrv j join parroquia p on p.id = j.parroquia_id"
+            + (filtrarObserver
+                ? " where exists (select 1 from observer_jrv_asignacion oja"
+                    + " where oja.jrv_id = j.id and oja.usuario_id = :usuarioId)"
+                    + " or exists (select 1 from usuario_recinto ur"
+                    + " where ur.recinto_id = j.recinto_id and ur.usuario_id = :usuarioId"
+                    + " and ur.rol_en_recinto = 'OBSERVER')"
+                : "")
             + " order by j.id";
-    List<Object[]> filas = entityManager.createNativeQuery(sql, Object[].class).getResultList();
+    var query = entityManager.createNativeQuery(sql, Object[].class);
+    if (filtrarObserver) {
+      query.setParameter("usuarioId", usuarioId);
+    }
+    List<Object[]> filas = query.getResultList();
     List<FilaJrv> out = new ArrayList<>();
     for (Object[] fila : filas) {
       int totalCargos = ((Number) fila[3]).intValue();

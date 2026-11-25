@@ -141,4 +141,11 @@ export class GeografiaApi {
   eliminarJrv(id: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/jrvs/${id}`);
   }
+
+  /** Elimina un lote de JRVs. 409 si alguna tiene actas registradas. */
+  eliminarJrvsBatch(jrvIds: number[]): Observable<void> {
+    return this.http.request<void>('delete', `${this.baseUrl}/jrvs/batch`, {
+      body: { jrvIds },
+    });
+  }
 }

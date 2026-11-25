@@ -9,6 +9,7 @@ export interface JrvNode {
   numero: string;
   recinto?: string;
   totalElectores?: number;
+  recintoId?: number | null;
 }
 
 export interface ParroquiaNode {
@@ -51,6 +52,26 @@ export class GeografiaApi {
   obtenerGeografia(): Observable<GeografiaTreeDto> {
     return this.http
       .get<GeografiaTreeDto>(`${this.baseUrl}/geografia`)
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  /**
+   * Elimina una JRV individual.
+   */
+  eliminarJrv(id: number): Observable<void> {
+    return this.http
+      .delete<void>(`${this.baseUrl}/jrvs/${id}`)
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  /**
+   * Elimina un lote de JRVs en una sola operación.
+   */
+  eliminarJrvsBatch(jrvIds: number[]): Observable<void> {
+    return this.http
+      .request<void>('delete', `${this.baseUrl}/jrvs/batch`, {
+        body: { jrvIds },
+      })
       .pipe(catchError((err) => this.handleError(err)));
   }
 

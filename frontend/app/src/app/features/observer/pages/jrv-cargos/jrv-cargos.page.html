@@ -77,7 +77,9 @@
             (clicked)="registrarActa(cargo)"
           >
             {{ cargo.estadoActa === 'EN_DISPUTA' ? 'Subsanar Disputa' :
-            cargo.registrado ? 'Ver / Modificar' : 'Registrar Acta' }}
+            cargo.registrado ? (authStore.isMaster() || authStore.role() ===
+            'COORDINATOR' ? 'Ver Detalle' : 'Ver / Modificar') : 'Registrar
+            Acta' }}
           </app-button>
         </div>
       </div>
