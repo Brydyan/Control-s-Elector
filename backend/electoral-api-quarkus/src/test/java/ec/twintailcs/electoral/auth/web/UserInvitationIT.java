@@ -751,7 +751,8 @@ class UserInvitationIT {
                   .toLowerCase()
                   .replace(" ", "");
           String uuid = String.format("%08d", emailCounter);
-          return "juan." + limpio + "." + uuid + "@example.com";
+          // Use mail.brydyan.me for Resend testing (example.com is rejected)
+          return "juan." + limpio + "." + uuid + "@mail.brydyan.me";
         });
   }
 
@@ -771,7 +772,8 @@ class UserInvitationIT {
                       .toLowerCase()
                       .replace(" ", "");
               String uuid = String.format("%08d", emailCounter);
-              return "juan." + limpio + "." + uuid + "@example.com";
+              // Use mail.brydyan.me for Resend testing (example.com is rejected)
+              return "juan." + limpio + "." + uuid + "@mail.brydyan.me";
             });
 
     // Cachear también en emailCache para que emailDe() después lo encuentre
