@@ -71,7 +71,8 @@ interface Jrv {
         <h2>Generación Rápida por Rango</h2>
         <p class="text-sm text-gray-600">
           Las nuevas JRVs se vinculan directamente a
-          <strong>{{ recinto?.nombre }}</strong> y reciben todos los cargos activos.
+          <strong>{{ recinto?.nombre }}</strong> y reciben todos los cargos
+          activos.
         </p>
         <div class="generacion-campos">
           <label>
@@ -126,7 +127,8 @@ interface Jrv {
       <div class="flex justify-between items-center mb-4">
         <p class="text-sm text-gray-600 m-0">
           JRVs de la parroquia disponibles para asignar a
-          <strong>{{ recinto?.nombre }}</strong>.
+          <strong>{{ recinto?.nombre }}</strong
+          >.
         </p>
         <button
           *ngIf="jrvsSeleccionadas.length > 0"
@@ -174,7 +176,9 @@ interface Jrv {
               <td>{{ jrv.numero }}</td>
               <td>{{ jrv.totalElectores }}</td>
               <td>
-                <span [class]="jrv.asignada ? 'tag-asignada' : 'tag-disponible'">
+                <span
+                  [class]="jrv.asignada ? 'tag-asignada' : 'tag-disponible'"
+                >
                   {{ jrv.asignada ? 'Asignada' : 'Disponible' }}
                 </span>
               </td>
@@ -231,7 +235,7 @@ interface Jrv {
     }
 
     .generacion-panel {
-      border: 1px solid var(--surface-border);
+      border: 1px solid var(--color-border-on-surface);
       border-radius: 0.75rem;
       padding: 1rem;
       margin-bottom: 1.5rem;
@@ -259,7 +263,7 @@ interface Jrv {
     .generacion-campos input {
       min-width: 8rem;
       padding: 0.5rem;
-      border: 1px solid var(--surface-border);
+      border: 1px solid var(--color-border-on-surface);
       border-radius: 0.375rem;
     }
 
@@ -267,8 +271,8 @@ interface Jrv {
       padding: 0.2rem 0.5rem;
       border-radius: 0.25rem;
       font-size: 0.8rem;
-      background-color: #e0f2fe;
-      color: #0369a1;
+      background-color: var(--color-status-info-bg);
+      color: var(--color-status-info);
       font-weight: 500;
     }
 
@@ -276,8 +280,8 @@ interface Jrv {
       padding: 0.2rem 0.5rem;
       border-radius: 0.25rem;
       font-size: 0.8rem;
-      background-color: #f1f5f9;
-      color: #475569;
+      background-color: var(--color-surface-raised);
+      color: var(--color-text-muted-on-surface);
       font-weight: 500;
     }
   `,
@@ -318,7 +322,11 @@ export class RecintoJrvsModalComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if ((changes['abierto'] || changes['recinto']) && this.abierto && this.recinto) {
+    if (
+      (changes['abierto'] || changes['recinto']) &&
+      this.abierto &&
+      this.recinto
+    ) {
       this.cargarJrvs();
     }
   }
@@ -338,7 +346,8 @@ export class RecintoJrvsModalComponent implements OnChanges {
           .find((item) => item.id === this.recinto?.parroquiaId);
         this.jrvs = (parroquia?.jrvs ?? [])
           .filter(
-            (jrv) => jrv.recintoId == null || jrv.recintoId === this.recinto?.id,
+            (jrv) =>
+              jrv.recintoId == null || jrv.recintoId === this.recinto?.id,
           )
           .map((jrv) => ({
             id: jrv.id,
@@ -369,31 +378,35 @@ export class RecintoJrvsModalComponent implements OnChanges {
       hasta < desde ||
       electoresPorMesa < 1
     ) {
-      this.error.set('Ingresa un rango válido y electores por mesa mayor que cero');
+      this.error.set(
+        'Ingresa un rango válido y electores por mesa mayor que cero',
+      );
       return;
     }
 
     this.error.set(null);
     this.mensaje.set(null);
     this.enviando.set(true);
-    this.recintoApi.generarJrvsPorRango(this.recinto.id, this.generacion).subscribe({
-      next: (generadas) => {
-        const nuevas = generadas.map((jrv) => this.aJrvAsignada(jrv));
-        const porId = new Map(this.jrvs.map((jrv) => [jrv.id, jrv]));
-        nuevas.forEach((jrv) => porId.set(jrv.id, jrv));
-        this.jrvs = Array.from(porId.values());
-        this.jrvsSeleccionadas = this.jrvsSeleccionadas.filter(
-          (jrv) => !nuevas.some((generada) => generada.id === jrv.id),
-        );
-        this.mensaje.set(`${nuevas.length} JRV(s) generada(s) correctamente`);
-        this.enviando.set(false);
-        this.actualizarSiguienteNumero();
-      },
-      error: (err: Error) => {
-        this.error.set(err.message || 'No se pudieron generar las JRVs');
-        this.enviando.set(false);
-      },
-    });
+    this.recintoApi
+      .generarJrvsPorRango(this.recinto.id, this.generacion)
+      .subscribe({
+        next: (generadas) => {
+          const nuevas = generadas.map((jrv) => this.aJrvAsignada(jrv));
+          const porId = new Map(this.jrvs.map((jrv) => [jrv.id, jrv]));
+          nuevas.forEach((jrv) => porId.set(jrv.id, jrv));
+          this.jrvs = Array.from(porId.values());
+          this.jrvsSeleccionadas = this.jrvsSeleccionadas.filter(
+            (jrv) => !nuevas.some((generada) => generada.id === jrv.id),
+          );
+          this.mensaje.set(`${nuevas.length} JRV(s) generada(s) correctamente`);
+          this.enviando.set(false);
+          this.actualizarSiguienteNumero();
+        },
+        error: (err: Error) => {
+          this.error.set(err.message || 'No se pudieron generar las JRVs');
+          this.enviando.set(false);
+        },
+      });
   }
 
   guardar(): void {
@@ -471,7 +484,9 @@ export class RecintoJrvsModalComponent implements OnChanges {
 
     req$.subscribe({
       next: () => {
-        this.jrvs = this.jrvs.filter((item) => !idsParaEliminar.includes(item.id));
+        this.jrvs = this.jrvs.filter(
+          (item) => !idsParaEliminar.includes(item.id),
+        );
         this.jrvsSeleccionadas = this.jrvsSeleccionadas.filter(
           (item) => !idsParaEliminar.includes(item.id),
         );
@@ -483,7 +498,8 @@ export class RecintoJrvsModalComponent implements OnChanges {
       },
       error: (err: Error) => {
         this.error.set(
-          err.message || 'No se pudieron eliminar las mesas (pueden tener actas asociadas)',
+          err.message ||
+            'No se pudieron eliminar las mesas (pueden tener actas asociadas)',
         );
         this.idsAEliminarPendientes = [];
         this.eliminando.set(false);
@@ -506,7 +522,11 @@ export class RecintoJrvsModalComponent implements OnChanges {
       const numStr = (jrv.numero || '').toUpperCase();
       // Casos comunes: JRV-001, JRV-M-001, JRV-F-001, JRV-001-M, etc.
       if (sufijo.length > 0) {
-        if (!numStr.includes(`-${sufijo}-`) && !numStr.includes(`-${sufijo}`) && !numStr.includes(`${sufijo}-`)) {
+        if (
+          !numStr.includes(`-${sufijo}-`) &&
+          !numStr.includes(`-${sufijo}`) &&
+          !numStr.includes(`${sufijo}-`)
+        ) {
           continue;
         }
       }

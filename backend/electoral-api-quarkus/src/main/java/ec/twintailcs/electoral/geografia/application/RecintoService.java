@@ -1,13 +1,13 @@
 package ec.twintailcs.electoral.geografia.application;
 
 import ec.twintailcs.electoral.auth.domain.Usuario;
+import ec.twintailcs.electoral.evidencia.domain.RlsContexto;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.domain.Recinto;
 import ec.twintailcs.electoral.geografia.domain.RecintoRepository;
-import ec.twintailcs.electoral.evidencia.domain.RlsContexto;
 import ec.twintailcs.electoral.shared.cache.InvalidadorDeCache;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -276,10 +276,10 @@ public class RecintoService {
     Recinto recinto =
         repository
             .findByIdOptional(recintoId)
-            .orElseThrow(() -> new GeografiaNotFoundException("Recinto " + recintoId + " not found"));
+            .orElseThrow(
+                () -> new GeografiaNotFoundException("Recinto " + recintoId + " not found"));
     if (Parroquia.findById(recinto.getParroquiaId()) == null) {
-      throw new GeografiaNotFoundException(
-          "Parroquia " + recinto.getParroquiaId() + " not found");
+      throw new GeografiaNotFoundException("Parroquia " + recinto.getParroquiaId() + " not found");
     }
 
     List<String> numeros = new ArrayList<>((int) cantidad);
@@ -289,7 +289,8 @@ public class RecintoService {
               ? "JRV-" + String.format(Locale.ROOT, "%03d", numero)
               : "JRV-" + sufijo + "-" + String.format(Locale.ROOT, "%03d", numero);
       if (numeroJrv.length() > 20) {
-        throw new IllegalArgumentException("El número generado supera los 20 caracteres permitidos");
+        throw new IllegalArgumentException(
+            "El número generado supera los 20 caracteres permitidos");
       }
       numeros.add(numeroJrv);
     }

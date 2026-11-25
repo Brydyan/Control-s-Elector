@@ -2,7 +2,6 @@ package ec.twintailcs.electoral.geografia.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
@@ -60,7 +59,8 @@ class RecintoServiceTest {
     // Act & Assert: second creation with same nombre + parroquia should fail
     assertThrows(
         GeografiaConflictException.class,
-        () -> service.crearRecinto("Unique Recinto", parroquia.getId(), null, "ACTIVO", masterId()));
+        () ->
+            service.crearRecinto("Unique Recinto", parroquia.getId(), null, "ACTIVO", masterId()));
   }
 
   @Test
@@ -105,8 +105,7 @@ class RecintoServiceTest {
 
     // Act
     Recinto updated =
-        service.actualizarRecinto(
-            recinto.getId(), "Updated Name", null, "INACTIVO", masterId());
+        service.actualizarRecinto(recinto.getId(), "Updated Name", null, "INACTIVO", masterId());
 
     // Assert
     assertEquals("Updated Name", updated.getNombre());
@@ -161,18 +160,13 @@ class RecintoServiceTest {
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
     Recinto recinto =
         service.crearRecinto(
-            "Recinto generado " + UUID.randomUUID(),
-            parroquia.getId(),
-            null,
-            "ACTIVO",
-            masterId());
+            "Recinto generado " + UUID.randomUUID(), parroquia.getId(), null, "ACTIVO", masterId());
     String sufijo = "IT" + UUID.randomUUID().toString().replace("-", "").substring(0, 6);
     long cargosActivos =
         ((Number) entityManager.createNativeQuery("select count(*) from cargo").getSingleResult())
             .longValue();
 
-    List<Jrv> jrvs =
-        service.generarJrvsPorRango(recinto.getId(), 1, 2, sufijo, 350, masterId());
+    List<Jrv> jrvs = service.generarJrvsPorRango(recinto.getId(), 1, 2, sufijo, 350, masterId());
 
     assertEquals(2, jrvs.size());
     assertEquals("JRV-" + sufijo + "-001", jrvs.get(0).getNumero());
@@ -199,7 +193,8 @@ class RecintoServiceTest {
   void generarJrvsPorRangoRechazaParametrosInvalidos() {
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
     Recinto recinto =
-        service.crearRecinto("Recinto rango invalido", parroquia.getId(), null, "ACTIVO", masterId());
+        service.crearRecinto(
+            "Recinto rango invalido", parroquia.getId(), null, "ACTIVO", masterId());
 
     assertThrows(
         IllegalArgumentException.class,

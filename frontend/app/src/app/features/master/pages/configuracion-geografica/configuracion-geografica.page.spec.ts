@@ -130,8 +130,12 @@ describe('ConfiguracionGeograficaPage', () => {
     component.expandirTodo();
     expect(component.nodos()[0].expanded).toBe(true);
     expect(component.nodos()[0].children?.[0].expanded).toBe(true);
-    expect(component.nodos()[0].children?.[0].children?.[0].expanded).toBe(false);
-    expect(component.nodos()[0].children?.[0].children?.[0].children).toBeUndefined();
+    expect(component.nodos()[0].children?.[0].children?.[0].expanded).toBe(
+      false,
+    );
+    expect(
+      component.nodos()[0].children?.[0].children?.[0].children,
+    ).toBeUndefined();
 
     component.colapsarTodo();
     expect(component.nodos()[0].expanded).toBe(false);

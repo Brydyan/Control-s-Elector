@@ -11,7 +11,9 @@ public record GenerarJrvsRangoRequest(
     @Min(value = 1, message = "El inicio del rango debe ser mayor que cero") int desde,
     @Min(value = 1, message = "El fin del rango debe ser mayor que cero") int hasta,
     @Size(max = 8, message = "El sufijo no puede exceder 8 caracteres")
-        @Pattern(regexp = "[A-Za-z0-9]*", message = "El sufijo solo puede contener letras y números")
+        @Pattern(
+            regexp = "[A-Za-z0-9]*",
+            message = "El sufijo solo puede contener letras y números")
         String sufijoGenero,
     @Min(value = 1, message = "Los electores por mesa deben ser mayores que cero")
         int electoresPorMesa) {}

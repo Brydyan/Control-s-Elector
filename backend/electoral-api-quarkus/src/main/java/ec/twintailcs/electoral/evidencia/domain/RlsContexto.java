@@ -9,9 +9,9 @@ import jakarta.persistence.EntityManager;
  *
  * <p>Las tablas {@code acta}, {@code acta_detalle}, {@code evidencia}, {@code recinto}, {@code jrv}
  * y {@code jrv_cargo} aplican RLS: sin el contexto del usuario, Postgres no autoriza las escrituras
- * restringidas. El contexto se activa con {@code set_config('app.current_user_id', ..., true)},
- * que es el equivalente parametrizado de {@code SET LOCAL}: el valor vive solo durante la
- * transaccion, asi que una conexion del pool no puede arrastrar la identidad de un request a otro.
+ * restringidas. El contexto se activa con {@code set_config('app.current_user_id', ..., true)}, que
+ * es el equivalente parametrizado de {@code SET LOCAL}: el valor vive solo durante la transaccion,
+ * asi que una conexion del pool no puede arrastrar la identidad de un request a otro.
  *
  * <p>El rol no se manda: la funcion {@code get_current_user_rol_name()} de la base lo deduce del id
  * del usuario. Es lo mismo que hace el backend Spring, que ademas fija {@code app.current_user_rol}

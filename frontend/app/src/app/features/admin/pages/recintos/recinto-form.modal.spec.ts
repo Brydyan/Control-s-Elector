@@ -121,7 +121,9 @@ describe('RecintoFormModalComponent', () => {
       component.ngOnInit();
 
       expect(geografiaApi.obtenerGeografia).toHaveBeenCalled();
-      expect(component.provincias.map((p) => p.nombre)).toEqual(['Santa Elena']);
+      expect(component.provincias.map((p) => p.nombre)).toEqual([
+        'Santa Elena',
+      ]);
       component.onProvinciaChange({ value: 1 });
       expect(component.cantones.map((c) => c.nombre)).toEqual(['La Libertad']);
       component.onCantonChange({ value: 10 });

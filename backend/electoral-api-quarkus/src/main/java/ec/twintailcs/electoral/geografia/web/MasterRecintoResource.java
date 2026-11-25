@@ -92,7 +92,11 @@ public class MasterRecintoResource {
 
     Recinto recinto =
         service.crearRecinto(
-            dto.nombre(), dto.parroquiaId(), dto.coordinatorId(), dto.estado(), contexto.usuarioId());
+            dto.nombre(),
+            dto.parroquiaId(),
+            dto.coordinatorId(),
+            dto.estado(),
+            contexto.usuarioId());
     return Response.status(Response.Status.CREATED).entity(toDto(recinto)).build();
   }
 

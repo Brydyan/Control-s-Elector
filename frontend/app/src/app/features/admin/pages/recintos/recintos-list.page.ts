@@ -61,7 +61,12 @@ export class RecintosListPage implements OnInit {
 
   readonly tableColumns: TableColumn<RecintoResponse>[] = [
     { key: 'nombre', header: 'Nombre', sortable: true },
-    { key: 'parroquia', header: 'Parroquia', sortable: true, value: (r) => r.parroquia || '-' },
+    {
+      key: 'parroquia',
+      header: 'Parroquia',
+      sortable: true,
+      value: (r) => r.parroquia || '-',
+    },
     {
       key: 'coordinador',
       header: 'Coordinador',
@@ -211,7 +216,8 @@ export class RecintosListPage implements OnInit {
   }
 
   onPaginationChange(event: any): void {
-    this.page = event.page ?? Math.floor((event.first ?? 0) / (event.rows || this.size));
+    this.page =
+      event.page ?? Math.floor((event.first ?? 0) / (event.rows || this.size));
     this.size = event.rows || 20;
     this.cargarRecintos();
   }

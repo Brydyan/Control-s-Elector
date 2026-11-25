@@ -263,15 +263,17 @@ export class RecintoFormModalComponent implements OnInit, OnChanges {
   }
 
   private cargarCoordinadores(): void {
-    this.adminApi.listarUsuarios({ page: 0, size: 100, rol: 'COORDINATOR' }).subscribe({
-      next: (response) => {
-        this.coordinadores =
-          response.data?.filter((u) => u.rolNombre === 'COORDINATOR') || [];
-      },
-      error: (err) => {
-        console.error('Error loading coordinators:', err);
-      },
-    });
+    this.adminApi
+      .listarUsuarios({ page: 0, size: 100, rol: 'COORDINATOR' })
+      .subscribe({
+        next: (response) => {
+          this.coordinadores =
+            response.data?.filter((u) => u.rolNombre === 'COORDINATOR') || [];
+        },
+        error: (err) => {
+          console.error('Error loading coordinators:', err);
+        },
+      });
   }
 
   onProvinciaChange(event: any): void {
