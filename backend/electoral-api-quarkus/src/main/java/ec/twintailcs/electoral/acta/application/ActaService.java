@@ -143,8 +143,8 @@ public class ActaService {
   /** Todas las JRVs con su estado de registro. */
   @Transactional
   public List<JrvConEstadoDto> jrvs() {
-    activarContexto();
-    return repository.listarJrvs().stream()
+    Long usuarioId = activarContexto();
+    return repository.listarJrvs(usuarioId, currentUser.rol()).stream()
         .map(
             fila ->
                 new JrvConEstadoDto(
