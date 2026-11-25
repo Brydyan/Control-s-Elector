@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.geografia.application.usecase;
 
 import ec.twintailcs.electoral.electoral.application.ConfiguracionAuditService;
+import ec.twintailcs.electoral.evidencia.domain.RlsContexto;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
 import ec.twintailcs.electoral.geografia.domain.Jrv;
@@ -17,6 +18,7 @@ import jakarta.transaction.Transactional;
 public class ActualizarJrvUseCase {
 
   @Inject ConfiguracionAuditService audit;
+  @Inject RlsContexto rls;
   @Inject EntityManager entityManager;
 
   @Inject InvalidadorDeCache invalidador;
@@ -24,6 +26,7 @@ public class ActualizarJrvUseCase {
   /** Actualiza la JRV y deja rastro en la auditoria. */
   @Transactional
   public Jrv execute(Long id, JrvRequest dto, Long masterId, String ipAddress) {
+    rls.activar(masterId);
     Jrv jrv = entityManager.find(Jrv.class, id);
     if (jrv == null) {
       throw new GeografiaNotFoundException("No existe la JRV " + id);

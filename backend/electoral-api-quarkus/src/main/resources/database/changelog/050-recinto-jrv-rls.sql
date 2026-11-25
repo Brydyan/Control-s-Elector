@@ -1,6 +1,17 @@
 --liquibase formatted sql
 
--- changeset electoral:050-01-recinto-jrv-rls
+-- changeset electoral:050-01-fix-get-current-user-id splitStatements:false
+-- current_setting('app.current_user_id', true) devuelve '' (string vacío) o NULL si no está definido.
+-- El casteo directo (''::BIGINT) falla con "invalid input syntax for type bigint: ''".
+-- Usamos NULLIF(..., '') para transformar cadenas vacías en NULL antes de castear.
+CREATE OR REPLACE FUNCTION get_current_user_id() RETURNS BIGINT AS $$
+  SELECT (NULLIF(current_setting('app.current_user_id', true), ''))::BIGINT;
+$$ LANGUAGE SQL STABLE;
+
+ALTER FUNCTION get_current_user_id() SECURITY DEFINER;
+ALTER FUNCTION get_current_user_id() SET search_path = public, pg_temp;
+
+-- changeset electoral:050-02-recinto-jrv-rls
 -- Las tablas de configuración geográfica son compartidas por los roles autenticados, pero solo
 -- MASTER puede mutarlas. Las escrituras activan app.current_user_id desde la capa de aplicación.
 ALTER TABLE recinto ENABLE ROW LEVEL SECURITY;
