@@ -335,22 +335,38 @@
   </app-card>
 
   <!-- Datos faltantes o inconsistencias -->
-  <app-card [elevated]="true" headerTitle="Datos faltantes o inconsistencias">
-    <ul
+  <app-card
+    [elevated]="true"
+    headerTitle="Verificación de Integridad y Chequeos"
+  >
+    <div
       class="faltantes-list"
+      role="list"
       aria-label="Lista de chequeos de integridad del acta"
     >
       @for (check of chequeos(); track check.texto) {
-      <li class="faltante-item" [class.faltante-ok]="check.ok">
-        <i
-          [class]="check.ok ? 'pi pi-check' : 'pi pi-exclamation-triangle'"
-          class="faltante-icono"
-          aria-hidden="true"
-        ></i>
-        <span class="faltante-texto">{{ check.texto }}</span>
-      </li>
+      <div
+        class="faltante-item"
+        role="listitem"
+        [class.faltante-ok]="check.ok"
+        [class.faltante-warning]="!check.ok"
+      >
+        <div class="faltante-icon-wrapper">
+          <i
+            [class]="check.ok ? 'pi pi-check-circle' : 'pi pi-exclamation-triangle'"
+            class="faltante-icono"
+            aria-hidden="true"
+          ></i>
+        </div>
+        <div class="faltante-content">
+          <span class="faltante-titulo"
+            >{{ check.ok ? 'Verificado' : 'Atención requerida' }}</span
+          >
+          <span class="faltante-texto">{{ check.texto }}</span>
+        </div>
+      </div>
       }
-    </ul>
+    </div>
   </app-card>
 
   <!-- Fullscreen Image Zoom Modal -->
