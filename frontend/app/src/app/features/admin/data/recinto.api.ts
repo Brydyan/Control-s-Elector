@@ -28,6 +28,22 @@ export interface RecintoRequest {
   estado?: string;
 }
 
+export interface GenerarJrvsRangoRequest {
+  desde: number;
+  hasta: number;
+  sufijoGenero?: string;
+  electoresPorMesa: number;
+}
+
+export interface JrvResponse {
+  id: number;
+  numero: string;
+  recinto: string;
+  totalElectores: number;
+  parroquiaId: number;
+  recintoId: number | null;
+}
+
 export interface CrearRecintoConAsignacionesRequest {
   nombre: string;
   parroquiaId: number;
@@ -110,6 +126,28 @@ export class RecintoApi {
   eliminarRecinto(id: number): Observable<void> {
     return this.http
       .delete(`${this.baseUrl}/${id}`, this.noContentOptions())
+      .pipe(
+        map(() => undefined),
+        catchError((err) => this.handleError(err)),
+      );
+  }
+
+  generarJrvsPorRango(
+    recintoId: number,
+    payload: GenerarJrvsRangoRequest,
+  ): Observable<JrvResponse[]> {
+    return this.http
+      .post<JrvResponse[]>(`${this.baseUrl}/${recintoId}/generar-jrvs`, payload)
+      .pipe(catchError((err) => this.handleError(err)));
+  }
+
+  asignarJrvsAlRecinto(recintoId: number, jrvIds: number[]): Observable<void> {
+    return this.http
+      .post(
+        `${this.baseUrl}/${recintoId}/asignar-jrvs`,
+        { jrvIds },
+        this.noContentOptions(),
+      )
       .pipe(
         map(() => undefined),
         catchError((err) => this.handleError(err)),

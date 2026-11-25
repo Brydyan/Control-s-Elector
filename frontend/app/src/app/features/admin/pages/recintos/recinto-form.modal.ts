@@ -4,7 +4,9 @@ import {
   Input,
   Output,
   EventEmitter,
+  OnChanges,
   OnInit,
+  SimpleChanges,
   inject,
   signal,
 } from '@angular/core';
@@ -26,24 +28,13 @@ import {
   RecintoRequest,
 } from '../../data/recinto.api';
 import { AdminApi } from '../../data/admin.api';
+import {
+  CantonNode,
+  GeografiaApi,
+  ParroquiaNode,
+  ProvinciaNode,
+} from '../../data/geografia.api';
 import { UsuarioResponseDto } from '../../domain/models/admin.model';
-
-interface Provincia {
-  id: number;
-  nombre: string;
-}
-
-interface Canton {
-  id: number;
-  nombre: string;
-  provinciaId: number;
-}
-
-interface Parroquia {
-  id: number;
-  nombre: string;
-  cantonId: number;
-}
 
 @Component({
   selector: 'app-recinto-form-modal',
@@ -193,7 +184,7 @@ interface Parroquia {
     }
   `,
 })
-export class RecintoFormModalComponent implements OnInit {
+export class RecintoFormModalComponent implements OnInit, OnChanges {
   @Input() abierto = false;
   @Input() recinto: RecintoResponse | null = null;
   @Input() modoEdicion = false;
@@ -202,21 +193,28 @@ export class RecintoFormModalComponent implements OnInit {
 
   private readonly recintoApi = inject(RecintoApi);
   private readonly adminApi = inject(AdminApi);
+  private readonly geografiaApi = inject(GeografiaApi);
   private readonly fb = inject(FormBuilder);
 
   readonly error = signal<string | null>(null);
   readonly enviando = signal(false);
 
   formulario!: FormGroup;
-  provincias: Provincia[] = [];
-  cantones: Canton[] = [];
-  parroquias: Parroquia[] = [];
+  provincias: ProvinciaNode[] = [];
+  cantones: CantonNode[] = [];
+  parroquias: ParroquiaNode[] = [];
   coordinadores: UsuarioResponseDto[] = [];
 
   ngOnInit(): void {
     this.inicializarFormulario();
     this.cargarProvincias();
     this.cargarCoordinadores();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['recinto'] && this.formulario && this.recinto) {
+      this.seleccionarGeografia(this.recinto.parroquiaId);
+    }
   }
 
   private inicializarFormulario(): void {
@@ -231,38 +229,65 @@ export class RecintoFormModalComponent implements OnInit {
   }
 
   private cargarProvincias(): void {
-    // TODO: Fetch from geografía API
-    this.provincias = [
-      { id: 1, nombre: 'Pichincha' },
-      { id: 2, nombre: 'Guayas' },
-      { id: 3, nombre: 'Azuay' },
-    ];
-  }
-
-  private cargarCoordinadores(): void {
-    this.adminApi.listarUsuarios({ page: 0, size: 1000 }).subscribe({
-      next: (response) => {
-        this.coordinadores =
-          response.data?.filter((u) => u.rolNombre === 'COORDINATOR') || [];
+    this.geografiaApi.obtenerGeografia().subscribe({
+      next: (geografia) => {
+        this.provincias = geografia.provincias ?? [];
+        if (this.recinto) {
+          this.seleccionarGeografia(this.recinto.parroquiaId);
+        }
       },
       error: (err) => {
-        console.error('Error loading coordinators:', err);
+        this.error.set(err.message || 'No se pudo cargar la geografía');
       },
     });
   }
 
+  private seleccionarGeografia(parroquiaId: number): void {
+    const provincia = this.provincias.find((p) =>
+      p.cantones.some((canton) =>
+        canton.parroquias.some((parroquia) => parroquia.id === parroquiaId),
+      ),
+    );
+    const canton = provincia?.cantones.find((c) =>
+      c.parroquias.some((parroquia) => parroquia.id === parroquiaId),
+    );
+    const parroquia = canton?.parroquias.find((p) => p.id === parroquiaId);
+
+    this.cantones = provincia?.cantones ?? [];
+    this.parroquias = canton?.parroquias ?? [];
+    this.formulario.patchValue({
+      provinciaId: provincia?.id ?? null,
+      cantonId: canton?.id ?? null,
+      parroquiaId: parroquia?.id ?? null,
+    });
+  }
+
+  private cargarCoordinadores(): void {
+    this.adminApi
+      .listarUsuarios({ page: 0, size: 100, rol: 'COORDINATOR' })
+      .subscribe({
+        next: (response) => {
+          this.coordinadores =
+            response.data?.filter((u) => u.rolNombre === 'COORDINATOR') || [];
+        },
+        error: (err) => {
+          console.error('Error loading coordinators:', err);
+        },
+      });
+  }
+
   onProvinciaChange(event: any): void {
     const provinciaId = event.value;
-    // TODO: Fetch from geografía API based on provinciaId
-    this.cantones = [];
+    const provincia = this.provincias.find((p) => p.id === provinciaId);
+    this.cantones = provincia?.cantones ?? [];
     this.parroquias = [];
     this.formulario.patchValue({ cantonId: null, parroquiaId: null });
   }
 
   onCantonChange(event: any): void {
     const cantonId = event.value;
-    // TODO: Fetch from geografía API based on cantonId
-    this.parroquias = [];
+    const canton = this.cantones.find((c) => c.id === cantonId);
+    this.parroquias = canton?.parroquias ?? [];
     this.formulario.patchValue({ parroquiaId: null });
   }
 

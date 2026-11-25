@@ -12,6 +12,7 @@ import java.time.Instant;
 public record RecintoResponse(
     Long id,
     String nombre,
+    Long parroquiaId,
     String parroquia,
     CoordinadorInfo coordinador,
     Integer totalMesas,
