@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RecintoFormModalComponent } from './recinto-form.modal';
 import { RecintoApi, RecintoResponse } from '../../data/recinto.api';
 import { AdminApi } from '../../data/admin.api';
+import { GeografiaApi, GeografiaTreeDto } from '../../data/geografia.api';
 import { PagedResponse } from '../../../../shared/models/page.model';
 import { UsuarioResponseDto } from '../../domain/models/admin.model';
 
@@ -13,6 +14,7 @@ describe('RecintoFormModalComponent', () => {
   let fixture: ComponentFixture<RecintoFormModalComponent>;
   let recintoApi: jasmine.SpyObj<RecintoApi>;
   let adminApi: jasmine.SpyObj<AdminApi>;
+  let geografiaApi: jasmine.SpyObj<GeografiaApi>;
 
   const mockRecinto: RecintoResponse = {
     id: 1,
@@ -47,12 +49,33 @@ describe('RecintoFormModalComponent', () => {
       'actualizarRecinto',
     ]);
     adminApi = jasmine.createSpyObj('AdminApi', ['listarUsuarios']);
+    geografiaApi = jasmine.createSpyObj('GeografiaApi', ['obtenerGeografia']);
+    geografiaApi.obtenerGeografia.and.returnValue(
+      of({
+        provincias: [
+          {
+            id: 1,
+            nombre: 'Santa Elena',
+            cantones: [
+              {
+                id: 10,
+                nombre: 'La Libertad',
+                parroquias: [
+                  { id: 100, nombre: 'Centro', esUrbana: true, jrvs: [] },
+                ],
+              },
+            ],
+          },
+        ],
+      } as GeografiaTreeDto),
+    );
 
     await TestBed.configureTestingModule({
       imports: [RecintoFormModalComponent, ReactiveFormsModule],
       providers: [
         { provide: RecintoApi, useValue: recintoApi },
         { provide: AdminApi, useValue: adminApi },
+        { provide: GeografiaApi, useValue: geografiaApi },
       ],
     }).compileComponents();
 
@@ -85,6 +108,24 @@ describe('RecintoFormModalComponent', () => {
 
       expect(component.coordinadores.length).toBe(2);
       expect(component.coordinadores[0].rolNombre).toBe('COORDINATOR');
+    });
+
+    it('debería cargar y filtrar provincias, cantones y parroquias desde la API', () => {
+      adminApi.listarUsuarios.and.returnValue(
+        of({
+          data: mockCoordinadores,
+          meta: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
+        }),
+      );
+
+      component.ngOnInit();
+
+      expect(geografiaApi.obtenerGeografia).toHaveBeenCalled();
+      expect(component.provincias.map((p) => p.nombre)).toEqual(['Santa Elena']);
+      component.onProvinciaChange({ value: 1 });
+      expect(component.cantones.map((c) => c.nombre)).toEqual(['La Libertad']);
+      component.onCantonChange({ value: 10 });
+      expect(component.parroquias.map((p) => p.nombre)).toEqual(['Centro']);
     });
   });
 

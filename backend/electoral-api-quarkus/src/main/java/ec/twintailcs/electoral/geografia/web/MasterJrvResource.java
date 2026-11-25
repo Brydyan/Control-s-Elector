@@ -71,12 +71,25 @@ public class MasterJrvResource {
     return Response.noContent().build();
   }
 
+  /** Eliminar múltiples JRVs en lote. 409 si alguna tiene actas registradas. */
+  @DELETE
+  @Path("/batch")
+  public Response eliminarBatch(
+      @Valid ec.twintailcs.electoral.geografia.web.dto.EliminarJrvsBatchRequest dto,
+      @HeaderParam("X-Forwarded-For") String xForwardedFor) {
+    autorizador.exigir("configuracion:write");
+
+    service.eliminarJrvsBatch(dto.jrvIds(), contexto.usuarioId(), contexto.ip(xForwardedFor));
+    return Response.noContent().build();
+  }
+
   private static JrvResponse toDto(Jrv jrv) {
     return new JrvResponse(
         jrv.getId(),
         jrv.getNumero(),
         jrv.getRecinto(),
         jrv.getTotalElectores(),
-        jrv.getParroquiaId());
+        jrv.getParroquiaId(),
+        jrv.getRecintoId());
   }
 }

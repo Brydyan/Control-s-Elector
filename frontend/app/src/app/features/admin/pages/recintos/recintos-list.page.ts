@@ -3,10 +3,16 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Select } from 'primeng/select';
 import { Skeleton } from 'primeng/skeleton';
-import { TableModule } from 'primeng/table';
-import { Message } from 'primeng/message';
-import { ButtonModule } from 'primeng/button';
-import { EmptyStateComponent } from '../../../../shared/ui';
+import { MenuItem } from 'primeng/api';
+import {
+  ButtonComponent,
+  EmptyStateComponent,
+  ErrorStateComponent,
+  TableCellTemplate,
+  TableColumn,
+  TableComponent,
+} from '../../../../shared/ui';
+import { PaginatorComponent } from '../../../../shared/components/paginator/paginator.component';
 import {
   RecintoApi,
   RecintoResponse,
@@ -21,12 +27,12 @@ import { RecintoJrvsModalComponent } from './recinto-jrvs.modal';
   imports: [
     CommonModule,
     FormsModule,
-    ButtonModule,
-    EmptyStateComponent,
+    ButtonComponent,
+    ErrorStateComponent,
     Select,
-    Skeleton,
-    TableModule,
-    Message,
+    TableComponent,
+    TableCellTemplate,
+    PaginatorComponent,
     RecintoFormModalComponent,
     RecintoJrvsModalComponent,
   ],
@@ -53,8 +59,51 @@ export class RecintosListPage implements OnInit {
   terminoBusqueda = '';
   estadoSeleccionado = '';
 
+  readonly tableColumns: TableColumn<RecintoResponse>[] = [
+    { key: 'nombre', header: 'Nombre', sortable: true },
+    { key: 'parroquia', header: 'Parroquia', sortable: true, value: (r) => r.parroquia || '-' },
+    {
+      key: 'coordinador',
+      header: 'Coordinador',
+      sortable: true,
+      value: (r) => r.coordinador?.nombre || '-',
+    },
+    {
+      key: 'totalMesas',
+      header: 'Mesas (JRV)',
+      align: 'center',
+      sortable: true,
+      value: (r) => r.totalMesas ?? 0,
+    },
+    { key: 'estado', header: 'Estado', align: 'center', sortable: true },
+  ];
+
   ngOnInit(): void {
     this.cargarRecintos();
+  }
+
+  obtenerAccionesRecinto(recinto: RecintoResponse): MenuItem[] {
+    return [
+      {
+        label: 'Editar',
+        icon: 'pi pi-pencil',
+        command: () => this.abrirFormularioEditar(recinto),
+      },
+      {
+        label: 'Asignar JRVs',
+        icon: 'pi pi-list',
+        command: () => this.abrirModalJrvs(recinto),
+      },
+      {
+        separator: true,
+      },
+      {
+        label: 'Eliminar',
+        icon: 'pi pi-trash',
+        styleClass: 'text-red-500',
+        command: () => this.confirmarEliminar(recinto),
+      },
+    ];
   }
 
   cargarRecintos(): void {
@@ -141,13 +190,28 @@ export class RecintosListPage implements OnInit {
     this.cargarRecintos();
   }
 
+  onJrvsModificadas(): void {
+    this.cargarRecintos();
+  }
+
   onJrvsCancelado(): void {
     this.modalJrvsAbierto = false;
     this.recintoSeleccionado = null;
   }
 
+  onPageChange(page: number): void {
+    this.page = page;
+    this.cargarRecintos();
+  }
+
+  onSizeChange(size: number): void {
+    this.size = size;
+    this.page = 0;
+    this.cargarRecintos();
+  }
+
   onPaginationChange(event: any): void {
-    this.page = event.page || 0;
+    this.page = event.page ?? Math.floor((event.first ?? 0) / (event.rows || this.size));
     this.size = event.rows || 20;
     this.cargarRecintos();
   }

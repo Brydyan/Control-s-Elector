@@ -22,18 +22,16 @@ import {
 import { GeografiaApi } from '../../data/geografia.api';
 import {
   CantonNodoDto,
-  JrvNodoDto,
   ParroquiaNodoDto,
   ProvinciaNodoDto,
 } from '../../domain/models/geografia.model';
 import { ConfirmDialogComponent } from '../configuracion/dialogs/confirm-dialog/confirm-dialog.component';
 import { CantonModalComponent } from './dialogs/canton-modal/canton-modal.component';
-import { JrvModalComponent } from './dialogs/jrv-modal/jrv-modal.component';
 import { ParroquiaModalComponent } from './dialogs/parroquia-modal/parroquia-modal.component';
 import { ProvinciaModalComponent } from './dialogs/provincia-modal/provincia-modal.component';
 
 /** Nivel geografico de un nodo del arbol. */
-export type NivelGeografico = 'PROVINCIA' | 'CANTON' | 'PARROQUIA' | 'JRV';
+export type NivelGeografico = 'PROVINCIA' | 'CANTON' | 'PARROQUIA';
 
 /**
  * Lo que la pantalla sabe de un nodo del arbol.
@@ -48,21 +46,20 @@ export interface NodoGeografia {
   /** Texto secundario del nodo: "2 parroquias", "320 electores"... */
   meta: string;
   /**
-   * Id del padre en la jerarquia (la provincia de un canton, el canton de una
-   * parroquia, la parroquia de una JRV).
+   * Id del padre en la jerarquia (la provincia de un canton o el canton de una parroquia).
    *
    * <p>El arbol del backend no lo repite en cada nodo, pero el frontend lo necesita
    * para editar: el PUT de una parroquia exige el canton al que pertenece.
    */
   padreId?: number;
   /** Entidad de origen, para el modo edicion del modal. */
-  datos: ProvinciaNodoDto | CantonNodoDto | ParroquiaNodoDto | JrvNodoDto;
+  datos: ProvinciaNodoDto | CantonNodoDto | ParroquiaNodoDto;
 }
 
 /**
  * Configuracion geografica jerarquica (SDD 2026-11-16-config-geografica).
  *
- * <p>Una sola pantalla para los cuatro niveles: Provincia → Canton → Parroquia → JRV. El arbol
+ * <p>Una sola pantalla para tres niveles: Provincia → Canton → Parroquia. El arbol
  * se lee entero de una vez y el CRUD es contextual: cada nodo ofrece crear su nivel hijo, y el
  * menu contextual ofrece editar o eliminar.
  *
@@ -132,14 +129,12 @@ export class ConfiguracionGeograficaPage implements OnInit {
       },
     ];
 
-    if (datos.nivel !== 'JRV') {
-      items.push({
-        label: 'Eliminar',
-        icon: 'pi pi-trash',
-        styleClass: 'text-red-500',
-        command: () => this.eliminar(datos),
-      });
-    }
+    items.push({
+      label: 'Eliminar',
+      icon: 'pi pi-trash',
+      styleClass: 'text-red-500',
+      command: () => this.eliminar(datos),
+    });
 
     return items;
   });
@@ -243,16 +238,6 @@ export class ConfiguracionGeograficaPage implements OnInit {
     );
   }
 
-  /** Abre el modal de alta de JRV bajo la parroquia del nodo. */
-  crearJrv(nodo: NodoGeografia): void {
-    this.abrirDialogo(
-      JrvModalComponent,
-      `Nueva JRV en ${nodo.nombre}`,
-      { mode: 'create', parroquiaId: nodo.id, parroquiaNombre: nodo.nombre },
-      'JRV creada',
-      this.clave('PARROQUIA', nodo.id),
-    );
-  }
 
   // ---------------------------------------------------------------------------
   // Edicion y baja
@@ -291,18 +276,6 @@ export class ConfiguracionGeograficaPage implements OnInit {
             cantonId: datos.padreId,
           },
           'Parroquia actualizada',
-        );
-        break;
-      case 'JRV':
-        this.abrirDialogo(
-          JrvModalComponent,
-          'Editar JRV',
-          {
-            mode: 'edit',
-            jrv: datos.datos as JrvNodoDto,
-            parroquiaId: datos.padreId,
-          },
-          'JRV actualizada',
         );
         break;
     }
@@ -355,8 +328,6 @@ export class ConfiguracionGeograficaPage implements OnInit {
         return this.api.eliminarCanton(datos.id);
       case 'PARROQUIA':
         return this.api.eliminarParroquia(datos.id);
-      case 'JRV':
-        return this.api.eliminarJrv(datos.id);
     }
   }
 
@@ -433,7 +404,6 @@ export class ConfiguracionGeograficaPage implements OnInit {
         };
 
         nodoCanton.children = parroquias.map((parroquia) => {
-          const jrvs = parroquia.jrvs ?? [];
           const claveParroquia = this.clave('PARROQUIA', parroquia.id);
 
           const nodoParroquia: TreeNode = {
@@ -443,33 +413,12 @@ export class ConfiguracionGeograficaPage implements OnInit {
               id: parroquia.id,
               nivel: 'PARROQUIA',
               nombre: parroquia.nombre,
-              meta: `${parroquia.esUrbana ? 'urbana' : 'rural'} · ${this.resumen(
-                jrvs.length,
-                'JRV',
-                'JRVs',
-              )}`,
+              meta: parroquia.esUrbana ? 'urbana' : 'rural',
               padreId: canton.id,
               datos: parroquia,
             } satisfies NodoGeografia,
             expanded: expandidos.has(claveParroquia),
           };
-
-          nodoParroquia.children = jrvs.map((jrv) => {
-            const claveJrv = this.clave('JRV', jrv.id);
-            return {
-              key: claveJrv,
-              label: jrv.numero,
-              data: {
-                id: jrv.id,
-                nivel: 'JRV',
-                nombre: jrv.numero,
-                meta: `${jrv.totalElectores} electores`,
-                padreId: parroquia.id,
-                datos: jrv,
-              } satisfies NodoGeografia,
-              expanded: false,
-            } satisfies TreeNode;
-          });
 
           return nodoParroquia;
         });
@@ -509,11 +458,6 @@ export class ConfiguracionGeograficaPage implements OnInit {
         const parroquias = canton.parroquias ?? [];
         if (parroquias.length) {
           claves.push(this.clave('CANTON', canton.id));
-        }
-        for (const parroquia of parroquias) {
-          if ((parroquia.jrvs ?? []).length) {
-            claves.push(this.clave('PARROQUIA', parroquia.id));
-          }
         }
       }
     }

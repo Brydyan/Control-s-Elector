@@ -164,6 +164,11 @@ export const NAV_CONFIG: Record<UserRole, NavSection[]> = {
           icon: 'pi pi-list',
           route: '/master/configuracion',
         },
+        {
+          label: 'Configuración Geográfica',
+          icon: 'pi pi-map',
+          route: '/master/configuracion-geografica',
+        },
       ],
     },
     {

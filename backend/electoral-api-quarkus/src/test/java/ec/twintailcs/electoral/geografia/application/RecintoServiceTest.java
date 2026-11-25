@@ -2,8 +2,10 @@ package ec.twintailcs.electoral.geografia.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.geografia.domain.GeografiaConflictException;
 import ec.twintailcs.electoral.geografia.domain.GeografiaNotFoundException;
+import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.domain.Recinto;
 import ec.twintailcs.electoral.geografia.domain.RecintoRepository;
@@ -11,6 +13,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -34,7 +38,8 @@ class RecintoServiceTest {
     assertNotNull(parroquia, "Test requires at least one Parroquia to exist");
 
     // Act
-    Recinto created = service.crearRecinto("Test Recinto", parroquia.getId(), null, "ACTIVO");
+    Recinto created =
+        service.crearRecinto("Test Recinto", parroquia.getId(), null, "ACTIVO", masterId());
 
     // Assert
     assertNotNull(created);
@@ -50,12 +55,12 @@ class RecintoServiceTest {
   void crearRecintoConDuplicadoNombreParroquia() {
     // Setup
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
-    service.crearRecinto("Unique Recinto", parroquia.getId(), null, "ACTIVO");
+    service.crearRecinto("Unique Recinto", parroquia.getId(), null, "ACTIVO", masterId());
 
     // Act & Assert: second creation with same nombre + parroquia should fail
     assertThrows(
         GeografiaConflictException.class,
-        () -> service.crearRecinto("Unique Recinto", parroquia.getId(), null, "ACTIVO"));
+        () -> service.crearRecinto("Unique Recinto", parroquia.getId(), null, "ACTIVO", masterId()));
   }
 
   @Test
@@ -64,7 +69,7 @@ class RecintoServiceTest {
     // Act & Assert: invalid parroquiaId
     assertThrows(
         GeografiaNotFoundException.class,
-        () -> service.crearRecinto("Test", 99999L, null, "ACTIVO"));
+        () -> service.crearRecinto("Test", 99999L, null, "ACTIVO", masterId()));
   }
 
   @Test
@@ -72,7 +77,8 @@ class RecintoServiceTest {
   void obtenerRecintoExistente() {
     // Setup
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
-    Recinto created = service.crearRecinto("Get Test", parroquia.getId(), null, "ACTIVO");
+    Recinto created =
+        service.crearRecinto("Get Test", parroquia.getId(), null, "ACTIVO", masterId());
 
     // Act
     Recinto obtained = service.obtenerRecinto(created.getId());
@@ -94,10 +100,13 @@ class RecintoServiceTest {
   void actualizarRecinto() {
     // Setup
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
-    Recinto recinto = service.crearRecinto("Original Name", parroquia.getId(), null, "ACTIVO");
+    Recinto recinto =
+        service.crearRecinto("Original Name", parroquia.getId(), null, "ACTIVO", masterId());
 
     // Act
-    Recinto updated = service.actualizarRecinto(recinto.getId(), "Updated Name", null, "INACTIVO");
+    Recinto updated =
+        service.actualizarRecinto(
+            recinto.getId(), "Updated Name", null, "INACTIVO", masterId());
 
     // Assert
     assertEquals("Updated Name", updated.getNombre());
@@ -109,10 +118,11 @@ class RecintoServiceTest {
   void eliminarRecintoSinJrvs() {
     // Setup
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
-    Recinto recinto = service.crearRecinto("To Delete", parroquia.getId(), null, "ACTIVO");
+    Recinto recinto =
+        service.crearRecinto("To Delete", parroquia.getId(), null, "ACTIVO", masterId());
 
     // Act
-    service.eliminarRecinto(recinto.getId());
+    service.eliminarRecinto(recinto.getId(), masterId());
 
     // Assert: recinto should no longer exist
     assertThrows(GeografiaNotFoundException.class, () -> service.obtenerRecinto(recinto.getId()));
@@ -124,7 +134,8 @@ class RecintoServiceTest {
     // Setup: recinto + 2 jrvs asignadas
     Parroquia parroquia = Parroquia.find("order by id").firstResult();
     Recinto recinto =
-        service.crearRecinto("Test Recinto with JRVs", parroquia.getId(), null, "ACTIVO");
+        service.crearRecinto(
+            "Test Recinto with JRVs", parroquia.getId(), null, "ACTIVO", masterId());
 
     // Create and assign 2 JRVs to recinto
     ec.twintailcs.electoral.geografia.domain.Jrv jrv1 =
@@ -140,7 +151,65 @@ class RecintoServiceTest {
     // Act & Assert: cannot delete recinto with assigned JRVs
     assertThrows(
         GeografiaConflictException.class,
-        () -> service.eliminarRecinto(recinto.getId()),
+        () -> service.eliminarRecinto(recinto.getId(), masterId()),
         "Cannot delete Recinto with assigned JRVs");
+  }
+
+  @Test
+  @Transactional
+  void generarJrvsPorRangoLasVinculaAlRecintoParroquiaYCargosActivos() {
+    Parroquia parroquia = Parroquia.find("order by id").firstResult();
+    Recinto recinto =
+        service.crearRecinto(
+            "Recinto generado " + UUID.randomUUID(),
+            parroquia.getId(),
+            null,
+            "ACTIVO",
+            masterId());
+    String sufijo = "IT" + UUID.randomUUID().toString().replace("-", "").substring(0, 6);
+    long cargosActivos =
+        ((Number) entityManager.createNativeQuery("select count(*) from cargo").getSingleResult())
+            .longValue();
+
+    List<Jrv> jrvs =
+        service.generarJrvsPorRango(recinto.getId(), 1, 2, sufijo, 350, masterId());
+
+    assertEquals(2, jrvs.size());
+    assertEquals("JRV-" + sufijo + "-001", jrvs.get(0).getNumero());
+    assertEquals("JRV-" + sufijo + "-002", jrvs.get(1).getNumero());
+    for (Jrv jrv : jrvs) {
+      assertEquals(parroquia.getId(), jrv.getParroquiaId());
+      assertEquals(recinto.getId(), jrv.getRecintoId());
+      assertEquals(recinto.getNombre(), jrv.getRecinto());
+      assertEquals(350, jrv.getTotalElectores());
+      long cargosJrv =
+          ((Number)
+                  entityManager
+                      .createNativeQuery(
+                          "select count(*) from jrv_cargo where jrv_id = :jrvId and activo = true")
+                      .setParameter("jrvId", jrv.getId())
+                      .getSingleResult())
+              .longValue();
+      assertEquals(cargosActivos, cargosJrv);
+    }
+  }
+
+  @Test
+  @Transactional
+  void generarJrvsPorRangoRechazaParametrosInvalidos() {
+    Parroquia parroquia = Parroquia.find("order by id").firstResult();
+    Recinto recinto =
+        service.crearRecinto("Recinto rango invalido", parroquia.getId(), null, "ACTIVO", masterId());
+
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.generarJrvsPorRango(recinto.getId(), 3, 2, "IT", 350, masterId()));
+  }
+
+  private Long masterId() {
+    return entityManager
+        .createQuery("select u.id from Usuario u where u.email = :email", Long.class)
+        .setParameter("email", "mastersolon@example.local")
+        .getSingleResult();
   }
 }

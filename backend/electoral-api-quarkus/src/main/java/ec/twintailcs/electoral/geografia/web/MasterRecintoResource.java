@@ -2,9 +2,14 @@ package ec.twintailcs.electoral.geografia.web;
 
 import ec.twintailcs.electoral.auth.domain.Usuario;
 import ec.twintailcs.electoral.auth.security.Autorizador;
+import ec.twintailcs.electoral.electoral.web.ContextoSolicitud;
 import ec.twintailcs.electoral.geografia.application.RecintoService;
+import ec.twintailcs.electoral.geografia.domain.Jrv;
 import ec.twintailcs.electoral.geografia.domain.Parroquia;
 import ec.twintailcs.electoral.geografia.domain.Recinto;
+import ec.twintailcs.electoral.geografia.web.dto.AsignarJrvsRequest;
+import ec.twintailcs.electoral.geografia.web.dto.GenerarJrvsRangoRequest;
+import ec.twintailcs.electoral.geografia.web.dto.JrvResponse;
 import ec.twintailcs.electoral.geografia.web.dto.RecintoRequest;
 import ec.twintailcs.electoral.geografia.web.dto.RecintoResponse;
 import ec.twintailcs.electoral.shared.web.pagination.PagedResponse;
@@ -23,12 +28,14 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.List;
 
 /**
  * CRUD de Recintos en {@code /api/v1/admin/recintos}.
  *
- * <p>Todas las operaciones exigen {@code configuracion:write}, que solo MASTER tiene. Recintos
- * agrupa múltiples JRVs bajo un COORDINATOR responsable de validar actas.
+ * <p>Las lecturas exigen {@code configuracion:read}; las mutaciones, incluido generar y asignar
+ * JRVs, exigen {@code configuracion:write}, reservado a MASTER. Las políticas RLS de PostgreSQL
+ * vuelven a verificar el rol antes de modificar las tablas geográficas.
  */
 @Path("/api/v1/admin/recintos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -38,6 +45,7 @@ public class MasterRecintoResource {
 
   @Inject RecintoService service;
   @Inject Autorizador autorizador;
+  @Inject ContextoSolicitud contexto;
 
   /**
    * Listar todos los Recintos con paginación.
@@ -82,7 +90,8 @@ public class MasterRecintoResource {
     autorizador.exigir("configuracion:write");
 
     Recinto recinto =
-        service.crearRecinto(dto.nombre(), dto.parroquiaId(), dto.coordinatorId(), dto.estado());
+        service.crearRecinto(
+            dto.nombre(), dto.parroquiaId(), dto.coordinatorId(), dto.estado(), contexto.usuarioId());
     return Response.status(Response.Status.CREATED).entity(toDto(recinto)).build();
   }
 
@@ -99,7 +108,8 @@ public class MasterRecintoResource {
     autorizador.exigir("configuracion:write");
 
     Recinto recinto =
-        service.actualizarRecinto(id, dto.nombre(), dto.coordinatorId(), dto.estado());
+        service.actualizarRecinto(
+            id, dto.nombre(), dto.coordinatorId(), dto.estado(), contexto.usuarioId());
     return Response.ok(toDto(recinto)).build();
   }
 
@@ -114,7 +124,40 @@ public class MasterRecintoResource {
   public Response eliminar(@PathParam("id") Long id) {
     autorizador.exigir("configuracion:write");
 
-    service.eliminarRecinto(id);
+    service.eliminarRecinto(id, contexto.usuarioId());
+    return Response.noContent().build();
+  }
+
+  /**
+   * Generar JRVs para el recinto; solo MASTER ({@code configuracion:write}) puede mutar geografía.
+   */
+  @POST
+  @Path("/{id}/generar-jrvs")
+  public Response generarJrvs(@PathParam("id") Long id, @Valid GenerarJrvsRangoRequest dto) {
+    autorizador.exigir("configuracion:write");
+
+    List<JrvResponse> generadas =
+        service
+            .generarJrvsPorRango(
+                id,
+                dto.desde(),
+                dto.hasta(),
+                dto.sufijoGenero(),
+                dto.electoresPorMesa(),
+                contexto.usuarioId())
+            .stream()
+            .map(MasterRecintoResource::toJrvDto)
+            .toList();
+    return Response.status(Response.Status.CREATED).entity(generadas).build();
+  }
+
+  /** Asignar JRVs existentes y no asignadas de la misma parroquia; solo MASTER puede mutar. */
+  @POST
+  @Path("/{id}/asignar-jrvs")
+  public Response asignarJrvs(@PathParam("id") Long id, @Valid AsignarJrvsRequest dto) {
+    autorizador.exigir("configuracion:write");
+
+    service.asignarJrvsAlRecinto(id, dto.jrvIds(), contexto.usuarioId());
     return Response.noContent().build();
   }
 
@@ -143,11 +186,22 @@ public class MasterRecintoResource {
     return new RecintoResponse(
         recinto.getId(),
         recinto.getNombre(),
+        recinto.getParroquiaId(),
         parroquiaNombre,
         coordinadorInfo,
         totalMesas,
         recinto.getEstado(),
         recinto.getFechaCreacion());
+  }
+
+  private static JrvResponse toJrvDto(Jrv jrv) {
+    return new JrvResponse(
+        jrv.getId(),
+        jrv.getNumero(),
+        jrv.getRecinto(),
+        jrv.getTotalElectores(),
+        jrv.getParroquiaId(),
+        jrv.getRecintoId());
   }
 
   private PagedResponse<RecintoResponse> toPagedResponse(PagedResponse<Recinto> paginada) {

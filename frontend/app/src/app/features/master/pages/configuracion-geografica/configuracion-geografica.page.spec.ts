@@ -22,7 +22,6 @@ describe('ConfiguracionGeograficaPage', () => {
     eliminarProvincia: ReturnType<typeof vi.fn>;
     eliminarCanton: ReturnType<typeof vi.fn>;
     eliminarParroquia: ReturnType<typeof vi.fn>;
-    eliminarJrv: ReturnType<typeof vi.fn>;
   };
   let dialogService: { open: ReturnType<typeof vi.fn> };
   let toast: {
@@ -52,6 +51,7 @@ describe('ConfiguracionGeograficaPage', () => {
                     numero: 'JRV-SE-001',
                     recinto: 'Escuela Abdón Calderón',
                     totalElectores: 320,
+                    recintoId: null,
                   },
                 ],
               },
@@ -68,7 +68,6 @@ describe('ConfiguracionGeograficaPage', () => {
       eliminarProvincia: vi.fn().mockReturnValue(of(undefined)),
       eliminarCanton: vi.fn().mockReturnValue(of(undefined)),
       eliminarParroquia: vi.fn().mockReturnValue(of(undefined)),
-      eliminarJrv: vi.fn().mockReturnValue(of(undefined)),
     };
     // El dialogo simulado cierra con `true`: es lo que el dialogo de confirmacion devuelve
     // cuando el operador acepta, y lo que el modal de alta devuelve cuando guardo.
@@ -101,17 +100,16 @@ describe('ConfiguracionGeograficaPage', () => {
     expect(component.nodos()[0].label).toBe('Santa Elena');
   });
 
-  it('arma los cuatro niveles del arbol', () => {
+  it('arma provincia, canton y parroquia, dejando la parroquia como hoja', () => {
     component.ngOnInit();
 
     const provincia = component.nodos()[0];
     const canton = provincia.children?.[0];
     const parroquia = canton?.children?.[0];
-    const jrv = parroquia?.children?.[0];
 
     expect(canton?.label).toBe('Santa Elena');
     expect(parroquia?.label).toBe('Santa Elena');
-    expect(jrv?.label).toBe('JRV-SE-001');
+    expect(parroquia?.children).toBeUndefined();
   });
 
   it('el nodo lleva el resumen de sus hijos', () => {
@@ -123,8 +121,7 @@ describe('ConfiguracionGeograficaPage', () => {
 
     expect((provincia.data as any).meta).toBe('1 canton');
     expect((canton?.data as any).meta).toBe('1 parroquia');
-    expect((parroquia?.data as any).meta).toBe('urbana · 1 JRV');
-    expect((parroquia?.children?.[0].data as any).meta).toBe('320 electores');
+    expect((parroquia?.data as any).meta).toBe('urbana');
   });
 
   it('expande y colapsa todo el arbol', () => {
@@ -133,16 +130,15 @@ describe('ConfiguracionGeograficaPage', () => {
     component.expandirTodo();
     expect(component.nodos()[0].expanded).toBe(true);
     expect(component.nodos()[0].children?.[0].expanded).toBe(true);
-    expect(component.nodos()[0].children?.[0].children?.[0].expanded).toBe(
-      true,
-    );
+    expect(component.nodos()[0].children?.[0].children?.[0].expanded).toBe(false);
+    expect(component.nodos()[0].children?.[0].children?.[0].children).toBeUndefined();
 
     component.colapsarTodo();
     expect(component.nodos()[0].expanded).toBe(false);
     expect(component.nodos()[0].children?.[0].expanded).toBe(false);
   });
 
-  it('el menu contextual ofrece editar y eliminar, y el JRV no se puede borrar', () => {
+  it('el menu contextual ofrece editar y eliminar en la parroquia hoja', () => {
     component.ngOnInit();
 
     const canton = component.nodos()[0].children?.[0];
@@ -152,9 +148,12 @@ describe('ConfiguracionGeograficaPage', () => {
       'Eliminar',
     ]);
 
-    const jrv = component.nodos()[0].children?.[0].children?.[0].children?.[0];
-    component.nodoContexto.set(jrv);
-    expect(component.menuItems().map((i) => i.label)).toEqual(['Editar']);
+    const parroquia = component.nodos()[0].children?.[0].children?.[0];
+    component.nodoContexto.set(parroquia);
+    expect(component.menuItems().map((i) => i.label)).toEqual([
+      'Editar',
+      'Eliminar',
+    ]);
   });
 
   it('el alta de cada nivel abre el modal con el padre del nodo', () => {
@@ -177,11 +176,7 @@ describe('ConfiguracionGeograficaPage', () => {
 
     const parroquia = component.nodos()[0].children?.[0].children?.[0]
       .data as any;
-    component.crearJrv(parroquia);
-    expect(dialogService.open.mock.calls[2][1].data).toMatchObject({
-      mode: 'create',
-      parroquiaId: 100,
-    });
+    expect(dialogService.open).toHaveBeenCalledTimes(2);
   });
 
   it('la edicion manda el padre del nodo, que el backend exige en el PUT', () => {
