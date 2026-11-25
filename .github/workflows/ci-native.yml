@@ -19,33 +19,15 @@
 name: Backend Native Image
 
 on:
-  pull_request:
-    branches:
-      - main
-      - develop
-      - 'feat/**'
-      - 'fix/**'
-      - 'refactor/**'
-      - 'test/**'
-      - 'chore/**'
-      - 'build/**'
-      - 'upgrade/**'
-      - 'docs/**'
-    paths:
-      - 'backend/electoral-api-quarkus/**'
-      - 'backend/contract-tests/**'
-      - '.github/workflows/ci.yml'
-      - '.github/workflows/ci-native.yml'
   push:
     branches: [main, develop]
     paths:
       - 'backend/electoral-api-quarkus/**'
-      - 'backend/contract-tests/**'
-      - '.github/workflows/ci.yml'
       - '.github/workflows/ci-native.yml'
+  schedule:
+    - cron: '0 3 * * *'  # Ejecución nocturna diaria a las 03:00 UTC
+  workflow_dispatch:
 
-# Sin esto el PR que solo toca el frontend se queda esperando un check que
-# nunca se reporta.
 permissions:
   contents: read
 
