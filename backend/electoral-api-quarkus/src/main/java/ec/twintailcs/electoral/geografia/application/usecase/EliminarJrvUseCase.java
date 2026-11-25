@@ -56,6 +56,12 @@ public class EliminarJrvUseCase {
               "La JRV tiene actas registradas: no se puede eliminar"));
     }
 
+    // Limpiar jrv_cargo antes de borrar la JRV para respetar la FK sin ON DELETE CASCADE
+    entityManager
+        .createNativeQuery("DELETE FROM jrv_cargo WHERE jrv_id = :jrvId")
+        .setParameter("jrvId", id)
+        .executeUpdate();
+
     jrv.delete();
 
     audit.registrarConIp(

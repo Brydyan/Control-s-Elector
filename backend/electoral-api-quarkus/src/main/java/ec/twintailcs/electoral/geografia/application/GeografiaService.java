@@ -24,6 +24,7 @@ import ec.twintailcs.electoral.geografia.web.dto.ParroquiaRequest;
 import ec.twintailcs.electoral.geografia.web.dto.ProvinciaRequest;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
 
 /**
  * Fachada de la geografia electoral.
@@ -113,5 +114,14 @@ public class GeografiaService {
   /** Baja de JRV. */
   public void eliminarJrv(Long id, Long masterId, String ipAddress) {
     eliminarJrv.execute(id, masterId, ipAddress);
+  }
+
+  public void eliminarJrvsBatch(List<Long> ids, Long masterId, String ipAddress) {
+    if (ids == null || ids.isEmpty()) {
+      return;
+    }
+    for (Long id : ids) {
+      eliminarJrv.execute(id, masterId, ipAddress);
+    }
   }
 }

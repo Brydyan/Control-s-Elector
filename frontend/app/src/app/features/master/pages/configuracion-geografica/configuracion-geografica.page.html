@@ -2,9 +2,7 @@
   <header class="page-header">
     <div>
       <h1>Configuración Geográfica Electoral</h1>
-      <span
-        >Provincias, cantones, parroquias y juntas de recepción de votos</span
-      >
+      <span>Provincias, cantones y parroquias</span>
     </div>
     <app-button (clicked)="crearProvincia()">Crear provincia</app-button>
   </header>
@@ -89,15 +87,6 @@
               (clicked)="crearParroquia(node.data)"
             >
               + Parroquia
-            </app-button>
-            <app-button
-              *ngIf="node.data.nivel === 'PARROQUIA'"
-              variant="ghost"
-              size="sm"
-              [attr.data-testid]="'crear-jrv-' + node.data.id"
-              (clicked)="crearJrv(node.data)"
-            >
-              + JRV
             </app-button>
           </span>
         </div>
