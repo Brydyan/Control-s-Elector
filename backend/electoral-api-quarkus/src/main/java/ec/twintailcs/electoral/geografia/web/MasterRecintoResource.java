@@ -44,6 +44,7 @@ import java.util.List;
 public class MasterRecintoResource {
 
   @Inject RecintoService service;
+  @Inject ec.twintailcs.electoral.geografia.domain.RecintoRepository recintoRepository;
   @Inject Autorizador autorizador;
   @Inject ContextoSolicitud contexto;
 
@@ -179,9 +180,9 @@ public class MasterRecintoResource {
     }
 
     // Calculate total mesas (count JRVs in Recinto)
-    // For now, we'll leave it null/0 as it requires a service call
-    // In production, this should be optimized with a query that includes the count
-    Integer totalMesas = 0; // TODO: Calculate from JRV count
+    long mesasCount =
+        recinto.getId() != null ? recintoRepository.countJrvsInRecinto(recinto.getId()) : 0L;
+    Integer totalMesas = (int) mesasCount;
 
     return new RecintoResponse(
         recinto.getId(),
