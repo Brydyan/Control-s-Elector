@@ -499,7 +499,7 @@ export class RecintoCreateWizardModalComponent implements OnInit {
   }
 
   private cargarUsuarios(): void {
-    this.adminApi.listarUsuarios({ page: 0, size: 1000 }).subscribe({
+    this.adminApi.listarUsuarios({ page: 0, size: 100 }).subscribe({
       next: (response) => {
         this.usuarios = response.data || [];
       },

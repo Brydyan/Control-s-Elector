@@ -18,7 +18,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * corre en otro contexto, pero en el mismo JVM.
  */
 @Alternative
-@Priority(1)
 @ApplicationScoped
 public class RecordingEmailService implements EmailService {
 

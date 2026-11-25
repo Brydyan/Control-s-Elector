@@ -29,5 +29,6 @@ public record GeografiaTreeDto(List<ProvinciaNode> provincias) {
 
   /** Junta de recepcion de votos. */
   @RegisterForReflection
-  public record JrvNode(Long id, String numero, String recinto, int totalElectores) {}
+  public record JrvNode(
+      Long id, String numero, String recinto, int totalElectores, Long recintoId) {}
 }

@@ -1,18 +1,9 @@
 name: Load Test Baseline (20 VUs)
 
 on:
-  pull_request:
-    branches: [develop]
-    paths:
-      - 'backend/**'
-      - 'frontend/tests/load/**'
-      - '.github/workflows/load-test-baseline.yml'
-  push:
-    branches: [develop, main]
-    paths:
-      - 'backend/**'
-      - 'frontend/tests/load/**'
-      - '.github/workflows/load-test-baseline.yml'
+  schedule:
+    - cron: '30 3 * * *'  # Ejecución programada nocturna a las 03:30 UTC
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -25,8 +16,9 @@ jobs:
   # ===========================================================================
   # LOAD TESTING (Baseline - 20 VUs)
   # ===========================================================================
-  # Load test en cada PR: baseline 20 VUs para validar que el sistema tolera
-  # carga mínima. Útil para detectar regresos de performance temprano.
+  # Suite de pruebas de carga con k6 fuera del gate de PR (ejecución nocturna
+  # o workflow_dispatch manual) para detectar regresiones de latencia o degradación
+  # sin penalizar el tiempo de feedback de los Pull Requests.
   # SLA: p95 < 1.5s, p99 < 2s, failures < 2%
   load-test-baseline:
     name: Load Test Baseline (20 VUs)
