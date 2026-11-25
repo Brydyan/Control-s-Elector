@@ -398,9 +398,22 @@ public class ActaRepository {
     return listarJrvs(null, null);
   }
 
-  /** JRVs visibles por el usuario autenticado; el OBSERVER solo ve las que tiene asignadas. */
+  /** JRVs visibles por el usuario autenticado; el OBSERVER con asignaciones solo ve las suyas. */
   public List<FilaJrv> listarJrvs(Long usuarioId, String rol) {
-    boolean filtrarObserver = "OBSERVER".equals(rol) && usuarioId != null;
+    boolean tieneAsignaciones = false;
+    if ("OBSERVER".equals(rol) && usuarioId != null) {
+      Number count =
+          (Number)
+              entityManager
+                  .createNativeQuery(
+                      "select (select count(*) from observer_jrv_asignacion where usuario_id = :uid)"
+                          + " + (select count(*) from usuario_recinto where usuario_id = :uid and rol_en_recinto = 'OBSERVER')")
+                  .setParameter("uid", usuarioId)
+                  .getSingleResult();
+      tieneAsignaciones = count != null && count.longValue() > 0;
+    }
+
+    boolean filtrarObserver = tieneAsignaciones;
     String sql =
         "select j.id, j.numero, p.nombre,"
             + " (select count(*) from jrv_cargo jc where jc.jrv_id = j.id and jc.activo),"

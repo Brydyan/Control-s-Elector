@@ -110,9 +110,19 @@ class ObserverJrvsFiltradasIT {
   }
 
   @Test
-  @DisplayName("un OBSERVER sin asignaciones recibe una lista vacia")
-  void observerSinAsignacionesRecibeListaVacia() {
-    assertThat(listar(tokenObserverSinAsignaciones)).isEmpty();
+  @DisplayName(
+      "un OBSERVER sin asignaciones conserva acceso al catalogo completo para seleccion libre")
+  void observerSinAsignacionesRecibeCatalogoCompleto() {
+    int totalJrvs =
+        QuarkusTransaction.requiringNew()
+            .call(
+                () ->
+                    ((Number) em.createNativeQuery("select count(*) from jrv").getSingleResult())
+                        .intValue());
+
+    assertThat(listar(tokenObserverSinAsignaciones))
+        .hasSize(totalJrvs)
+        .contains(jrvDirectaId.intValue(), jrvPorRecintoId.intValue(), jrvNoAsignadaId.intValue());
   }
 
   @Test
