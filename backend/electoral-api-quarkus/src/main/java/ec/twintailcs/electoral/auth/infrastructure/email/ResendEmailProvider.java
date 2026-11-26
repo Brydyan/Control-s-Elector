@@ -104,6 +104,8 @@ public class ResendEmailProvider implements EmailService {
         """,
             escapeJson(fromEmail), escapeJson(to), escapeJson(subject), escapeJson(html));
 
+    log.debugf("Sending email from %s to %s with subject: %s", fromEmail, to, subject);
+
     try {
       HttpRequest request =
           HttpRequest.newBuilder()
@@ -117,7 +119,7 @@ public class ResendEmailProvider implements EmailService {
           httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() >= 200 && response.statusCode() < 300) {
-        log.infof("Resend email sent successfully to %s", to);
+        log.infof("Resend email sent successfully to %s (status %d)", to, response.statusCode());
       } else {
         log.warnf(
             "Resend API error (status %d) for %s: %s",
