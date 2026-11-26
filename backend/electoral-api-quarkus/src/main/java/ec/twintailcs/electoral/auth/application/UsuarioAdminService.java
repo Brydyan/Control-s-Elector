@@ -136,6 +136,7 @@ public class UsuarioAdminService {
     usuario.setPasswordHash(passwordHasher.hash(password));
     usuario.setRol(rol);
     usuario.setHabilitado(true);
+    usuario.setEmailPersonal(request.emailPersonal());
     if (enviarInvitacion) {
       usuario.setEstadoUsuario(EstadoUsuario.PENDIENTE_INVITACION);
     }
