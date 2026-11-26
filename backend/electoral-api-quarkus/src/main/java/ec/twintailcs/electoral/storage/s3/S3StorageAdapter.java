@@ -1,12 +1,11 @@
 package ec.twintailcs.electoral.storage.s3;
 
+import ec.twintailcs.electoral.storage.S3Provider;
 import ec.twintailcs.electoral.storage.StorageException;
 import ec.twintailcs.electoral.storage.StorageException.StorageErrorType;
 import ec.twintailcs.electoral.storage.StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import java.io.IOException;
 import java.io.InputStream;
 import org.jboss.logging.Logger;
@@ -25,13 +24,11 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
  *   <li>Validar salud del storage (credenciales, bucket, etc)
  * </ul>
  *
- * <p><b>CDI:</b> @Alternative + @Named("s3") para evitar ambiguedad cuando hay múltiples
- * implementaciones de StorageService. Lo inyecta FallbackStorageService como primary.
- * El @Alternative permite que exista sin ser automáticamente inyectable.
+ * <p><b>CDI:</b> @S3Provider qualifier para distinguir esta implementación. Lo inyecta
+ * FallbackStorageService como primary. StorageConfiguration lo produce como singleton default.
  */
 @ApplicationScoped
-@Alternative
-@Named("s3")
+@S3Provider
 public class S3StorageAdapter implements StorageService {
 
   private static final Logger log = Logger.getLogger(S3StorageAdapter.class);

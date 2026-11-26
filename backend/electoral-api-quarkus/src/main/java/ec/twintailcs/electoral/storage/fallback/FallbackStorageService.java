@@ -1,13 +1,13 @@
 package ec.twintailcs.electoral.storage.fallback;
 
+import ec.twintailcs.electoral.storage.FallbackProvider;
+import ec.twintailcs.electoral.storage.S3Provider;
 import ec.twintailcs.electoral.storage.StorageException;
 import ec.twintailcs.electoral.storage.StorageException.StorageErrorType;
 import ec.twintailcs.electoral.storage.StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.enterprise.inject.Alternative;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import java.io.IOException;
 import java.io.InputStream;
 import org.jboss.logging.Logger;
@@ -20,8 +20,8 @@ import org.jboss.logging.Logger;
  *
  * <p><b>Configuración:</b>
  * <ul>
- *   <li>Primary: Se inyecta con @Named("s3") — generalmente S3StorageAdapter
- *   <li>Fallback: Se inyecta con @Named("fallback") — generalmente LocalStorageAdapter
+ *   <li>Primary: Se inyecta con @S3Provider — S3StorageAdapter
+ *   <li>Fallback: Se inyecta con @FallbackProvider — generalmente LocalStorageAdapter
  * </ul>
  *
  * <p><b>Comportamiento:</b>
@@ -34,20 +34,18 @@ import org.jboss.logging.Logger;
  *
  * <p><b>Loggeo:</b> Cada fallover se loguea con contexto completo para auditoría.
  *
- * <p><b>CDI:</b> @Alternative + @Named("fallback") para evitar ser confundido con el producer
- * que expone esta clase como StorageService. El @Alternative permite que exista sin ser
- * automáticamente inyectable, solo a través del producer o explicit @Named.
+ * <p><b>CDI:</b> @FallbackProvider qualifier para distinguir esta implementación.
+ * StorageConfiguration lo produce como el bean default de StorageService.
  */
 @ApplicationScoped
-@Alternative
-@Named("fallback")
+@FallbackProvider
 public class FallbackStorageService implements StorageService {
 
   private static final Logger log = Logger.getLogger(FallbackStorageService.class);
 
-  @Inject @Named("s3") Instance<StorageService> primary;
+  @Inject @S3Provider Instance<StorageService> primary;
 
-  @Inject @Named("fallback") Instance<StorageService> fallback;
+  @Inject @FallbackProvider Instance<StorageService> fallback;
 
   private StorageService getPrimary() {
     // Si la instancia no está disponible, retorna null
