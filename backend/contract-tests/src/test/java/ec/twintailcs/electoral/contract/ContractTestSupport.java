@@ -103,8 +103,17 @@ public abstract class ContractTestSupport {
 
   /**
    * GET con reintentos automáticos para 429 (rate limit).
-   * Implementa backoff exponencial: 200ms, 500ms, 1s, 2s, 3s, 3s base + jitter ±50%.
-   * Con 152 tests paralelos y 60 req/min rate limit, necesita backoff mucho más agresivo.
+   *
+   * <p><b>Estrategia:</b>
+   * <ul>
+   *   <li>Parsea Retry-After header del servidor (respeta lo que el servidor pide)
+   *   <li>Fallback: backoff exponencial adaptado a carga paralela (200ms → 3s)
+   *   <li>Jitter ±50% para descorrelacionar reintentos entre tests
+   *   <li>Máximo 6 intentos (~30s total en peor caso)
+   * </ul>
+   *
+   * <p>Con 152 tests paralelos × 2-3 endpoints por test = 300-400 req/min vs 60 req/min limit,
+   * la coordinación entre tests es crítica. El jitter previene que todos reintenten en simultaneo.
    */
   protected static Response getWithRetry(RequestSpecification spec, String path) {
     int maxAttempts = 6;
@@ -118,18 +127,15 @@ public abstract class ContractTestSupport {
       if (attempt >= maxAttempts) {
         return r; // Devuelve 429 si se agotaron reintentos
       }
-      // Backoff: 200, 500, 1000, 2000, 3000, 3000 ms
-      long baseDelayMs;
-      switch (attempt) {
-        case 1 -> baseDelayMs = 200L;
-        case 2 -> baseDelayMs = 500L;
-        case 3 -> baseDelayMs = 1000L;
-        case 4 -> baseDelayMs = 2000L;
-        default -> baseDelayMs = 3000L; // Attempts 5+: 3s
+
+      // Parsear Retry-After header del servidor (RFC 7231)
+      long waitMs = parseRetryAfter(r);
+
+      // Si el servidor no indicó Retry-After, usar backoff exponencial
+      if (waitMs <= 0) {
+        waitMs = computeBackoffDelay(attempt);
       }
-      // Jitter: ±50% del base delay
-      long jitter = ThreadLocalRandom.current().nextLong(-baseDelayMs / 2, baseDelayMs / 2);
-      long waitMs = baseDelayMs + jitter;
+
       try {
         Thread.sleep(Math.max(100, waitMs)); // Nunca menor a 100ms
       } catch (InterruptedException e) {
@@ -138,6 +144,52 @@ public abstract class ContractTestSupport {
       }
     }
     return spec.get(path);
+  }
+
+  /**
+   * Parsea el header Retry-After (RFC 7231) y devuelve millisegundos a esperar.
+   *
+   * <p>Formato: "120" (segundos) o "Wed, 21 Oct 2015 07:28:00 GMT" (fecha HTTP).
+   *
+   * @return millisegundos a esperar, o <= 0 si no está presente o invalido
+   */
+  private static long parseRetryAfter(Response r) {
+    String retryAfterHeader = r.header("Retry-After");
+    if (retryAfterHeader == null || retryAfterHeader.isBlank()) {
+      return -1;
+    }
+
+    try {
+      // Intenta parsear como segundos (formato decimal)
+      long seconds = Long.parseLong(retryAfterHeader.trim());
+      if (seconds > 0) {
+        return seconds * 1000;
+      }
+    } catch (NumberFormatException e) {
+      // No es formato decimal; ignorar parsing de fecha (RFC completa requiere parsing HTTP-date)
+      // Por ahora, solo soportamos formato decimal
+    }
+    return -1;
+  }
+
+  /**
+   * Calcula delay exponencial adaptado a carga paralela.
+   *
+   * <p>Backoff: 200, 500, 1000, 2000, 3000, 3000 ms + jitter ±50%.
+   */
+  private static long computeBackoffDelay(int attempt) {
+    long baseDelayMs;
+    switch (attempt) {
+      case 1 -> baseDelayMs = 200L;
+      case 2 -> baseDelayMs = 500L;
+      case 3 -> baseDelayMs = 1000L;
+      case 4 -> baseDelayMs = 2000L;
+      default -> baseDelayMs = 3000L; // Attempts 5+: 3s
+    }
+    // Jitter: ±50% del base delay para descorrelacionar reintentos en paralelo
+    long jitter =
+        ThreadLocalRandom.current().nextLong(-baseDelayMs / 2, baseDelayMs / 2);
+    return baseDelayMs + jitter;
   }
 
   /** Serializa un body a JSON. */
