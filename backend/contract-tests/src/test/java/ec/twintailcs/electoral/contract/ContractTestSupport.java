@@ -101,6 +101,35 @@ public abstract class ContractTestSupport {
     return given().header("Authorization", "Bearer " + token);
   }
 
+  /**
+   * GET con reintentos automáticos para 429 (rate limit).
+   * Implementa backoff exponencial: 100ms, 200ms, 400ms, 800ms base + jitter.
+   */
+  protected static Response getWithRetry(RequestSpecification spec, String path) {
+    int maxAttempts = 5;
+    int attempt = 0;
+    while (attempt < maxAttempts) {
+      Response r = spec.get(path);
+      if (r.statusCode() != 429) {
+        return r;
+      }
+      attempt++;
+      if (attempt >= maxAttempts) {
+        return r; // Devuelve 429 si se agotaron reintentos
+      }
+      long baseDelay = 100L * (1L << (attempt - 1)); // 100, 200, 400, 800ms
+      long jitter = ThreadLocalRandom.current().nextLong(baseDelay / 2);
+      long waitMs = baseDelay + jitter;
+      try {
+        Thread.sleep(waitMs);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return r;
+      }
+    }
+    return spec.get(path);
+  }
+
   /** Serializa un body a JSON. */
   protected static String json(Object body) {
     return JSON.writeValueAsString(body);
@@ -244,10 +273,10 @@ public abstract class ContractTestSupport {
     // fallo del endpoint. El MASTER ve el estado global, que es el que decide.
     String tokenGlobal = masterToken();
 
-    for (Map<String, Object> jrv : listar(as(tokenGlobal).get(OBSERVER + "/jrvs"))) {
+    for (Map<String, Object> jrv : listar(getWithRetry(as(tokenGlobal), OBSERVER + "/jrvs"))) {
       long jrvId = ((Number) jrv.get("id")).longValue();
       for (Map<String, Object> cargo :
-          listar(as(tokenGlobal).get(OBSERVER + "/jrv/" + jrvId + "/cargos"))) {
+          listar(getWithRetry(as(tokenGlobal), OBSERVER + "/jrv/" + jrvId + "/cargos"))) {
         if (Boolean.TRUE.equals(cargo.get("registrado"))) {
           continue;
         }
