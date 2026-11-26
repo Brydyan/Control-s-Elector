@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { RegistrarActaPage } from './registrar-acta.page';
 import { ObserverApi } from '../../data/observer.api';
@@ -196,6 +196,47 @@ describe('RegistrarActaPage', () => {
       101,
       'cargos',
     ]);
+  });
+
+  it('should warn the observer (not report success) when the photo upload fails', () => {
+    vi.useFakeTimers();
+    component.totalSufragantes = 100;
+    component.votosBlancos = 0;
+    component.votosNulos = 0;
+    component.votosPorCandidato.set(1, 50);
+    component.votosPorCandidato.set(2, 50);
+    component.selectedImageFile = new File(['x'], 'acta.webp', {
+      type: 'image/webp',
+    });
+    observerServiceSpy.enviarActaDirecta.and.returnValue(
+      of({
+        id: 99,
+        jrvId: 101,
+        cargoId: 2,
+        estado: 'ENVIADA',
+        totalSufragantes: 100,
+        votosBlancos: 0,
+        votosNulos: 0,
+        detalles: [],
+      }),
+    );
+    observerServiceSpy.subirImagenActa.and.returnValue(
+      throwError(() => ({ status: 400 })),
+    );
+
+    component.enviarActaFinal();
+
+    expect(component.success()).toBeNull();
+    expect(component.error()).toContain('la foto no se pudo subir');
+    vi.advanceTimersByTime(1900);
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(4200);
+    expect(routerSpy.navigate).toHaveBeenCalledWith([
+      '/observer/jrv',
+      101,
+      'cargos',
+    ]);
+    vi.useRealTimers();
   });
 
   it('should chain subirImagenActa after guardarBorrador (D.4)', () => {

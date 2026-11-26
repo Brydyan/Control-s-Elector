@@ -840,8 +840,12 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
               next: () => {
                 this.finalizarEnvio();
               },
-              error: () => {
-                this.finalizarEnvio();
+              error: (imgErr) => {
+                console.warn(
+                  'Borrador guardado pero falló la subida de la foto:',
+                  imgErr,
+                );
+                this.finalizarEnvioSinFoto();
               },
             });
         } else {
@@ -909,7 +913,7 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
                       'Acta corregida pero falló la subida de nueva evidencia fotográfica:',
                       imgErr,
                     );
-                    this.finalizarEnvio();
+                    this.finalizarEnvioSinFoto();
                   },
                 });
             } else {
@@ -952,7 +956,7 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
                     'Acta enviada pero falló la subida de evidencia fotográfica:',
                     imgErr,
                   );
-                  this.finalizarEnvio();
+                  this.finalizarEnvioSinFoto();
                 },
               });
           } else {
@@ -1053,6 +1057,23 @@ export class RegistrarActaPage implements OnInit, OnDestroy {
     setTimeout(() => {
       this.router.navigate(['/observer/jrv', this.jrvId, 'cargos']);
     }, 1800);
+  }
+
+  /**
+   * El acta quedó registrada pero la foto no se subió. No se informa como éxito: el observador
+   * tiene que saber que falta la evidencia. El borrador local se conserva (con la foto) y la
+   * redirección espera más para que el aviso se pueda leer.
+   */
+  private finalizarEnvioSinFoto(): void {
+    this.submitting.set(false);
+    this.submitSuccess.set(true);
+    this.error.set(
+      'El acta quedó registrada, pero la foto no se pudo subir. Vuelve a subirla desde el ' +
+        'detalle del acta o avisa a tu coordinador.',
+    );
+    setTimeout(() => {
+      this.router.navigate(['/observer/jrv', this.jrvId, 'cargos']);
+    }, 6000);
   }
 
   /**
