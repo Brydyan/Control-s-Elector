@@ -118,6 +118,22 @@ describe('ActaDetallePage', () => {
     expect(badge?.textContent.trim()).toBe('Enviada');
   });
 
+  it('should reload the evidence URL once when the image fails to load', () => {
+    const image = fixture.nativeElement.querySelector('.evidence-image');
+
+    image.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(coordinatorServiceMock.getActaDetalleCompleto).toHaveBeenCalledTimes(
+      2,
+    );
+
+    image.dispatchEvent(new Event('error'));
+    expect(coordinatorServiceMock.getActaDetalleCompleto).toHaveBeenCalledTimes(
+      2,
+    );
+  });
+
   it('should navigate back to list on volver', () => {
     component.volver();
     expect(routerMock.navigate).toHaveBeenCalledWith(['/coordinator/actas']);

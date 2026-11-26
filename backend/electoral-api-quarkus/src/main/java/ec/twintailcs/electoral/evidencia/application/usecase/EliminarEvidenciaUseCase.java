@@ -3,7 +3,8 @@ package ec.twintailcs.electoral.evidencia.application.usecase;
 import ec.twintailcs.electoral.evidencia.application.AuditoriaEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaNotFoundException;
-import ec.twintailcs.electoral.storage.s3.S3StorageService;
+import ec.twintailcs.electoral.storage.StorageException;
+import ec.twintailcs.electoral.storage.StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -19,12 +20,12 @@ import java.util.UUID;
 @ApplicationScoped
 public class EliminarEvidenciaUseCase {
 
-  @Inject S3StorageService s3;
+  @Inject StorageService storage;
   @Inject AuditoriaEvidencia auditoria;
 
   /** Elimina la evidencia identificada por su UUID publico. */
-  @Transactional
-  public void execute(UUID publicId, Long usuarioId, String ip) {
+  @Transactional(rollbackOn = StorageException.class)
+  public void execute(UUID publicId, Long usuarioId, String ip) throws StorageException {
     Evidencia evidencia = Evidencia.find("publicId", publicId).firstResult();
     if (evidencia == null) {
       throw new EvidenciaNotFoundException(publicId);
@@ -38,7 +39,7 @@ public class EliminarEvidenciaUseCase {
     // El delete NO debe tragarse el error de S3: si S3 falla, el frontend recibe 5xx y puede
     // reintentar. Antes el catch logueaba y devolvia exito, dejando la foto accesible mientras el
     // usuario pensaba que se habia borrado.
-    s3.delete(s3Key);
+    storage.delete(s3Key);
 
     auditoria.registrar(
         usuarioId,

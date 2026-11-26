@@ -9,7 +9,8 @@ import ec.twintailcs.electoral.evidencia.web.dto.DownloadUrlResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.MarcarObservacionesRequest;
 import ec.twintailcs.electoral.evidencia.web.dto.UploadUrlResponse;
-import ec.twintailcs.electoral.storage.s3.S3StorageService;
+import ec.twintailcs.electoral.storage.StorageException;
+import ec.twintailcs.electoral.storage.StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -54,7 +55,7 @@ public class EvidenciaResource {
 
   @Inject Autorizador autorizador;
   @Inject EvidenciaService service;
-  @Inject S3StorageService s3Storage;
+  @Inject StorageService storage;
 
   /**
    * Sube la foto de un acta.
@@ -93,7 +94,7 @@ public class EvidenciaResource {
   /** Obtener la URL prefirmada de descarga (15 min de validez). */
   @GET
   @Path("/{id}/download-url")
-  public DownloadUrlResponse urlDescarga(@PathParam("id") UUID id) {
+  public DownloadUrlResponse urlDescarga(@PathParam("id") UUID id) throws StorageException {
     autorizador.exigir("evidencia:download");
 
     return service.urlDescarga(id);
@@ -104,11 +105,11 @@ public class EvidenciaResource {
    */
   @POST
   @Path("/{id}/upload-url")
-  public UploadUrlResponse urlSubida(@PathParam("id") UUID id) {
+  public UploadUrlResponse urlSubida(@PathParam("id") UUID id) throws StorageException {
     autorizador.exigir("evidencia:upload");
 
     String key = "evidencias/" + id + ".webp";
-    String url = s3Storage.presignUploadUrl(key);
+    String url = storage.presignUploadUrl(key);
     return new UploadUrlResponse(id, url);
   }
 
@@ -138,7 +139,8 @@ public class EvidenciaResource {
   @DELETE
   @Path("/{id}")
   public Response eliminar(
-      @PathParam("id") UUID id, @HeaderParam("X-Forwarded-For") String xForwardedFor) {
+      @PathParam("id") UUID id, @HeaderParam("X-Forwarded-For") String xForwardedFor)
+      throws StorageException {
     autorizador.exigir("evidencia:delete");
 
     service.eliminar(id, xForwardedFor);

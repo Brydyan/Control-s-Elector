@@ -89,6 +89,7 @@ export class ActaDetallePage implements OnInit, OnDestroy {
   /** True cuando el último error vino de un 409 y debemos recargar al reintentar. */
   errorEsConflicto = false;
   private successTimer: ReturnType<typeof setTimeout> | null = null;
+  private evidenceReloadAttempted = false;
 
   // Modal visibility signals
   readonly modalAprobarVisible = signal(false);
@@ -136,6 +137,12 @@ export class ActaDetallePage implements OnInit, OnDestroy {
         this.handleActionError(err, 'main', /* reloadOnConflict */ false);
       },
     });
+  }
+
+  onEvidenceError(): void {
+    if (this.evidenceReloadAttempted) return;
+    this.evidenceReloadAttempted = true;
+    this.cargarDetalle();
   }
 
   /**

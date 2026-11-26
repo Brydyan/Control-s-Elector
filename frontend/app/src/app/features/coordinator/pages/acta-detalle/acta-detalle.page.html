@@ -165,6 +165,7 @@
           >
             <img
               [src]="detalle.acta.urlEvidencia"
+              (error)="onEvidenceError()"
               alt="Evidencia fotográfica de acta de escrutinio"
               class="evidence-image"
             />

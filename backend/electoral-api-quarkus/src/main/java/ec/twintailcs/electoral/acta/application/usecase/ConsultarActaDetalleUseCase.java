@@ -8,7 +8,10 @@ import ec.twintailcs.electoral.acta.web.dto.ActaDetalleDto;
 import ec.twintailcs.electoral.acta.web.dto.mapper.ActaMapper;
 import ec.twintailcs.electoral.auth.domain.RecursoNoEncontradoException;
 import ec.twintailcs.electoral.evidencia.application.usecase.ConsultarEvidenciaUseCase;
+import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
+import ec.twintailcs.electoral.storage.StorageException;
+import io.quarkus.logging.Log;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -55,8 +58,17 @@ public class ConsultarActaDetalleUseCase {
     if (evidencia != null) {
       try {
         urlEvidencia = evidenciaUseCase.presignDownload(evidencia.getPublicId());
-      } catch (Exception ignored) {
-        // No propagamos: el DTO se entrega con urlEvidencia=null si S3 falla.
+      } catch (Exception error) {
+        String errorType =
+            error instanceof StorageException storageError
+                ? storageError.getErrorType().name()
+                : error.getClass().getSimpleName();
+        Log.warnf(
+            "No se pudo generar la URL de evidencia: actaId=%s publicId=%s s3Key=%s errorType=%s",
+            actaId,
+            evidencia.getPublicId(),
+            evidencia.getS3Key(),
+            errorType);
       }
     }
 
@@ -87,8 +99,26 @@ public class ConsultarActaDetalleUseCase {
         motivoDisputa);
   }
 
-  /** Primera evidencia asociada al acta (la que se muestra en el detalle). */
+  /** Evidencia no rechazada más reciente, o la última si todas están rechazadas. */
   private Evidencia primeraEvidencia(Long actaId) {
-    return Evidencia.find("actaId", Sort.by("id"), actaId).firstResult();
+    Evidencia masRecienteNoRechazada =
+        Evidencia.find(
+                "actaId = ?1 and estado <> ?2",
+                Sort.by("id").descending(),
+                actaId,
+                EstadoEvidencia.RECHAZADA)
+            .firstResult();
+    if (masRecienteNoRechazada != null) {
+      return seleccionarEvidencia(masRecienteNoRechazada, null);
+    }
+
+    Evidencia masReciente =
+        Evidencia.find("actaId", Sort.by("id").descending(), actaId).firstResult();
+    return seleccionarEvidencia(null, masReciente);
+  }
+
+  static Evidencia seleccionarEvidencia(
+      Evidencia masRecienteNoRechazada, Evidencia masReciente) {
+    return masRecienteNoRechazada != null ? masRecienteNoRechazada : masReciente;
   }
 }
