@@ -136,6 +136,8 @@ services:
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
       AWS_S3_ENDPOINT: http://rustfs:${S3_PORT:-9000}
+      # El navegador no resuelve "rustfs": las URLs prefirmadas se firman con el host publicado.
+      AWS_S3_PUBLIC_ENDPOINT: http://localhost:${S3_PORT:-9000}
       AWS_S3_REGION: us-east-1
       AWS_S3_BUCKET: electoral-evidences
       AWS_S3_PATH_STYLE: "true"
@@ -255,6 +257,8 @@ services:
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
       AWS_S3_ENDPOINT: http://rustfs:${S3_PORT:-9000}
+      # El navegador no resuelve "rustfs": las URLs prefirmadas se firman con el host publicado.
+      AWS_S3_PUBLIC_ENDPOINT: http://localhost:${S3_PORT:-9000}
       AWS_S3_REGION: us-east-1
       AWS_S3_BUCKET: electoral-evidences
       AWS_S3_PATH_STYLE: "true"

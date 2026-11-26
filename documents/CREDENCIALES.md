@@ -53,7 +53,27 @@ En la base local quedaron 17 admins duplicados (`admsismas@` a
 No hay variable de entorno para estos valores: la contraseña está versionada en
 el changelog, y por eso la cuenta es **solo de desarrollo**.
 
-### ⚠️ En staging y producción esta cuenta NO se crea
+## 👥 Cuentas de referencia por rol (seed)
+
+Las crea `025-data-seed.sql` (contexto `seed`) y `027-repara-hash-cuentas-referencia.sql`
+les corrige el hash. Todas usan la misma contraseña: **`admin12345`** (BCrypt costo 10).
+
+| Rol           | Email                              | Uso típico                                   |
+| ------------- | ---------------------------------- | -------------------------------------------- |
+| `MASTER`      | `admin@control-elector.local`      | Admin inicial (`026`, contexto `bootstrap-admin`) |
+| `MASTER`      | `mastersolon@example.local`        | Gestión total: usuarios, configuración       |
+| `COORDINATOR` | `coordinatorcortes@example.local`  | Revisa, aprueba o pone en disputa actas      |
+| `ADMIN`       | `adminpalma@example.local`         | Administración operativa                     |
+| `OBSERVER`    | `observervera@example.local`       | Registra actas y sube la foto de evidencia   |
+| `OBSERVER`    | `observerquimis@example.local`     | Segundo observador (otra JRV)                |
+
+> ⚠️ **Riesgo en producción:** el contexto `seed` también se ejecuta en staging y
+> producción (`QUARKUS_LIQUIDASE_CONTEXTS: "seed"`), y el `027` no tiene contexto.
+> Si esa base se migró con estos changesets, estas cinco cuentas `@example.local`
+> existen allí con la contraseña `admin12345`. Hay que verificarlo y, si es así,
+> desactivarlas o rotar su contraseña.
+
+### ⚠️ En staging y producción `admin@control-elector.local` NO se crea
 
 El changeset lleva el contexto de Liquibase `bootstrap-admin`, que no pide
 producción (`k8s/configmap.yaml` deja `QUARKUS_LIQUIDASE_CONTEXTS: "seed"`).
