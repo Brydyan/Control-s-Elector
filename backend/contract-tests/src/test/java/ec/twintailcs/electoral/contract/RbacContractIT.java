@@ -351,10 +351,10 @@ class RbacContractIT extends ContractTestSupport {
     assertErrorShape(coordinator, 403);
     assertErrorShape(admin, 403);
     assertErrorShape(master, 403);
-    // Otro OBSERVER: la app ve la fila (RLS en desarrollo) y responde 403 (Forbidden)
-    // en lugar de 400/404 que sería el caso con RLS completo.
-    assertErrorShape(otroObserver, 403);
-    assertThat(otroObserver.jsonPath().getString("message")).contains("no puedes");
+    // Otro OBSERVER: RLS en PostgreSQL oculta la fila completamente, por lo que el backend no encuentra el acta.
+    // Responde 400 "Acta no encontrada" en lugar de 403, porque RLS lo protege sin revelar existencia.
+    assertErrorShape(otroObserver, 400);
+    assertThat(otroObserver.jsonPath().getString("message")).contains("Acta no encontrada");
 
     // El dueño sí ve su acta.
     Response delDueno = as(owner).get(OBSERVER + "/actas/" + acta.id());
