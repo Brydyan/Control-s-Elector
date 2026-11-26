@@ -3,6 +3,7 @@ package ec.twintailcs.electoral.auth.infrastructure.email;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 /**
  * Productor que selecciona la implementación de EmailService basado en la configuración.
@@ -14,6 +15,8 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  */
 @ApplicationScoped
 public class EmailServiceProducer {
+
+  private static final Logger log = Logger.getLogger(EmailServiceProducer.class);
 
   /**
    * Provee la implementación correcta de EmailService basado en {@code app.email.provider}.
@@ -30,12 +33,20 @@ public class EmailServiceProducer {
       @ec.twintailcs.electoral.auth.infrastructure.email.SmtpProvider SmtpEmailProvider smtp,
       @ec.twintailcs.electoral.auth.infrastructure.email.ResendProvider
           ResendEmailProvider resend) {
-    return switch (provider) {
-      case "resend" -> resend;
-      case "smtp" -> smtp;
-      default ->
-          throw new IllegalArgumentException(
-              "Unrecognized email provider: " + provider + ". Must be 'smtp' or 'resend'.");
-    };
+    EmailService chosen;
+    switch (provider) {
+      case "resend":
+        log.infof("Selected ResendEmailProvider for email service");
+        chosen = resend;
+        break;
+      case "smtp":
+        log.infof("Selected SmtpEmailProvider for email service");
+        chosen = smtp;
+        break;
+      default:
+        throw new IllegalArgumentException(
+            "Unrecognized email provider: " + provider + ". Must be 'smtp' or 'resend'.");
+    }
+    return chosen;
   }
 }
