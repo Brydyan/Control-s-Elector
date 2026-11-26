@@ -142,11 +142,17 @@ public class InvitationEmailQueueImpl implements InvitationEmailQueue {
       try {
         esperarTurnoDeTasa();
         if (email.tipo() == EmailAEnviar.TipoEmail.CONFIRMACION) {
+          log.debugf(
+              "Sending activation confirmation to %s for user %s",
+              email.destinatario(), email.username());
           emailService.sendActivationConfirmation(email.destinatario(), email.nombreCompleto());
         } else {
+          log.debugf(
+              "Sending invitation email to %s for user %s (username: %s)",
+              email.destinatario(), email.nombreCompleto(), email.username());
           emailService.sendInvitationEmail(email);
         }
-        log.debugf("Email enviado a %s (intento %d)", email.destinatario(), intento);
+        log.infof("Email sent successfully to %s (attempt %d)", email.destinatario(), intento);
         return;
       } catch (RuntimeException e) {
         log.errorf(

@@ -54,7 +54,11 @@ public class ResendEmailProvider implements EmailService {
    * Config.getOptionalValue() permite que la resolución ocurra en runtime, no en AOT.
    */
   private String getResendApiKey() {
-    return config.getOptionalValue("RESEND_API_KEY", String.class).orElse("");
+    var apiKey = config.getOptionalValue("RESEND_API_KEY", String.class).orElse("");
+    if (apiKey.isEmpty()) {
+      log.warnf("RESEND_API_KEY is not set - email sending will fail");
+    }
+    return apiKey;
   }
 
   @Override
@@ -100,6 +104,8 @@ public class ResendEmailProvider implements EmailService {
         """,
             escapeJson(fromEmail), escapeJson(to), escapeJson(subject), escapeJson(html));
 
+    log.debugf("Sending email from %s to %s with subject: %s", fromEmail, to, subject);
+
     try {
       HttpRequest request =
           HttpRequest.newBuilder()
@@ -113,8 +119,11 @@ public class ResendEmailProvider implements EmailService {
           httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() >= 200 && response.statusCode() < 300) {
-        log.debugf("Resend email sent successfully to %s", to);
+        log.infof("Resend email sent successfully to %s (status %d)", to, response.statusCode());
       } else {
+        log.warnf(
+            "Resend API error (status %d) for %s: %s",
+            response.statusCode(), to, response.body());
         throw new RuntimeException(
             "Resend API returned status " + response.statusCode() + ": " + response.body());
       }
