@@ -35,7 +35,15 @@
   </mirrors>
 
   <!-- Descarga en paralelo: acorta el build sin cambiar lo que se resuelve. -->
-  <properties>
-    <maven.artifact.threads>8</maven.artifact.threads>
-  </properties>
+  <profiles>
+    <profile>
+      <id>parallel-downloads</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <maven.artifact.threads>8</maven.artifact.threads>
+      </properties>
+    </profile>
+  </profiles>
 </settings>
