@@ -374,12 +374,12 @@ class ObserverActasContractIT extends ContractTestSupport {
 
     // Aislamiento: un observer que no registró el acta no puede verla.
     //
-    // RLS en PostgreSQL oculta la fila completamente, por lo que el backend no encuentra el acta.
-    // Responde 400 "Acta no encontrada" en lugar de 403, porque RLS lo protege sin revelar existencia.
+    // El backend verifica explícitamente la autoría en verMiActa() y lanza AccesoNoPermitidoException (403).
+    // No es RLS silencioso que oculta la fila: es una comprobación de negocio.
     Response ajeno = as(otroToken).get(OBSERVER + "/actas/" + actaId);
 
-    assertErrorShape(ajeno, 400);
-    assertThat(ajeno.jsonPath().getString("message")).contains("Acta no encontrada");
+    assertErrorShape(ajeno, 403);
+    assertThat(ajeno.jsonPath().getString("message")).contains("Solo puedes consultar tus propias actas");
   }
 
   // -----------------------------------------------------------------------------------------------

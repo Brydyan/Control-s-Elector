@@ -103,10 +103,11 @@ public abstract class ContractTestSupport {
 
   /**
    * GET con reintentos automáticos para 429 (rate limit).
-   * Implementa backoff exponencial: 100ms, 200ms, 400ms, 800ms base + jitter.
+   * Implementa backoff exponencial: 200ms, 500ms, 1s, 2s, 3s, 3s base + jitter ±50%.
+   * Con 152 tests paralelos y 60 req/min rate limit, necesita backoff mucho más agresivo.
    */
   protected static Response getWithRetry(RequestSpecification spec, String path) {
-    int maxAttempts = 5;
+    int maxAttempts = 6;
     int attempt = 0;
     while (attempt < maxAttempts) {
       Response r = spec.get(path);
@@ -117,11 +118,20 @@ public abstract class ContractTestSupport {
       if (attempt >= maxAttempts) {
         return r; // Devuelve 429 si se agotaron reintentos
       }
-      long baseDelay = 100L * (1L << (attempt - 1)); // 100, 200, 400, 800ms
-      long jitter = ThreadLocalRandom.current().nextLong(baseDelay / 2);
-      long waitMs = baseDelay + jitter;
+      // Backoff: 200, 500, 1000, 2000, 3000, 3000 ms
+      long baseDelayMs;
+      switch (attempt) {
+        case 1 -> baseDelayMs = 200L;
+        case 2 -> baseDelayMs = 500L;
+        case 3 -> baseDelayMs = 1000L;
+        case 4 -> baseDelayMs = 2000L;
+        default -> baseDelayMs = 3000L; // Attempts 5+: 3s
+      }
+      // Jitter: ±50% del base delay
+      long jitter = ThreadLocalRandom.current().nextLong(-baseDelayMs / 2, baseDelayMs / 2);
+      long waitMs = baseDelayMs + jitter;
       try {
-        Thread.sleep(waitMs);
+        Thread.sleep(Math.max(100, waitMs)); // Nunca menor a 100ms
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         return r;
@@ -321,7 +331,7 @@ public abstract class ContractTestSupport {
 
   /** ID interno de la JRV con ese número. */
   protected static long jrvIdDe(String numero, String token) {
-    for (Map<String, Object> jrv : listar(as(token).get(OBSERVER + "/jrvs"))) {
+    for (Map<String, Object> jrv : listar(getWithRetry(as(token), OBSERVER + "/jrvs"))) {
       if (numero.equals(jrv.get("numero"))) {
         return ((Number) jrv.get("id")).longValue();
       }
@@ -333,7 +343,7 @@ public abstract class ContractTestSupport {
   protected static List<Long> candidatosDe(long cargoId, String token) {
     List<Long> ids = new ArrayList<>();
     for (Map<String, Object> candidato :
-        listar(as(token).get("/api/v1/configuracion/candidatos?cargoId=" + cargoId))) {
+        listar(getWithRetry(as(token), "/api/v1/configuracion/candidatos?cargoId=" + cargoId))) {
       ids.add(((Number) candidato.get("id")).longValue());
     }
     if (ids.isEmpty()) {
