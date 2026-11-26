@@ -12,10 +12,13 @@
 |----------|---------|----------|--------|
 | **proposal.md** | Executive summary + 6 design decisions | Architect | ✅ Done |
 | **design.md** | Technical details (schema, code, arch) | Architect + Builder | ✅ Done |
+| **specs.md** | Functional + non-functional requirements (S1-S10) | Architect + Builder | ✅ Done |
+| **tasks.md** | Implementation tasks A-F with mutations | Architect + Builder | ✅ Done |
+| **apply-progress.md** | Progress log template (Builder fills in) | Builder | ✅ Done |
+| **README.md** (this file) | Index + handoff notes | Everyone | ✅ Done |
 | **t1-ocr-photo-quality-validation.md** | ODD Task 1 — OpenCV validators | Builder | ✅ Done |
 | **t2-ocr-async-processor.md** | ODD Task 2 — Tesseract + queue | Builder | ✅ Done |
 | **t3-ocr-api-integration.md** | ODD Task 3 — API + E2E | Builder | ✅ Done |
-| **README.md** (this file) | Index + handoff notes | Everyone | ✅ Done |
 
 ---
 
@@ -25,18 +28,24 @@
 - ✅ SDD approved by Architect
 - ✅ 3 ODDs created + ready for Builder
 
-### Phase 2: Implementation (T1-T3, ~2-3 days)
+### Phase 2: Implementation (Tasks A-F, full details in `tasks.md`)
 
-| Phase | Task | Input | Output | Duration |
-|-------|------|-------|--------|----------|
-| **A** | **T1** | — | OcrValidatorImpl + unit tests | 1-2h |
-| **B** | **T2** | T1 | OcrValidationQueueImpl + DB migration | 2-3h |
-| **C** | **T3** | T1+T2 | API endpoints + contract tests | 2-3h |
+| Phase | Task | Input | Output | Duration | ODD |
+|-------|------|-------|--------|----------|-----|
+| **A** | **T1** | — | OcrValidatorImpl + unit tests | 1-2h | t1-ocr-photo-quality-validation.md |
+| **B** | **T2** | A | OcrValidationQueueImpl + DB migration | 2-3h | t2-ocr-async-processor.md |
+| **C** | **T3** | A+B | API endpoints + contract tests | 2-3h | t3-ocr-api-integration.md |
+| **D** | QA | A-C | Manual checklist (12 points) | 1h | — |
+| **E** | Staging | A-D | Deploy + monitoring setup | 30m | — |
+| **F** | Prod | A-E | Rollout 100% + verify | 1h | — |
 
-### Phase 3: Deploy & Verify (1 day)
+**See `tasks.md` for complete A-F breakdown with mutation details.**
+
+### Phase 3: Deploy & Verify (Tasks D-F)
 - ✅ All tests pass (unit + integration + contract)
 - ✅ Manual QA: upload photo → see validation status
-- ✅ Deploy to staging/prod
+- ✅ Staging deployment + logs verified
+- ✅ Prod rollout + monitoring active
 
 ---
 
@@ -92,6 +101,40 @@ CREATE TABLE ocr_result (
 | **Decision** | ✅ **Local** | ❌ Cloud |
 
 **Why:** Free, private, good enough for flagging.
+
+---
+
+## 📖 How to Use This SDD
+
+**For Architect (pre-approval):**
+1. Read `proposal.md` (decisions D1-D6)
+2. Review `design.md` (technical details)
+3. Review `specs.md` (all functional/non-functional requirements S1-S10)
+4. Approve tasks A-F in `tasks.md`
+5. Provide feedback on open questions (design.md end)
+
+**For Builder (implementation):**
+1. Read `proposal.md` (understand why)
+2. Read `specs.md` (functional requirements)
+3. Read `tasks.md` (scope A-F, mutations)
+4. Read linked ODD files (T1, T2, T3) for detailed specs
+5. Fill in `apply-progress.md` as you complete each task
+6. Run verification commands per task
+
+**Reference Flow:**
+```
+proposal.md (why)
+         ↓
+design.md (how)
+         ↓
+specs.md (what exactly)
+         ↓
+tasks.md (A-F breakdown)
+         ↓
+/odd/tasks/t1,t2,t3.md (detailed implementation)
+         ↓
+apply-progress.md (track progress)
+```
 
 ---
 
