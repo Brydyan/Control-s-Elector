@@ -31,6 +31,10 @@ public class ActaEvidenciaRepository {
       return Optional.empty();
     }
     Object[] fila = filas.get(0);
+    if (fila[1] == null || fila[2] == null) {
+      throw new IllegalStateException(
+          "Acta inválida: jrv_id o cargo_id nulo. id=" + fila[0]);
+    }
     return Optional.of(
         new ActaEvidencia(
             ((Number) fila[0]).longValue(),

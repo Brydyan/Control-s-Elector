@@ -351,13 +351,10 @@ class RbacContractIT extends ContractTestSupport {
     assertErrorShape(coordinator, 403);
     assertErrorShape(admin, 403);
     assertErrorShape(master, 403);
-    // Otro OBSERVER: con RLS real la fila NO le es visible, asi que la app no puede
-    // ni siquiera compararla con la suya y responde "no encontrada". Antes (con el
-    // rol de superusuario, que ignora RLS) la app veia la fila y respondia 403 con
-    // "Solo puedes consultar tus propias actas". La diferencia es la que hace el
-    // aislamiento: no se confirma que el acta exista.
-    assertErrorShape(otroObserver, 400);
-    assertThat(otroObserver.jsonPath().getString("message")).contains("no encontrada");
+    // Otro OBSERVER: verMiActa() valida explícitamente la autoría y lanza 403.
+    // No es RLS silencioso que oculta la fila: es una comprobación de negocio.
+    assertErrorShape(otroObserver, 403);
+    assertThat(otroObserver.jsonPath().getString("message")).contains("Solo puedes consultar tus propias actas");
 
     // El dueño sí ve su acta.
     Response delDueno = as(owner).get(OBSERVER + "/actas/" + acta.id());

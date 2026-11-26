@@ -322,6 +322,7 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     expect(crearUsuario).toHaveBeenCalledWith({
       nombre: 'Juan',
       apellido: 'García',
+      emailPersonal: 'juan@example.com',
       rolNombre: 'OBSERVER',
       sendInvitation: true,
     });
@@ -355,6 +356,7 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     expect(crearUsuario).toHaveBeenCalledWith({
       nombre: 'Juan',
       apellido: 'García',
+      emailPersonal: 'juan@example.com',
       rolNombre: 'OBSERVER',
       sendInvitation: false,
     });
@@ -408,6 +410,7 @@ describe('AdminUsuariosPage — invitacion de una persona (T-AUTH-INV-02)', () =
     expect(crearUsuario).toHaveBeenCalledWith({
       nombre: 'Juan',
       apellido: 'García',
+      emailPersonal: 'juan@example.com',
       rolNombre: 'OBSERVER',
       sendInvitation: true,
     });

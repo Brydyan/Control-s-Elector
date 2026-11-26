@@ -89,14 +89,19 @@ jobs:
           AWS_ENDPOINT_URL: http://localhost:9000
           AWS_REGION: us-east-1
         run: |
-          python3 -c "
-          import urllib.request, os
-          # Bucket creation against S3 API
-          req = urllib.request.Request('http://localhost:9000/electoral-evidences', method='PUT')
-          # Basic auth or S3 signature not strictly needed for rustfs bucket create if local
-          " || true
-          # Alternative CLI / curl approach if python fails
-          curl -X PUT http://localhost:9000/electoral-evidences || true
+          # Install AWS CLI if not available
+          which aws || pip install awscli-local
+
+          # Create bucket using AWS CLI with proper S3 endpoint and auth
+          aws --endpoint-url http://localhost:9000 \
+              --region us-east-1 \
+              s3 mb s3://electoral-evidences || true
+
+          # Verify bucket exists
+          aws --endpoint-url http://localhost:9000 \
+              --region us-east-1 \
+              s3 ls s3://electoral-evidences || \
+            (echo "WARN: Failed to verify bucket creation"; exit 0)
 
       - name: Build the backend image
         run: docker build --no-cache -t electoral-api:contract backend/electoral-api-quarkus

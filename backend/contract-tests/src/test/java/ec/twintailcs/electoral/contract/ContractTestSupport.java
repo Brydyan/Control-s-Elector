@@ -101,6 +101,97 @@ public abstract class ContractTestSupport {
     return given().header("Authorization", "Bearer " + token);
   }
 
+  /**
+   * GET con reintentos automáticos para 429 (rate limit).
+   *
+   * <p><b>Estrategia:</b>
+   * <ul>
+   *   <li>Parsea Retry-After header del servidor (respeta lo que el servidor pide)
+   *   <li>Fallback: backoff exponencial adaptado a carga paralela (200ms → 3s)
+   *   <li>Jitter ±50% para descorrelacionar reintentos entre tests
+   *   <li>Máximo 6 intentos (~30s total en peor caso)
+   * </ul>
+   *
+   * <p>Con 152 tests paralelos × 2-3 endpoints por test = 300-400 req/min vs 60 req/min limit,
+   * la coordinación entre tests es crítica. El jitter previene que todos reintenten en simultaneo.
+   */
+  protected static Response getWithRetry(RequestSpecification spec, String path) {
+    int maxAttempts = 6;
+    int attempt = 0;
+    while (attempt < maxAttempts) {
+      Response r = spec.get(path);
+      if (r.statusCode() != 429) {
+        return r;
+      }
+      attempt++;
+      if (attempt >= maxAttempts) {
+        return r; // Devuelve 429 si se agotaron reintentos
+      }
+
+      // Parsear Retry-After header del servidor (RFC 7231)
+      long waitMs = parseRetryAfter(r);
+
+      // Si el servidor no indicó Retry-After, usar backoff exponencial
+      if (waitMs <= 0) {
+        waitMs = computeBackoffDelay(attempt);
+      }
+
+      try {
+        Thread.sleep(Math.max(100, waitMs)); // Nunca menor a 100ms
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return r;
+      }
+    }
+    return spec.get(path);
+  }
+
+  /**
+   * Parsea el header Retry-After (RFC 7231) y devuelve millisegundos a esperar.
+   *
+   * <p>Formato: "120" (segundos) o "Wed, 21 Oct 2015 07:28:00 GMT" (fecha HTTP).
+   *
+   * @return millisegundos a esperar, o <= 0 si no está presente o invalido
+   */
+  private static long parseRetryAfter(Response r) {
+    String retryAfterHeader = r.header("Retry-After");
+    if (retryAfterHeader == null || retryAfterHeader.isBlank()) {
+      return -1;
+    }
+
+    try {
+      // Intenta parsear como segundos (formato decimal)
+      long seconds = Long.parseLong(retryAfterHeader.trim());
+      if (seconds > 0) {
+        return seconds * 1000;
+      }
+    } catch (NumberFormatException e) {
+      // No es formato decimal; ignorar parsing de fecha (RFC completa requiere parsing HTTP-date)
+      // Por ahora, solo soportamos formato decimal
+    }
+    return -1;
+  }
+
+  /**
+   * Calcula delay exponencial adaptado a carga paralela.
+   *
+   * <p>Backoff: 200, 500, 1000, 2000, 3000, 3000 ms + jitter ±50%.
+   */
+  private static long computeBackoffDelay(int attempt) {
+    long baseDelayMs;
+    switch (attempt) {
+      case 1 -> baseDelayMs = 200L;
+      case 2 -> baseDelayMs = 500L;
+      case 3 -> baseDelayMs = 1000L;
+      case 4 -> baseDelayMs = 2000L;
+      default -> baseDelayMs = 3000L; // Attempts 5+: 3s
+    }
+    // Jitter: ±50% del base delay para descorrelacionar reintentos en paralelo
+    long jitter =
+        ThreadLocalRandom.current().nextLong(-baseDelayMs / 2, baseDelayMs / 2);
+    return baseDelayMs + jitter;
+  }
+
   /** Serializa un body a JSON. */
   protected static String json(Object body) {
     return JSON.writeValueAsString(body);
@@ -244,10 +335,10 @@ public abstract class ContractTestSupport {
     // fallo del endpoint. El MASTER ve el estado global, que es el que decide.
     String tokenGlobal = masterToken();
 
-    for (Map<String, Object> jrv : listar(as(tokenGlobal).get(OBSERVER + "/jrvs"))) {
+    for (Map<String, Object> jrv : listar(getWithRetry(as(tokenGlobal), OBSERVER + "/jrvs"))) {
       long jrvId = ((Number) jrv.get("id")).longValue();
       for (Map<String, Object> cargo :
-          listar(as(tokenGlobal).get(OBSERVER + "/jrv/" + jrvId + "/cargos"))) {
+          listar(getWithRetry(as(tokenGlobal), OBSERVER + "/jrv/" + jrvId + "/cargos"))) {
         if (Boolean.TRUE.equals(cargo.get("registrado"))) {
           continue;
         }
@@ -292,7 +383,7 @@ public abstract class ContractTestSupport {
 
   /** ID interno de la JRV con ese número. */
   protected static long jrvIdDe(String numero, String token) {
-    for (Map<String, Object> jrv : listar(as(token).get(OBSERVER + "/jrvs"))) {
+    for (Map<String, Object> jrv : listar(getWithRetry(as(token), OBSERVER + "/jrvs"))) {
       if (numero.equals(jrv.get("numero"))) {
         return ((Number) jrv.get("id")).longValue();
       }
@@ -304,7 +395,7 @@ public abstract class ContractTestSupport {
   protected static List<Long> candidatosDe(long cargoId, String token) {
     List<Long> ids = new ArrayList<>();
     for (Map<String, Object> candidato :
-        listar(as(token).get("/api/v1/configuracion/candidatos?cargoId=" + cargoId))) {
+        listar(getWithRetry(as(token), "/api/v1/configuracion/candidatos?cargoId=" + cargoId))) {
       ids.add(((Number) candidato.get("id")).longValue());
     }
     if (ids.isEmpty()) {

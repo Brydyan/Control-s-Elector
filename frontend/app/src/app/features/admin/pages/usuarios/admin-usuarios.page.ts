@@ -291,6 +291,7 @@ export class AdminUsuariosPage implements OnInit {
       nombre: this.nombre.trim(),
       apellido: this.apellido.trim(),
       rolNombre: this.rol,
+      emailPersonal: !this.modoEdicion ? this.emailPersonal.trim() : undefined,
       sendInvitation: !this.modoEdicion
         ? this.enviarInvitacionPorEmail()
         : undefined,
@@ -750,6 +751,7 @@ export class AdminUsuariosPage implements OnInit {
   abrirReenvio(usuario: UsuarioResponseDto): void {
     if (!this.puedeReenviarInvitacion(usuario)) return;
     this.usuarioAReenviar.set(usuario);
+    this.emailPersonal = usuario.emailPersonal ?? '';
     this.error.set(null);
   }
 

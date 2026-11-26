@@ -153,6 +153,7 @@ public class UsuarioAdminService {
     return new UsuarioResponseDto(
         response.publicId(),
         response.email(),
+        response.emailPersonal(),
         response.nombre(),
         response.apellido(),
         response.rolNombre(),

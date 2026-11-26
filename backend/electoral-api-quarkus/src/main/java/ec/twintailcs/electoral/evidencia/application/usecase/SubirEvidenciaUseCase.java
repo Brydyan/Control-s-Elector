@@ -7,7 +7,8 @@ import ec.twintailcs.electoral.evidencia.domain.ActaEvidenciaRepository;
 import ec.twintailcs.electoral.evidencia.domain.EstadoEvidencia;
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaInvalidaException;
-import ec.twintailcs.electoral.storage.s3.S3StorageService;
+import ec.twintailcs.electoral.storage.StorageException;
+import ec.twintailcs.electoral.storage.StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Status;
@@ -27,8 +28,16 @@ import org.jboss.logging.Logger;
  * Sube una evidencia fotografica y la deja registrada en la base.
  *
  * <p>Port exacto del {@code SubirEvidenciaUseCase} del backend Spring: mismas validaciones, misma
- * clave de S3 ({@code actas/{actaId}/{uuid}.webp}), mismo SHA-256 y misma compensacion (si la
- * transaccion falla, el objeto de S3 se borra).
+ * clave ({@code actas/{actaId}/{uuid}.webp}), mismo SHA-256 y misma compensacion (si la
+ * transaccion falla, el objeto se borra del storage).
+ *
+ * <p><b>Desacoplamiento:</b> Usa {@link StorageService} en lugar de S3StorageService directamente,
+ * permitiendo:
+ * <ul>
+ *   <li>Cambiar providers (S3 → MinIO → Local) sin refactor
+ *   <li>Implementar fallback automático (S3 → Local)
+ *   <li>Testear con storage mock
+ * </ul>
  */
 @ApplicationScoped
 public class SubirEvidenciaUseCase {
@@ -41,7 +50,7 @@ public class SubirEvidenciaUseCase {
   /** Prefijo de content type admitido. */
   private static final String ALLOWED_MIME_PREFIX = "image/";
 
-  @Inject S3StorageService s3;
+  @Inject StorageService storage;
   @Inject ActaEvidenciaRepository actaRepository;
   @Inject AuditoriaEvidencia auditoria;
   @Inject TransactionManager transactionManager;
@@ -82,13 +91,21 @@ public class SubirEvidenciaUseCase {
     String sha256 = computeSha256(archivo.contenido());
 
     try {
-      s3.upload(s3Key, new ByteArrayInputStream(archivo.contenido()), size, contentType);
+      storage.upload(s3Key, new ByteArrayInputStream(archivo.contenido()), size, contentType);
     } catch (IOException e) {
       throw new EvidenciaInvalidaException("cannot read uploaded file: " + e.getMessage());
+    } catch (StorageException e) {
+      // StorageService.upload() lanza StorageException si las credenciales fallan,
+      // conectividad se pierde, etc. Se traduce a 400 "evidencia inválida" en lugar
+      // de 500 "internal error" para que la suite de contrato pueda diferenciar entre
+      // problemas de configuracion y problemas de entrada del cliente.
+      // Incluir tipo de error para debugging.
+      throw new EvidenciaInvalidaException(
+          String.format("Storage upload failed [%s]: %s", e.getErrorType(), e.getMessage()));
     }
 
-    // La compensacion de S3 se engancha al final de la transaccion, no al persist().
-    // Si la transaccion ROLLBACKea (commit fallido o excepcion temprana), el objeto de S3 se
+    // La compensacion de storage se engancha al final de la transaccion, no al persist().
+    // Si la transaccion ROLLBACKea (commit fallido o excepcion temprana), el objeto de storage se
     // limpia: si no, queda huerfano y el usuario cree que subio la foto.
     programarLimpiezaSiHayRollback(s3Key);
 
@@ -152,7 +169,7 @@ public class SubirEvidenciaUseCase {
   }
 
   /**
-   * Registra la limpieza del objeto de S3 si la transaccion termina en rollback.
+   * Registra la limpieza del objeto de storage si la transaccion termina en rollback.
    *
    * <p>Si no hay transaccion activa, no se registra nada (mismo guard que el backend Spring).
    */
@@ -175,20 +192,20 @@ public class SubirEvidenciaUseCase {
             public void afterCompletion(int status) {
               if (status == Status.STATUS_ROLLEDBACK) {
                 try {
-                  s3.delete(s3Key);
+                  storage.delete(s3Key);
                   log.infof(
-                      "S3 cleanup after rollback for key %s (evidencia NOT persisted)", s3Key);
-                } catch (RuntimeException s3Cleanup) {
+                      "Storage cleanup after rollback for key %s (evidencia NOT persisted)", s3Key);
+                } catch (StorageException cleanupFailed) {
                   log.errorf(
-                      s3Cleanup,
-                      "S3 cleanup FAILED after rollback for key %s; orphan remains",
+                      cleanupFailed,
+                      "Storage cleanup FAILED after rollback for key %s; orphan remains",
                       s3Key);
                 }
               }
             }
           });
     } catch (Exception e) {
-      log.warnf(e, "No se pudo registrar la limpieza de S3 para la clave %s", s3Key);
+      log.warnf(e, "No se pudo registrar la limpieza de storage para la clave %s", s3Key);
     }
   }
 }

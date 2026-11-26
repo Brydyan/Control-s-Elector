@@ -45,6 +45,7 @@ public class UsuarioMapper {
     return new UsuarioResponseDto(
         entity.getPublicId(),
         entity.getEmail(),
+        entity.getEmailPersonal(),
         entity.getNombre(),
         entity.getApellido(),
         entity.getRolNombre(),

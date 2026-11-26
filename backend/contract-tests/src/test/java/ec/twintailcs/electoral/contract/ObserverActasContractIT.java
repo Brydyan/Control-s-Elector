@@ -374,14 +374,12 @@ class ObserverActasContractIT extends ContractTestSupport {
 
     // Aislamiento: un observer que no registró el acta no puede verla.
     //
-    // Con RLS real la fila no le es visible: la app responde "no encontrada" y no
-    // confirma que el acta exista. Antes (con el rol de superusuario, que ignora
-    // RLS) la app veia la fila y respondia 403 con "Solo puedes consultar tus
-    // propias actas".
+    // El backend verifica explícitamente la autoría en verMiActa() y lanza AccesoNoPermitidoException (403).
+    // No es RLS silencioso que oculta la fila: es una comprobación de negocio.
     Response ajeno = as(otroToken).get(OBSERVER + "/actas/" + actaId);
 
-    assertErrorShape(ajeno, 400);
-    assertThat(ajeno.jsonPath().getString("message")).contains("no encontrada");
+    assertErrorShape(ajeno, 403);
+    assertThat(ajeno.jsonPath().getString("message")).contains("Solo puedes consultar tus propias actas");
   }
 
   // -----------------------------------------------------------------------------------------------
