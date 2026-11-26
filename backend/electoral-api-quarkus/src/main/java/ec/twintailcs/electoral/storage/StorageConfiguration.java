@@ -30,6 +30,7 @@ public class StorageConfiguration {
    * Productor de StorageService default: implementación con fallback.
    *
    * <p>Los componentes que inyecten StorageService sin @Named reciben esta instancia.
+   * Este producer es el único que debe producir StorageService sin qualifier específico.
    */
   @Produces
   @Singleton
@@ -41,11 +42,13 @@ public class StorageConfiguration {
    * Productor de S3StorageAdapter con @Named("s3").
    *
    * <p>Lo inyecta FallbackStorageService como primary.
+   * Nota: S3StorageAdapter ya tiene @Named("s3"), este producer es redundante
+   * pero se mantiene para explicititud en la configuración de DI.
    */
   @Produces
   @Singleton
   @Named("s3")
-  public StorageService s3Storage(S3StorageAdapter adapter) {
+  public StorageService s3Storage(@Named("s3") S3StorageAdapter adapter) {
     return adapter;
   }
 

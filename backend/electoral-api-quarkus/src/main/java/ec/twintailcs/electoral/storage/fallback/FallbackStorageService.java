@@ -4,6 +4,7 @@ import ec.twintailcs.electoral.storage.StorageException;
 import ec.twintailcs.electoral.storage.StorageException.StorageErrorType;
 import ec.twintailcs.electoral.storage.StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -32,8 +33,14 @@ import org.jboss.logging.Logger;
  * </ul>
  *
  * <p><b>Loggeo:</b> Cada fallover se loguea con contexto completo para auditoría.
+ *
+ * <p><b>CDI:</b> @Alternative + @Named("fallback") para evitar ser confundido con el producer
+ * que expone esta clase como StorageService. El @Alternative permite que exista sin ser
+ * automáticamente inyectable, solo a través del producer o explicit @Named.
  */
 @ApplicationScoped
+@Alternative
+@Named("fallback")
 public class FallbackStorageService implements StorageService {
 
   private static final Logger log = Logger.getLogger(FallbackStorageService.class);
