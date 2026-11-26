@@ -15,8 +15,7 @@ class ConsultarActaDetalleEvidenciaSeleccionTest {
     Evidencia ultimaRechazada = evidencia(EstadoEvidencia.RECHAZADA);
 
     assertSame(
-        elegible,
-        ConsultarActaDetalleUseCase.seleccionarEvidencia(elegible, ultimaRechazada));
+        elegible, ConsultarActaDetalleUseCase.seleccionarEvidencia(elegible, ultimaRechazada));
   }
 
   @Test
@@ -24,8 +23,7 @@ class ConsultarActaDetalleEvidenciaSeleccionTest {
     Evidencia ultimaRechazada = evidencia(EstadoEvidencia.RECHAZADA);
 
     assertSame(
-        ultimaRechazada,
-        ConsultarActaDetalleUseCase.seleccionarEvidencia(null, ultimaRechazada));
+        ultimaRechazada, ConsultarActaDetalleUseCase.seleccionarEvidencia(null, ultimaRechazada));
   }
 
   @Test

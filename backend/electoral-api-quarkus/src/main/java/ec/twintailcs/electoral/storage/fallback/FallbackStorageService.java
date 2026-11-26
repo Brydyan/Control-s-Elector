@@ -20,12 +20,14 @@ import org.jboss.logging.Logger;
  * fallback solo si hay un proveedor alternativo registrado.
  *
  * <p><b>Configuración:</b>
+ *
  * <ul>
  *   <li>Primary: Se inyecta con @S3Provider — S3StorageAdapter
  *   <li>Fallback: Se inyecta con @FallbackProvider — opcional; actualmente no hay uno registrado
  * </ul>
  *
  * <p><b>Comportamiento:</b>
+ *
  * <ul>
  *   <li>Si primary.isHealthy() = false, usa fallback directamente
  *   <li>Si primary falla con error no-retryable (auth, bad request), lanza excepción
@@ -170,8 +172,7 @@ public class FallbackStorageService implements StorageService {
       return p.presignDownloadUrl(key);
     } catch (StorageException e) {
       if (e.isRetryable()) {
-        return fallbackAfterRetryableFailure("presign download", key, e)
-            .presignDownloadUrl(key);
+        return fallbackAfterRetryableFailure("presign download", key, e).presignDownloadUrl(key);
       } else {
         throw e;
       }
@@ -223,16 +224,12 @@ public class FallbackStorageService implements StorageService {
     if (f == null) {
       log.warnf(
           "Primary storage %s failed (retryable), no fallback is configured: key=%s errorType=%s",
-          operation,
-          key,
-          primaryFailure.getErrorType());
+          operation, key, primaryFailure.getErrorType());
       throw primaryFailure;
     }
     log.warnf(
         "Primary storage %s failed (retryable), using fallback: key=%s errorType=%s",
-        operation,
-        key,
-        primaryFailure.getErrorType());
+        operation, key, primaryFailure.getErrorType());
     return f;
   }
 

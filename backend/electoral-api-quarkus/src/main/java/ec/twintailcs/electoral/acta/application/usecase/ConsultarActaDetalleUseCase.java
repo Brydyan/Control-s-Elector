@@ -65,10 +65,7 @@ public class ConsultarActaDetalleUseCase {
                 : error.getClass().getSimpleName();
         Log.warnf(
             "No se pudo generar la URL de evidencia: actaId=%s publicId=%s s3Key=%s errorType=%s",
-            actaId,
-            evidencia.getPublicId(),
-            evidencia.getS3Key(),
-            errorType);
+            actaId, evidencia.getPublicId(), evidencia.getS3Key(), errorType);
       }
     }
 
@@ -117,8 +114,7 @@ public class ConsultarActaDetalleUseCase {
     return seleccionarEvidencia(null, masReciente);
   }
 
-  static Evidencia seleccionarEvidencia(
-      Evidencia masRecienteNoRechazada, Evidencia masReciente) {
+  static Evidencia seleccionarEvidencia(Evidencia masRecienteNoRechazada, Evidencia masReciente) {
     return masRecienteNoRechazada != null ? masRecienteNoRechazada : masReciente;
   }
 }
