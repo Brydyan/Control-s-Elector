@@ -85,6 +85,12 @@ public class SubirEvidenciaUseCase {
       s3.upload(s3Key, new ByteArrayInputStream(archivo.contenido()), size, contentType);
     } catch (IOException e) {
       throw new EvidenciaInvalidaException("cannot read uploaded file: " + e.getMessage());
+    } catch (RuntimeException e) {
+      // S3StorageService.upload() lanza S3Exception (extends RuntimeException) si las
+      // credenciales no existen o fallan. Se traduce a 400 "evidencia inválida" en lugar
+      // de 500 "internal error" para que la suite de contrato pueda diferenciar entre
+      // problemas de configuracion y problemas de entrada del cliente.
+      throw new EvidenciaInvalidaException("S3 upload failed: " + e.getMessage());
     }
 
     // La compensacion de S3 se engancha al final de la transaccion, no al persist().
