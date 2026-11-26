@@ -6,6 +6,7 @@ export type EstadoUsuario = 'ACTIVO' | 'PENDIENTE_INVITACION';
 export interface UsuarioResponseDto {
   publicId: string;
   email: string;
+  emailPersonal?: string;
   nombre: string;
   apellido: string;
   rolNombre: string;

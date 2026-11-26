@@ -26,6 +26,7 @@ import java.util.UUID;
 public record UsuarioResponseDto(
     UUID publicId,
     String email,
+    String emailPersonal,
     String nombre,
     String apellido,
     String rolNombre,
