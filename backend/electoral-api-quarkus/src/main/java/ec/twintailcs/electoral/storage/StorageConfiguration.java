@@ -9,20 +9,14 @@ import jakarta.inject.Singleton;
 /**
  * Configuración de inyección para StorageService.
  *
- * <p><b>Producción:</b> Inyecta {@link FallbackStorageService} como StorageService default. -
- * Primary: {@link S3StorageAdapter} (AWS S3 / RustFS / MinIO) inyectado con @S3Provider - Fallback:
- * (None, pero extensible a LocalStorageAdapter) con @FallbackProvider
+ * <p><b>Producción:</b> Inyecta {@link FallbackStorageService} como StorageService default. El
+ * primary es {@link S3StorageAdapter}; actualmente no hay un proveedor de fallback registrado.
  *
- * <p><b>Desarrollo / CI sin S3:</b> Configurar environment o agregar LocalStorageAdapter.
+ * <p><b>Decisión de diseño:</b> los casos de uso consumen la interfaz StorageService y no dependen
+ * del proveedor concreto. El fallback queda opcional y no se configura en este alcance.
  *
- * <p><b>Decisión de diseño:</b> FallbackStorageService es el default porque: - En prod: S3 es
- * always healthy, fallback nunca se usa (costo cero) - En CI: S3 con credenciales inválidas se
- * detecta en health check, fallback da opciones - Desacoplamiento: UseCase no sabe sobre fallback,
- * transparente
- *
- * <p><b>CDI Pattern:</b> Usa @Qualifier annotations (@S3Provider, @FallbackProvider) para
- * disambiguación instead de @Alternative. Esto permite que el producer acceda explícitamente a
- * ambas implementaciones sin ambigüedad de resolución.
+ * <p><b>CDI Pattern:</b> usa qualifiers distintos para el decorador (@FallbackService), el primary
+ * (@S3Provider) y los proveedores alternativos (@FallbackProvider).
  */
 @ApplicationScoped
 public class StorageConfiguration {
@@ -35,7 +29,7 @@ public class StorageConfiguration {
    */
   @Produces
   @Singleton
-  public StorageService storageService(@FallbackProvider FallbackStorageService fallback) {
+  public StorageService storageService(@FallbackService FallbackStorageService fallback) {
     return fallback;
   }
 

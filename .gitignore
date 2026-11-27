@@ -280,3 +280,4 @@ documents/data
 # herramienta, que vive fuera del repositorio (~/.pandorx/projects/).
 # Ver issue #171.
 test-results.txt
+.pandorx/materialized/

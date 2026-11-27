@@ -1,6 +1,7 @@
 package ec.twintailcs.electoral.storage.fallback;
 
 import ec.twintailcs.electoral.storage.FallbackProvider;
+import ec.twintailcs.electoral.storage.FallbackService;
 import ec.twintailcs.electoral.storage.S3Provider;
 import ec.twintailcs.electoral.storage.StorageException;
 import ec.twintailcs.electoral.storage.StorageException.StorageErrorType;
@@ -15,16 +16,18 @@ import org.jboss.logging.Logger;
 /**
  * Decorador de {@link StorageService} que implementa fallback automático.
  *
- * <p>Intenta con primary (ej: S3), y si falla con error retryable (conectividad, quota), cae a
- * fallback (ej: Local disk).
+ * <p>Intenta con primary (ej: S3), y si falla con error retryable (conectividad, quota), cae a un
+ * fallback solo si hay un proveedor alternativo registrado.
  *
  * <p><b>Configuración:</b>
+ *
  * <ul>
  *   <li>Primary: Se inyecta con @S3Provider — S3StorageAdapter
- *   <li>Fallback: Se inyecta con @FallbackProvider — generalmente LocalStorageAdapter
+ *   <li>Fallback: Se inyecta con @FallbackProvider — opcional; actualmente no hay uno registrado
  * </ul>
  *
  * <p><b>Comportamiento:</b>
+ *
  * <ul>
  *   <li>Si primary.isHealthy() = false, usa fallback directamente
  *   <li>Si primary falla con error no-retryable (auth, bad request), lanza excepción
@@ -32,13 +35,13 @@ import org.jboss.logging.Logger;
  *   <li>Si fallback también falla, lanza excepción del fallback
  * </ul>
  *
- * <p><b>Loggeo:</b> Cada fallover se loguea con contexto completo para auditoría.
+ * <p><b>Loggeo:</b> Los fallovers se registran sin incluir mensajes de excepción ni credenciales.
  *
- * <p><b>CDI:</b> @FallbackProvider qualifier para distinguir esta implementación.
+ * <p><b>CDI:</b> @FallbackService qualifier para distinguir esta implementación.
  * StorageConfiguration lo produce como el bean default de StorageService.
  */
 @ApplicationScoped
-@FallbackProvider
+@FallbackService
 public class FallbackStorageService implements StorageService {
 
   private static final Logger log = Logger.getLogger(FallbackStorageService.class);
@@ -74,8 +77,7 @@ public class FallbackStorageService implements StorageService {
       p.upload(key, input, size, mimeType);
     } catch (StorageException e) {
       if (e.isRetryable()) {
-        log.warnf(e, "Primary storage upload failed (retryable), using fallback: %s [%s]", key, e.getErrorType());
-        uploadWithFallback(key, input, size, mimeType);
+        fallbackAfterRetryableFailure("upload", key, e).upload(key, input, size, mimeType);
       } else {
         throw e;
       }
@@ -108,8 +110,7 @@ public class FallbackStorageService implements StorageService {
       p.delete(key);
     } catch (StorageException e) {
       if (e.isRetryable()) {
-        log.warnf(e, "Primary storage delete failed (retryable), using fallback: %s", key);
-        deleteWithFallback(key);
+        fallbackAfterRetryableFailure("delete", key, e).delete(key);
       } else {
         throw e;
       }
@@ -140,8 +141,7 @@ public class FallbackStorageService implements StorageService {
       return p.download(key);
     } catch (StorageException e) {
       if (e.isRetryable()) {
-        log.warnf(e, "Primary storage download failed (retryable), using fallback: %s", key);
-        return downloadWithFallback(key);
+        return fallbackAfterRetryableFailure("download", key, e).download(key);
       } else {
         throw e;
       }
@@ -172,8 +172,7 @@ public class FallbackStorageService implements StorageService {
       return p.presignDownloadUrl(key);
     } catch (StorageException e) {
       if (e.isRetryable()) {
-        log.warnf(e, "Primary storage presign download failed (retryable), using fallback: %s", key);
-        return presignDownloadUrlWithFallback(key);
+        return fallbackAfterRetryableFailure("presign download", key, e).presignDownloadUrl(key);
       } else {
         throw e;
       }
@@ -204,8 +203,7 @@ public class FallbackStorageService implements StorageService {
       return p.presignUploadUrl(key);
     } catch (StorageException e) {
       if (e.isRetryable()) {
-        log.warnf(e, "Primary storage presign upload failed (retryable), using fallback: %s", key);
-        return presignUploadUrlWithFallback(key);
+        return fallbackAfterRetryableFailure("presign upload", key, e).presignUploadUrl(key);
       } else {
         throw e;
       }
@@ -218,6 +216,21 @@ public class FallbackStorageService implements StorageService {
       throwNoProvidersAvailable();
     }
     return f.presignUploadUrl(key);
+  }
+
+  private StorageService fallbackAfterRetryableFailure(
+      String operation, String key, StorageException primaryFailure) throws StorageException {
+    StorageService f = getFallback();
+    if (f == null) {
+      log.warnf(
+          "Primary storage %s failed (retryable), no fallback is configured: key=%s errorType=%s",
+          operation, key, primaryFailure.getErrorType());
+      throw primaryFailure;
+    }
+    log.warnf(
+        "Primary storage %s failed (retryable), using fallback: key=%s errorType=%s",
+        operation, key, primaryFailure.getErrorType());
+    return f;
   }
 
   @Override

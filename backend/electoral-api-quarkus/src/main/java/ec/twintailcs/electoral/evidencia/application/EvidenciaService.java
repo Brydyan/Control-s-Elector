@@ -14,6 +14,7 @@ import ec.twintailcs.electoral.evidencia.domain.TipoObservacion;
 import ec.twintailcs.electoral.evidencia.web.dto.DownloadUrlResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.EvidenciaResponse;
 import ec.twintailcs.electoral.evidencia.web.dto.mapper.EvidenciaMapper;
+import ec.twintailcs.electoral.storage.StorageException;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -73,7 +74,7 @@ public class EvidenciaService {
 
   /** URL prefirmada de descarga de la evidencia. */
   @Transactional
-  public DownloadUrlResponse urlDescarga(UUID publicId) {
+  public DownloadUrlResponse urlDescarga(UUID publicId) throws StorageException {
     rls.activar(contexto.usuarioId());
 
     String url = consultarEvidenciaUseCase.presignDownload(publicId);
@@ -89,8 +90,8 @@ public class EvidenciaService {
   }
 
   /** Elimina la evidencia (registro y objeto de S3). */
-  @Transactional
-  public void eliminar(UUID publicId, String xForwardedFor) {
+  @Transactional(rollbackOn = StorageException.class)
+  public void eliminar(UUID publicId, String xForwardedFor) throws StorageException {
     Long usuarioId = contexto.usuarioId();
     rls.activar(usuarioId);
 

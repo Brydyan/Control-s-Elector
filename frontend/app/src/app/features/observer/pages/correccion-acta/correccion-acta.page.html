@@ -69,6 +69,7 @@
     <p class="evidence-section__label">Foto Original del Acta</p>
     <img
       [src]="url"
+      (error)="onEvidenceError()"
       alt="Evidencia fotográfica del acta"
       class="evidence-section__image"
       data-testid="evidence-image"

@@ -2,6 +2,7 @@ package ec.twintailcs.electoral.storage.s3;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Duration;
+import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -35,6 +36,14 @@ public class S3Properties {
   /** Endpoint custom (vacio = AWS real). Para RustFS va http://localhost:9000. */
   private final String endpoint;
 
+  /**
+   * Endpoint con el que se firman las URLs prefirmadas que abre el navegador. El host forma parte
+   * de la firma, asi que no se puede reescribir despues: si el backend llega a S3 por un nombre
+   * interno (en Docker, {@code http://rustfs:9000}), el navegador no lo resuelve. Vacio = se usa
+   * {@link #endpoint}, que es lo correcto cuando el endpoint ya es publico (R2 en produccion).
+   */
+  private final String publicEndpoint;
+
   /** Path style para S3-compatible (RustFS, MinIO). True por default. */
   private final boolean pathStyleAccessEnabled;
 
@@ -49,6 +58,7 @@ public class S3Properties {
       @ConfigProperty(name = "aws.s3.region", defaultValue = "us-east-1") String region,
       @ConfigProperty(name = "aws.s3.endpoint", defaultValue = "http://localhost:9000")
           String endpoint,
+      @ConfigProperty(name = "aws.s3.public-endpoint") Optional<String> publicEndpoint,
       @ConfigProperty(name = "aws.s3.path-style-access-enabled", defaultValue = "true")
           boolean pathStyleAccessEnabled,
       @ConfigProperty(name = "aws.s3.presign-expiry", defaultValue = "PT15M")
@@ -56,6 +66,8 @@ public class S3Properties {
     this.bucket = bucket;
     this.region = region;
     this.endpoint = endpoint;
+    this.publicEndpoint =
+        publicEndpoint.map(String::trim).filter(valor -> !valor.isEmpty()).orElse(endpoint);
     this.pathStyleAccessEnabled = booleanFromEnv("AWS_S3_PATH_STYLE", pathStyleAccessEnabled);
     this.presignExpiry = presignExpiry;
   }
@@ -82,6 +94,10 @@ public class S3Properties {
 
   public String getEndpoint() {
     return endpoint;
+  }
+
+  public String getPublicEndpoint() {
+    return publicEndpoint;
   }
 
   public boolean isPathStyleAccessEnabled() {

@@ -80,8 +80,9 @@ public class S3Config {
                     .pathStyleAccessEnabled(props.isPathStyleAccessEnabled())
                     .build());
 
-    if (props.getEndpoint() != null && !props.getEndpoint().isBlank()) {
-      builder.endpointOverride(URI.create(props.getEndpoint()));
+    // Firma con el endpoint publico: es el host que va a pedir el navegador.
+    if (props.getPublicEndpoint() != null && !props.getPublicEndpoint().isBlank()) {
+      builder.endpointOverride(URI.create(props.getPublicEndpoint()));
     }
 
     return builder.build();

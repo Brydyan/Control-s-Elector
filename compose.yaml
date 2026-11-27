@@ -136,6 +136,8 @@ services:
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
       AWS_S3_ENDPOINT: http://rustfs:${S3_PORT:-9000}
+      # El navegador no resuelve "rustfs": las URLs prefirmadas se firman con el host publicado.
+      AWS_S3_PUBLIC_ENDPOINT: http://localhost:${S3_PORT:-9000}
       AWS_S3_REGION: us-east-1
       AWS_S3_BUCKET: electoral-evidences
       AWS_S3_PATH_STYLE: "true"
@@ -255,6 +257,8 @@ services:
       AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
       AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
       AWS_S3_ENDPOINT: http://rustfs:${S3_PORT:-9000}
+      # El navegador no resuelve "rustfs": las URLs prefirmadas se firman con el host publicado.
+      AWS_S3_PUBLIC_ENDPOINT: http://localhost:${S3_PORT:-9000}
       AWS_S3_REGION: us-east-1
       AWS_S3_BUCKET: electoral-evidences
       AWS_S3_PATH_STYLE: "true"
@@ -299,6 +303,27 @@ services:
       resources:
         limits:
           memory: 256M
+
+  # Crea el bucket de evidencias al levantar RustFS. Sin el bucket, toda subida de
+  # foto falla con NoSuchBucket y el acta queda sin evidencia. Es idempotente: si el
+  # bucket ya existe, termina sin error. Usa el mismo AWS CLI que el CI de contratos.
+  rustfs-init:
+    image: amazon/aws-cli:2.22.0
+    container_name: electoral-rustfs-init
+    profiles: ["s3"]
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-rustfsadmin}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-rustfsadmin123}
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        aws --endpoint-url http://rustfs:${S3_PORT:-9000} s3api head-bucket --bucket electoral-evidences 2>/dev/null
+        || aws --endpoint-url http://rustfs:${S3_PORT:-9000} s3 mb s3://electoral-evidences
+    restart: "no"
 
   # ---------------------------------------------------------------------------
   # Valkey — almacen compartido del rate limiting y de la cache distribuida

@@ -207,6 +207,25 @@ export class ModificarActaPage implements OnInit, OnDestroy {
       });
   }
 
+  private evidenceReloadAttempted = false;
+
+  /**
+   * La URL prefirmada de la evidencia caduca (15 min). Si la imagen falla, se pide una URL
+   * nueva una sola vez, actualizando solo la evidencia para no perder los votos ya editados.
+   */
+  onEvidenceError(): void {
+    if (this.evidenceReloadAttempted) return;
+    this.evidenceReloadAttempted = true;
+    this.observerService
+      .getActaParaCorregir(this.actaId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (acta) => this.urlEvidencia.set(acta.urlEvidencia || null),
+        error: (err) =>
+          console.error('No se pudo renovar la URL de la evidencia:', err),
+      });
+  }
+
   /**
    * Procesa el acta cargada: precarga datos y carga candidatos.
    */

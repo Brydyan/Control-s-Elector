@@ -208,6 +208,7 @@
             [src]="url"
             alt="Evidencia inicial del acta"
             class="acta-thumb"
+            (error)="onEvidenceError()"
             data-testid="evidence-image-current"
           />
         </div>

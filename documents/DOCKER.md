@@ -183,10 +183,15 @@ docker compose --profile dev restart postgres
 ```bash
 docker compose --profile dev logs rustfs
 
-# Bucket bootstrap (S3 necesita firma SigV4)
-docker run --rm --network host minio/mc \
-  alias set local http://localhost:9000 rustfsadmin rustfsadmin123
-docker run --rm --network host minio/mc mb local/electoral-evidences
+# El bucket lo crea el servicio `rustfs-init` al levantar el profile s3.
+# Si falta (p. ej. tras `down -v`), se puede volver a correr:
+docker compose --profile s3 run --rm rustfs-init
+
+# O a mano con AWS CLI (la imagen minio/mc ya no está publicada):
+docker run --rm --network host \
+  -e AWS_ACCESS_KEY_ID=rustfsadmin -e AWS_SECRET_ACCESS_KEY=rustfsadmin123 \
+  -e AWS_DEFAULT_REGION=us-east-1 \
+  amazon/aws-cli --endpoint-url http://localhost:9000 s3 mb s3://electoral-evidences
 ```
 
 ### Frontend no se conecta al backend

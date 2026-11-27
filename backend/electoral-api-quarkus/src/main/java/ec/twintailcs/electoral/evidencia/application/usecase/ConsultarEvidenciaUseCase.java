@@ -2,7 +2,8 @@ package ec.twintailcs.electoral.evidencia.application.usecase;
 
 import ec.twintailcs.electoral.evidencia.domain.Evidencia;
 import ec.twintailcs.electoral.evidencia.domain.EvidenciaNotFoundException;
-import ec.twintailcs.electoral.storage.s3.S3StorageService;
+import ec.twintailcs.electoral.storage.StorageException;
+import ec.twintailcs.electoral.storage.StorageService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -16,7 +17,7 @@ import java.util.UUID;
 @ApplicationScoped
 public class ConsultarEvidenciaUseCase {
 
-  @Inject S3StorageService s3;
+  @Inject StorageService storage;
 
   /** Metadata de la evidencia por su UUID publico. */
   @Transactional
@@ -30,8 +31,8 @@ public class ConsultarEvidenciaUseCase {
 
   /** URL prefirmada de descarga del objeto de la evidencia. */
   @Transactional
-  public String presignDownload(UUID publicId) {
+  public String presignDownload(UUID publicId) throws StorageException {
     Evidencia evidencia = get(publicId);
-    return s3.presignDownloadUrl(evidencia.getS3Key());
+    return storage.presignDownloadUrl(evidencia.getS3Key());
   }
 }

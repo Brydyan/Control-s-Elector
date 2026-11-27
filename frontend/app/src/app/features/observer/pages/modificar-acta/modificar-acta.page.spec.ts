@@ -118,6 +118,29 @@ describe('ModificarActaPage', () => {
   // Carga inicial
   // ============================================================================
 
+  it('should renew only the evidence URL once when the image fails, keeping edits', () => {
+    fixture.detectChanges();
+    component.votosBlancos.set(99);
+    observerServiceSpy.getActaParaCorregir.and.returnValue(
+      of({ ...mockActa, urlEvidencia: 'https://ejemplo.com/foto-nueva.jpg' }),
+    );
+    const image = fixture.nativeElement.querySelector(
+      '[data-testid="evidence-image-current"]',
+    );
+
+    image.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(observerServiceSpy.getActaParaCorregir).toHaveBeenCalledTimes(2);
+    expect(component.urlEvidencia()).toBe('https://ejemplo.com/foto-nueva.jpg');
+    expect(component.votosBlancos()).toBe(99);
+
+    fixture.nativeElement
+      .querySelector('[data-testid="evidence-image-current"]')
+      .dispatchEvent(new Event('error'));
+    expect(observerServiceSpy.getActaParaCorregir).toHaveBeenCalledTimes(2);
+  });
+
   it('should load acta and candidatos on init', () => {
     fixture.detectChanges();
 

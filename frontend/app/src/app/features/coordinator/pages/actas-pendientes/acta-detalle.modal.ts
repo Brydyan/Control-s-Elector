@@ -53,7 +53,12 @@ interface ActaDetalle {
       <div *ngIf="!cargando() && detalle()" class="detalle-content">
         <!-- Foto del acta -->
         <div class="foto-section" *ngIf="detalle()?.urlEvidencia">
-          <img [src]="detalle()!.urlEvidencia" alt="Acta" class="acta-foto" />
+          <img
+            [src]="detalle()!.urlEvidencia"
+            alt="Acta"
+            class="acta-foto"
+            (error)="onEvidenceError()"
+          />
         </div>
 
         <!-- Datos principales -->
@@ -247,6 +252,30 @@ export class ActaDetalleModalComponent implements OnChanges {
     });
   }
 
+  private evidenceReloadAttempted = false;
+
+  /**
+   * La URL prefirmada de la evidencia caduca (15 min). Si la imagen falla, se pide el detalle
+   * de nuevo una sola vez y se actualiza solo la URL, sin mostrar el estado de carga.
+   */
+  onEvidenceError(): void {
+    if (this.evidenceReloadAttempted || !this.acta) return;
+    this.evidenceReloadAttempted = true;
+    this.api.obtenerActaDetalle(this.acta.id).subscribe({
+      next: (detalle) => {
+        const actual = this.detalle();
+        if (actual) {
+          this.detalle.set({
+            ...actual,
+            urlEvidencia: (detalle as ActaDetalle).urlEvidencia,
+          });
+        }
+      },
+      error: (err) =>
+        console.error('No se pudo renovar la URL de la evidencia:', err),
+    });
+  }
+
   onAprobar(): void {
     this.aprobar.emit(undefined);
   }
@@ -257,6 +286,7 @@ export class ActaDetalleModalComponent implements OnChanges {
 
   cerrar(): void {
     this.detalle.set(null);
+    this.evidenceReloadAttempted = false;
     this.cerrado.emit();
   }
 }

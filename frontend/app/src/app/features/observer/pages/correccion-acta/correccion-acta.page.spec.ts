@@ -102,6 +102,21 @@ describe('CorreccionActaPage (T-FE-14 C.1)', () => {
     expect(banner.getAttribute('aria-live')).toBeNull();
   });
 
+  it('should reload the evidence URL once when the image fails to load', () => {
+    fixture.detectChanges();
+    const image = fixture.nativeElement.querySelector(
+      '[data-testid="evidence-image"]',
+    );
+
+    image.dispatchEvent(new Event('error'));
+    fixture.detectChanges();
+
+    expect(observerServiceSpy.getActaParaCorregir).toHaveBeenCalledTimes(2);
+
+    image.dispatchEvent(new Event('error'));
+    expect(observerServiceSpy.getActaParaCorregir).toHaveBeenCalledTimes(2);
+  });
+
   it('should calculate valid checksum when votes sum equals sufragantes (C.1 happy path)', () => {
     fixture.detectChanges();
 

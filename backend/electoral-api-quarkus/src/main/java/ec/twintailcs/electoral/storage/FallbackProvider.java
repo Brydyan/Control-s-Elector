@@ -7,10 +7,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * CDI Qualifier para {@link FallbackStorageService}.
+ * CDI Qualifier para proveedores alternativos de almacenamiento.
  *
- * <p>Usado para distinguir la implementación de fallback de otras implementaciones de {@link StorageService}.
- * Permite que el producer method acceda explícitamente a FallbackStorageService sin ambigüedad.
+ * <p>El decorador de fallback usa este qualifier para descubrir adaptadores opcionales. No debe
+ * asignarse a {@code FallbackStorageService} para evitar que se inyecte a sí mismo.
  */
 @Qualifier
 @Retention(RetentionPolicy.RUNTIME)

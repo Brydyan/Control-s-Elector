@@ -67,6 +67,7 @@ export class CorreccionActaPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly observerService = inject(ObserverApi);
   private readonly destroy$ = new Subject<void>();
+  private evidenceReloadAttempted = false;
 
   actaId!: number;
 
@@ -167,6 +168,12 @@ export class CorreccionActaPage implements OnInit, OnDestroy {
           this.loading.set(false);
         },
       });
+  }
+
+  onEvidenceError(): void {
+    if (this.evidenceReloadAttempted) return;
+    this.evidenceReloadAttempted = true;
+    this.cargarActa();
   }
 
   /**
